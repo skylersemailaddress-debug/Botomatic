@@ -5,7 +5,7 @@ import { advanceProject, markPacketComplete, markPacketFailed } from "../../../p
 import { MockExecutor } from "../../../packages/executor-adapters/src/mockExecutor";
 import { ClaudeExecutorStub } from "../../../packages/executor-adapters/src/claudeExecutorStub";
 import { runValidation } from "../../../packages/validation/src/runner";
-import { MockGitHubAdapter } from "../../../packages/github-adapter/src/mockGithub";
+import { createGitOperation } from "../../../packages/github-adapter/src/operations";
 
 const app = express();
 app.use(express.json());
@@ -19,14 +19,11 @@ type InMemoryProject = {
   plan?: any;
   runs?: any;
   validations?: any;
-  git?: any;
+  gitOperations?: Record<string, any>;
+  gitResults?: Record<string, any>;
 };
 
 const projects = new Map<string, InMemoryProject>();
-
-app.get("/api/health", (req, res) => {
-  res.json({ status: "ok" });
-});
 
 app.post("/api/projects/intake", (req, res) => {
   const { name, request } = req.body;
@@ -55,9 +52,8 @@ app.post("/api/projects/:projectId/compile", (req, res) => {
 
   project.masterTruth = truth;
   project.status = truth.status;
-  projects.set(project.projectId, project);
 
-  return res.json({ projectId: project.projectId, status: project.status, masterTruth: truth });
+  return res.json({ projectId: project.projectId, status: project.status });
 });
 
 app.post("/api/projects/:projectId/plan", (req, res) => {
@@ -67,9 +63,38 @@ app.post("/api/projects/:projectId/plan", (req, res) => {
   const plan = generatePlan(project.masterTruth);
   project.plan = plan;
   project.status = "queued";
-  projects.set(project.projectId, project);
 
-  return res.json({ projectId: project.projectId, status: project.status, plan });
+  return res.json({ projectId: project.projectId, status: project.status });
+});
+
+// Request Git operation (intent)
+app.post("/api/projects/:projectId/git/request", (req, res) => {
+  const project = projects.get(req.params.projectId);
+  if (!project) return res.status(404).json({ error: "Project not found" });
+
+  const operation = createGitOperation(req.body);
+
+  project.gitOperations = {
+    ...(project.gitOperations || {}),
+    [operation.operationId]: operation
+  };
+
+  return res.json(operation);
+});
+
+// Receive Git result (runtime writes back)
+app.post("/api/projects/:projectId/git/result", (req, res) => {
+  const project = projects.get(req.params.projectId);
+  if (!project) return res.status(404).json({ error: "Project not found" });
+
+  const result = req.body;
+
+  project.gitResults = {
+    ...(project.gitResults || {}),
+    [result.operationId]: result
+  };
+
+  return res.json({ status: "recorded" });
 });
 
 app.post("/api/projects/:projectId/execute-next", async (req, res) => {
@@ -90,18 +115,19 @@ app.post("/api/projects/:projectId/execute-next", async (req, res) => {
   const executingPacket = project.plan.packets.find((p: any) => p.status === "executing");
 
   if (executingPacket) {
-    const git = await MockGitHubAdapter.createBranch({
+    // Emit Git branch operation instead of executing directly
+    const op = createGitOperation({
       projectId: project.projectId,
       packetId: executingPacket.packetId,
+      type: "create_branch",
       branchName: executingPacket.branchName
     });
 
-    project.git = {
-      ...(project.git || {}),
-      [executingPacket.packetId]: git
+    project.gitOperations = {
+      ...(project.gitOperations || {}),
+      [op.operationId]: op
     };
 
-    // Switchable executor layer
     const executor = process.env.EXECUTOR === "claude" ? ClaudeExecutorStub : MockExecutor;
 
     const result = await executor.execute({
@@ -131,15 +157,11 @@ app.post("/api/projects/:projectId/execute-next", async (req, res) => {
     project.runs = updated.runs;
   }
 
-  projects.set(project.projectId, project);
-
   return res.json({
     projectId: project.projectId,
     status: project.status,
-    packets: project.plan.packets,
-    runs: project.runs,
-    validations: project.validations,
-    git: project.git
+    gitOperations: project.gitOperations,
+    gitResults: project.gitResults
   });
 });
 
@@ -147,28 +169,7 @@ app.get("/api/projects/:projectId/status", (req, res) => {
   const project = projects.get(req.params.projectId);
   if (!project) return res.status(404).json({ error: "Project not found" });
 
-  const packets = project.plan?.packets || [];
-
-  return res.json({
-    projectId: project.projectId,
-    status: project.status,
-    packetsSummary: {
-      total: packets.length,
-      complete: packets.filter((p: any) => p.status === "complete").length
-    },
-    currentPacket: packets.find((p: any) => p.status !== "complete") || null,
-    runs: project.runs,
-    validations: project.validations,
-    git: project.git
-  });
-});
-
-// New endpoint: run logs
-app.get("/api/projects/:projectId/logs", (req, res) => {
-  const project = projects.get(req.params.projectId);
-  if (!project) return res.status(404).json({ error: "Project not found" });
-
-  return res.json(project.runs || {});
+  return res.json(project);
 });
 
 const PORT = process.env.PORT || 3000;
