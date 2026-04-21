@@ -3,6 +3,7 @@ import { compileConversationToMasterTruth } from "../../../packages/master-truth
 import { generatePlan } from "../../../packages/packet-engine/src/generator";
 import { advanceProject, markPacketComplete, markPacketFailed } from "../../../packages/execution/src/runner";
 import { MockExecutor } from "../../../packages/executor-adapters/src/mockExecutor";
+import { runValidation } from "../../../packages/validation/src/runner";
 
 const app = express();
 app.use(express.json());
@@ -15,6 +16,7 @@ type InMemoryProject = {
   masterTruth?: any;
   plan?: any;
   runs?: any;
+  validations?: any;
 };
 
 const projects = new Map<string, InMemoryProject>();
@@ -95,6 +97,13 @@ app.post("/api/projects/:projectId/execute-next", async (req, res) => {
     });
 
     if (result.success) {
+      const validation = runValidation(project.projectId, executingPacket.packetId);
+
+      project.validations = {
+        ...(project.validations || {}),
+        [executingPacket.packetId]: validation
+      };
+
       updated = markPacketComplete(updated, executingPacket.packetId);
     } else {
       updated = markPacketFailed(updated, executingPacket.packetId);
@@ -107,7 +116,13 @@ app.post("/api/projects/:projectId/execute-next", async (req, res) => {
 
   projects.set(project.projectId, project);
 
-  return res.json({ projectId: project.projectId, status: project.status, packets: project.plan.packets, runs: project.runs });
+  return res.json({
+    projectId: project.projectId,
+    status: project.status,
+    packets: project.plan.packets,
+    runs: project.runs,
+    validations: project.validations
+  });
 });
 
 app.get("/api/projects/:projectId/status", (req, res) => {
