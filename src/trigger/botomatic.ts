@@ -35,7 +35,7 @@ export const executeNextPacketTask = task({
     logger.log("Executing next packet", payload);
 
     const result = await postJson(
-      `${payload.apiBaseUrl}/api/projects/${payload.projectId}/execute-next`,
+      `${payload.apiBaseUrl}/api/projects/${payload.projectId}/dispatch/execute-next`,
       {}
     );
 
@@ -49,6 +49,11 @@ export const processGitOperationTask = task({
   maxDuration: 600,
   run: async (payload: GitOperationPayload) => {
     logger.log("Processing git operation", payload);
+
+    await postJson(
+      `${payload.apiBaseUrl}/api/projects/${payload.projectId}/dispatch/process-git-operation`,
+      {}
+    );
 
     const mockResult = {
       operationId: payload.operationId,
