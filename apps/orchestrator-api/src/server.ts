@@ -9,13 +9,14 @@ import { createGitOperation } from "../../../packages/github-adapter/src/operati
 import { InMemoryProjectRepository } from "../../../packages/supabase-adapter/src/memoryRepo";
 import { StoredProjectRecord } from "../../../packages/supabase-adapter/src/types";
 import { createTriggerJob } from "../../../packages/trigger-adapter/src/jobs";
-import { MockTriggerRunner } from "../../../packages/trigger-adapter/src/mockRunner";
+import { InMemoryJobRepository } from "../../../packages/trigger-adapter/src/jobRepo";
+import { getRetryDecision } from "../../../packages/trigger-adapter/src/retryPolicy";
 
 const app = express();
 app.use(express.json());
 
 const repo = new InMemoryProjectRepository();
-const triggerRunner = new MockTriggerRunner();
+const jobRepo = new InMemoryJobRepository();
 
 function now(): string {
   return new Date().toISOString();
@@ -149,23 +150,24 @@ app.post("/api/projects/:projectId/jobs/execute", async (req, res) => {
     payload: { projectId: project.projectId }
   });
 
-  triggerRunner.enqueue(job);
+  jobRepo.save(job);
 
   return res.json({
     projectId: project.projectId,
     jobId: job.jobId,
-    status: job.status
+    status: "queued"
   });
 });
 
 app.post("/api/projects/:projectId/jobs/:jobId/run", async (req, res) => {
   const project = await repo.getProject(req.params.projectId);
-  if (!project) return res.status(404).json({ error: "Project not found" });
+  const job = jobRepo.get(req.params.jobId);
 
-  const job = await triggerRunner.run(req.params.jobId);
-  if (!job) return res.status(404).json({ error: "Job not found" });
+  if (!project || !job) return res.status(404).json({ error: "Not found" });
 
-  if (job.type === "execute_next_packet") {
+  jobRepo.update(job.jobId, { status: "running" });
+
+  try {
     let updatedState = advanceProject({
       projectId: project.projectId,
       status: project.status as any,
@@ -214,7 +216,7 @@ app.post("/api/projects/:projectId/jobs/:jobId/run", async (req, res) => {
         };
         updatedState = markPacketComplete(updatedState, executingPacket.packetId);
       } else {
-        updatedState = markPacketFailed(updatedState, executingPacket.packetId);
+        throw new Error("Execution failed");
       }
 
       updated = {
@@ -227,16 +229,38 @@ app.post("/api/projects/:projectId/jobs/:jobId/run", async (req, res) => {
     }
 
     await repo.upsertProject(updated);
+    jobRepo.update(job.jobId, { status: "succeeded" });
 
     return res.json({
       projectId: updated.projectId,
       jobId: job.jobId,
-      jobStatus: job.status,
+      jobStatus: "succeeded",
       projectStatus: updated.status
     });
-  }
+  } catch (err) {
+    jobRepo.incrementRetry(job.jobId);
+    const retryCount = jobRepo.get(job.jobId)?.retryCount || 0;
+    const decision = getRetryDecision(retryCount);
 
-  return res.json({ projectId: project.projectId, jobId: job.jobId, jobStatus: job.status });
+    if (decision.shouldRetry) {
+      jobRepo.update(job.jobId, { status: "queued" });
+      return res.json({
+        projectId: project.projectId,
+        jobId: job.jobId,
+        jobStatus: "retrying",
+        retryCount,
+        nextDelayMs: decision.nextDelayMs
+      });
+    }
+
+    jobRepo.update(job.jobId, { status: "failed" });
+    return res.json({
+      projectId: project.projectId,
+      jobId: job.jobId,
+      jobStatus: "failed",
+      retryCount
+    });
+  }
 });
 
 app.post("/api/projects/:projectId/execute-next", async (req, res) => {
