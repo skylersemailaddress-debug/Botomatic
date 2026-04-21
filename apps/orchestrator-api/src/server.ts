@@ -3,6 +3,7 @@ import { compileConversationToMasterTruth } from "../../../packages/master-truth
 import { generatePlan } from "../../../packages/packet-engine/src/generator";
 import { advanceProject, markPacketComplete, markPacketFailed } from "../../../packages/execution/src/runner";
 import { MockExecutor } from "../../../packages/executor-adapters/src/mockExecutor";
+import { ClaudeExecutorStub } from "../../../packages/executor-adapters/src/claudeExecutorStub";
 import { runValidation } from "../../../packages/validation/src/runner";
 import { MockGitHubAdapter } from "../../../packages/github-adapter/src/mockGithub";
 
@@ -100,7 +101,10 @@ app.post("/api/projects/:projectId/execute-next", async (req, res) => {
       [executingPacket.packetId]: git
     };
 
-    const result = await MockExecutor.execute({
+    // Switchable executor layer
+    const executor = process.env.EXECUTOR === "claude" ? ClaudeExecutorStub : MockExecutor;
+
+    const result = await executor.execute({
       projectId: project.projectId,
       packetId: executingPacket.packetId,
       branchName: executingPacket.branchName,
@@ -143,7 +147,28 @@ app.get("/api/projects/:projectId/status", (req, res) => {
   const project = projects.get(req.params.projectId);
   if (!project) return res.status(404).json({ error: "Project not found" });
 
-  return res.json(project);
+  const packets = project.plan?.packets || [];
+
+  return res.json({
+    projectId: project.projectId,
+    status: project.status,
+    packetsSummary: {
+      total: packets.length,
+      complete: packets.filter((p: any) => p.status === "complete").length
+    },
+    currentPacket: packets.find((p: any) => p.status !== "complete") || null,
+    runs: project.runs,
+    validations: project.validations,
+    git: project.git
+  });
+});
+
+// New endpoint: run logs
+app.get("/api/projects/:projectId/logs", (req, res) => {
+  const project = projects.get(req.params.projectId);
+  if (!project) return res.status(404).json({ error: "Project not found" });
+
+  return res.json(project.runs || {});
 });
 
 const PORT = process.env.PORT || 3000;
