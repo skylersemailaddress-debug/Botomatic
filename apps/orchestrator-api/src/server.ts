@@ -6,11 +6,19 @@ import { MockExecutor } from "../../../packages/executor-adapters/src/mockExecut
 import { ClaudeExecutorStub } from "../../../packages/executor-adapters/src/claudeExecutorStub";
 import { runValidation } from "../../../packages/validation/src/runner";
 import { createGitOperation } from "../../../packages/github-adapter/src/operations";
+import { InMemoryProjectRepository } from "../../../packages/supabase-adapter/src/memoryRepo";
+import { StoredProjectRecord } from "../../../packages/supabase-adapter/src/types";
 
 const app = express();
 app.use(express.json());
 
-type InMemoryProject = {
+const repo = new InMemoryProjectRepository();
+
+function now(): string {
+  return new Date().toISOString();
+}
+
+function toStored(record: {
   projectId: string;
   name: string;
   request: string;
@@ -21,27 +29,41 @@ type InMemoryProject = {
   validations?: any;
   gitOperations?: Record<string, any>;
   gitResults?: Record<string, any>;
-};
+}): StoredProjectRecord {
+  const timestamp = now();
+  return {
+    projectId: record.projectId,
+    name: record.name,
+    request: record.request,
+    status: record.status,
+    masterTruth: record.masterTruth ?? null,
+    plan: record.plan ?? null,
+    runs: record.runs ?? null,
+    validations: record.validations ?? null,
+    gitOperations: record.gitOperations ?? null,
+    gitResults: record.gitResults ?? null,
+    createdAt: timestamp,
+    updatedAt: timestamp
+  };
+}
 
-const projects = new Map<string, InMemoryProject>();
-
-app.post("/api/projects/intake", (req, res) => {
+app.post("/api/projects/intake", async (req, res) => {
   const { name, request } = req.body;
   const projectId = `proj_${Date.now()}`;
 
-  const project: InMemoryProject = {
+  const project = toStored({
     projectId,
     name,
     request,
     status: "clarifying"
-  };
+  });
 
-  projects.set(projectId, project);
+  await repo.upsertProject(project);
   res.json({ projectId, status: project.status });
 });
 
-app.post("/api/projects/:projectId/compile", (req, res) => {
-  const project = projects.get(req.params.projectId);
+app.post("/api/projects/:projectId/compile", async (req, res) => {
+  const project = await repo.getProject(req.params.projectId);
   if (!project) return res.status(404).json({ error: "Project not found" });
 
   const truth = compileConversationToMasterTruth({
@@ -50,88 +72,106 @@ app.post("/api/projects/:projectId/compile", (req, res) => {
     request: project.request
   });
 
-  project.masterTruth = truth;
-  project.status = truth.status;
+  const updated: StoredProjectRecord = {
+    ...project,
+    masterTruth: truth,
+    status: truth.status,
+    updatedAt: now()
+  };
 
-  return res.json({ projectId: project.projectId, status: project.status });
+  await repo.upsertProject(updated);
+  return res.json({ projectId: updated.projectId, status: updated.status });
 });
 
-app.post("/api/projects/:projectId/plan", (req, res) => {
-  const project = projects.get(req.params.projectId);
+app.post("/api/projects/:projectId/plan", async (req, res) => {
+  const project = await repo.getProject(req.params.projectId);
   if (!project || !project.masterTruth) return res.status(404).json({ error: "No master truth" });
 
-  const plan = generatePlan(project.masterTruth);
-  project.plan = plan;
-  project.status = "queued";
+  const plan = generatePlan(project.masterTruth as any);
+  const updated: StoredProjectRecord = {
+    ...project,
+    plan,
+    status: "queued",
+    updatedAt: now()
+  };
 
-  return res.json({ projectId: project.projectId, status: project.status });
+  await repo.upsertProject(updated);
+  return res.json({ projectId: updated.projectId, status: updated.status });
 });
 
-// Request Git operation (intent)
-app.post("/api/projects/:projectId/git/request", (req, res) => {
-  const project = projects.get(req.params.projectId);
+app.post("/api/projects/:projectId/git/request", async (req, res) => {
+  const project = await repo.getProject(req.params.projectId);
   if (!project) return res.status(404).json({ error: "Project not found" });
 
   const operation = createGitOperation(req.body);
-
-  project.gitOperations = {
-    ...(project.gitOperations || {}),
-    [operation.operationId]: operation
+  const updated: StoredProjectRecord = {
+    ...project,
+    gitOperations: {
+      ...(project.gitOperations || {}),
+      [operation.operationId]: operation
+    },
+    updatedAt: now()
   };
 
+  await repo.upsertProject(updated);
   return res.json(operation);
 });
 
-// Receive Git result (runtime writes back)
-app.post("/api/projects/:projectId/git/result", (req, res) => {
-  const project = projects.get(req.params.projectId);
+app.post("/api/projects/:projectId/git/result", async (req, res) => {
+  const project = await repo.getProject(req.params.projectId);
   if (!project) return res.status(404).json({ error: "Project not found" });
 
   const result = req.body;
-
-  project.gitResults = {
-    ...(project.gitResults || {}),
-    [result.operationId]: result
+  const updated: StoredProjectRecord = {
+    ...project,
+    gitResults: {
+      ...(project.gitResults || {}),
+      [result.operationId]: result
+    },
+    updatedAt: now()
   };
 
+  await repo.upsertProject(updated);
   return res.json({ status: "recorded" });
 });
 
 app.post("/api/projects/:projectId/execute-next", async (req, res) => {
-  const project = projects.get(req.params.projectId);
+  const project = await repo.getProject(req.params.projectId);
   if (!project || !project.plan) return res.status(404).json({ error: "No plan" });
 
-  let updated = advanceProject({
+  let updatedState = advanceProject({
     projectId: project.projectId,
     status: project.status as any,
-    packets: project.plan.packets,
-    runs: project.runs
+    packets: (project.plan as any).packets,
+    runs: project.runs as any
   });
 
-  project.status = updated.status;
-  project.plan.packets = updated.packets;
-  project.runs = updated.runs;
+  let updated: StoredProjectRecord = {
+    ...project,
+    status: updatedState.status,
+    plan: { ...(project.plan as any), packets: updatedState.packets },
+    runs: updatedState.runs,
+    updatedAt: now()
+  };
 
-  const executingPacket = project.plan.packets.find((p: any) => p.status === "executing");
+  const executingPacket = (updated.plan as any).packets.find((p: any) => p.status === "executing");
 
   if (executingPacket) {
-    // Emit Git branch operation instead of executing directly
     const op = createGitOperation({
-      projectId: project.projectId,
+      projectId: updated.projectId,
       packetId: executingPacket.packetId,
       type: "create_branch",
       branchName: executingPacket.branchName
     });
 
-    project.gitOperations = {
-      ...(project.gitOperations || {}),
+    updated.gitOperations = {
+      ...(updated.gitOperations || {}),
       [op.operationId]: op
     };
 
     const executor = process.env.EXECUTOR === "claude" ? ClaudeExecutorStub : MockExecutor;
-
     const result = await executor.execute({
-      projectId: project.projectId,
+      projectId: updated.projectId,
       packetId: executingPacket.packetId,
       branchName: executingPacket.branchName,
       goal: executingPacket.goal,
@@ -140,33 +180,36 @@ app.post("/api/projects/:projectId/execute-next", async (req, res) => {
     });
 
     if (result.success) {
-      const validation = runValidation(project.projectId, executingPacket.packetId);
-
-      project.validations = {
-        ...(project.validations || {}),
+      const validation = runValidation(updated.projectId, executingPacket.packetId);
+      updated.validations = {
+        ...(updated.validations || {}),
         [executingPacket.packetId]: validation
       };
-
-      updated = markPacketComplete(updated, executingPacket.packetId);
+      updatedState = markPacketComplete(updatedState, executingPacket.packetId);
     } else {
-      updated = markPacketFailed(updated, executingPacket.packetId);
+      updatedState = markPacketFailed(updatedState, executingPacket.packetId);
     }
 
-    project.status = updated.status;
-    project.plan.packets = updated.packets;
-    project.runs = updated.runs;
+    updated = {
+      ...updated,
+      status: updatedState.status,
+      plan: { ...(updated.plan as any), packets: updatedState.packets },
+      runs: updatedState.runs,
+      updatedAt: now()
+    };
   }
 
+  await repo.upsertProject(updated);
   return res.json({
-    projectId: project.projectId,
-    status: project.status,
-    gitOperations: project.gitOperations,
-    gitResults: project.gitResults
+    projectId: updated.projectId,
+    status: updated.status,
+    gitOperations: updated.gitOperations,
+    gitResults: updated.gitResults
   });
 });
 
-app.get("/api/projects/:projectId/status", (req, res) => {
-  const project = projects.get(req.params.projectId);
+app.get("/api/projects/:projectId/status", async (req, res) => {
+  const project = await repo.getProject(req.params.projectId);
   if (!project) return res.status(404).json({ error: "Project not found" });
 
   return res.json(project);
