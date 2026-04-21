@@ -1,7 +1,8 @@
 import express from "express";
 import { compileConversationToMasterTruth } from "../../../packages/master-truth/src/compiler";
 import { generatePlan } from "../../../packages/packet-engine/src/generator";
-import { advanceProject, markPacketComplete } from "../../../packages/execution/src/runner";
+import { advanceProject, markPacketComplete, markPacketFailed } from "../../../packages/execution/src/runner";
+import { MockExecutor } from "../../../packages/executor-adapters/src/mockExecutor";
 
 const app = express();
 app.use(express.json());
@@ -13,6 +14,7 @@ type InMemoryProject = {
   status: string;
   masterTruth?: any;
   plan?: any;
+  runs?: any;
 };
 
 const projects = new Map<string, InMemoryProject>();
@@ -33,7 +35,6 @@ app.post("/api/projects/intake", (req, res) => {
   };
 
   projects.set(projectId, project);
-
   res.json({ projectId, status: project.status });
 });
 
@@ -66,42 +67,47 @@ app.post("/api/projects/:projectId/plan", (req, res) => {
   return res.json({ projectId: project.projectId, status: project.status, plan });
 });
 
-app.post("/api/projects/:projectId/execute-next", (req, res) => {
+app.post("/api/projects/:projectId/execute-next", async (req, res) => {
   const project = projects.get(req.params.projectId);
   if (!project || !project.plan) return res.status(404).json({ error: "No plan" });
 
-  const updated = advanceProject({
+  let updated = advanceProject({
     projectId: project.projectId,
     status: project.status as any,
-    packets: project.plan.packets
+    packets: project.plan.packets,
+    runs: project.runs
   });
 
   project.status = updated.status;
   project.plan.packets = updated.packets;
-  projects.set(project.projectId, project);
+  project.runs = updated.runs;
 
-  return res.json({ projectId: project.projectId, status: project.status, packets: project.plan.packets });
-});
+  const executingPacket = project.plan.packets.find((p: any) => p.status === "executing");
 
-app.post("/api/projects/:projectId/complete-packet", (req, res) => {
-  const { packetId } = req.body;
-  const project = projects.get(req.params.projectId);
-  if (!project || !project.plan) return res.status(404).json({ error: "No plan" });
-
-  const updated = markPacketComplete(
-    {
+  if (executingPacket) {
+    const result = await MockExecutor.execute({
       projectId: project.projectId,
-      status: project.status as any,
-      packets: project.plan.packets
-    },
-    packetId
-  );
+      packetId: executingPacket.packetId,
+      branchName: executingPacket.branchName,
+      goal: executingPacket.goal,
+      requirements: executingPacket.requirements,
+      constraints: executingPacket.constraints
+    });
 
-  project.status = updated.status;
-  project.plan.packets = updated.packets;
+    if (result.success) {
+      updated = markPacketComplete(updated, executingPacket.packetId);
+    } else {
+      updated = markPacketFailed(updated, executingPacket.packetId);
+    }
+
+    project.status = updated.status;
+    project.plan.packets = updated.packets;
+    project.runs = updated.runs;
+  }
+
   projects.set(project.projectId, project);
 
-  return res.json({ projectId: project.projectId, status: project.status });
+  return res.json({ projectId: project.projectId, status: project.status, packets: project.plan.packets, runs: project.runs });
 });
 
 app.get("/api/projects/:projectId/status", (req, res) => {
