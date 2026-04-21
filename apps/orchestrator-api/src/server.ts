@@ -8,15 +8,15 @@ import { runValidation } from "../../../packages/validation/src/runner";
 import { createGitOperation } from "../../../packages/github-adapter/src/operations";
 import { InMemoryProjectRepository } from "../../../packages/supabase-adapter/src/memoryRepo";
 import { StoredProjectRecord } from "../../../packages/supabase-adapter/src/types";
-import { createTriggerJob } from "../../../packages/trigger-adapter/src/jobs";
-import { InMemoryJobRepository } from "../../../packages/trigger-adapter/src/jobRepo";
-import { getRetryDecision } from "../../../packages/trigger-adapter/src/retryPolicy";
+import {
+  dispatchExecuteNextPacket,
+  dispatchProcessGitOperation,
+} from "../../../packages/trigger-adapter/src/liveTrigger";
 
 const app = express();
 app.use(express.json());
 
 const repo = new InMemoryProjectRepository();
-const jobRepo = new InMemoryJobRepository();
 
 function now(): string {
   return new Date().toISOString();
@@ -33,7 +33,6 @@ function toStored(record: {
   validations?: any;
   gitOperations?: Record<string, any>;
   gitResults?: Record<string, any>;
-  triggerJobs?: Record<string, any>;
 }): StoredProjectRecord {
   const timestamp = now();
   return {
@@ -48,9 +47,13 @@ function toStored(record: {
     gitOperations: record.gitOperations ?? null,
     gitResults: record.gitResults ?? null,
     createdAt: timestamp,
-    updatedAt: timestamp
+    updatedAt: timestamp,
   };
 }
+
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok" });
+});
 
 app.post("/api/projects/intake", async (req, res) => {
   const { name, request } = req.body;
@@ -60,7 +63,7 @@ app.post("/api/projects/intake", async (req, res) => {
     projectId,
     name,
     request,
-    status: "clarifying"
+    status: "clarifying",
   });
 
   await repo.upsertProject(project);
@@ -74,14 +77,14 @@ app.post("/api/projects/:projectId/compile", async (req, res) => {
   const truth = compileConversationToMasterTruth({
     projectId: project.projectId,
     appName: project.name,
-    request: project.request
+    request: project.request,
   });
 
   const updated: StoredProjectRecord = {
     ...project,
     masterTruth: truth,
     status: truth.status,
-    updatedAt: now()
+    updatedAt: now(),
   };
 
   await repo.upsertProject(updated);
@@ -97,7 +100,7 @@ app.post("/api/projects/:projectId/plan", async (req, res) => {
     ...project,
     plan,
     status: "queued",
-    updatedAt: now()
+    updatedAt: now(),
   };
 
   await repo.upsertProject(updated);
@@ -113,9 +116,9 @@ app.post("/api/projects/:projectId/git/request", async (req, res) => {
     ...project,
     gitOperations: {
       ...(project.gitOperations || {}),
-      [operation.operationId]: operation
+      [operation.operationId]: operation,
     },
-    updatedAt: now()
+    updatedAt: now(),
   };
 
   await repo.upsertProject(updated);
@@ -131,139 +134,16 @@ app.post("/api/projects/:projectId/git/result", async (req, res) => {
     ...project,
     gitResults: {
       ...(project.gitResults || {}),
-      [result.operationId]: result
+      [result.operationId]: result,
     },
-    updatedAt: now()
+    updatedAt: now(),
   };
 
   await repo.upsertProject(updated);
   return res.json({ status: "recorded" });
 });
 
-app.post("/api/projects/:projectId/jobs/execute", async (req, res) => {
-  const project = await repo.getProject(req.params.projectId);
-  if (!project) return res.status(404).json({ error: "Project not found" });
-
-  const job = createTriggerJob({
-    projectId: project.projectId,
-    type: "execute_next_packet",
-    payload: { projectId: project.projectId }
-  });
-
-  jobRepo.save(job);
-
-  return res.json({
-    projectId: project.projectId,
-    jobId: job.jobId,
-    status: "queued"
-  });
-});
-
-app.post("/api/projects/:projectId/jobs/:jobId/run", async (req, res) => {
-  const project = await repo.getProject(req.params.projectId);
-  const job = jobRepo.get(req.params.jobId);
-
-  if (!project || !job) return res.status(404).json({ error: "Not found" });
-
-  jobRepo.update(job.jobId, { status: "running" });
-
-  try {
-    let updatedState = advanceProject({
-      projectId: project.projectId,
-      status: project.status as any,
-      packets: (project.plan as any)?.packets || [],
-      runs: project.runs as any
-    });
-
-    let updated: StoredProjectRecord = {
-      ...project,
-      status: updatedState.status,
-      plan: project.plan ? { ...(project.plan as any), packets: updatedState.packets } : null,
-      runs: updatedState.runs,
-      updatedAt: now()
-    };
-
-    const executingPacket = (updated.plan as any)?.packets?.find((p: any) => p.status === "executing");
-
-    if (executingPacket) {
-      const op = createGitOperation({
-        projectId: updated.projectId,
-        packetId: executingPacket.packetId,
-        type: "create_branch",
-        branchName: executingPacket.branchName
-      });
-
-      updated.gitOperations = {
-        ...(updated.gitOperations || {}),
-        [op.operationId]: op
-      };
-
-      const executor = process.env.EXECUTOR === "claude" ? ClaudeExecutorStub : MockExecutor;
-      const result = await executor.execute({
-        projectId: updated.projectId,
-        packetId: executingPacket.packetId,
-        branchName: executingPacket.branchName,
-        goal: executingPacket.goal,
-        requirements: executingPacket.requirements,
-        constraints: executingPacket.constraints
-      });
-
-      if (result.success) {
-        const validation = runValidation(updated.projectId, executingPacket.packetId);
-        updated.validations = {
-          ...(updated.validations || {}),
-          [executingPacket.packetId]: validation
-        };
-        updatedState = markPacketComplete(updatedState, executingPacket.packetId);
-      } else {
-        throw new Error("Execution failed");
-      }
-
-      updated = {
-        ...updated,
-        status: updatedState.status,
-        plan: { ...(updated.plan as any), packets: updatedState.packets },
-        runs: updatedState.runs,
-        updatedAt: now()
-      };
-    }
-
-    await repo.upsertProject(updated);
-    jobRepo.update(job.jobId, { status: "succeeded" });
-
-    return res.json({
-      projectId: updated.projectId,
-      jobId: job.jobId,
-      jobStatus: "succeeded",
-      projectStatus: updated.status
-    });
-  } catch (err) {
-    jobRepo.incrementRetry(job.jobId);
-    const retryCount = jobRepo.get(job.jobId)?.retryCount || 0;
-    const decision = getRetryDecision(retryCount);
-
-    if (decision.shouldRetry) {
-      jobRepo.update(job.jobId, { status: "queued" });
-      return res.json({
-        projectId: project.projectId,
-        jobId: job.jobId,
-        jobStatus: "retrying",
-        retryCount,
-        nextDelayMs: decision.nextDelayMs
-      });
-    }
-
-    jobRepo.update(job.jobId, { status: "failed" });
-    return res.json({
-      projectId: project.projectId,
-      jobId: job.jobId,
-      jobStatus: "failed",
-      retryCount
-    });
-  }
-});
-
-app.post("/api/projects/:projectId/execute-next", async (req, res) => {
+app.post("/api/projects/:projectId/dispatch/execute-next", async (req, res) => {
   const project = await repo.getProject(req.params.projectId);
   if (!project || !project.plan) return res.status(404).json({ error: "No plan" });
 
@@ -271,7 +151,7 @@ app.post("/api/projects/:projectId/execute-next", async (req, res) => {
     projectId: project.projectId,
     status: project.status as any,
     packets: (project.plan as any).packets,
-    runs: project.runs as any
+    runs: project.runs as any,
   });
 
   let updated: StoredProjectRecord = {
@@ -279,7 +159,7 @@ app.post("/api/projects/:projectId/execute-next", async (req, res) => {
     status: updatedState.status,
     plan: { ...(project.plan as any), packets: updatedState.packets },
     runs: updatedState.runs,
-    updatedAt: now()
+    updatedAt: now(),
   };
 
   const executingPacket = (updated.plan as any).packets.find((p: any) => p.status === "executing");
@@ -289,12 +169,12 @@ app.post("/api/projects/:projectId/execute-next", async (req, res) => {
       projectId: updated.projectId,
       packetId: executingPacket.packetId,
       type: "create_branch",
-      branchName: executingPacket.branchName
+      branchName: executingPacket.branchName,
     });
 
     updated.gitOperations = {
       ...(updated.gitOperations || {}),
-      [op.operationId]: op
+      [op.operationId]: op,
     };
 
     const executor = process.env.EXECUTOR === "claude" ? ClaudeExecutorStub : MockExecutor;
@@ -304,14 +184,14 @@ app.post("/api/projects/:projectId/execute-next", async (req, res) => {
       branchName: executingPacket.branchName,
       goal: executingPacket.goal,
       requirements: executingPacket.requirements,
-      constraints: executingPacket.constraints
+      constraints: executingPacket.constraints,
     });
 
     if (result.success) {
       const validation = runValidation(updated.projectId, executingPacket.packetId);
       updated.validations = {
         ...(updated.validations || {}),
-        [executingPacket.packetId]: validation
+        [executingPacket.packetId]: validation,
       };
       updatedState = markPacketComplete(updatedState, executingPacket.packetId);
     } else {
@@ -323,17 +203,66 @@ app.post("/api/projects/:projectId/execute-next", async (req, res) => {
       status: updatedState.status,
       plan: { ...(updated.plan as any), packets: updatedState.packets },
       runs: updatedState.runs,
-      updatedAt: now()
+      updatedAt: now(),
     };
   }
 
   await repo.upsertProject(updated);
+
   return res.json({
     projectId: updated.projectId,
     status: updated.status,
     gitOperations: updated.gitOperations,
-    gitResults: updated.gitResults
+    gitResults: updated.gitResults,
   });
+});
+
+app.post("/api/projects/:projectId/dispatch/process-git-operation", async (req, res) => {
+  const project = await repo.getProject(req.params.projectId);
+  if (!project) return res.status(404).json({ error: "Project not found" });
+
+  return res.json({
+    projectId: project.projectId,
+    status: project.status,
+    gitOperations: project.gitOperations || {},
+    gitResults: project.gitResults || {},
+  });
+});
+
+app.post("/api/projects/:projectId/jobs/execute", async (req, res) => {
+  const project = await repo.getProject(req.params.projectId);
+  if (!project) return res.status(404).json({ error: "Project not found" });
+
+  const apiBaseUrl = req.body.apiBaseUrl || process.env.API_BASE_URL;
+  if (!apiBaseUrl) {
+    return res.status(400).json({ error: "Missing apiBaseUrl or API_BASE_URL" });
+  }
+
+  return res.json(dispatchExecuteNextPacket({
+    projectId: project.projectId,
+    apiBaseUrl,
+  }));
+});
+
+app.post("/api/projects/:projectId/jobs/process-git", async (req, res) => {
+  const project = await repo.getProject(req.params.projectId);
+  if (!project) return res.status(404).json({ error: "Project not found" });
+
+  const { operationId } = req.body;
+  const apiBaseUrl = req.body.apiBaseUrl || process.env.API_BASE_URL;
+  if (!apiBaseUrl) {
+    return res.status(400).json({ error: "Missing apiBaseUrl or API_BASE_URL" });
+  }
+
+  if (!operationId) {
+    return res.status(400).json({ error: "Missing operationId" });
+  }
+
+  return res.json(dispatchProcessGitOperation({
+    projectId: project.projectId,
+    operationId,
+    apiBaseUrl,
+  }));
 });
 
 app.get("/api/projects/:projectId/status", async (req, res) => {
