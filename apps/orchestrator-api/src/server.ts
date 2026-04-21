@@ -4,6 +4,7 @@ import { generatePlan } from "../../../packages/packet-engine/src/generator";
 import { advanceProject, markPacketComplete, markPacketFailed } from "../../../packages/execution/src/runner";
 import { MockExecutor } from "../../../packages/executor-adapters/src/mockExecutor";
 import { runValidation } from "../../../packages/validation/src/runner";
+import { MockGitHubAdapter } from "../../../packages/github-adapter/src/mockGithub";
 
 const app = express();
 app.use(express.json());
@@ -17,6 +18,7 @@ type InMemoryProject = {
   plan?: any;
   runs?: any;
   validations?: any;
+  git?: any;
 };
 
 const projects = new Map<string, InMemoryProject>();
@@ -87,6 +89,17 @@ app.post("/api/projects/:projectId/execute-next", async (req, res) => {
   const executingPacket = project.plan.packets.find((p: any) => p.status === "executing");
 
   if (executingPacket) {
+    const git = await MockGitHubAdapter.createBranch({
+      projectId: project.projectId,
+      packetId: executingPacket.packetId,
+      branchName: executingPacket.branchName
+    });
+
+    project.git = {
+      ...(project.git || {}),
+      [executingPacket.packetId]: git
+    };
+
     const result = await MockExecutor.execute({
       projectId: project.projectId,
       packetId: executingPacket.packetId,
@@ -121,7 +134,8 @@ app.post("/api/projects/:projectId/execute-next", async (req, res) => {
     status: project.status,
     packets: project.plan.packets,
     runs: project.runs,
-    validations: project.validations
+    validations: project.validations,
+    git: project.git
   });
 });
 
