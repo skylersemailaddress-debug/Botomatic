@@ -24,6 +24,10 @@ async function ghRequest(url: string, options: RequestInit, token: string) {
   return res.json();
 }
 
+function isSha(value: unknown): value is string {
+  return typeof value === "string" && /^[0-9a-f]{40}$/.test(value);
+}
+
 export class GitHubRuntime {
   private base: string;
 
@@ -94,22 +98,53 @@ export class GitHubRuntime {
       )
     );
 
-    const tree = await ghRequest(
-      `${this.base}/git/trees`,
-      {
-        method: "POST",
-        body: JSON.stringify({
-          base_tree: head.treeSha,
-          tree: files.map((f, i) => ({
-            path: f.path,
-            mode: "100644",
-            type: "blob",
-            sha: blobs[i].sha,
-          })),
-        }),
-      },
-      this.opts.token
-    );
+    if (blobs.length !== files.length) {
+      throw new Error(
+        `Blob count mismatch: files=${files.length} blobs=${blobs.length}`
+      );
+    }
+
+    const treeEntries = files.map((f, i) => {
+      const blobSha = blobs[i]?.sha;
+
+      if (!isSha(blobSha)) {
+        throw new Error(
+          `Invalid blob sha at index ${i}: ${JSON.stringify({
+            file: f.path,
+            blob: blobs[i] ?? null,
+            allBlobs: blobs,
+          })}`
+        );
+      }
+
+      return {
+        path: f.path,
+        mode: "100644",
+        type: "blob",
+        sha: blobSha,
+      };
+    });
+
+    const treePayload = {
+      base_tree: head.treeSha,
+      tree: treeEntries,
+    };
+
+    let tree;
+    try {
+      tree = await ghRequest(
+        `${this.base}/git/trees`,
+        {
+          method: "POST",
+          body: JSON.stringify(treePayload),
+        },
+        this.opts.token
+      );
+    } catch (error: any) {
+      throw new Error(
+        `Tree creation failed: ${String(error?.message || error)} | payload=${JSON.stringify(treePayload)}`
+      );
+    }
 
     const commit = await ghRequest(
       `${this.base}/git/commits`,
