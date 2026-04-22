@@ -70,6 +70,10 @@ async function parseJsonSafe(res: Response): Promise<any> {
   }
 }
 
+function joinUrl(baseUrl: string, path: string): string {
+  return `${baseUrl}/rest/v1/${path}`;
+}
+
 export class DurableProjectRepository implements ProjectRepository {
   private readonly baseUrl: string;
   private readonly tableName: string;
@@ -79,25 +83,39 @@ export class DurableProjectRepository implements ProjectRepository {
     this.tableName = options.tableName || "orchestrator_projects";
   }
 
-  private get headers(): Record<string, string> {
+  private get authHeaders(): Record<string, string> {
     return {
       apikey: this.options.serviceRoleKey,
       Authorization: `Bearer ${this.options.serviceRoleKey}`,
+    };
+  }
+
+  private get jsonHeaders(): Record<string, string> {
+    return {
+      ...this.authHeaders,
       "Content-Type": "application/json",
-      Prefer: "return=representation",
     };
   }
 
   async getProject(projectId: string): Promise<StoredProjectRecord | null> {
-    const url = `${this.baseUrl}/rest/v1/${this.tableName}?project_id=eq.${encodeURIComponent(projectId)}&select=*`;
+    const url = joinUrl(
+      this.baseUrl,
+      `${this.tableName}?project_id=eq.${encodeURIComponent(projectId)}&select=*`
+    );
+
     const res = await fetch(url, {
       method: "GET",
-      headers: this.headers,
+      headers: {
+        ...this.authHeaders,
+        Accept: "application/json",
+      },
     });
 
     if (!res.ok) {
       const body = await parseJsonSafe(res);
-      throw new Error(`Durable repository getProject failed ${res.status}: ${JSON.stringify(body)}`);
+      throw new Error(
+        `Durable repository getProject failed ${res.status}: ${JSON.stringify(body)}`
+      );
     }
 
     const rows = (await parseJsonSafe(res)) as ProjectRow[] | null;
@@ -109,24 +127,68 @@ export class DurableProjectRepository implements ProjectRepository {
   }
 
   async upsertProject(record: StoredProjectRecord): Promise<void> {
-    const row = toRow({
-      ...record,
-      updatedAt: new Date().toISOString(),
-    });
+    const existing = await this.getProject(record.projectId);
+    const nowIso = new Date().toISOString();
 
-    const url = `${this.baseUrl}/rest/v1/${this.tableName}?on_conflict=project_id`;
-    const res = await fetch(url, {
+    const normalized: StoredProjectRecord = {
+      ...record,
+      createdAt: existing?.createdAt || record.createdAt || nowIso,
+      updatedAt: nowIso,
+    };
+
+    const row = toRow(normalized);
+    const encodedProjectId = encodeURIComponent(normalized.projectId);
+
+    if (existing) {
+      const updateUrl = joinUrl(
+        this.baseUrl,
+        `${this.tableName}?project_id=eq.${encodedProjectId}`
+      );
+
+      const updateRes = await fetch(updateUrl, {
+        method: "PATCH",
+        headers: {
+          ...this.jsonHeaders,
+          Prefer: "return=representation",
+        },
+        body: JSON.stringify(row),
+      });
+
+      if (!updateRes.ok) {
+        const body = await parseJsonSafe(updateRes);
+        throw new Error(
+          `Durable repository update failed ${updateRes.status}: ${JSON.stringify(body)}`
+        );
+      }
+
+      const updatedRows = (await parseJsonSafe(updateRes)) as ProjectRow[] | null;
+      if (!updatedRows || updatedRows.length === 0) {
+        throw new Error("Durable repository update returned no rows");
+      }
+
+      return;
+    }
+
+    const insertUrl = joinUrl(this.baseUrl, this.tableName);
+    const insertRes = await fetch(insertUrl, {
       method: "POST",
       headers: {
-        ...this.headers,
-        Prefer: "resolution=merge-duplicates,return=representation",
+        ...this.jsonHeaders,
+        Prefer: "return=representation",
       },
-      body: JSON.stringify([row]),
+      body: JSON.stringify(row),
     });
 
-    if (!res.ok) {
-      const body = await parseJsonSafe(res);
-      throw new Error(`Durable repository upsertProject failed ${res.status}: ${JSON.stringify(body)}`);
+    if (!insertRes.ok) {
+      const body = await parseJsonSafe(insertRes);
+      throw new Error(
+        `Durable repository insert failed ${insertRes.status}: ${JSON.stringify(body)}`
+      );
+    }
+
+    const insertedRows = (await parseJsonSafe(insertRes)) as ProjectRow[] | null;
+    if (!insertedRows || insertedRows.length === 0) {
+      throw new Error("Durable repository insert returned no rows");
     }
   }
 }
