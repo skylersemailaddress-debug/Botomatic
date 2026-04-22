@@ -175,6 +175,19 @@ function getNextPendingPacket(project: StoredProjectRecord) {
   return packets.find((packet: any) => packet.status === "pending") || null;
 }
 
+function getRepairablePackets(project: StoredProjectRecord) {
+  const plan = (project.plan || {}) as any;
+  const packets = Array.isArray(plan.packets) ? plan.packets : [];
+  const gitResults = (project.gitResults || {}) as Record<string, GitOperationResult>;
+
+  return packets.filter((packet: any) => {
+    if (packet.status !== "blocked") return false;
+
+    const commitFailure = gitResults[`${packet.packetId}:commit_files`];
+    return commitFailure?.status === "failed";
+  });
+}
+
 function ensureGitOperation(project: StoredProjectRecord, input: {
   packetId: string;
   type: "create_branch" | "commit_files" | "open_pull_request";
@@ -514,6 +527,44 @@ export function buildApp(config: RuntimeConfig) {
       });
     } catch (error) {
       return handleRouteError(res, config, error, "POST /api/projects/:projectId/dispatch/execute-next", actor);
+    }
+  });
+
+  app.post("/api/projects/:projectId/repair/replay", async (req, res) => {
+    const actor = getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project || !project.plan) return res.status(404).json({ error: "No plan" });
+
+      const repairablePackets = getRepairablePackets(project);
+      if (repairablePackets.length === 0) {
+        return res.status(409).json({ error: "No repairable packets", actorId: actor.actorId });
+      }
+
+      const replayed: string[] = [];
+
+      for (const packet of repairablePackets) {
+        setPacketStatus(project, packet.packetId, "pending");
+        const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        await enqueueJob({
+          job_id: jobId,
+          project_id: project.projectId,
+          packet_id: packet.packetId,
+        });
+        replayed.push(packet.packetId);
+      }
+
+      project.status = "queued";
+      await persistProject(config, project);
+
+      return res.status(202).json({
+        accepted: true,
+        replayed,
+        actorId: actor.actorId,
+        workerId,
+      });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/projects/:projectId/repair/replay", actor);
     }
   });
 
