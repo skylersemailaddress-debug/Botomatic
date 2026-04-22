@@ -7,6 +7,7 @@ import { ClaudeCodeExecutor } from "../../../packages/executor-adapters/src/clau
 import { runValidation } from "../../../packages/validation/src/runner";
 import { createGitOperation, GitOperationRequest, GitOperationResult } from "../../../packages/github-adapter/src/operations";
 import { GitHubRuntime } from "../../../packages/github-adapter/src/githubRuntime";
+import { enqueueJob, claimJob, finalizeJob } from "../../../packages/supabase-adapter/src/jobClient";
 import { StoredProjectRecord } from "../../../packages/supabase-adapter/src/types";
 import { RuntimeConfig } from "./config";
 
@@ -19,37 +20,12 @@ type RequestActor = {
   actorSource: "x-actor-id" | "x-user-email" | "bearer_token" | "anonymous";
 };
 
-type QueueJobStatus = "queued" | "running" | "succeeded" | "failed";
-
 type QueueJobRecord = {
-  jobId: string;
-  type: "execute_packet";
-  projectId: string;
-  packetId: string;
-  status: QueueJobStatus;
-  actorId: string;
-  actorSource: RequestActor["actorSource"];
-  attempts: number;
-  lastError?: string;
-  createdAt: string;
-  updatedAt: string;
-  workerId?: string;
-  leaseExpiresAt?: string;
-};
-
-type ProjectSummaryRow = {
+  job_id: string;
   project_id: string;
-  name: string;
-  request: string;
-  status: string;
-  master_truth: Record<string, unknown> | null;
-  plan: Record<string, unknown> | null;
-  runs: Record<string, unknown> | null;
-  validations: Record<string, unknown> | null;
-  git_operations: Record<string, unknown> | null;
-  git_results: Record<string, unknown> | null;
-  created_at: string;
-  updated_at: string;
+  packet_id: string;
+  status: "queued" | "running" | "succeeded" | "failed";
+  attempts: number;
 };
 
 const workerId = process.env.WORKER_ID || `worker_${Math.random().toString(36).slice(2, 8)}`;
@@ -84,64 +60,6 @@ function toStored(record: {
     createdAt: timestamp,
     updatedAt: timestamp,
   };
-}
-
-function fromProjectRow(row: ProjectSummaryRow): StoredProjectRecord {
-  return {
-    projectId: row.project_id,
-    name: row.name,
-    request: row.request,
-    status: row.status,
-    masterTruth: row.master_truth,
-    plan: row.plan,
-    runs: row.runs,
-    validations: row.validations,
-    gitOperations: row.git_operations,
-    gitResults: row.git_results,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  };
-}
-
-async function parseJsonSafe(res: Response): Promise<any> {
-  const text = await res.text();
-  if (!text) return null;
-  try {
-    return JSON.parse(text);
-  } catch {
-    return { raw: text };
-  }
-}
-
-function joinRestUrl(baseUrl: string, path: string): string {
-  return `${String(baseUrl).replace(/\/$/, "")}/rest/v1/${path}`;
-}
-
-async function listDurableProjects(config: RuntimeConfig): Promise<StoredProjectRecord[]> {
-  if (config.repository.mode !== "durable") {
-    return [];
-  }
-
-  const url = joinRestUrl(
-    String(process.env.SUPABASE_URL),
-    "orchestrator_projects?select=*"
-  );
-  const res = await fetch(url, {
-    method: "GET",
-    headers: {
-      apikey: String(process.env.SUPABASE_SERVICE_ROLE_KEY),
-      Authorization: `Bearer ${String(process.env.SUPABASE_SERVICE_ROLE_KEY)}`,
-      Accept: "application/json",
-    },
-  });
-
-  if (!res.ok) {
-    const body = await parseJsonSafe(res);
-    throw new Error(`Failed to list durable projects ${res.status}: ${JSON.stringify(body)}`);
-  }
-
-  const rows = (await parseJsonSafe(res)) as ProjectSummaryRow[] | null;
-  return (rows || []).map(fromProjectRow);
 }
 
 function getExecutor() {
@@ -230,24 +148,6 @@ function handleRouteError(res: express.Response, config: RuntimeConfig, error: u
   });
 }
 
-function getJobs(project: StoredProjectRecord): Record<string, QueueJobRecord> {
-  const runs = (project.runs || {}) as Record<string, unknown>;
-  return ((runs.__jobs || {}) as Record<string, QueueJobRecord>) || {};
-}
-
-function setJobs(project: StoredProjectRecord, jobs: Record<string, QueueJobRecord>) {
-  project.runs = {
-    ...((project.runs || {}) as Record<string, unknown>),
-    __jobs: jobs,
-  };
-}
-
-function upsertJob(project: StoredProjectRecord, job: QueueJobRecord) {
-  const jobs = getJobs(project);
-  jobs[job.jobId] = job;
-  setJobs(project, jobs);
-}
-
 function setPacketStatus(project: StoredProjectRecord, packetId: string, status: string) {
   const plan = (project.plan || {}) as any;
   const packets = Array.isArray(plan.packets) ? plan.packets : [];
@@ -312,14 +212,6 @@ function setGitOperationResult(project: StoredProjectRecord, result: GitOperatio
 
 function getGitOperationResult(project: StoredProjectRecord, operationId: string) {
   return ((project.gitResults || {}) as Record<string, GitOperationResult>)[operationId] || null;
-}
-
-function getLeaseExpiry(): string {
-  return new Date(Date.now() + leaseMs).toISOString();
-}
-
-function isLeaseExpired(job: QueueJobRecord): boolean {
-  return !job.leaseExpiresAt || new Date(job.leaseExpiresAt).getTime() <= Date.now();
 }
 
 async function persistProject(config: RuntimeConfig, project: StoredProjectRecord) {
@@ -389,48 +281,16 @@ async function runGitHubLifecycle(config: RuntimeConfig, project: StoredProjectR
   }
 }
 
-async function claimAvailableJob(config: RuntimeConfig): Promise<{ project: StoredProjectRecord; job: QueueJobRecord } | null> {
-  const projects = config.repository.mode === "durable"
-    ? await listDurableProjects(config)
-    : [];
-
-  for (const project of projects) {
-    const jobs = Object.values(getJobs(project));
-    const candidate = jobs.find((job) => (job.status === "queued") || (job.status === "running" && isLeaseExpired(job)) || (job.status === "failed" && job.attempts < 3));
-    if (!candidate) continue;
-
-    const claimed: QueueJobRecord = {
-      ...candidate,
-      status: "running",
-      workerId,
-      attempts: candidate.status === "running" ? candidate.attempts : candidate.attempts + 1,
-      leaseExpiresAt: getLeaseExpiry(),
-      updatedAt: now(),
-    };
-    upsertJob(project, claimed);
-    await persistProject(config, project);
-    return { project, job: claimed };
+async function processJob(config: RuntimeConfig, job: QueueJobRecord) {
+  const project = await config.repository.repo.getProject(job.project_id);
+  if (!project) {
+    await finalizeJob(job.job_id, "failed", `Project not found: ${job.project_id}`);
+    return;
   }
 
-  return null;
-}
-
-function finalizeJob(project: StoredProjectRecord, job: QueueJobRecord, status: QueueJobStatus, lastError?: string) {
-  upsertJob(project, {
-    ...job,
-    status,
-    lastError,
-    workerId,
-    leaseExpiresAt: undefined,
-    updatedAt: now(),
-  });
-}
-
-async function processJob(config: RuntimeConfig, project: StoredProjectRecord, job: QueueJobRecord) {
-  const packet = getPacket(project, job.packetId);
+  const packet = getPacket(project, job.packet_id);
   if (!packet) {
-    finalizeJob(project, job, "failed", `Packet not found: ${job.packetId}`);
-    await persistProject(config, project);
+    await finalizeJob(job.job_id, "failed", `Packet not found: ${job.packet_id}`);
     return;
   }
 
@@ -454,8 +314,8 @@ async function processJob(config: RuntimeConfig, project: StoredProjectRecord, j
       project.plan = { ...((project.plan as any) || {}), packets: failedState.packets };
       project.status = failedState.status;
       project.runs = failedState.runs || project.runs;
-      finalizeJob(project, job, "failed", result.summary);
       await persistProject(config, project);
+      await finalizeJob(job.job_id, "failed", result.summary);
       return;
     }
 
@@ -468,15 +328,15 @@ async function processJob(config: RuntimeConfig, project: StoredProjectRecord, j
     project.plan = { ...((project.plan as any) || {}), packets: completedState.packets };
     project.status = completedState.status;
     project.runs = completedState.runs || project.runs;
-    finalizeJob(project, job, "succeeded");
     await persistProject(config, project);
+    await finalizeJob(job.job_id, "succeeded");
   } catch (error: any) {
     const failedState = markPacketFailed({ projectId: project.projectId, status: project.status as any, packets: ((project.plan as any)?.packets || []), runs: project.runs as any }, packet.packetId);
     project.plan = { ...((project.plan as any) || {}), packets: failedState.packets };
     project.status = failedState.status;
     project.runs = failedState.runs || project.runs;
-    finalizeJob(project, job, "failed", String(error?.message || error));
     await persistProject(config, project);
+    await finalizeJob(job.job_id, "failed", String(error?.message || error));
   }
 }
 
@@ -488,9 +348,9 @@ function startQueueWorker(config: RuntimeConfig) {
     if (workerBusy) return;
     workerBusy = true;
     try {
-      const claim = await claimAvailableJob(config);
-      if (claim) {
-        await processJob(config, claim.project, claim.job);
+      const job = await claimJob(workerId, leaseMs);
+      if (job) {
+        await processJob(config, job as QueueJobRecord);
       }
     } catch (error: any) {
       console.error(JSON.stringify({ event: "queue_worker_error", workerId, message: String(error?.message || error), timestamp: now() }));
@@ -498,15 +358,6 @@ function startQueueWorker(config: RuntimeConfig) {
       workerBusy = false;
     }
   }, Number(process.env.QUEUE_POLL_INTERVAL_MS || 2000));
-}
-
-function getQueueStatsFromProject(project: StoredProjectRecord) {
-  const jobs = Object.values(getJobs(project));
-  return {
-    queued: jobs.filter((job) => job.status === "queued").length,
-    running: jobs.filter((job) => job.status === "running").length,
-    failed: jobs.filter((job) => job.status === "failed").length,
-  };
 }
 
 export function buildApp(config: RuntimeConfig) {
@@ -517,15 +368,6 @@ export function buildApp(config: RuntimeConfig) {
   app.use(express.json());
 
   app.get("/api/health", async (req, res) => {
-    let queueDepth = 0;
-    if (config.repository.mode === "durable") {
-      try {
-        const projects = await listDurableProjects(config);
-        queueDepth = projects.reduce((sum, project) => sum + getQueueStatsFromProject(project).queued + getQueueStatsFromProject(project).running, 0);
-      } catch {
-        queueDepth = -1;
-      }
-    }
     res.json({
       status: "ok",
       appName: config.appName,
@@ -538,10 +380,10 @@ export function buildApp(config: RuntimeConfig) {
       commitSha: config.commitSha,
       startupTimestamp: config.startupTimestamp,
       queueEnabled: true,
-      queueDepth,
       workerBusy,
       workerId,
       leaseMs,
+      queueMode: "dedicated_jobs_table",
     });
   });
 
@@ -616,26 +458,21 @@ export function buildApp(config: RuntimeConfig) {
         return res.status(409).json({ error: "No pending packet", actorId: actor.actorId });
       }
 
-      const existingJob = Object.values(getJobs(project)).find((job) => job.packetId === packet.packetId && (job.status === "queued" || job.status === "running") && !isLeaseExpired(job));
-      if (existingJob) {
-        return res.status(202).json({ accepted: true, queued: true, jobId: existingJob.jobId, packetId: packet.packetId, actorId: actor.actorId, workerId: existingJob.workerId || null });
-      }
+      const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      await enqueueJob({
+        job_id: jobId,
+        project_id: project.projectId,
+        packet_id: packet.packetId,
+      });
 
-      const job: QueueJobRecord = {
-        jobId: `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-        type: "execute_packet",
-        projectId: project.projectId,
+      return res.status(202).json({
+        accepted: true,
+        queued: true,
+        jobId,
         packetId: packet.packetId,
-        status: "queued",
         actorId: actor.actorId,
-        actorSource: actor.actorSource,
-        attempts: 0,
-        createdAt: now(),
-        updatedAt: now(),
-      };
-      upsertJob(project, job);
-      await persistProject(config, project);
-      return res.status(202).json({ accepted: true, queued: true, jobId: job.jobId, packetId: packet.packetId, actorId: actor.actorId, workerId });
+        workerId,
+      });
     } catch (error) {
       return handleRouteError(res, config, error, "POST /api/projects/:projectId/dispatch/execute-next", actor);
     }
