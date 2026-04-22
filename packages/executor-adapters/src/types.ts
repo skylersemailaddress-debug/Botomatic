@@ -7,10 +7,15 @@ export interface ExecutorContext {
   constraints: string[];
 }
 
+export interface FileChange {
+  path: string;
+  body: string;
+}
+
 export interface ExecutorResult {
   success: boolean;
   summary: string;
-  changedFiles: string[];
+  changedFiles: FileChange[];
   logs?: string[];
 }
 
