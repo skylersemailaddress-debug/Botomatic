@@ -3,7 +3,7 @@ import { compileConversationToMasterTruth } from "../../../packages/master-truth
 import { generatePlan } from "../../../packages/packet-engine/src/generator";
 import { advanceProject, markPacketComplete, markPacketFailed } from "../../../packages/execution/src/runner";
 import { MockExecutor } from "../../../packages/executor-adapters/src/mockExecutor";
-import { ClaudeExecutorStub } from "../../../packages/executor-adapters/src/claudeExecutorStub";
+import { ClaudeCodeExecutor } from "../../../packages/executor-adapters/src/claudeCodeExecutor";
 import { runValidation } from "../../../packages/validation/src/runner";
 import { createGitOperation } from "../../../packages/github-adapter/src/operations";
 import { InMemoryProjectRepository } from "../../../packages/supabase-adapter/src/memoryRepo";
@@ -49,6 +49,22 @@ function toStored(record: {
     createdAt: timestamp,
     updatedAt: timestamp,
   };
+}
+
+function getExecutor() {
+  if (process.env.EXECUTOR === "claude") {
+    const baseUrl = process.env.CLAUDE_EXECUTOR_URL;
+    if (!baseUrl) {
+      throw new Error("CLAUDE_EXECUTOR_URL is required when EXECUTOR=claude");
+    }
+
+    return new ClaudeCodeExecutor({
+      baseUrl,
+      apiKey: process.env.CLAUDE_EXECUTOR_KEY,
+    });
+  }
+
+  return MockExecutor;
 }
 
 app.get("/api/health", (req, res) => {
@@ -177,24 +193,28 @@ app.post("/api/projects/:projectId/dispatch/execute-next", async (req, res) => {
       [op.operationId]: op,
     };
 
-    const executor = process.env.EXECUTOR === "claude" ? ClaudeExecutorStub : MockExecutor;
-    const result = await executor.execute({
-      projectId: updated.projectId,
-      packetId: executingPacket.packetId,
-      branchName: executingPacket.branchName,
-      goal: executingPacket.goal,
-      requirements: executingPacket.requirements,
-      constraints: executingPacket.constraints,
-    });
+    try {
+      const executor = getExecutor();
+      const result = await executor.execute({
+        projectId: updated.projectId,
+        packetId: executingPacket.packetId,
+        branchName: executingPacket.branchName,
+        goal: executingPacket.goal,
+        requirements: executingPacket.requirements,
+        constraints: executingPacket.constraints,
+      });
 
-    if (result.success) {
-      const validation = runValidation(updated.projectId, executingPacket.packetId);
-      updated.validations = {
-        ...(updated.validations || {}),
-        [executingPacket.packetId]: validation,
-      };
-      updatedState = markPacketComplete(updatedState, executingPacket.packetId);
-    } else {
+      if (result.success) {
+        const validation = runValidation(updated.projectId, executingPacket.packetId);
+        updated.validations = {
+          ...(updated.validations || {}),
+          [executingPacket.packetId]: validation,
+        };
+        updatedState = markPacketComplete(updatedState, executingPacket.packetId);
+      } else {
+        updatedState = markPacketFailed(updatedState, executingPacket.packetId);
+      }
+    } catch (error) {
       updatedState = markPacketFailed(updatedState, executingPacket.packetId);
     }
 
