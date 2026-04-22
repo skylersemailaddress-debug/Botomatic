@@ -30,8 +30,9 @@ type QueueJobRecord = {
 
 const workerId = process.env.WORKER_ID || `worker_${Math.random().toString(36).slice(2, 8)}`;
 const leaseMs = Number(process.env.QUEUE_LEASE_MS || 30000);
+const workerConcurrency = Math.max(1, Number(process.env.WORKER_CONCURRENCY || 2));
 let workerStarted = false;
-let workerBusy = false;
+let activeWorkers = 0;
 
 function toStored(record: {
   projectId: string;
@@ -340,23 +341,35 @@ async function processJob(config: RuntimeConfig, job: QueueJobRecord) {
   }
 }
 
+async function workerTick(config: RuntimeConfig) {
+  if (activeWorkers >= workerConcurrency) {
+    return;
+  }
+
+  const availableSlots = workerConcurrency - activeWorkers;
+  const claims = await Promise.all(
+    Array.from({ length: availableSlots }, () => claimJob(workerId, leaseMs))
+  );
+  const jobs = claims.filter(Boolean) as QueueJobRecord[];
+
+  for (const job of jobs) {
+    activeWorkers += 1;
+    void processJob(config, job)
+      .catch((error: any) => {
+        console.error(JSON.stringify({ event: "queue_worker_error", workerId, message: String(error?.message || error), timestamp: now() }));
+      })
+      .finally(() => {
+        activeWorkers -= 1;
+      });
+  }
+}
+
 function startQueueWorker(config: RuntimeConfig) {
   if (workerStarted) return;
   workerStarted = true;
 
-  setInterval(async () => {
-    if (workerBusy) return;
-    workerBusy = true;
-    try {
-      const job = await claimJob(workerId, leaseMs);
-      if (job) {
-        await processJob(config, job as QueueJobRecord);
-      }
-    } catch (error: any) {
-      console.error(JSON.stringify({ event: "queue_worker_error", workerId, message: String(error?.message || error), timestamp: now() }));
-    } finally {
-      workerBusy = false;
-    }
+  setInterval(() => {
+    void workerTick(config);
   }, Number(process.env.QUEUE_POLL_INTERVAL_MS || 2000));
 }
 
@@ -380,10 +393,11 @@ export function buildApp(config: RuntimeConfig) {
       commitSha: config.commitSha,
       startupTimestamp: config.startupTimestamp,
       queueEnabled: true,
-      workerBusy,
+      activeWorkers,
+      workerConcurrency,
       workerId,
       leaseMs,
-      queueMode: "dedicated_jobs_table",
+      queueMode: "dedicated_jobs_table_parallel",
     });
   });
 
