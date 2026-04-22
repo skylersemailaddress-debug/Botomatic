@@ -233,6 +233,32 @@ function getGitOperationResult(project: StoredProjectRecord, operationId: string
   return ((project.gitResults || {}) as Record<string, GitOperationResult>)[operationId] || null;
 }
 
+function clearReplayState(project: StoredProjectRecord, packetId: string) {
+  const operationKeys = [
+    `${packetId}:commit_files`,
+    `${packetId}:open_pull_request`,
+  ];
+
+  const gitResults = { ...((project.gitResults || {}) as Record<string, GitOperationResult>) };
+  for (const key of operationKeys) {
+    delete gitResults[key];
+  }
+  project.gitResults = gitResults;
+
+  const gitOperations = { ...((project.gitOperations || {}) as Record<string, GitOperationRequest>) };
+  for (const key of operationKeys) {
+    const op = gitOperations[key];
+    if (op) {
+      gitOperations[key] = {
+        ...op,
+        status: "pending",
+        updatedAt: now(),
+      };
+    }
+  }
+  project.gitOperations = gitOperations;
+}
+
 function validateChangedFiles(changedFiles: ChangedFile[]) {
   return changedFiles.map((file, index) => {
     if (!file?.path || typeof file.body !== "string") {
@@ -544,6 +570,7 @@ export function buildApp(config: RuntimeConfig) {
       const replayed: string[] = [];
 
       for (const packet of repairablePackets) {
+        clearReplayState(project, packet.packetId);
         setPacketStatus(project, packet.packetId, "pending");
         const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
         await enqueueJob({
