@@ -126,6 +126,15 @@ export class DurableProjectRepository implements ProjectRepository {
     return fromRow(rows[0]);
   }
 
+  private async assertReadable(projectId: string): Promise<void> {
+    const readback = await this.getProject(projectId);
+    if (!readback) {
+      throw new Error(
+        `Durable repository write succeeded but readback failed for ${projectId}`
+      );
+    }
+  }
+
   async upsertProject(record: StoredProjectRecord): Promise<void> {
     const existing = await this.getProject(record.projectId);
     const nowIso = new Date().toISOString();
@@ -161,11 +170,7 @@ export class DurableProjectRepository implements ProjectRepository {
         );
       }
 
-      const updatedRows = (await parseJsonSafe(updateRes)) as ProjectRow[] | null;
-      if (!updatedRows || updatedRows.length === 0) {
-        throw new Error("Durable repository update returned no rows");
-      }
-
+      await this.assertReadable(normalized.projectId);
       return;
     }
 
@@ -186,9 +191,6 @@ export class DurableProjectRepository implements ProjectRepository {
       );
     }
 
-    const insertedRows = (await parseJsonSafe(insertRes)) as ProjectRow[] | null;
-    if (!insertedRows || insertedRows.length === 0) {
-      throw new Error("Durable repository insert returned no rows");
-    }
+    await this.assertReadable(normalized.projectId);
   }
 }
