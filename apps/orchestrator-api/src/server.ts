@@ -8,12 +8,30 @@ import { runValidation } from "../../../packages/validation/src/runner";
 import { createGitOperation } from "../../../packages/github-adapter/src/operations";
 import { GitHubRuntime } from "../../../packages/github-adapter/src/githubRuntime";
 import { InMemoryProjectRepository } from "../../../packages/supabase-adapter/src/memoryRepo";
-import { StoredProjectRecord } from "../../../packages/supabase-adapter/src/types";
+import { DurableProjectRepository } from "../../../packages/supabase-adapter/src/durableRepo";
+import { StoredProjectRecord, ProjectRepository } from "../../../packages/supabase-adapter/src/types";
 
 const app = express();
 app.use(express.json());
 
-const repo = new InMemoryProjectRepository();
+function createRepository(): ProjectRepository {
+  const mode = process.env.PROJECT_REPOSITORY_MODE || "memory";
+
+  if (mode === "durable") {
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      throw new Error("Durable repository selected but SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY missing");
+    }
+
+    return new DurableProjectRepository({
+      baseUrl: process.env.SUPABASE_URL,
+      serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    });
+  }
+
+  return new InMemoryProjectRepository();
+}
+
+const repo = createRepository();
 
 function now(): string {
   return new Date().toISOString();
