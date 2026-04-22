@@ -28,6 +28,11 @@ type QueueJobRecord = {
   attempts: number;
 };
 
+type ChangedFile = {
+  path?: string;
+  body?: string;
+};
+
 const workerId = process.env.WORKER_ID || `worker_${Math.random().toString(36).slice(2, 8)}`;
 const leaseMs = Number(process.env.QUEUE_LEASE_MS || 30000);
 const workerConcurrency = Math.max(1, Number(process.env.WORKER_CONCURRENCY || 2));
@@ -215,12 +220,31 @@ function getGitOperationResult(project: StoredProjectRecord, operationId: string
   return ((project.gitResults || {}) as Record<string, GitOperationResult>)[operationId] || null;
 }
 
+function validateChangedFiles(changedFiles: ChangedFile[]) {
+  return changedFiles.map((file, index) => {
+    if (!file?.path || typeof file.body !== "string") {
+      throw new Error(
+        `Executor returned invalid changed file payload: ${JSON.stringify({
+          index,
+          path: file?.path ?? null,
+          hasBody: typeof file?.body === "string",
+        })}`
+      );
+    }
+
+    return {
+      path: file.path,
+      content: file.body,
+    };
+  });
+}
+
 async function persistProject(config: RuntimeConfig, project: StoredProjectRecord) {
   project.updatedAt = now();
   await config.repository.repo.upsertProject(project);
 }
 
-async function runGitHubLifecycle(config: RuntimeConfig, project: StoredProjectRecord, packet: any, changedFiles: { path: string; body: string }[]) {
+async function runGitHubLifecycle(config: RuntimeConfig, project: StoredProjectRecord, packet: any, changedFiles: ChangedFile[]) {
   const gh = getGitHub();
 
   const branchOp = ensureGitOperation(project, { packetId: packet.packetId, type: "create_branch", branchName: packet.branchName });
@@ -252,7 +276,8 @@ async function runGitHubLifecycle(config: RuntimeConfig, project: StoredProjectR
     setGitOperationStatus(project, commitOp.operationId, "submitted");
     await persistProject(config, project);
     try {
-      const commit = await gh.commitFiles(packet.branchName, `Packet ${packet.packetId}`, changedFiles.map((file) => ({ path: file.path, content: file.body })));
+      const validatedFiles = validateChangedFiles(changedFiles);
+      const commit = await gh.commitFiles(packet.branchName, `Packet ${packet.packetId}`, validatedFiles);
       setGitOperationStatus(project, commitOp.operationId, "succeeded");
       setGitOperationResult(project, { operationId: commitOp.operationId, status: "succeeded", branchName: packet.branchName, commitSha: commit.sha, updatedAt: now() });
     } catch (error: any) {
@@ -320,7 +345,7 @@ async function processJob(config: RuntimeConfig, job: QueueJobRecord) {
       return;
     }
 
-    await runGitHubLifecycle(config, project, packet, result.changedFiles as any);
+    await runGitHubLifecycle(config, project, packet, result.changedFiles as ChangedFile[]);
 
     const validation = runValidation(project.projectId, packet.packetId);
     project.validations = { ...((project.validations || {}) as Record<string, unknown>), [packet.packetId]: validation };
