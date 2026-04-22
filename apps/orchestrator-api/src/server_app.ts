@@ -33,14 +33,27 @@ type QueueJobRecord = {
   lastError?: string;
   createdAt: string;
   updatedAt: string;
+  workerId?: string;
+  leaseExpiresAt?: string;
 };
 
-type QueueRef = {
-  projectId: string;
-  jobId: string;
+type ProjectSummaryRow = {
+  project_id: string;
+  name: string;
+  request: string;
+  status: string;
+  master_truth: Record<string, unknown> | null;
+  plan: Record<string, unknown> | null;
+  runs: Record<string, unknown> | null;
+  validations: Record<string, unknown> | null;
+  git_operations: Record<string, unknown> | null;
+  git_results: Record<string, unknown> | null;
+  created_at: string;
+  updated_at: string;
 };
 
-const inMemoryQueue: QueueRef[] = [];
+const workerId = process.env.WORKER_ID || `worker_${Math.random().toString(36).slice(2, 8)}`;
+const leaseMs = Number(process.env.QUEUE_LEASE_MS || 30000);
 let workerStarted = false;
 let workerBusy = false;
 
@@ -73,6 +86,64 @@ function toStored(record: {
   };
 }
 
+function fromProjectRow(row: ProjectSummaryRow): StoredProjectRecord {
+  return {
+    projectId: row.project_id,
+    name: row.name,
+    request: row.request,
+    status: row.status,
+    masterTruth: row.master_truth,
+    plan: row.plan,
+    runs: row.runs,
+    validations: row.validations,
+    gitOperations: row.git_operations,
+    gitResults: row.git_results,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+async function parseJsonSafe(res: Response): Promise<any> {
+  const text = await res.text();
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { raw: text };
+  }
+}
+
+function joinRestUrl(baseUrl: string, path: string): string {
+  return `${String(baseUrl).replace(/\/$/, "")}/rest/v1/${path}`;
+}
+
+async function listDurableProjects(config: RuntimeConfig): Promise<StoredProjectRecord[]> {
+  if (config.repository.mode !== "durable") {
+    return [];
+  }
+
+  const url = joinRestUrl(
+    String(process.env.SUPABASE_URL),
+    "orchestrator_projects?select=*"
+  );
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      apikey: String(process.env.SUPABASE_SERVICE_ROLE_KEY),
+      Authorization: `Bearer ${String(process.env.SUPABASE_SERVICE_ROLE_KEY)}`,
+      Accept: "application/json",
+    },
+  });
+
+  if (!res.ok) {
+    const body = await parseJsonSafe(res);
+    throw new Error(`Failed to list durable projects ${res.status}: ${JSON.stringify(body)}`);
+  }
+
+  const rows = (await parseJsonSafe(res)) as ProjectSummaryRow[] | null;
+  return (rows || []).map(fromProjectRow);
+}
+
 function getExecutor() {
   if (process.env.EXECUTOR === "claude") {
     return new ClaudeCodeExecutor({
@@ -96,19 +167,16 @@ function getRequestActor(req: express.Request, config: RuntimeConfig): RequestAc
   if (actorIdHeader) {
     return { actorId: actorIdHeader, actorSource: "x-actor-id" };
   }
-
   const userEmailHeader = req.header("x-user-email");
   if (userEmailHeader) {
     return { actorId: userEmailHeader, actorSource: "x-user-email" };
   }
-
   if (config.auth.enabled && config.auth.token) {
     return {
       actorId: `api_token:${String(config.auth.token).slice(0, 6)}`,
       actorSource: "bearer_token",
     };
   }
-
   return { actorId: "anonymous", actorSource: "anonymous" };
 }
 
@@ -121,10 +189,8 @@ function requireApiAuth(config: RuntimeConfig): express.RequestHandler {
         authImplementation: config.auth.implementation,
       });
     }
-
     const authorization = req.header("authorization") || "";
     const expected = `Bearer ${config.auth.token}`;
-
     if (authorization !== expected) {
       return res.status(401).json({
         error: "Unauthorized",
@@ -132,7 +198,6 @@ function requireApiAuth(config: RuntimeConfig): express.RequestHandler {
         authImplementation: config.auth.implementation,
       });
     }
-
     return next();
   };
 }
@@ -150,6 +215,7 @@ function handleRouteError(res: express.Response, config: RuntimeConfig, error: u
       actorId: actor?.actorId || "unknown",
       actorSource: actor?.actorSource || "unknown",
       message,
+      workerId,
       timestamp: now(),
     })
   );
@@ -160,13 +226,13 @@ function handleRouteError(res: express.Response, config: RuntimeConfig, error: u
     repositoryImplementation: config.repository.implementation,
     authEnabled: config.auth.enabled,
     authImplementation: config.auth.implementation,
+    workerId,
   });
 }
 
 function getJobs(project: StoredProjectRecord): Record<string, QueueJobRecord> {
   const runs = (project.runs || {}) as Record<string, unknown>;
-  const jobs = (runs.__jobs || {}) as Record<string, QueueJobRecord>;
-  return jobs;
+  return ((runs.__jobs || {}) as Record<string, QueueJobRecord>) || {};
 }
 
 function setJobs(project: StoredProjectRecord, jobs: Record<string, QueueJobRecord>) {
@@ -187,9 +253,7 @@ function setPacketStatus(project: StoredProjectRecord, packetId: string, status:
   const packets = Array.isArray(plan.packets) ? plan.packets : [];
   project.plan = {
     ...plan,
-    packets: packets.map((packet: any) =>
-      packet.packetId === packetId ? { ...packet, status, updatedAt: now() } : packet
-    ),
+    packets: packets.map((packet: any) => packet.packetId === packetId ? { ...packet, status, updatedAt: now() } : packet),
   };
 }
 
@@ -214,10 +278,7 @@ function ensureGitOperation(project: StoredProjectRecord, input: {
 }): GitOperationRequest {
   const operationId = `${input.packetId}:${input.type}`;
   const existing = ((project.gitOperations || {}) as Record<string, GitOperationRequest>)[operationId];
-  if (existing) {
-    return existing;
-  }
-
+  if (existing) return existing;
   const created = createGitOperation({
     operationId,
     projectId: project.projectId,
@@ -227,12 +288,10 @@ function ensureGitOperation(project: StoredProjectRecord, input: {
     title: input.title,
     body: input.body,
   });
-
   project.gitOperations = {
     ...((project.gitOperations || {}) as Record<string, GitOperationRequest>),
     [operationId]: created,
   };
-
   return created;
 }
 
@@ -255,6 +314,14 @@ function getGitOperationResult(project: StoredProjectRecord, operationId: string
   return ((project.gitResults || {}) as Record<string, GitOperationResult>)[operationId] || null;
 }
 
+function getLeaseExpiry(): string {
+  return new Date(Date.now() + leaseMs).toISOString();
+}
+
+function isLeaseExpired(job: QueueJobRecord): boolean {
+  return !job.leaseExpiresAt || new Date(job.leaseExpiresAt).getTime() <= Date.now();
+}
+
 async function persistProject(config: RuntimeConfig, project: StoredProjectRecord) {
   project.updatedAt = now();
   await config.repository.repo.upsertProject(project);
@@ -263,11 +330,7 @@ async function persistProject(config: RuntimeConfig, project: StoredProjectRecor
 async function runGitHubLifecycle(config: RuntimeConfig, project: StoredProjectRecord, packet: any, changedFiles: { path: string; body: string }[]) {
   const gh = getGitHub();
 
-  const branchOp = ensureGitOperation(project, {
-    packetId: packet.packetId,
-    type: "create_branch",
-    branchName: packet.branchName,
-  });
+  const branchOp = ensureGitOperation(project, { packetId: packet.packetId, type: "create_branch", branchName: packet.branchName });
   if (!getGitOperationResult(project, branchOp.operationId)?.status || getGitOperationResult(project, branchOp.operationId)?.status === "failed") {
     setGitOperationStatus(project, branchOp.operationId, "submitted");
     await persistProject(config, project);
@@ -275,31 +338,15 @@ async function runGitHubLifecycle(config: RuntimeConfig, project: StoredProjectR
       const baseSha = await gh.getDefaultBranchSha();
       await gh.createBranch(packet.branchName, baseSha);
       setGitOperationStatus(project, branchOp.operationId, "succeeded");
-      setGitOperationResult(project, {
-        operationId: branchOp.operationId,
-        status: "succeeded",
-        branchName: packet.branchName,
-        updatedAt: now(),
-      });
+      setGitOperationResult(project, { operationId: branchOp.operationId, status: "succeeded", branchName: packet.branchName, updatedAt: now() });
     } catch (error: any) {
       const message = String(error?.message || error);
       if (message.includes("Reference already exists")) {
         setGitOperationStatus(project, branchOp.operationId, "succeeded");
-        setGitOperationResult(project, {
-          operationId: branchOp.operationId,
-          status: "succeeded",
-          branchName: packet.branchName,
-          updatedAt: now(),
-        });
+        setGitOperationResult(project, { operationId: branchOp.operationId, status: "succeeded", branchName: packet.branchName, updatedAt: now() });
       } else {
         setGitOperationStatus(project, branchOp.operationId, "failed");
-        setGitOperationResult(project, {
-          operationId: branchOp.operationId,
-          status: "failed",
-          branchName: packet.branchName,
-          error: message,
-          updatedAt: now(),
-        });
+        setGitOperationResult(project, { operationId: branchOp.operationId, status: "failed", branchName: packet.branchName, error: message, updatedAt: now() });
         await persistProject(config, project);
         throw error;
       }
@@ -307,68 +354,34 @@ async function runGitHubLifecycle(config: RuntimeConfig, project: StoredProjectR
     await persistProject(config, project);
   }
 
-  const commitOp = ensureGitOperation(project, {
-    packetId: packet.packetId,
-    type: "commit_files",
-    branchName: packet.branchName,
-    title: `Packet ${packet.packetId}`,
-  });
+  const commitOp = ensureGitOperation(project, { packetId: packet.packetId, type: "commit_files", branchName: packet.branchName, title: `Packet ${packet.packetId}` });
   if (!getGitOperationResult(project, commitOp.operationId)?.status || getGitOperationResult(project, commitOp.operationId)?.status === "failed") {
     setGitOperationStatus(project, commitOp.operationId, "submitted");
     await persistProject(config, project);
     try {
       const commit = await gh.commitFiles(packet.branchName, `Packet ${packet.packetId}`, changedFiles.map((file) => ({ path: file.path, content: file.body })));
       setGitOperationStatus(project, commitOp.operationId, "succeeded");
-      setGitOperationResult(project, {
-        operationId: commitOp.operationId,
-        status: "succeeded",
-        branchName: packet.branchName,
-        commitSha: commit.sha,
-        updatedAt: now(),
-      });
+      setGitOperationResult(project, { operationId: commitOp.operationId, status: "succeeded", branchName: packet.branchName, commitSha: commit.sha, updatedAt: now() });
     } catch (error: any) {
       setGitOperationStatus(project, commitOp.operationId, "failed");
-      setGitOperationResult(project, {
-        operationId: commitOp.operationId,
-        status: "failed",
-        branchName: packet.branchName,
-        error: String(error?.message || error),
-        updatedAt: now(),
-      });
+      setGitOperationResult(project, { operationId: commitOp.operationId, status: "failed", branchName: packet.branchName, error: String(error?.message || error), updatedAt: now() });
       await persistProject(config, project);
       throw error;
     }
     await persistProject(config, project);
   }
 
-  const prOp = ensureGitOperation(project, {
-    packetId: packet.packetId,
-    type: "open_pull_request",
-    branchName: packet.branchName,
-    title: `Packet ${packet.packetId}`,
-  });
+  const prOp = ensureGitOperation(project, { packetId: packet.packetId, type: "open_pull_request", branchName: packet.branchName, title: `Packet ${packet.packetId}` });
   if (!getGitOperationResult(project, prOp.operationId)?.status || getGitOperationResult(project, prOp.operationId)?.status === "failed") {
     setGitOperationStatus(project, prOp.operationId, "submitted");
     await persistProject(config, project);
     try {
       const pr = await gh.createPullRequest(`Packet ${packet.packetId}`, packet.branchName);
       setGitOperationStatus(project, prOp.operationId, "succeeded");
-      setGitOperationResult(project, {
-        operationId: prOp.operationId,
-        status: "succeeded",
-        branchName: packet.branchName,
-        prUrl: pr.html_url,
-        updatedAt: now(),
-      });
+      setGitOperationResult(project, { operationId: prOp.operationId, status: "succeeded", branchName: packet.branchName, prUrl: pr.html_url, updatedAt: now() });
     } catch (error: any) {
       setGitOperationStatus(project, prOp.operationId, "failed");
-      setGitOperationResult(project, {
-        operationId: prOp.operationId,
-        status: "failed",
-        branchName: packet.branchName,
-        error: String(error?.message || error),
-        updatedAt: now(),
-      });
+      setGitOperationResult(project, { operationId: prOp.operationId, status: "failed", branchName: packet.branchName, error: String(error?.message || error), updatedAt: now() });
       await persistProject(config, project);
       throw error;
     }
@@ -376,33 +389,51 @@ async function runGitHubLifecycle(config: RuntimeConfig, project: StoredProjectR
   }
 }
 
-async function processJob(config: RuntimeConfig, queueRef: QueueRef) {
-  const repo = config.repository.repo;
-  const project = await repo.getProject(queueRef.projectId);
-  if (!project) {
-    return;
+async function claimAvailableJob(config: RuntimeConfig): Promise<{ project: StoredProjectRecord; job: QueueJobRecord } | null> {
+  const projects = config.repository.mode === "durable"
+    ? await listDurableProjects(config)
+    : [];
+
+  for (const project of projects) {
+    const jobs = Object.values(getJobs(project));
+    const candidate = jobs.find((job) => (job.status === "queued") || (job.status === "running" && isLeaseExpired(job)) || (job.status === "failed" && job.attempts < 3));
+    if (!candidate) continue;
+
+    const claimed: QueueJobRecord = {
+      ...candidate,
+      status: "running",
+      workerId,
+      attempts: candidate.status === "running" ? candidate.attempts : candidate.attempts + 1,
+      leaseExpiresAt: getLeaseExpiry(),
+      updatedAt: now(),
+    };
+    upsertJob(project, claimed);
+    await persistProject(config, project);
+    return { project, job: claimed };
   }
 
-  const jobs = getJobs(project);
-  const job = jobs[queueRef.jobId];
-  if (!job || job.status === "succeeded") {
-    return;
-  }
+  return null;
+}
 
+function finalizeJob(project: StoredProjectRecord, job: QueueJobRecord, status: QueueJobStatus, lastError?: string) {
+  upsertJob(project, {
+    ...job,
+    status,
+    lastError,
+    workerId,
+    leaseExpiresAt: undefined,
+    updatedAt: now(),
+  });
+}
+
+async function processJob(config: RuntimeConfig, project: StoredProjectRecord, job: QueueJobRecord) {
   const packet = getPacket(project, job.packetId);
   if (!packet) {
-    job.status = "failed";
-    job.lastError = `Packet not found: ${job.packetId}`;
-    job.updatedAt = now();
-    upsertJob(project, job);
+    finalizeJob(project, job, "failed", `Packet not found: ${job.packetId}`);
     await persistProject(config, project);
     return;
   }
 
-  job.status = "running";
-  job.attempts += 1;
-  job.updatedAt = now();
-  upsertJob(project, job);
   setPacketStatus(project, packet.packetId, "executing");
   project.status = "executing";
   await persistProject(config, project);
@@ -419,18 +450,11 @@ async function processJob(config: RuntimeConfig, queueRef: QueueRef) {
     });
 
     if (!result.success) {
-      const failedState = markPacketFailed({
-        projectId: project.projectId,
-        status: project.status as any,
-        packets: ((project.plan as any)?.packets || []),
-        runs: project.runs as any,
-      }, packet.packetId);
+      const failedState = markPacketFailed({ projectId: project.projectId, status: project.status as any, packets: ((project.plan as any)?.packets || []), runs: project.runs as any }, packet.packetId);
       project.plan = { ...((project.plan as any) || {}), packets: failedState.packets };
       project.status = failedState.status;
-      job.status = "failed";
-      job.lastError = result.summary;
-      job.updatedAt = now();
-      upsertJob(project, job);
+      project.runs = failedState.runs || project.runs;
+      finalizeJob(project, job, "failed", result.summary);
       await persistProject(config, project);
       return;
     }
@@ -438,66 +462,51 @@ async function processJob(config: RuntimeConfig, queueRef: QueueRef) {
     await runGitHubLifecycle(config, project, packet, result.changedFiles as any);
 
     const validation = runValidation(project.projectId, packet.packetId);
-    project.validations = {
-      ...((project.validations || {}) as Record<string, unknown>),
-      [packet.packetId]: validation,
-    };
+    project.validations = { ...((project.validations || {}) as Record<string, unknown>), [packet.packetId]: validation };
 
-    const completedState = markPacketComplete({
-      projectId: project.projectId,
-      status: project.status as any,
-      packets: ((project.plan as any)?.packets || []),
-      runs: project.runs as any,
-    }, packet.packetId);
-
+    const completedState = markPacketComplete({ projectId: project.projectId, status: project.status as any, packets: ((project.plan as any)?.packets || []), runs: project.runs as any }, packet.packetId);
     project.plan = { ...((project.plan as any) || {}), packets: completedState.packets };
     project.status = completedState.status;
     project.runs = completedState.runs || project.runs;
-    job.status = "succeeded";
-    job.updatedAt = now();
-    upsertJob(project, job);
+    finalizeJob(project, job, "succeeded");
     await persistProject(config, project);
   } catch (error: any) {
-    const failedState = markPacketFailed({
-      projectId: project.projectId,
-      status: project.status as any,
-      packets: ((project.plan as any)?.packets || []),
-      runs: project.runs as any,
-    }, packet.packetId);
+    const failedState = markPacketFailed({ projectId: project.projectId, status: project.status as any, packets: ((project.plan as any)?.packets || []), runs: project.runs as any }, packet.packetId);
     project.plan = { ...((project.plan as any) || {}), packets: failedState.packets };
     project.status = failedState.status;
     project.runs = failedState.runs || project.runs;
-    job.status = "failed";
-    job.lastError = String(error?.message || error);
-    job.updatedAt = now();
-    upsertJob(project, job);
+    finalizeJob(project, job, "failed", String(error?.message || error));
     await persistProject(config, project);
   }
 }
 
 function startQueueWorker(config: RuntimeConfig) {
-  if (workerStarted) {
-    return;
-  }
+  if (workerStarted) return;
   workerStarted = true;
 
   setInterval(async () => {
-    if (workerBusy || inMemoryQueue.length === 0) {
-      return;
-    }
-
+    if (workerBusy) return;
     workerBusy = true;
-    const next = inMemoryQueue.shift();
     try {
-      if (next) {
-        await processJob(config, next);
+      const claim = await claimAvailableJob(config);
+      if (claim) {
+        await processJob(config, claim.project, claim.job);
       }
     } catch (error: any) {
-      console.error(JSON.stringify({ event: "queue_worker_error", message: String(error?.message || error), timestamp: now() }));
+      console.error(JSON.stringify({ event: "queue_worker_error", workerId, message: String(error?.message || error), timestamp: now() }));
     } finally {
       workerBusy = false;
     }
   }, Number(process.env.QUEUE_POLL_INTERVAL_MS || 2000));
+}
+
+function getQueueStatsFromProject(project: StoredProjectRecord) {
+  const jobs = Object.values(getJobs(project));
+  return {
+    queued: jobs.filter((job) => job.status === "queued").length,
+    running: jobs.filter((job) => job.status === "running").length,
+    failed: jobs.filter((job) => job.status === "failed").length,
+  };
 }
 
 export function buildApp(config: RuntimeConfig) {
@@ -505,10 +514,18 @@ export function buildApp(config: RuntimeConfig) {
   const repo = config.repository.repo;
 
   startQueueWorker(config);
-
   app.use(express.json());
 
-  app.get("/api/health", (req, res) => {
+  app.get("/api/health", async (req, res) => {
+    let queueDepth = 0;
+    if (config.repository.mode === "durable") {
+      try {
+        const projects = await listDurableProjects(config);
+        queueDepth = projects.reduce((sum, project) => sum + getQueueStatsFromProject(project).queued + getQueueStatsFromProject(project).running, 0);
+      } catch {
+        queueDepth = -1;
+      }
+    }
     res.json({
       status: "ok",
       appName: config.appName,
@@ -521,8 +538,10 @@ export function buildApp(config: RuntimeConfig) {
       commitSha: config.commitSha,
       startupTimestamp: config.startupTimestamp,
       queueEnabled: true,
-      queueDepth: inMemoryQueue.length,
+      queueDepth,
       workerBusy,
+      workerId,
+      leaseMs,
     });
   });
 
@@ -592,15 +611,14 @@ export function buildApp(config: RuntimeConfig) {
     try {
       const project = await repo.getProject(req.params.projectId);
       if (!project || !project.plan) return res.status(404).json({ error: "No plan" });
-
       const packet = getNextPendingPacket(project);
       if (!packet) {
         return res.status(409).json({ error: "No pending packet", actorId: actor.actorId });
       }
 
-      const existingJob = Object.values(getJobs(project)).find((job) => job.packetId === packet.packetId && (job.status === "queued" || job.status === "running"));
+      const existingJob = Object.values(getJobs(project)).find((job) => job.packetId === packet.packetId && (job.status === "queued" || job.status === "running") && !isLeaseExpired(job));
       if (existingJob) {
-        return res.status(202).json({ accepted: true, queued: true, jobId: existingJob.jobId, packetId: packet.packetId, actorId: actor.actorId });
+        return res.status(202).json({ accepted: true, queued: true, jobId: existingJob.jobId, packetId: packet.packetId, actorId: actor.actorId, workerId: existingJob.workerId || null });
       }
 
       const job: QueueJobRecord = {
@@ -615,12 +633,9 @@ export function buildApp(config: RuntimeConfig) {
         createdAt: now(),
         updatedAt: now(),
       };
-
       upsertJob(project, job);
       await persistProject(config, project);
-      inMemoryQueue.push({ projectId: project.projectId, jobId: job.jobId });
-
-      return res.status(202).json({ accepted: true, queued: true, jobId: job.jobId, packetId: packet.packetId, actorId: actor.actorId });
+      return res.status(202).json({ accepted: true, queued: true, jobId: job.jobId, packetId: packet.packetId, actorId: actor.actorId, workerId });
     } catch (error) {
       return handleRouteError(res, config, error, "POST /api/projects/:projectId/dispatch/execute-next", actor);
     }
@@ -631,7 +646,7 @@ export function buildApp(config: RuntimeConfig) {
     try {
       const project = await repo.getProject(req.params.projectId);
       if (!project) return res.status(404).json({ error: "Project not found" });
-      return res.json({ ...project, actorId: actor.actorId });
+      return res.json({ ...project, actorId: actor.actorId, workerId });
     } catch (error) {
       return handleRouteError(res, config, error, "GET /api/projects/:projectId/status", actor);
     }
