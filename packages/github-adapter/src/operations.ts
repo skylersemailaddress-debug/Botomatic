@@ -1,4 +1,4 @@
-export type GitOperationType = "create_branch" | "open_pull_request" | "sync_checks";
+export type GitOperationType = "create_branch" | "commit_files" | "open_pull_request" | "sync_checks";
 export type GitOperationStatus = "pending" | "submitted" | "succeeded" | "failed";
 
 export interface GitOperationRequest {
@@ -34,11 +34,12 @@ export function createGitOperation(input: {
   baseBranch?: string;
   title?: string;
   body?: string;
+  operationId?: string;
 }): GitOperationRequest {
   const now = new Date().toISOString();
 
   return {
-    operationId: `gitop_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    operationId: input.operationId || `gitop_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
     projectId: input.projectId,
     packetId: input.packetId,
     type: input.type,
