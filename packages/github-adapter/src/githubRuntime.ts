@@ -56,9 +56,30 @@ export class GitHubRuntime {
     return ref.object.sha as string;
   }
 
+  async getBranchHead(branchName?: string) {
+    const refName = branchName || this.opts.baseBranch || "main";
+    const ref = await ghRequest(
+      `${this.base}/git/ref/heads/${refName}`,
+      { method: "GET" },
+      this.opts.token
+    );
+
+    const commitSha = ref.object.sha as string;
+    const commit = await ghRequest(
+      `${this.base}/git/commits/${commitSha}`,
+      { method: "GET" },
+      this.opts.token
+    );
+
+    return {
+      branch: refName,
+      commitSha,
+      treeSha: commit.tree.sha as string,
+    };
+  }
+
   async commitFiles(branchName: string, message: string, files: { path: string; content: string }[]) {
-    // Simplified: create blobs -> tree -> commit -> update ref
-    const baseSha = await this.getDefaultBranchSha();
+    const head = await this.getBranchHead(branchName);
 
     const blobs = await Promise.all(
       files.map((f) =>
@@ -78,7 +99,7 @@ export class GitHubRuntime {
       {
         method: "POST",
         body: JSON.stringify({
-          base_tree: baseSha,
+          base_tree: head.treeSha,
           tree: files.map((f, i) => ({
             path: f.path,
             mode: "100644",
@@ -97,7 +118,7 @@ export class GitHubRuntime {
         body: JSON.stringify({
           message,
           tree: tree.sha,
-          parents: [baseSha],
+          parents: [head.commitSha],
         }),
       },
       this.opts.token
