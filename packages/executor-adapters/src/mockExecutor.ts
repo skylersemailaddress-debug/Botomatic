@@ -7,8 +7,13 @@ export const MockExecutor: ExecutorAdapter = {
     return {
       success: true,
       summary: `Executed packet ${context.packetId}`,
-      changedFiles: ["/example/file.ts"],
-      logs: [`Mock execution for ${context.goal}`]
+      changedFiles: [
+        {
+          path: "example/file.ts",
+          body: `export const packetId = \"${context.packetId}\";\n`,
+        },
+      ],
+      logs: [`Mock execution for ${context.goal}`],
     };
-  }
+  },
 };
