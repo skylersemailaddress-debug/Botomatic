@@ -20,6 +20,16 @@ type RepositoryContext = {
   implementation: string;
 };
 
+type AuthContext = {
+  enabled: boolean;
+  implementation: "bearer_token" | "disabled";
+};
+
+type RequestActor = {
+  actorId: string;
+  actorSource: "x-actor-id" | "x-user-email" | "bearer_token" | "anonymous";
+};
+
 function createRepositoryContext(): RepositoryContext {
   const mode = process.env.PROJECT_REPOSITORY_MODE === "durable" ? "durable" : "memory";
 
@@ -45,7 +55,22 @@ function createRepositoryContext(): RepositoryContext {
   };
 }
 
+function createAuthContext(): AuthContext {
+  if (process.env.API_AUTH_TOKEN) {
+    return {
+      enabled: true,
+      implementation: "bearer_token",
+    };
+  }
+
+  return {
+    enabled: false,
+    implementation: "disabled",
+  };
+}
+
 const repositoryContext = createRepositoryContext();
+const authContext = createAuthContext();
 const repo = repositoryContext.repo;
 
 function now(): string {
@@ -99,6 +124,50 @@ function getGitHub() {
   });
 }
 
+function getRequestActor(req: express.Request): RequestActor {
+  const actorIdHeader = req.header("x-actor-id");
+  if (actorIdHeader) {
+    return { actorId: actorIdHeader, actorSource: "x-actor-id" };
+  }
+
+  const userEmailHeader = req.header("x-user-email");
+  if (userEmailHeader) {
+    return { actorId: userEmailHeader, actorSource: "x-user-email" };
+  }
+
+  if (authContext.enabled) {
+    return {
+      actorId: `api_token:${String(process.env.API_AUTH_TOKEN).slice(0, 6)}`,
+      actorSource: "bearer_token",
+    };
+  }
+
+  return { actorId: "anonymous", actorSource: "anonymous" };
+}
+
+function requireApiAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
+  if (!authContext.enabled) {
+    return res.status(500).json({
+      error: "API auth is not configured",
+      authEnabled: authContext.enabled,
+      authImplementation: authContext.implementation,
+    });
+  }
+
+  const authorization = req.header("authorization") || "";
+  const expected = `Bearer ${process.env.API_AUTH_TOKEN}`;
+
+  if (authorization !== expected) {
+    return res.status(401).json({
+      error: "Unauthorized",
+      authEnabled: authContext.enabled,
+      authImplementation: authContext.implementation,
+    });
+  }
+
+  return next();
+}
+
 function logStartup() {
   console.log(
     JSON.stringify({
@@ -106,12 +175,14 @@ function logStartup() {
       repositoryMode: repositoryContext.mode,
       repositoryImplementation: repositoryContext.implementation,
       durableEnvPresent: Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY),
+      authEnabled: authContext.enabled,
+      authImplementation: authContext.implementation,
       timestamp: now(),
     })
   );
 }
 
-function handleRouteError(res: express.Response, error: unknown, route: string) {
+function handleRouteError(res: express.Response, error: unknown, route: string, actor?: RequestActor) {
   const message = String((error as any)?.message || error);
   console.error(
     JSON.stringify({
@@ -119,6 +190,10 @@ function handleRouteError(res: express.Response, error: unknown, route: string) 
       route,
       repositoryMode: repositoryContext.mode,
       repositoryImplementation: repositoryContext.implementation,
+      authEnabled: authContext.enabled,
+      authImplementation: authContext.implementation,
+      actorId: actor?.actorId || "unknown",
+      actorSource: actor?.actorSource || "unknown",
       message,
       timestamp: now(),
     })
@@ -128,6 +203,8 @@ function handleRouteError(res: express.Response, error: unknown, route: string) 
     error: message,
     repositoryMode: repositoryContext.mode,
     repositoryImplementation: repositoryContext.implementation,
+    authEnabled: authContext.enabled,
+    authImplementation: authContext.implementation,
   });
 }
 
@@ -137,10 +214,16 @@ app.get("/api/health", (req, res) => {
     repositoryMode: repositoryContext.mode,
     repositoryImplementation: repositoryContext.implementation,
     durableEnvPresent: Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY),
+    authEnabled: authContext.enabled,
+    authImplementation: authContext.implementation,
   });
 });
 
+app.use("/api/projects", requireApiAuth);
+
 app.post("/api/projects/intake", async (req, res) => {
+  const actor = getRequestActor(req);
+
   try {
     const { name, request } = req.body;
     const projectId = `proj_${Date.now()}`;
@@ -153,13 +236,15 @@ app.post("/api/projects/intake", async (req, res) => {
     });
 
     await repo.upsertProject(project);
-    return res.json({ projectId, status: project.status });
+    return res.json({ projectId, status: project.status, actorId: actor.actorId });
   } catch (error) {
-    return handleRouteError(res, error, "POST /api/projects/intake");
+    return handleRouteError(res, error, "POST /api/projects/intake", actor);
   }
 });
 
 app.post("/api/projects/:projectId/compile", async (req, res) => {
+  const actor = getRequestActor(req);
+
   try {
     const project = await repo.getProject(req.params.projectId);
     if (!project) return res.status(404).json({ error: "Project not found" });
@@ -178,13 +263,15 @@ app.post("/api/projects/:projectId/compile", async (req, res) => {
     };
 
     await repo.upsertProject(updated);
-    return res.json({ projectId: updated.projectId, status: updated.status });
+    return res.json({ projectId: updated.projectId, status: updated.status, actorId: actor.actorId });
   } catch (error) {
-    return handleRouteError(res, error, "POST /api/projects/:projectId/compile");
+    return handleRouteError(res, error, "POST /api/projects/:projectId/compile", actor);
   }
 });
 
 app.post("/api/projects/:projectId/plan", async (req, res) => {
+  const actor = getRequestActor(req);
+
   try {
     const project = await repo.getProject(req.params.projectId);
     if (!project || !project.masterTruth) return res.status(404).json({ error: "No master truth" });
@@ -198,13 +285,15 @@ app.post("/api/projects/:projectId/plan", async (req, res) => {
     };
 
     await repo.upsertProject(updated);
-    return res.json({ projectId: updated.projectId, status: updated.status });
+    return res.json({ projectId: updated.projectId, status: updated.status, actorId: actor.actorId });
   } catch (error) {
-    return handleRouteError(res, error, "POST /api/projects/:projectId/plan");
+    return handleRouteError(res, error, "POST /api/projects/:projectId/plan", actor);
   }
 });
 
 app.post("/api/projects/:projectId/git/result", async (req, res) => {
+  const actor = getRequestActor(req);
+
   try {
     const project = await repo.getProject(req.params.projectId);
     if (!project) return res.status(404).json({ error: "Project not found" });
@@ -220,13 +309,15 @@ app.post("/api/projects/:projectId/git/result", async (req, res) => {
     };
 
     await repo.upsertProject(updated);
-    return res.json({ status: "recorded" });
+    return res.json({ status: "recorded", actorId: actor.actorId });
   } catch (error) {
-    return handleRouteError(res, error, "POST /api/projects/:projectId/git/result");
+    return handleRouteError(res, error, "POST /api/projects/:projectId/git/result", actor);
   }
 });
 
 app.post("/api/projects/:projectId/dispatch/execute-next", async (req, res) => {
+  const actor = getRequestActor(req);
+
   try {
     const project = await repo.getProject(req.params.projectId);
     if (!project || !project.plan) return res.status(404).json({ error: "No plan" });
@@ -341,19 +432,22 @@ app.post("/api/projects/:projectId/dispatch/execute-next", async (req, res) => {
       status: updated.status,
       gitOperations: updated.gitOperations,
       gitResults: updated.gitResults,
+      actorId: actor.actorId,
     });
   } catch (error) {
-    return handleRouteError(res, error, "POST /api/projects/:projectId/dispatch/execute-next");
+    return handleRouteError(res, error, "POST /api/projects/:projectId/dispatch/execute-next", actor);
   }
 });
 
 app.get("/api/projects/:projectId/status", async (req, res) => {
+  const actor = getRequestActor(req);
+
   try {
     const project = await repo.getProject(req.params.projectId);
     if (!project) return res.status(404).json({ error: "Project not found" });
-    return res.json(project);
+    return res.json({ ...project, actorId: actor.actorId });
   } catch (error) {
-    return handleRouteError(res, error, "GET /api/projects/:projectId/status");
+    return handleRouteError(res, error, "GET /api/projects/:projectId/status", actor);
   }
 });
 
