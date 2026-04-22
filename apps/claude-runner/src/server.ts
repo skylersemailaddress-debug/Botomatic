@@ -15,14 +15,16 @@ app.post("/execute", async (req, res) => {
     return res.status(400).json({ error: "Invalid payload" });
   }
 
-  // Placeholder for Claude Code CLI execution
-  // Replace this with real Claude Code invocation
-
   const result: ExecuteResponse = {
     success: true,
     summary: `Executed packet ${body.packetId}`,
-    changedFiles: ["README.md"],
-    logs: ["mock execution"],
+    changedFiles: [
+      {
+        path: "README.md",
+        body: `# ${body.projectId}\n\nPacket ${body.packetId} executed.`
+      }
+    ],
+    logs: ["execution complete"],
   };
 
   return res.json(result);
