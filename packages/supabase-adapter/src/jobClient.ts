@@ -7,12 +7,22 @@ const headers = {
   "Content-Type": "application/json",
 };
 
+async function parseJsonSafe(res: Response) {
+  const text = await res.text();
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { raw: text };
+  }
+}
+
 export async function enqueueJob(job: {
   job_id: string;
   project_id: string;
   packet_id: string;
 }) {
-  await fetch(`${URL}/rest/v1/orchestrator_jobs`, {
+  const res = await fetch(`${URL}/rest/v1/orchestrator_jobs`, {
     method: "POST",
     headers,
     body: JSON.stringify({
@@ -21,6 +31,11 @@ export async function enqueueJob(job: {
       status: "queued",
     }),
   });
+
+  if (!res.ok) {
+    const body = await parseJsonSafe(res);
+    throw new Error(`enqueueJob failed ${res.status}: ${JSON.stringify(body)}`);
+  }
 }
 
 export async function claimJob(workerId: string, leaseMs: number) {
@@ -33,7 +48,12 @@ export async function claimJob(workerId: string, leaseMs: number) {
     }),
   });
 
-  const data = await res.json();
+  const data = await parseJsonSafe(res);
+
+  if (!res.ok) {
+    throw new Error(`claimJob failed ${res.status}: ${JSON.stringify(data)}`);
+  }
+
   return data?.[0] || null;
 }
 
@@ -42,7 +62,7 @@ export async function finalizeJob(
   status: string,
   error?: string
 ) {
-  await fetch(`${URL}/rest/v1/orchestrator_jobs?job_id=eq.${jobId}`, {
+  const res = await fetch(`${URL}/rest/v1/orchestrator_jobs?job_id=eq.${jobId}`, {
     method: "PATCH",
     headers,
     body: JSON.stringify({
@@ -52,4 +72,9 @@ export async function finalizeJob(
       updated_at: new Date().toISOString(),
     }),
   });
+
+  if (!res.ok) {
+    const body = await parseJsonSafe(res);
+    throw new Error(`finalizeJob failed ${res.status}: ${JSON.stringify(body)}`);
+  }
 }
