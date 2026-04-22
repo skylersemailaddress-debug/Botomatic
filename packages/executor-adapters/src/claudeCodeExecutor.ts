@@ -1,4 +1,4 @@
-import { ExecutorAdapter, ExecutorContext, ExecutorResult } from "./types";
+import { ExecutorAdapter, ExecutorContext, ExecutorResult, FileChange } from "./types";
 
 export type ClaudeCodeExecutorOptions = {
   baseUrl: string;
@@ -48,11 +48,29 @@ async function postJsonSafe(url: string, body: unknown, apiKey?: string, timeout
   }
 }
 
-/**
- * Real executor boundary for an external Claude Code worker service.
- * Non-throwing by design: all response normalization happens here so the
- * orchestrator can make deterministic retry/repair decisions with logs.
- */
+function normalizeChangedFiles(input: any): FileChange[] {
+  if (!Array.isArray(input)) return [];
+
+  const out: FileChange[] = [];
+
+  for (const item of input) {
+    if (!item) continue;
+
+    if (typeof item === "string") {
+      continue; // invalid, drop
+    }
+
+    const path = item.path || item.filePath || item.filename;
+    const body = item.body || item.content || item.contents;
+
+    if (typeof path === "string" && typeof body === "string") {
+      out.push({ path, body });
+    }
+  }
+
+  return out;
+}
+
 export class ClaudeCodeExecutor implements ExecutorAdapter {
   public readonly name = "claude_code";
 
@@ -88,6 +106,8 @@ export class ClaudeCodeExecutor implements ExecutorAdapter {
 
     const success = response.ok && Boolean(data.success);
 
+    const changedFiles = normalizeChangedFiles(data.changedFiles);
+
     return {
       success,
       summary: String(
@@ -96,9 +116,7 @@ export class ClaudeCodeExecutor implements ExecutorAdapter {
             ? "Claude Code execution completed"
             : "Claude Code execution failed")
       ),
-      changedFiles: Array.isArray(data.changedFiles)
-        ? data.changedFiles.map((v: unknown) => String(v))
-        : [],
+      changedFiles,
       logs,
     };
   }
