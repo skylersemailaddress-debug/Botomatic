@@ -7,9 +7,14 @@ export interface ExecuteRequest {
   constraints: string[];
 }
 
+export interface FileChange {
+  path: string;
+  body: string;
+}
+
 export interface ExecuteResponse {
   success: boolean;
   summary: string;
-  changedFiles: string[];
+  changedFiles: FileChange[];
   logs?: string[];
 }
