@@ -6,9 +6,31 @@ export default function OverviewPanel({ projectId }: { projectId: string }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    getProjectOverview(projectId)
-      .then(setData)
-      .catch((e) => setError(e.message));
+    let active = true;
+
+    async function load() {
+      try {
+        const next = await getProjectOverview(projectId);
+        if (active) {
+          setData(next);
+          setError(null);
+        }
+      } catch (e: any) {
+        if (active) {
+          setError(e.message || "Overview failed to load.");
+        }
+      }
+    }
+
+    void load();
+    const timer = setInterval(() => {
+      void load();
+    }, 3000);
+
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
   }, [projectId]);
 
   if (error) {
@@ -27,7 +49,7 @@ export default function OverviewPanel({ projectId }: { projectId: string }) {
       </div>
       <div style={{ border: "1px solid var(--border)", padding: 12 }}>
         <strong>Stages</strong>
-        <div>{data.summary.packetCount} packets</div>
+        <div>{data.summary.packetCount} packets • {data.summary.completedPackets} complete • {data.summary.failedPackets} failed</div>
       </div>
       <div style={{ border: "1px solid var(--border)", padding: 12 }}>
         <strong>Readiness</strong>
@@ -35,7 +57,7 @@ export default function OverviewPanel({ projectId }: { projectId: string }) {
       </div>
       <div style={{ border: "1px solid var(--border)", padding: 12 }}>
         <strong>Activity</strong>
-        <div>{data.activity?.[0]?.label}</div>
+        <div>{data.activity?.[0]?.label || "No recent activity"}</div>
       </div>
       <div style={{ border: "1px solid var(--border)", padding: 12 }}>
         <strong>Artifacts</strong>
