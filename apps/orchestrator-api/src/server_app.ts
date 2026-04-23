@@ -313,6 +313,63 @@ async function persistProject(config: RuntimeConfig, project: StoredProjectRecor
   await config.repository.repo.upsertProject(project);
 }
 
+function buildOverview(project: StoredProjectRecord) {
+  const packets = getPackets(project);
+  const completedPackets = packets.filter((packet: any) => packet.status === "complete").length;
+  const failedPackets = packets.filter((packet: any) => packet.status === "blocked" || packet.status === "failed").length;
+  const latestValidation = project.validations ? Object.values(project.validations as Record<string, any>).slice(-1)[0] : null;
+  const gitResults = (project.gitResults || {}) as Record<string, GitOperationResult>;
+  const latestPr = Object.values(gitResults).find((result: any) => result?.prUrl);
+
+  const blockers: string[] = [];
+  if (!project.masterTruth) blockers.push("Compile has not completed.");
+  if (!project.plan) blockers.push("Plan has not completed.");
+  if (failedPackets > 0) blockers.push(`${failedPackets} packet${failedPackets === 1 ? " is" : "s are"} blocked or failed.`);
+  if (!latestValidation) blockers.push("Validation has not run.");
+
+  return {
+    project: {
+      id: project.projectId,
+      name: project.name,
+      environment: "commercial",
+    },
+    latestRun: {
+      id: project.projectId,
+      status: project.status || "idle",
+      currentStage: project.status || null,
+      startedAt: project.createdAt || null,
+      updatedAt: project.updatedAt || null,
+    },
+    summary: {
+      compiled: Boolean(project.masterTruth),
+      planned: Boolean(project.plan),
+      packetCount: packets.length,
+      completedPackets,
+      failedPackets,
+      pendingApprovals: 0,
+    },
+    readiness: {
+      status: latestValidation ? (blockers.length ? "blocked" : "ready") : "not_started",
+      score: latestValidation ? (blockers.length ? 6.5 : 8.0) : null,
+      topIssues: blockers.slice(0, 3),
+    },
+    activity: [
+      {
+        id: `evt_${project.projectId}`,
+        type: "project_status",
+        label: `Project status is ${project.status || "idle"}`,
+        timestamp: project.updatedAt || now(),
+      },
+    ],
+    latestArtifact: {
+      pullRequestUrl: latestPr?.prUrl || null,
+      changedFiles: Object.keys(gitResults).length,
+      previewUrl: null,
+    },
+    blockers,
+  };
+}
+
 async function runGitHubLifecycle(config: RuntimeConfig, project: StoredProjectRecord, packet: any, changedFiles: ChangedFile[]) {
   const gh = getGitHub();
 
@@ -633,6 +690,17 @@ export function buildApp(config: RuntimeConfig) {
       return res.json({ ...project, actorId: actor.actorId, workerId });
     } catch (error) {
       return handleRouteError(res, config, error, "GET /api/projects/:projectId/status", actor);
+    }
+  });
+
+  app.get("/api/projects/:projectId/ui/overview", async (req, res) => {
+    const actor = getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      return res.json({ ...buildOverview(project), actorId: actor.actorId, workerId });
+    } catch (error) {
+      return handleRouteError(res, config, error, "GET /api/projects/:projectId/ui/overview", actor);
     }
   });
 
