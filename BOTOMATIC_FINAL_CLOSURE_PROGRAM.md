@@ -320,4 +320,4 @@ Botomatic is 10 out of 10 only when all of the following are true:
 
 ## Immediate next action
 
-Run the canonical closure scenario and create the first hard-gap register from observed failures only.
+Run Gate 7 proof-integrity closure: reconcile runtime evidence, validator outcomes, and repo truth; do not claim enterprise launch readiness until no P0 blockers remain and all evidence links are complete.

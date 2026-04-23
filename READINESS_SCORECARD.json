@@ -1,5 +1,5 @@
 {
-  "status": "phase_f_gate6_active",
+  "status": "phase_g_gate7_active",
   "overall_target": "10/10 enterprise launch",
   "overall_cap_rules": {
     "p0_blockers_open": "overall_score_capped_below_8"
@@ -10,8 +10,8 @@
     "ui_control_plane": {"target": 10, "current": 7.4, "cap_reason": "final Gate 6 diagnostics closure still pending"},
     "security_governance": {"target": 10, "current": 8.4, "cap_reason": "Gate 4 is closed by local runtime proof; production IdP/runtime environment proof still pending"},
     "reliability": {"target": 10, "current": 8.1, "cap_reason": "dead-letter/idempotency breadth beyond current closure scope still pending"},
-    "observability": {"target": 10, "current": 7.1, "cap_reason": "Gate 6 auditability diagnostics proof and final validator pending"},
-    "validation": {"target": 10, "current": 7.8, "cap_reason": "final launch validator and proof-integrity validator pending"},
-    "documentation": {"target": 10, "current": 8.0, "cap_reason": "final closure bundle and Gate 7 consistency pass pending"}
+    "observability": {"target": 10, "current": 8.2, "cap_reason": "Gate 6 closed by local runtime proof; broader operational telemetry depth still pending"},
+    "validation": {"target": 10, "current": 8.0, "cap_reason": "final launch validator implemented but proof-integrity closure still pending"},
+    "documentation": {"target": 10, "current": 8.3, "cap_reason": "Gate 7 consistency pass pending and Gate 2/3 evidence links unresolved"}
   }
 }

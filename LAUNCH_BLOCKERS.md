@@ -15,8 +15,8 @@ Purpose: Central source of truth for all launch-blocking gaps preventing enterpr
 | Gate 3 | Closed by proof | Prior runtime proof run (in-repo closure note not yet linked) |
 | Gate 4 | Closed by proof (2026-04-23) | docs/gate4/GATE4_RUNTIME_PROOF_2026-04-23.md |
 | Gate 5 | Closed by proof (2026-04-23) | docs/gate5/GATE5_RUNTIME_PROOF_2026-04-23.md |
-| Gate 6 | Open | Final launch validator and evidence bundle closure pending |
-| Gate 7 | Open | Repo truth consistency final pass pending |
+| Gate 6 | Closed by proof (2026-04-23) | docs/gate6/GATE6_RUNTIME_PROOF_2026-04-23.md |
+| Gate 7 | Open | Final proof-integrity consistency pass pending |
 
 ### UI / Control Plane
 - No fully implemented operator UI system
