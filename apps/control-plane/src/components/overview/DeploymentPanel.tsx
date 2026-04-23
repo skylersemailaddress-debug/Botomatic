@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getProjectDeployments, promoteProject } from "@/services/deployments";
+import { getProjectDeployments, promoteProject, rollbackProject } from "@/services/deployments";
 import { getProjectGate } from "@/services/gate";
 import Panel from "@/components/ui/Panel";
 
@@ -29,11 +29,21 @@ export default function DeploymentPanel({ projectId }: { projectId: string }) {
     }
   }
 
+  async function handleRollback(env: "dev" | "staging" | "prod") {
+    setBusyEnv(env);
+    try {
+      await rollbackProject(projectId, env);
+    } finally {
+      setBusyEnv(null);
+    }
+  }
+
   if (!deployments || !gate) {
     return <Panel title="Deployment">Loading...</Panel>;
   }
 
   const canPromote = gate.role === "admin" && gate.launchStatus === "ready";
+  const isAdmin = gate.role === "admin";
 
   return (
     <Panel
@@ -49,6 +59,7 @@ export default function DeploymentPanel({ projectId }: { projectId: string }) {
       <div style={{ display: "grid", gap: 8 }}>
         {(["dev", "staging", "prod"] as const).map((env) => {
           const d = deployments[env];
+          const canRollback = isAdmin && Boolean(d?.promotedAt) && d?.status !== "rolled_back";
           return (
             <div
               key={env}
@@ -68,17 +79,30 @@ export default function DeploymentPanel({ projectId }: { projectId: string }) {
                 </div>
                 {d?.promotedBy && (
                   <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                    {d.promotedBy} · {d.promotedAt}
+                    promoted by {d.promotedBy} · {d.promotedAt}
+                  </div>
+                )}
+                {d?.rollbackBy && (
+                  <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                    rolled back by {d.rollbackBy} · {d.rollbackAt}
                   </div>
                 )}
               </div>
 
-              <button
-                onClick={() => handlePromote(env)}
-                disabled={!canPromote || busyEnv === env}
-              >
-                {busyEnv === env ? "Promoting..." : "Promote"}
-              </button>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  onClick={() => handlePromote(env)}
+                  disabled={!canPromote || busyEnv === env}
+                >
+                  {busyEnv === env ? "Working..." : "Promote"}
+                </button>
+                <button
+                  onClick={() => handleRollback(env)}
+                  disabled={!canRollback || busyEnv === env}
+                >
+                  {busyEnv === env ? "Working..." : "Rollback"}
+                </button>
+              </div>
             </div>
           );
         })}
