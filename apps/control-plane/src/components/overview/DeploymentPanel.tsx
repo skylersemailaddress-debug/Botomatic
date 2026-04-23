@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getProjectDeployments, promoteProject } from "@/services/deployments";
 import { getProjectGate } from "@/services/gate";
+import Panel from "@/components/ui/Panel";
 
 export default function DeploymentPanel({ projectId }: { projectId: string }) {
   const [deployments, setDeployments] = useState<any>(null);
@@ -28,38 +29,60 @@ export default function DeploymentPanel({ projectId }: { projectId: string }) {
     }
   }
 
-  if (!deployments || !gate) return <div style={{ padding: 16 }}>Loading deployments...</div>;
+  if (!deployments || !gate) {
+    return <Panel title="Deployment">Loading...</Panel>;
+  }
 
   const canPromote = gate.role === "admin" && gate.launchStatus === "ready";
 
   return (
-    <div style={{ padding: 16, borderTop: "1px solid var(--border)" }}>
-      <strong>Deployment</strong>
-      {(["dev", "staging", "prod"] as const).map((env) => {
-        const d = deployments[env];
-        return (
-          <div key={env} style={{ border: "1px solid var(--border)", padding: 8, marginTop: 8 }}>
-            <div>{env.toUpperCase()}</div>
-            <div>Status: {d?.status || "idle"}</div>
-            {d?.promotedBy && (
-              <div style={{ fontSize: 12 }}>
-                by {d.promotedBy} at {d.promotedAt}
-              </div>
-            )}
-            <button
-              onClick={() => handlePromote(env)}
-              disabled={!canPromote || busyEnv === env}
-            >
-              {busyEnv === env ? "Promoting..." : "Promote"}
-            </button>
+    <Panel
+      title="Deployment"
+      footer={
+        !canPromote ? (
+          <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
+            Promotion requires admin role and ready gate
           </div>
-        );
-      })}
-      {!canPromote && (
-        <div style={{ marginTop: 8, fontSize: 12, color: "var(--text-muted)" }}>
-          Promotion requires admin role and ready gate
-        </div>
-      )}
-    </div>
+        ) : null
+      }
+    >
+      <div style={{ display: "grid", gap: 8 }}>
+        {(["dev", "staging", "prod"] as const).map((env) => {
+          const d = deployments[env];
+          return (
+            <div
+              key={env}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                border: "1px solid var(--border)",
+                borderRadius: 8,
+                padding: 8,
+              }}
+            >
+              <div>
+                <div style={{ fontWeight: 600 }}>{env.toUpperCase()}</div>
+                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                  {d?.status || "idle"}
+                </div>
+                {d?.promotedBy && (
+                  <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                    {d.promotedBy} · {d.promotedAt}
+                  </div>
+                )}
+              </div>
+
+              <button
+                onClick={() => handlePromote(env)}
+                disabled={!canPromote || busyEnv === env}
+              >
+                {busyEnv === env ? "Promoting..." : "Promote"}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </Panel>
   );
 }
