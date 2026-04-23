@@ -379,6 +379,11 @@ async function processJob(config: RuntimeConfig, job: QueueJobRecord) {
     return;
   }
 
+  if (["executing", "blocked", "failed", "complete"].includes(String(packet.status))) {
+    await finalizeJob(job.job_id, "failed", `Duplicate or stale job ignored for packet ${packet.packetId} with status ${packet.status}`);
+    return;
+  }
+
   setPacketStatus(project, packet.packetId, "executing");
   recomputeProjectStatus(project);
   emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "execute_packet", actorId: workerId, role: "system", timestamp: now(), metadata: { packetId: packet.packetId } });
@@ -443,15 +448,17 @@ function startQueueWorker(config: RuntimeConfig) {
 export function buildApp(config: RuntimeConfig) {
   const app = express();
   const repo = config.repository.repo;
-  startQueueWorker(config);
+  if (config.repository.mode === "durable") {
+    startQueueWorker(config);
+  }
   app.use(express.json());
 
   app.get("/api/health", async (req, res) => {
     try {
       const auth = await getVerifiedAuth(req, config);
-      return res.json({ status: "ok", appName: config.appName, runtimeMode: config.runtimeMode, repositoryMode: config.repository.mode, repositoryImplementation: config.repository.implementation, durableEnvPresent: config.durableEnvPresent, authEnabled: config.auth.enabled, authImplementation: config.auth.implementation, commitSha: config.commitSha, startupTimestamp: config.startupTimestamp, queueEnabled: true, activeWorkers, workerConcurrency, workerId, leaseMs, queueMode: "dedicated_jobs_table_parallel", role: auth.role, userId: auth.userId, issuer: auth.issuer || null });
+      return res.json({ status: "ok", appName: config.appName, runtimeMode: config.runtimeMode, repositoryMode: config.repository.mode, repositoryImplementation: config.repository.implementation, durableEnvPresent: config.durableEnvPresent, authEnabled: config.auth.enabled, authImplementation: config.auth.implementation, commitSha: config.commitSha, startupTimestamp: config.startupTimestamp, queueEnabled: config.repository.mode === "durable", activeWorkers, workerConcurrency, workerId, leaseMs, queueMode: "dedicated_jobs_table_parallel", role: auth.role, userId: auth.userId, issuer: auth.issuer || null });
     } catch {
-      return res.json({ status: "ok", appName: config.appName, runtimeMode: config.runtimeMode, repositoryMode: config.repository.mode, repositoryImplementation: config.repository.implementation, durableEnvPresent: config.durableEnvPresent, authEnabled: config.auth.enabled, authImplementation: config.auth.implementation, commitSha: config.commitSha, startupTimestamp: config.startupTimestamp, queueEnabled: true, activeWorkers, workerConcurrency, workerId, leaseMs, queueMode: "dedicated_jobs_table_parallel", role: null, userId: null, issuer: null });
+      return res.json({ status: "ok", appName: config.appName, runtimeMode: config.runtimeMode, repositoryMode: config.repository.mode, repositoryImplementation: config.repository.implementation, durableEnvPresent: config.durableEnvPresent, authEnabled: config.auth.enabled, authImplementation: config.auth.implementation, commitSha: config.commitSha, startupTimestamp: config.startupTimestamp, queueEnabled: config.repository.mode === "durable", activeWorkers, workerConcurrency, workerId, leaseMs, queueMode: "dedicated_jobs_table_parallel", role: null, userId: null, issuer: null });
     }
   });
 
