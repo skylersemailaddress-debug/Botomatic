@@ -4,8 +4,8 @@
     "apps/orchestrator-api"
   ],
   "scripts": {
-    "api:start": "tsx apps/orchestrator-api/src/bootstrap.ts",
-    "api:dev": "tsx apps/orchestrator-api/src/server.ts",
+    "api:start": "PORT=3001 tsx apps/orchestrator-api/src/bootstrap.ts",
+    "api:dev": "PORT=3001 tsx apps/orchestrator-api/src/server.ts",
     "ui:dev": "npm --prefix apps/control-plane run dev",
     "ui:build": "npm --prefix apps/control-plane run build",
     "ui:start": "npm --prefix apps/control-plane run start",
