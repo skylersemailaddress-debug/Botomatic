@@ -580,7 +580,7 @@ export function buildApp(config: RuntimeConfig) {
     }
   });
 
-  app.get("/api/projects/:projectId/ui/artifacts", async (req, res) => {
+  app.get("/api/projects/:projectId/ui/artifacts", requireRole("reviewer", config), async (req, res) => {
     const actor = await getRequestActor(req, config);
     try {
       const project = await repo.getProject(req.params.projectId);
@@ -591,7 +591,7 @@ export function buildApp(config: RuntimeConfig) {
     }
   });
 
-  app.get("/api/projects/:projectId/ui/gate", async (req, res) => {
+  app.get("/api/projects/:projectId/ui/gate", requireRole("reviewer", config), async (req, res) => {
     const actor = await getRequestActor(req, config);
     try {
       const auth = await getVerifiedAuth(req, config);
@@ -623,7 +623,7 @@ export function buildApp(config: RuntimeConfig) {
     }
   });
 
-  app.get("/api/projects/:projectId/ui/deployments", async (req, res) => {
+  app.get("/api/projects/:projectId/ui/deployments", requireRole("reviewer", config), async (req, res) => {
     const actor = await getRequestActor(req, config);
     try {
       const project = await repo.getProject(req.params.projectId);
@@ -635,7 +635,7 @@ export function buildApp(config: RuntimeConfig) {
     }
   });
 
-  app.get("/api/projects/:projectId/ui/audit", async (req, res) => {
+  app.get("/api/projects/:projectId/ui/audit", requireRole("reviewer", config), async (req, res) => {
     const actor = await getRequestActor(req, config);
     try {
       const project = await repo.getProject(req.params.projectId);
