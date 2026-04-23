@@ -1,0 +1,219 @@
+{
+  "generatedAt": "2026-04-23T23:31:48.284Z",
+  "projectId": "proj_1776987107313",
+  "proofGrade": "local_runtime",
+  "checks": {
+    "overview": {
+      "status": 200,
+      "hasReadiness": true,
+      "hasBlockers": true
+    },
+    "packets": {
+      "status": 200,
+      "count": 5
+    },
+    "gate": {
+      "status": 200,
+      "launchStatus": "blocked",
+      "approvalStatus": "approved"
+    },
+    "deployments": {
+      "status": 200,
+      "hasStaging": true
+    },
+    "artifacts": {
+      "status": 200,
+      "artifactCount": 0
+    },
+    "audit": {
+      "status": 200,
+      "eventCount": 4
+    }
+  },
+  "raw": {
+    "overview": {
+      "status": 200,
+      "body": {
+        "project": {
+          "id": "proj_1776987107313",
+          "name": "UI Integration Proof Project",
+          "environment": "commercial"
+        },
+        "latestRun": {
+          "id": "proj_1776987107313",
+          "status": "queued",
+          "currentStage": "queued",
+          "startedAt": "2026-04-23T23:31:47.313+00:00",
+          "updatedAt": "2026-04-23T23:31:47.878+00:00"
+        },
+        "summary": {
+          "compiled": true,
+          "planned": true,
+          "packetCount": 5,
+          "completedPackets": 0,
+          "failedPackets": 0,
+          "pendingApprovals": 0
+        },
+        "readiness": {
+          "status": "not_started",
+          "score": null,
+          "topIssues": [
+            "Validation has not run."
+          ]
+        },
+        "activity": [
+          {
+            "id": "evt_proj_1776987107313",
+            "type": "project_status",
+            "label": "Project status is queued",
+            "timestamp": "2026-04-23T23:31:47.878+00:00"
+          }
+        ],
+        "latestArtifact": {
+          "pullRequestUrl": null,
+          "changedFiles": 0,
+          "previewUrl": null
+        },
+        "blockers": [
+          "Validation has not run."
+        ],
+        "actorId": "ui-reviewer",
+        "workerId": "worker_9oaihn"
+      }
+    },
+    "packets": {
+      "status": 200,
+      "body": {
+        "packets": [
+          {
+            "packetId": "proj_1776987107313-m1-p1",
+            "status": "pending",
+            "goal": "Scaffold + Repo Setup",
+            "branchName": "build/proj_1776987107313/1-1"
+          },
+          {
+            "packetId": "proj_1776987107313-m2-p2",
+            "status": "pending",
+            "goal": "Auth + App Shell",
+            "branchName": "build/proj_1776987107313/2-2"
+          },
+          {
+            "packetId": "proj_1776987107313-m3-p3",
+            "status": "pending",
+            "goal": "Core Data Model",
+            "branchName": "build/proj_1776987107313/3-3"
+          },
+          {
+            "packetId": "proj_1776987107313-m4-p4",
+            "status": "pending",
+            "goal": "Core Workflow Pages",
+            "branchName": "build/proj_1776987107313/4-4"
+          },
+          {
+            "packetId": "proj_1776987107313-m5-p5",
+            "status": "pending",
+            "goal": "Validation + Preview",
+            "branchName": "build/proj_1776987107313/5-5"
+          }
+        ],
+        "actorId": "ui-reviewer",
+        "workerId": "worker_9oaihn"
+      }
+    },
+    "gate": {
+      "status": 200,
+      "body": {
+        "launchStatus": "blocked",
+        "approvalStatus": "approved",
+        "governanceApproval": {
+          "updatedAt": "2026-04-23T23:31:47.844Z",
+          "updatedBy": "ui-admin",
+          "modelVersion": "gate4-minimal-v1",
+          "approvalStatus": "approved",
+          "runtimeProofStatus": "captured",
+          "runtimeProofRequired": true
+        },
+        "issues": [
+          "Validation has not run."
+        ],
+        "role": "reviewer",
+        "userId": "ui-reviewer",
+        "issuer": "http://127.0.0.1:4010",
+        "actorId": "ui-reviewer",
+        "workerId": "worker_9oaihn"
+      }
+    },
+    "deployments": {
+      "status": 200,
+      "body": {
+        "deployments": {
+          "dev": {
+            "environment": "dev",
+            "status": "idle"
+          },
+          "staging": {
+            "environment": "staging",
+            "status": "idle"
+          },
+          "prod": {
+            "environment": "prod",
+            "status": "idle"
+          }
+        },
+        "actorId": "ui-reviewer"
+      }
+    },
+    "artifacts": {
+      "status": 200,
+      "body": {
+        "artifacts": [],
+        "actorId": "ui-reviewer",
+        "workerId": "worker_9oaihn"
+      }
+    },
+    "audit": {
+      "status": 200,
+      "body": {
+        "events": [
+          {
+            "id": "evt_1776987107844",
+            "role": "admin",
+            "type": "governance_approval_updated",
+            "actorId": "ui-admin",
+            "metadata": {
+              "approvalStatus": "approved",
+              "runtimeProofStatus": "captured"
+            },
+            "projectId": "proj_1776987107313",
+            "timestamp": "2026-04-23T23:31:47.844Z"
+          },
+          {
+            "id": "evt_1776987107683",
+            "type": "plan",
+            "actorId": "ui-op",
+            "projectId": "proj_1776987107313",
+            "timestamp": "2026-04-23T23:31:47.683Z"
+          },
+          {
+            "id": "evt_1776987107517",
+            "type": "compile",
+            "actorId": "ui-op",
+            "projectId": "proj_1776987107313",
+            "timestamp": "2026-04-23T23:31:47.517Z"
+          },
+          {
+            "id": "evt_1776987107313",
+            "type": "intake",
+            "actorId": "ui-op",
+            "metadata": {
+              "name": "UI Integration Proof Project"
+            },
+            "projectId": "proj_1776987107313",
+            "timestamp": "2026-04-23T23:31:47.313Z"
+          }
+        ],
+        "actorId": "ui-reviewer"
+      }
+    }
+  }
+}

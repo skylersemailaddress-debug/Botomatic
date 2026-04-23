@@ -277,6 +277,32 @@ export function validateBehavioralRuntimeCoverage(root: string): RepoValidatorRe
   );
 }
 
+export function validateUIControlPlaneIntegration(root: string): RepoValidatorResult {
+  const checks = [
+    "apps/control-plane/src/app/projects/[projectId]/page.tsx",
+    "apps/control-plane/src/components/overview/AuditPanel.tsx",
+    "apps/control-plane/src/services/audit.ts",
+  ];
+  const fileOk = checks.every((p) => has(root, p));
+  const page = fileOk ? read(root, "apps/control-plane/src/app/projects/[projectId]/page.tsx") : "";
+  const ok =
+    fileOk &&
+    page.includes("<OverviewPanel") &&
+    page.includes("<GatePanel") &&
+    page.includes("<PacketPanel") &&
+    page.includes("<ArtifactPanel") &&
+    page.includes("<DeploymentPanel") &&
+    page.includes("<AuditPanel");
+  return result(
+    "Validate-Botomatic-UIControlPlaneIntegration",
+    ok,
+    ok
+      ? "Core control-plane panels are mounted in the project page."
+      : "One or more core control-plane panels are not mounted in the project page.",
+    checks
+  );
+}
+
 export function runAllRepoValidators(root: string): RepoValidatorResult[] {
   return [
     validateArchitecture(root),
@@ -290,6 +316,7 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateDeploymentRollbackGate5(root),
     validateDocumentation(root),
     validateAuthGovernanceGate4(root),
+    validateUIControlPlaneIntegration(root),
     validateBehavioralRuntimeCoverage(root),
     validateFinalLaunchReadiness(root),
   ];
