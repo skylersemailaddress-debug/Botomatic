@@ -37,6 +37,7 @@ const workerId = process.env.WORKER_ID || `worker_${Math.random().toString(36).s
 const leaseMs = Number(process.env.QUEUE_LEASE_MS || 30000);
 const workerConcurrency = Math.max(1, Number(process.env.WORKER_CONCURRENCY || 2));
 const governanceStateRunKey = "__governanceGate4Approval";
+const deploymentStateRunKey = "__deploymentState";
 let workerStarted = false;
 let activeWorkers = 0;
 
@@ -215,13 +216,15 @@ function getPackets(project: StoredProjectRecord): any[] {
 }
 
 function ensureDeploymentState(project: any) {
-  if (!project.deployments) {
-    project.deployments = {
-      dev: { environment: "dev", status: "idle" },
-      staging: { environment: "staging", status: "idle" },
-      prod: { environment: "prod", status: "idle" },
-    };
-  }
+  const runs = ((project.runs || {}) as Record<string, unknown>);
+  const fromRuns = runs[deploymentStateRunKey] as Record<string, any> | undefined;
+  const deployments = project.deployments || fromRuns || {
+    dev: { environment: "dev", status: "idle" },
+    staging: { environment: "staging", status: "idle" },
+    prod: { environment: "prod", status: "idle" },
+  };
+  project.deployments = deployments;
+  project.runs = { ...runs, [deploymentStateRunKey]: deployments };
 }
 
 function ensureAudit(project: any) {
@@ -751,6 +754,42 @@ export function buildApp(config: RuntimeConfig) {
       return res.json({ success: true, environment, governanceApprovalStatus: governanceApproval.approvalStatus, actorId: actor.actorId });
     } catch (error) {
       return handleRouteError(res, config, error, "POST deploy/promote", actor);
+    }
+  });
+
+  app.post("/api/projects/:projectId/deploy/rollback", requireRole("admin", config), async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const { environment } = req.body;
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      if (!environment || !["dev", "staging", "prod"].includes(environment)) {
+        return res.status(400).json({ error: "Invalid environment", allowed: ["dev", "staging", "prod"] });
+      }
+      ensureDeploymentState(project as any);
+      const current = (project as any).deployments[environment];
+      if (!current || !current.promotedAt) {
+        return res.status(409).json({ error: "Cannot rollback: environment has not been promoted", environment });
+      }
+      (project as any).deployments[environment] = {
+        ...current,
+        status: "rolled_back",
+        rollbackAt: now(),
+        rollbackBy: actor.actorId,
+      };
+      emitEvent(project as any, {
+        id: `evt_${Date.now()}`,
+        projectId: project.projectId,
+        type: "rollback",
+        actorId: actor.actorId,
+        role: "admin",
+        timestamp: now(),
+        metadata: { environment },
+      });
+      await persistProject(config, project);
+      return res.json({ success: true, environment, status: "rolled_back", actorId: actor.actorId });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/projects/:projectId/deploy/rollback", actor);
     }
   });
 

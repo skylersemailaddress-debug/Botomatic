@@ -1,5 +1,5 @@
 {
-  "status": "phase_e_gate5_active",
+  "status": "phase_f_gate6_active",
   "overall_target": "10/10 enterprise launch",
   "overall_cap_rules": {
     "p0_blockers_open": "overall_score_capped_below_8"
@@ -7,11 +7,11 @@
   "categories": {
     "architecture": {"target": 10, "current": 7.8, "cap_reason": "release posture and final closure docs still incomplete"},
     "builder_capability": {"target": 10, "current": 7.2, "cap_reason": "blueprint depth and benchmark quality evidence still incomplete"},
-    "ui_control_plane": {"target": 10, "current": 6.8, "cap_reason": "deployment and audit flows require final gate-proof hardening"},
+    "ui_control_plane": {"target": 10, "current": 7.4, "cap_reason": "final Gate 6 diagnostics closure still pending"},
     "security_governance": {"target": 10, "current": 8.4, "cap_reason": "Gate 4 is closed by local runtime proof; production IdP/runtime environment proof still pending"},
-    "reliability": {"target": 10, "current": 7.0, "cap_reason": "rollback and durable restart proof still pending"},
-    "observability": {"target": 10, "current": 6.6, "cap_reason": "auditability closure proof and operator diagnostics validation pending"},
-    "validation": {"target": 10, "current": 7.4, "cap_reason": "final launch validator and proof-integrity validator pending"},
-    "documentation": {"target": 10, "current": 7.6, "cap_reason": "closure evidence bundle and final gate alignment pending"}
+    "reliability": {"target": 10, "current": 8.1, "cap_reason": "dead-letter/idempotency breadth beyond current closure scope still pending"},
+    "observability": {"target": 10, "current": 7.1, "cap_reason": "Gate 6 auditability diagnostics proof and final validator pending"},
+    "validation": {"target": 10, "current": 7.8, "cap_reason": "final launch validator and proof-integrity validator pending"},
+    "documentation": {"target": 10, "current": 8.0, "cap_reason": "final closure bundle and Gate 7 consistency pass pending"}
   }
 }

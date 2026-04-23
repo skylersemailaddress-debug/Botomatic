@@ -39,6 +39,7 @@ All `/api/projects/*` routes are guarded by a global `requireApiAuth` middleware
 | `/api/projects/:id/governance/approval` | POST | **admin** | `requireRole("admin")` |
 | `/api/projects/:id/repair/replay` | POST | **admin** | `requireRole("admin")` |
 | `/api/projects/:id/deploy/promote` | POST | **admin** | `requireRole("admin")` |
+| `/api/projects/:id/deploy/rollback` | POST | **admin** | `requireRole("admin")` |
 
 ## Dangerous Actions
 
@@ -48,6 +49,7 @@ All `/api/projects/*` routes are guarded by a global `requireApiAuth` middleware
 | Packet execution (`dispatch/execute-next`) | reviewer | Triggers live code generation and git operations. |
 | Repair/replay (`repair/replay`) | admin | Mutates packet state and clears git history. Irreversible without manual intervention. |
 | Environment promotion (`deploy/promote`) | admin | Moves a build from staging to production. |
+| Environment rollback (`deploy/rollback`) | admin | Reverts promoted deployment state and must be traceable in audit logs. |
 
 ## Governance Boundary
 
