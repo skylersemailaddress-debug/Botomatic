@@ -17,6 +17,7 @@ type ProjectRow = {
   validations: Record<string, unknown> | null;
   git_operations: Record<string, unknown> | null;
   git_results: Record<string, unknown> | null;
+  audit_events: unknown[] | null;
   created_at: string;
   updated_at: string;
 };
@@ -37,6 +38,7 @@ function toRow(record: StoredProjectRecord): ProjectRow {
     validations: record.validations ?? null,
     git_operations: record.gitOperations ?? null,
     git_results: record.gitResults ?? null,
+    audit_events: record.auditEvents ?? null,
     created_at: record.createdAt,
     updated_at: record.updatedAt,
   };
@@ -54,6 +56,7 @@ function fromRow(row: ProjectRow): StoredProjectRecord {
     validations: row.validations,
     gitOperations: row.git_operations,
     gitResults: row.git_results,
+    auditEvents: row.audit_events,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
