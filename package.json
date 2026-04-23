@@ -10,7 +10,8 @@
     "ui:build": "npm --prefix apps/control-plane run build",
     "ui:start": "npm --prefix apps/control-plane run start",
     "control-plane:dev": "concurrently \"npm run api:dev\" \"npm run ui:dev\"",
-    "validate:all": "tsx packages/validation/src/cli.ts"
+    "validate:all": "tsx packages/validation/src/cli.ts",
+    "validate:behavioral": "tsx packages/validation/src/runtime/cli.ts"
   },
   "dependencies": {
     "@trigger.dev/sdk": "^4.4.4"

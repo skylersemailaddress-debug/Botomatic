@@ -223,6 +223,60 @@ export function validateFinalLaunchReadiness(root: string): RepoValidatorResult 
   );
 }
 
+export function validateBehavioralRuntimeCoverage(root: string): RepoValidatorResult {
+  const checks = [
+    "release-evidence/runtime/gate_negative_paths.json",
+  ];
+
+  if (!has(root, checks[0])) {
+    return result(
+      "Validate-Botomatic-BehavioralRuntimeCoverage",
+      false,
+      "Behavioral runtime evidence is missing. Run npm run validate:behavioral with runtime env configured.",
+      checks
+    );
+  }
+
+  let payload: any;
+  try {
+    payload = JSON.parse(read(root, checks[0]));
+  } catch {
+    return result(
+      "Validate-Botomatic-BehavioralRuntimeCoverage",
+      false,
+      "Behavioral runtime evidence JSON is invalid.",
+      checks
+    );
+  }
+
+  const summary = payload?.summary || {};
+  const checkNames = Array.isArray(payload?.suite?.checks)
+    ? payload.suite.checks.map((c: any) => c?.name)
+    : [];
+
+  const requiredChecks = [
+    "unauthorized_dispatch_denied",
+    "blocked_governance_promote",
+    "replay_restricted_before_approval",
+    "blocked_promote_before_ready",
+    "rollback_requires_promoted_state",
+    "audit_contains_governance_event",
+  ];
+
+  const hasAllChecks = requiredChecks.every((name) => checkNames.includes(name));
+  const ok = Number(summary.failed || 0) === 0 && hasAllChecks;
+  const proofGrade = payload?.proofGrade === "production_like" ? "production-like" : "local";
+
+  return result(
+    "Validate-Botomatic-BehavioralRuntimeCoverage",
+    ok,
+    ok
+      ? `Behavioral runtime negative-path checks passed (${proofGrade} proof).`
+      : `Behavioral runtime checks are incomplete or failing (${proofGrade} proof).`,
+    checks
+  );
+}
+
 export function runAllRepoValidators(root: string): RepoValidatorResult[] {
   return [
     validateArchitecture(root),
@@ -236,6 +290,7 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateDeploymentRollbackGate5(root),
     validateDocumentation(root),
     validateAuthGovernanceGate4(root),
+    validateBehavioralRuntimeCoverage(root),
     validateFinalLaunchReadiness(root),
   ];
 }
