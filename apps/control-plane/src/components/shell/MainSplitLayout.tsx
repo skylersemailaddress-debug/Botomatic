@@ -1,3 +1,5 @@
+import OpsPanel from "@/components/ops/OpsPanel";
+
 export default function MainSplitLayout({ left, right }: any) {
   return (
     <div
@@ -30,6 +32,7 @@ export default function MainSplitLayout({ left, right }: any) {
         }}
       >
         {right}
+        <OpsPanel />
       </div>
     </div>
   );
