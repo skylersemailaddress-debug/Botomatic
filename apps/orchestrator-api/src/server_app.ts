@@ -10,7 +10,8 @@ import { GitHubRuntime } from "../../../packages/github-adapter/src/githubRuntim
 import { enqueueJob, claimJob, finalizeJob } from "../../../packages/supabase-adapter/src/jobClient";
 import { StoredProjectRecord } from "../../../packages/supabase-adapter/src/types";
 import { RuntimeConfig } from "./config";
-import { resolveRole, type AuthContext } from "./auth/roles";
+import { type AuthContext } from "./auth/roles";
+import { verifyOidcBearerToken } from "./auth/oidc";
 
 function now(): string {
   return new Date().toISOString();
@@ -18,7 +19,7 @@ function now(): string {
 
 type RequestActor = {
   actorId: string;
-  actorSource: "x-actor-id" | "x-user-email" | "bearer_token" | "anonymous";
+  actorSource: "oidc" | "bearer_token" | "anonymous";
 };
 
 type QueueJobRecord = {
@@ -32,6 +33,10 @@ type QueueJobRecord = {
 type ChangedFile = {
   path?: string;
   body?: string;
+};
+
+type VerifiedRequestAuth = AuthContext & {
+  issuer?: string;
 };
 
 const workerId = process.env.WORKER_ID || `worker_${Math.random().toString(36).slice(2, 8)}`;
@@ -87,61 +92,86 @@ function getGitHub() {
   });
 }
 
-function getRequestActor(req: express.Request, config: RuntimeConfig): RequestActor {
-  const actorIdHeader = req.header("x-actor-id");
-  if (actorIdHeader) {
-    return { actorId: actorIdHeader, actorSource: "x-actor-id" };
-  }
-  const userEmailHeader = req.header("x-user-email");
-  if (userEmailHeader) {
-    return { actorId: userEmailHeader, actorSource: "x-user-email" };
-  }
-  if (config.auth.enabled && config.auth.token) {
+async function getVerifiedAuth(req: express.Request, config: RuntimeConfig): Promise<VerifiedRequestAuth> {
+  const authorization = req.header("authorization") || "";
+  const token = authorization.startsWith("Bearer ") ? authorization.slice(7) : "";
+
+  if (config.auth.implementation === "oidc" && config.auth.oidc) {
+    if (!token) {
+      throw new Error("Missing bearer token");
+    }
+    const identity = await verifyOidcBearerToken(token, config.auth.oidc);
     return {
-      actorId: `api_token:${String(config.auth.token).slice(0, 6)}`,
-      actorSource: "bearer_token",
+      userId: identity.userId,
+      role: identity.role,
+      issuer: identity.issuer,
     };
   }
-  return { actorId: "anonymous", actorSource: "anonymous" };
-}
 
-function getAuthContext(req: express.Request): AuthContext {
-  return resolveRole({
-    "x-role": req.header("x-role"),
-    "x-user-id": req.header("x-user-id"),
-  });
-}
-
-function requireRole(required: AuthContext["role"]): express.RequestHandler {
-  const rank: Record<AuthContext["role"], number> = { operator: 1, reviewer: 2, admin: 3 };
-  return (req, res, next) => {
-    const auth = getAuthContext(req);
-    if (rank[auth.role] < rank[required]) {
-      return res.status(403).json({ error: "Forbidden", requiredRole: required, actualRole: auth.role });
+  if (config.auth.implementation === "bearer_token" && config.auth.token) {
+    const expected = config.auth.token;
+    if (token !== expected) {
+      throw new Error("Unauthorized");
     }
-    return next();
+    return {
+      userId: `api_token:${String(expected).slice(0, 6)}`,
+      role: "admin",
+    };
+  }
+
+  return {
+    userId: "anonymous",
+    role: "operator",
+  };
+}
+
+async function getRequestActor(req: express.Request, config: RuntimeConfig): Promise<RequestActor> {
+  try {
+    const auth = await getVerifiedAuth(req, config);
+    return {
+      actorId: auth.userId,
+      actorSource: config.auth.implementation === "oidc" ? "oidc" : config.auth.implementation === "bearer_token" ? "bearer_token" : "anonymous",
+    };
+  } catch {
+    return { actorId: "anonymous", actorSource: "anonymous" };
+  }
+}
+
+function requireRole(required: AuthContext["role"], config: RuntimeConfig): express.RequestHandler {
+  const rank: Record<AuthContext["role"], number> = { operator: 1, reviewer: 2, admin: 3 };
+  return async (req, res, next) => {
+    try {
+      const auth = await getVerifiedAuth(req, config);
+      if (rank[auth.role] < rank[required]) {
+        return res.status(403).json({ error: "Forbidden", requiredRole: required, actualRole: auth.role });
+      }
+      return next();
+    } catch (error: any) {
+      return res.status(401).json({ error: String(error?.message || error) });
+    }
   };
 }
 
 function requireApiAuth(config: RuntimeConfig): express.RequestHandler {
-  return (req, res, next) => {
-    if (!config.auth.enabled || !config.auth.token) {
+  return async (req, res, next) => {
+    if (!config.auth.enabled) {
       return res.status(500).json({
         error: "API auth is not configured",
         authEnabled: config.auth.enabled,
         authImplementation: config.auth.implementation,
       });
     }
-    const authorization = req.header("authorization") || "";
-    const expected = `Bearer ${config.auth.token}`;
-    if (authorization !== expected) {
+
+    try {
+      await getVerifiedAuth(req, config);
+      return next();
+    } catch (error: any) {
       return res.status(401).json({
-        error: "Unauthorized",
+        error: String(error?.message || error),
         authEnabled: config.auth.enabled,
         authImplementation: config.auth.implementation,
       });
     }
-    return next();
   };
 }
 
@@ -435,14 +465,18 @@ export function buildApp(config: RuntimeConfig) {
   app.use(express.json());
 
   app.get("/api/health", async (req, res) => {
-    const auth = getAuthContext(req);
-    res.json({ status: "ok", appName: config.appName, runtimeMode: config.runtimeMode, repositoryMode: config.repository.mode, repositoryImplementation: config.repository.implementation, durableEnvPresent: config.durableEnvPresent, authEnabled: config.auth.enabled, authImplementation: config.auth.implementation, commitSha: config.commitSha, startupTimestamp: config.startupTimestamp, queueEnabled: true, activeWorkers, workerConcurrency, workerId, leaseMs, queueMode: "dedicated_jobs_table_parallel", role: auth.role, userId: auth.userId });
+    try {
+      const auth = await getVerifiedAuth(req, config);
+      res.json({ status: "ok", appName: config.appName, runtimeMode: config.runtimeMode, repositoryMode: config.repository.mode, repositoryImplementation: config.repository.implementation, durableEnvPresent: config.durableEnvPresent, authEnabled: config.auth.enabled, authImplementation: config.auth.implementation, commitSha: config.commitSha, startupTimestamp: config.startupTimestamp, queueEnabled: true, activeWorkers, workerConcurrency, workerId, leaseMs, queueMode: "dedicated_jobs_table_parallel", role: auth.role, userId: auth.userId, issuer: auth.issuer || null });
+    } catch {
+      res.json({ status: "ok", appName: config.appName, runtimeMode: config.runtimeMode, repositoryMode: config.repository.mode, repositoryImplementation: config.repository.implementation, durableEnvPresent: config.durableEnvPresent, authEnabled: config.auth.enabled, authImplementation: config.auth.implementation, commitSha: config.commitSha, startupTimestamp: config.startupTimestamp, queueEnabled: true, activeWorkers, workerConcurrency, workerId, leaseMs, queueMode: "dedicated_jobs_table_parallel", role: null, userId: null, issuer: null });
+    }
   });
 
   app.use("/api/projects", requireApiAuth(config));
 
   app.post("/api/projects/intake", async (req, res) => {
-    const actor = getRequestActor(req, config);
+    const actor = await getRequestActor(req, config);
     try {
       const { name, request } = req.body;
       const projectId = `proj_${Date.now()}`;
@@ -455,7 +489,7 @@ export function buildApp(config: RuntimeConfig) {
   });
 
   app.post("/api/projects/:projectId/compile", async (req, res) => {
-    const actor = getRequestActor(req, config);
+    const actor = await getRequestActor(req, config);
     try {
       const project = await repo.getProject(req.params.projectId);
       if (!project) return res.status(404).json({ error: "Project not found" });
@@ -469,7 +503,7 @@ export function buildApp(config: RuntimeConfig) {
   });
 
   app.post("/api/projects/:projectId/plan", async (req, res) => {
-    const actor = getRequestActor(req, config);
+    const actor = await getRequestActor(req, config);
     try {
       const project = await repo.getProject(req.params.projectId);
       if (!project || !project.masterTruth) return res.status(404).json({ error: "No master truth" });
@@ -483,7 +517,7 @@ export function buildApp(config: RuntimeConfig) {
   });
 
   app.post("/api/projects/:projectId/dispatch/execute-next", async (req, res) => {
-    const actor = getRequestActor(req, config);
+    const actor = await getRequestActor(req, config);
     try {
       const project = await repo.getProject(req.params.projectId);
       if (!project || !project.plan) return res.status(404).json({ error: "No plan" });
@@ -497,8 +531,8 @@ export function buildApp(config: RuntimeConfig) {
     }
   });
 
-  app.post("/api/projects/:projectId/repair/replay", requireRole("admin"), async (req, res) => {
-    const actor = getRequestActor(req, config);
+  app.post("/api/projects/:projectId/repair/replay", requireRole("admin", config), async (req, res) => {
+    const actor = await getRequestActor(req, config);
     try {
       const project = await repo.getProject(req.params.projectId);
       if (!project || !project.plan) return res.status(404).json({ error: "No plan" });
@@ -521,7 +555,7 @@ export function buildApp(config: RuntimeConfig) {
   });
 
   app.get("/api/projects/:projectId/status", async (req, res) => {
-    const actor = getRequestActor(req, config);
+    const actor = await getRequestActor(req, config);
     try {
       const project = await repo.getProject(req.params.projectId);
       if (!project) return res.status(404).json({ error: "Project not found" });
@@ -532,7 +566,7 @@ export function buildApp(config: RuntimeConfig) {
   });
 
   app.get("/api/projects/:projectId/ui/overview", async (req, res) => {
-    const actor = getRequestActor(req, config);
+    const actor = await getRequestActor(req, config);
     try {
       const project = await repo.getProject(req.params.projectId);
       if (!project) return res.status(404).json({ error: "Project not found" });
@@ -543,7 +577,7 @@ export function buildApp(config: RuntimeConfig) {
   });
 
   app.get("/api/projects/:projectId/ui/packets", async (req, res) => {
-    const actor = getRequestActor(req, config);
+    const actor = await getRequestActor(req, config);
     try {
       const project = await repo.getProject(req.params.projectId);
       if (!project) return res.status(404).json({ error: "Project not found" });
@@ -554,7 +588,7 @@ export function buildApp(config: RuntimeConfig) {
   });
 
   app.get("/api/projects/:projectId/ui/artifacts", async (req, res) => {
-    const actor = getRequestActor(req, config);
+    const actor = await getRequestActor(req, config);
     try {
       const project = await repo.getProject(req.params.projectId);
       if (!project) return res.status(404).json({ error: "Project not found" });
@@ -565,12 +599,12 @@ export function buildApp(config: RuntimeConfig) {
   });
 
   app.get("/api/projects/:projectId/ui/gate", async (req, res) => {
-    const actor = getRequestActor(req, config);
-    const auth = getAuthContext(req);
+    const actor = await getRequestActor(req, config);
     try {
+      const auth = await getVerifiedAuth(req, config);
       const project = await repo.getProject(req.params.projectId);
       if (!project) return res.status(404).json({ error: "Project not found" });
-      return res.json({ ...buildGate(project), role: auth.role, userId: auth.userId, actorId: actor.actorId, workerId });
+      return res.json({ ...buildGate(project), role: auth.role, userId: auth.userId, issuer: auth.issuer || null, actorId: actor.actorId, workerId });
     } catch (error) {
       return handleRouteError(res, config, error, "GET /api/projects/:projectId/ui/gate", actor);
     }
