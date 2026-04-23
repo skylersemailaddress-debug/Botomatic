@@ -303,6 +303,49 @@ export function validateUIControlPlaneIntegration(root: string): RepoValidatorRe
   );
 }
 
+export function validateBuilderQualityBenchmarks(root: string): RepoValidatorResult {
+  const checks = [
+    "release-evidence/benchmarks/builder_quality_cases.json",
+    "release-evidence/runtime/builder_quality_benchmark.json",
+  ];
+
+  const fileOk = checks.every((p) => has(root, p));
+  if (!fileOk) {
+    return result(
+      "Validate-Botomatic-BuilderQualityBenchmarks",
+      false,
+      "Builder quality benchmark evidence is missing. Run npm run benchmark:builder.",
+      checks
+    );
+  }
+
+  let payload: any;
+  try {
+    payload = JSON.parse(read(root, "release-evidence/runtime/builder_quality_benchmark.json"));
+  } catch {
+    return result(
+      "Validate-Botomatic-BuilderQualityBenchmarks",
+      false,
+      "Builder quality benchmark artifact is invalid JSON.",
+      checks
+    );
+  }
+
+  const avg = Number(payload?.averageScoreOutOf10 || 0);
+  const hasCases = Array.isArray(payload?.cases) && payload.cases.length >= 3;
+  const ok = hasCases && avg >= 6.0;
+  const proofGrade = payload?.proofGrade === "production_like" ? "production-like" : "local";
+
+  return result(
+    "Validate-Botomatic-BuilderQualityBenchmarks",
+    ok,
+    ok
+      ? `Builder quality benchmark is present with average ${avg}/10 (${proofGrade} proof).`
+      : `Builder benchmark average is below threshold or incomplete (${avg}/10, ${proofGrade} proof).`,
+    checks
+  );
+}
+
 export function runAllRepoValidators(root: string): RepoValidatorResult[] {
   return [
     validateArchitecture(root),
@@ -317,6 +360,7 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateDocumentation(root),
     validateAuthGovernanceGate4(root),
     validateUIControlPlaneIntegration(root),
+    validateBuilderQualityBenchmarks(root),
     validateBehavioralRuntimeCoverage(root),
     validateFinalLaunchReadiness(root),
   ];

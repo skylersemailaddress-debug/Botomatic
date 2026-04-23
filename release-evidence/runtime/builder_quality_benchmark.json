@@ -1,0 +1,63 @@
+{
+  "generatedAt": "2026-04-23T23:33:58.664Z",
+  "proofGrade": "local_static",
+  "methodology": "compiler+planner benchmark scoring",
+  "averageScoreOutOf10": 6,
+  "thresholdTarget": 8.5,
+  "cases": [
+    {
+      "id": "enterprise_crm",
+      "scoreOutOf10": 6,
+      "dimensions": {
+        "appStructure": 2,
+        "authShell": 1,
+        "dataModel": 1,
+        "workflowCompleteness": 1,
+        "validationBuildPath": 1,
+        "codeQualitySignals": 0
+      },
+      "notes": [
+        "Auth shell is not enterprise-grade (role model depth is limited).",
+        "Data model depth is below enterprise benchmark target.",
+        "Workflow modeling depth is shallow.",
+        "Support level remains bounded_prototype, not first_class."
+      ]
+    },
+    {
+      "id": "volunteer_ops",
+      "scoreOutOf10": 6,
+      "dimensions": {
+        "appStructure": 2,
+        "authShell": 1,
+        "dataModel": 1,
+        "workflowCompleteness": 1,
+        "validationBuildPath": 1,
+        "codeQualitySignals": 0
+      },
+      "notes": [
+        "Auth shell is not enterprise-grade (role model depth is limited).",
+        "Data model depth is below enterprise benchmark target.",
+        "Workflow modeling depth is shallow.",
+        "Support level remains bounded_prototype, not first_class."
+      ]
+    },
+    {
+      "id": "booking_platform",
+      "scoreOutOf10": 6,
+      "dimensions": {
+        "appStructure": 2,
+        "authShell": 1,
+        "dataModel": 1,
+        "workflowCompleteness": 1,
+        "validationBuildPath": 1,
+        "codeQualitySignals": 0
+      },
+      "notes": [
+        "Auth shell is not enterprise-grade (role model depth is limited).",
+        "Data model depth is below enterprise benchmark target.",
+        "Workflow modeling depth is shallow.",
+        "Support level remains bounded_prototype, not first_class."
+      ]
+    }
+  ]
+}

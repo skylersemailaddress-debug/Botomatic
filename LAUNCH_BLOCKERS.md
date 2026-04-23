@@ -45,7 +45,7 @@ Purpose: Central source of truth for all launch-blocking gaps preventing enterpr
 ### Builder Capability
 - Blueprint depth not fully expanded
 - Autonomy scoring not fully developed
-- Output quality not benchmarked to enterprise baseline
+- Output quality benchmark is below enterprise threshold (6.0/10 vs 8.5 target)
 
 ### Repo / Product Posture
 - Repo still describes system as MVP/scaffold

@@ -1,0 +1,17 @@
+[
+  {
+    "id": "enterprise_crm",
+    "appName": "Enterprise CRM",
+    "request": "Build an enterprise CRM with login, role based access, analytics dashboard, messaging, and customer workflow automation."
+  },
+  {
+    "id": "volunteer_ops",
+    "appName": "Volunteer Ops",
+    "request": "Need volunteer operations platform with event scheduling, communications, approval workflow, and reporting dashboard."
+  },
+  {
+    "id": "booking_platform",
+    "appName": "Booking Platform",
+    "request": "Create appointment booking system with authentication, customer portal, admin dashboard, reminders, and analytics."
+  }
+]
