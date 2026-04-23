@@ -1,0 +1,17 @@
+{
+  "status": "phase_1_initialized",
+  "overall_target": "10/10 enterprise launch",
+  "overall_cap_rules": {
+    "p0_blockers_open": "overall_score_capped_below_8"
+  },
+  "categories": {
+    "architecture": {"target": 10, "current": 7.5, "cap_reason": "docs and release posture incomplete"},
+    "builder_capability": {"target": 10, "current": 7.0, "cap_reason": "blueprint depth and output quality incomplete"},
+    "ui_control_plane": {"target": 10, "current": 2.0, "cap_reason": "no full operator UI system"},
+    "security_governance": {"target": 10, "current": 5.5, "cap_reason": "bearer auth only, no RBAC"},
+    "reliability": {"target": 10, "current": 6.5, "cap_reason": "replay exists but not full recovery system"},
+    "observability": {"target": 10, "current": 6.0, "cap_reason": "partial logs, limited metrics"},
+    "validation": {"target": 10, "current": 6.5, "cap_reason": "validation not full launch gate"},
+    "documentation": {"target": 10, "current": 6.5, "cap_reason": "scope and blockers not previously centralized"}
+  }
+}
