@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { getProjectGate } from "@/services/gate";
+import Panel from "@/components/ui/Panel";
+import StatusBadge from "@/components/ui/StatusBadge";
 
 export default function GatePanel({ projectId }: { projectId: string }) {
   const [gate, setGate] = useState<any>(null);
@@ -14,18 +16,21 @@ export default function GatePanel({ projectId }: { projectId: string }) {
     return () => clearInterval(t);
   }, [projectId]);
 
-  if (!gate) return <div style={{ padding: 16 }}>Loading gate...</div>;
+  if (!gate) return <Panel title="Launch Gate">Loading...</Panel>;
 
   return (
-    <div style={{ padding: 16, borderTop: "1px solid var(--border)" }}>
-      <strong>Launch Gate</strong>
-      <div>Status: {gate.launchStatus}</div>
-      <div>Approval: {gate.approvalStatus}</div>
+    <Panel title="Launch Gate">
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <StatusBadge status={gate.launchStatus} />
+        <StatusBadge status={gate.approvalStatus} />
+      </div>
       <div style={{ marginTop: 8 }}>
         {gate.issues?.map((i: string, idx: number) => (
-          <div key={idx} style={{ color: "var(--danger)" }}>{i}</div>
+          <div key={idx} style={{ fontSize: 12, color: "var(--danger)" }}>
+            {i}
+          </div>
         ))}
       </div>
-    </div>
+    </Panel>
   );
 }
