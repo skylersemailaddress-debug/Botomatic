@@ -12,7 +12,8 @@ Status: Active criteria
 6. Gate 7 is closed by proof-integrity validation.
 7. No P0 blockers remain open in LAUNCH_BLOCKERS.md.
 8. All required validators pass.
-9. LAUNCH_BLOCKERS.md, VALIDATION_MATRIX.md, READINESS_SCORECARD.json, and release-evidence/manifest.json agree.
+9. Proof grade is explicitly profiled in release-evidence/proof_profile.json and does not over-claim production readiness.
+10. LAUNCH_BLOCKERS.md, VALIDATION_MATRIX.md, READINESS_SCORECARD.json, release-evidence/manifest.json, and release-evidence/proof_profile.json agree.
 
 ## Explicit non-claim rule
 
