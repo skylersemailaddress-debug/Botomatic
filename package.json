@@ -1,7 +1,8 @@
 {
   "scripts": {
     "api:start": "tsx apps/orchestrator-api/src/bootstrap.ts",
-    "api:dev": "tsx apps/orchestrator-api/src/server.ts"
+    "api:dev": "tsx apps/orchestrator-api/src/server.ts",
+    "validate:all": "tsx packages/validation/src/cli.ts"
   },
   "dependencies": {
     "@trigger.dev/sdk": "^4.4.4"
