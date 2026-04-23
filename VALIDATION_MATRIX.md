@@ -24,6 +24,7 @@ Purpose: Map each launch category to required validators.
 | Builder Quality Benchmarks | Validate-Botomatic-BuilderQualityBenchmarks | IMPLEMENTED (PASS) |
 | Behavioral Runtime Coverage | Validate-Botomatic-BehavioralRuntimeCoverage | IMPLEMENTED (PASS) |
 | Observability Runtime Evidence | Validate-Botomatic-ObservabilityRuntimeEvidence | IMPLEMENTED (PASS) |
+| Production Proof Profile | Validate-Botomatic-ProductionProofProfile | IMPLEMENTED (PASS) |
 | Final Launch Readiness | Validate-Botomatic-FinalLaunchReadiness | IMPLEMENTED (ACTIVE) |
 
 ## Runtime Proof Matrix

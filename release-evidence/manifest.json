@@ -1,6 +1,6 @@
 {
-  "version": "1.0.0",
-  "generatedAt": "2026-04-23T23:06:00Z",
+  "version": "1.1.0",
+  "generatedAt": "2026-04-23T23:52:00Z",
   "gates": {
     "gate2": {
       "status": "closed_by_proof",
@@ -27,11 +27,13 @@
       "evidencePath": null
     }
   },
+  "proofProfilePath": "release-evidence/proof_profile.json",
   "launchClaim": {
     "enterpriseReady": false,
     "blockedBy": [
       "gate7_open",
-      "p0_blockers_open"
+      "p0_blockers_open",
+      "non_production_proof_grade"
     ]
   }
 }

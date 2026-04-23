@@ -1,0 +1,61 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-04-23T23:50:00Z",
+  "proofGrade": "local_runtime",
+  "enterpriseProductionProof": false,
+  "gateProofs": {
+    "gate2": {
+      "status": "closed_by_proof",
+      "proofGrade": "local_runtime",
+      "evidencePath": "docs/gate2/GATE2_RUNTIME_PROOF_2026-04-23.md"
+    },
+    "gate3": {
+      "status": "closed_by_proof",
+      "proofGrade": "local_runtime",
+      "evidencePath": "docs/gate3/GATE3_RUNTIME_PROOF_2026-04-23.md"
+    },
+    "gate4": {
+      "status": "closed_by_proof",
+      "proofGrade": "local_runtime",
+      "evidencePath": "docs/gate4/GATE4_RUNTIME_PROOF_2026-04-23.md"
+    },
+    "gate5": {
+      "status": "closed_by_proof",
+      "proofGrade": "local_runtime",
+      "evidencePath": "docs/gate5/GATE5_RUNTIME_PROOF_2026-04-23.md"
+    },
+    "gate6": {
+      "status": "closed_by_proof",
+      "proofGrade": "local_runtime",
+      "evidencePath": "docs/gate6/GATE6_RUNTIME_PROOF_2026-04-23.md"
+    },
+    "gate7": {
+      "status": "open",
+      "proofGrade": "incomplete",
+      "evidencePath": null
+    }
+  },
+  "runtimeEvidence": {
+    "behavioralNegativePaths": {
+      "artifactPath": "release-evidence/runtime/gate_negative_paths.json",
+      "proofGrade": "local_runtime"
+    },
+    "observabilityOps": {
+      "artifactPath": "release-evidence/runtime/ops_observability.json",
+      "proofGrade": "local_runtime"
+    },
+    "builderBenchmarks": {
+      "artifactPath": "release-evidence/runtime/builder_quality_benchmark.json",
+      "proofGrade": "local_runtime"
+    }
+  },
+  "productionGaps": [
+    "No independent production IdP runtime proof in this environment",
+    "No production telemetry stack proof (traces/alerts/SLO enforcement)",
+    "No production deployment environment proof bundle"
+  ],
+  "launchClaimPolicy": {
+    "canClaimEnterpriseReady": false,
+    "reason": "Proof grade is local runtime and Gate 7 remains open"
+  }
+}

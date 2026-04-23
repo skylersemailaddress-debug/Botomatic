@@ -38,8 +38,8 @@ Purpose: Central source of truth for all launch-blocking gaps preventing enterpr
 - Partial replay coverage only
 
 ### Validation / Launch Readiness
-- Validation exists but is not a full launch gate system
-- No full evidence bundle for releases
+- Validation exists but Gate 7 final closure is still open
+- Evidence bundle exists but is local-runtime grade, not production-grade
 - No strict pass/fail launch criteria enforcement
 
 ### Builder Capability

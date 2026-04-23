@@ -167,6 +167,55 @@ export function validateObservabilityRuntimeEvidence(root: string): RepoValidato
   );
 }
 
+export function validateProductionProofProfile(root: string): RepoValidatorResult {
+  const checks = [
+    "release-evidence/proof_profile.json",
+    "release-evidence/manifest.json",
+    "FINAL_LAUNCH_READINESS_CRITERIA.md",
+  ];
+
+  const fileOk = checks.every((p) => has(root, p));
+  if (!fileOk) {
+    return result(
+      "Validate-Botomatic-ProductionProofProfile",
+      false,
+      "Production proof profile is missing or incomplete.",
+      checks
+    );
+  }
+
+  let profile: any;
+  let manifest: any;
+  try {
+    profile = JSON.parse(read(root, "release-evidence/proof_profile.json"));
+    manifest = JSON.parse(read(root, "release-evidence/manifest.json"));
+  } catch {
+    return result(
+      "Validate-Botomatic-ProductionProofProfile",
+      false,
+      "Production proof profile or manifest JSON is invalid.",
+      checks
+    );
+  }
+
+  const profileIsLocal = profile?.proofGrade === "local_runtime";
+  const enterpriseFlagFalse = profile?.enterpriseProductionProof === false;
+  const hasProductionGaps = Array.isArray(profile?.productionGaps) && profile.productionGaps.length >= 2;
+  const launchPolicyBlocks = profile?.launchClaimPolicy?.canClaimEnterpriseReady === false;
+  const manifestLaunchFalse = manifest?.launchClaim?.enterpriseReady === false;
+
+  const ok = profileIsLocal && enterpriseFlagFalse && hasProductionGaps && launchPolicyBlocks && manifestLaunchFalse;
+
+  return result(
+    "Validate-Botomatic-ProductionProofProfile",
+    ok,
+    ok
+      ? "Production-proof profile is explicit and prevents false enterprise-ready claims."
+      : "Production-proof profile does not explicitly enforce non-production claim boundaries.",
+    checks
+  );
+}
+
 export function validateLaunchReadiness(root: string): RepoValidatorResult {
   const checks = [
     "VALIDATION_MATRIX.md",
@@ -429,6 +478,7 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateBuilderQualityBenchmarks(root),
     validateBehavioralRuntimeCoverage(root),
     validateObservabilityRuntimeEvidence(root),
+    validateProductionProofProfile(root),
     validateFinalLaunchReadiness(root),
   ];
 }
