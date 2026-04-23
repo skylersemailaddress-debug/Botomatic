@@ -1,6 +1,6 @@
 # Botomatic Validation Matrix
 
-Status: Phase F active
+Status: Phase G active
 Purpose: Map each launch category to required validators.
 
 ---
@@ -17,6 +17,7 @@ Purpose: Map each launch category to required validators.
 | Reliability | Validate-Botomatic-Reliability | IMPLEMENTED (PASS) |
 | Observability | Validate-Botomatic-Observability | IMPLEMENTED (PASS) |
 | Launch Readiness | Validate-Botomatic-LaunchReadiness | IMPLEMENTED (PASS) |
+| Deployment Rollback (Gate 5) | Validate-Botomatic-DeploymentRollbackGate5 | IMPLEMENTED (PASS) |
 | Documentation | Validate-Botomatic-Documentation | IMPLEMENTED (PASS) |
 | Gate 4 Auth/Governance | Validate-Botomatic-AuthGovernanceGate4 | IMPLEMENTED (PASS) |
 | Final Launch Readiness | Validate-Botomatic-FinalLaunchReadiness | IMPLEMENTED (ACTIVE) |
@@ -25,6 +26,8 @@ Purpose: Map each launch category to required validators.
 
 | Gate | Runtime Proof | Status |
 |---|---|---|
+| Gate 2 | End-to-end operator workflow scenario | PASS (2026-04-23) |
+| Gate 3 | Runtime safety/restart continuity scenario | PASS (2026-04-23) |
 | Gate 4 | Local OIDC role and governance smoke proof | PASS (2026-04-23) |
 | Gate 5 | Promote/rollback runtime scenario | PASS (2026-04-23) |
 | Gate 6 | Auditability and diagnostics scenario | PASS (2026-04-23) |

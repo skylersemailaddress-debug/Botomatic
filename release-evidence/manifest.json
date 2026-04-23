@@ -4,11 +4,11 @@
   "gates": {
     "gate2": {
       "status": "closed_by_proof",
-      "evidencePath": "pending-link-required"
+      "evidencePath": "docs/gate2/GATE2_RUNTIME_PROOF_2026-04-23.md"
     },
     "gate3": {
       "status": "closed_by_proof",
-      "evidencePath": "pending-link-required"
+      "evidencePath": "docs/gate3/GATE3_RUNTIME_PROOF_2026-04-23.md"
     },
     "gate4": {
       "status": "closed_by_proof",
@@ -31,9 +31,7 @@
     "enterpriseReady": false,
     "blockedBy": [
       "gate7_open",
-      "p0_blockers_open",
-      "gate2_evidence_link_missing",
-      "gate3_evidence_link_missing"
+      "p0_blockers_open"
     ]
   }
 }
