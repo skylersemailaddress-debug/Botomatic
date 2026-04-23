@@ -1,4 +1,8 @@
 {
+  "workspaces": [
+    "apps/control-plane",
+    "apps/orchestrator-api"
+  ],
   "scripts": {
     "api:start": "tsx apps/orchestrator-api/src/bootstrap.ts",
     "api:dev": "tsx apps/orchestrator-api/src/server.ts",
