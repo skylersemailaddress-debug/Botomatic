@@ -78,3 +78,45 @@ export async function finalizeJob(
     throw new Error(`finalizeJob failed ${res.status}: ${JSON.stringify(body)}`);
   }
 }
+
+async function getCountForStatus(status: string): Promise<number> {
+  const res = await fetch(`${URL}/rest/v1/orchestrator_jobs?status=eq.${encodeURIComponent(status)}&select=job_id`, {
+    method: "GET",
+    headers: {
+      ...headers,
+      Prefer: "count=exact",
+    },
+  });
+
+  if (!res.ok) {
+    const body = await parseJsonSafe(res);
+    throw new Error(`getQueueStats failed ${res.status}: ${JSON.stringify(body)}`);
+  }
+
+  const contentRange = res.headers.get("content-range") || "";
+  const total = Number(contentRange.split("/")[1] || 0);
+  return Number.isFinite(total) ? total : 0;
+}
+
+export async function getQueueStats(): Promise<{
+  queued: number;
+  running: number;
+  succeeded: number;
+  failed: number;
+  total: number;
+}> {
+  const [queued, running, succeeded, failed] = await Promise.all([
+    getCountForStatus("queued"),
+    getCountForStatus("running"),
+    getCountForStatus("succeeded"),
+    getCountForStatus("failed"),
+  ]);
+
+  return {
+    queued,
+    running,
+    succeeded,
+    failed,
+    total: queued + running + succeeded + failed,
+  };
+}

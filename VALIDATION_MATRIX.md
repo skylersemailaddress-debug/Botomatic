@@ -23,6 +23,7 @@ Purpose: Map each launch category to required validators.
 | UI Control-Plane Integration | Validate-Botomatic-UIControlPlaneIntegration | IMPLEMENTED (PASS) |
 | Builder Quality Benchmarks | Validate-Botomatic-BuilderQualityBenchmarks | IMPLEMENTED (PASS) |
 | Behavioral Runtime Coverage | Validate-Botomatic-BehavioralRuntimeCoverage | IMPLEMENTED (PASS) |
+| Observability Runtime Evidence | Validate-Botomatic-ObservabilityRuntimeEvidence | IMPLEMENTED (PASS) |
 | Final Launch Readiness | Validate-Botomatic-FinalLaunchReadiness | IMPLEMENTED (ACTIVE) |
 
 ## Runtime Proof Matrix
@@ -38,6 +39,7 @@ Purpose: Map each launch category to required validators.
 
 Gate 7 proof artifact (this cycle): docs/gate7/GATE7_VALIDATION_DEPTH_PROOF_2026-04-23.md
 Builder benchmark artifact: release-evidence/runtime/builder_quality_benchmark.json
+Observability runtime artifact: release-evidence/runtime/ops_observability.json
 
 ---
 

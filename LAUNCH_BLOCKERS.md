@@ -55,7 +55,7 @@ Purpose: Central source of truth for all launch-blocking gaps preventing enterpr
 
 ## P1 — Required for strong enterprise release
 
-- Full observability layer (metrics, traces, alerts)
+- Production telemetry depth (traces/alerts/SLO wiring) beyond current local runtime evidence
 - Advanced replay/repair logic
 - Expanded adapter ecosystem
 - Stronger output quality guarantees

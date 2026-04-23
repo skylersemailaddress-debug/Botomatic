@@ -1,0 +1,34 @@
+{
+  "generatedAt": "2026-04-23T23:41:54.968Z",
+  "proofGrade": "local_runtime",
+  "suite": {
+    "suite": "OpsObservability",
+    "checks": [
+      {
+        "name": "ops_metrics_endpoint_live",
+        "status": "passed",
+        "details": "expected 200 with metrics shape, got status=200"
+      },
+      {
+        "name": "ops_queue_endpoint_live",
+        "status": "passed",
+        "details": "expected 200 with queueDepth, got status=200"
+      },
+      {
+        "name": "ops_errors_endpoint_live",
+        "status": "passed",
+        "details": "expected 200 with errors array, got status=200"
+      },
+      {
+        "name": "request_id_header_present",
+        "status": "passed",
+        "details": "x-request-id=ops-metrics-proof"
+      }
+    ]
+  },
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "skipped": 0
+  }
+}
