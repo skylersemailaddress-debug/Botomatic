@@ -131,10 +131,12 @@ export function validateAuthGovernanceGate4(root: string): RepoValidatorResult {
   ];
   const fileOk = checks.every((p) => has(root, p));
   const server = fileOk ? read(root, "apps/orchestrator-api/src/server_app.ts") : "";
+  const hasAdminGuard = server.includes("requireRole(\"admin\", config)");
+  const hasReviewerGuard = server.includes("requireRole(\"reviewer\", config)");
   const ok =
     fileOk &&
-    server.includes("requireRole(\"admin\")") &&
-    server.includes("requireRole(\"reviewer\")") &&
+    hasAdminGuard &&
+    hasReviewerGuard &&
     server.includes("verifyOidcBearerToken") &&
     server.includes("requireApiAuth(config)") &&
     server.includes("/ui/gate") &&

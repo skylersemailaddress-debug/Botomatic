@@ -36,6 +36,7 @@ All `/api/projects/*` routes are guarded by a global `requireApiAuth` middleware
 | `/api/projects/:id/ui/gate` | GET | **reviewer** | `requireRole("reviewer")` |
 | `/api/projects/:id/ui/deployments` | GET | **reviewer** | `requireRole("reviewer")` |
 | `/api/projects/:id/ui/audit` | GET | **reviewer** | `requireRole("reviewer")` |
+| `/api/projects/:id/governance/approval` | POST | **admin** | `requireRole("admin")` |
 | `/api/projects/:id/repair/replay` | POST | **admin** | `requireRole("admin")` |
 | `/api/projects/:id/deploy/promote` | POST | **admin** | `requireRole("admin")` |
 
@@ -43,6 +44,7 @@ All `/api/projects/*` routes are guarded by a global `requireApiAuth` middleware
 
 | Action | Required Role | Reason |
 |---|---|---|
+| Governance approval transition (`governance/approval`) | admin | Captures runtime proof and records explicit governance approval state required for sensitive operations. |
 | Packet execution (`dispatch/execute-next`) | reviewer | Triggers live code generation and git operations. |
 | Repair/replay (`repair/replay`) | admin | Mutates packet state and clears git history. Irreversible without manual intervention. |
 | Environment promotion (`deploy/promote`) | admin | Moves a build from staging to production. |
@@ -51,7 +53,8 @@ All `/api/projects/*` routes are guarded by a global `requireApiAuth` middleware
 
 A `GovernanceApprovalState` record (model version `gate4-minimal-v1`) is maintained on every project.  
 Default state on creation: `approvalStatus: "pending"`, `runtimeProofRequired: true`.  
-Gate status (`/ui/gate`) reflects governance approval. No route currently auto-transitions approval to `"approved"` — that transition requires runtime operator action and is the closure criterion for Issue 21.
+Gate status (`/ui/gate`) reflects governance approval. Runtime operators can explicitly update this state through `POST /api/projects/:id/governance/approval`; approval cannot be set to `"approved"` until runtime proof is marked `"captured"`.
+`repair/replay` and `deploy/promote` now enforce this governance state and return `409` when proof/approval requirements are unmet.
 
 ## Implementation Files
 

@@ -102,6 +102,17 @@ function getGovernanceApprovalState(project: StoredProjectRecord): GovernanceApp
   return buildDefaultGovernanceApproval();
 }
 
+function validateGovernanceForAction(governanceApproval: GovernanceApprovalState, actionLabel: string): string[] {
+  const missing: string[] = [];
+  if (governanceApproval.runtimeProofRequired && governanceApproval.runtimeProofStatus !== "captured") {
+    missing.push(`${actionLabel} requires runtime proof to be captured.`);
+  }
+  if (governanceApproval.approvalStatus !== "approved") {
+    missing.push(`${actionLabel} requires governance approval.`);
+  }
+  return missing;
+}
+
 function ensureGovernanceApprovalState(project: StoredProjectRecord, actorId = "system") {
   const runs = ((project.runs || {}) as Record<string, unknown>);
   if (runs[governanceStateRunKey]) {
@@ -333,9 +344,11 @@ function buildOverview(project: StoredProjectRecord) {
 function buildGate(project: StoredProjectRecord) {
   const overview = buildOverview(project);
   const governanceApproval = getGovernanceApprovalState(project);
-  const approvalStatus = overview.blockers.length === 0 ? "approved" : "pending";
-  const launchStatus = overview.readiness.status === "ready" && approvalStatus === "approved" ? "ready" : overview.blockers.length > 0 ? "blocked" : "not_started";
-  return { launchStatus, approvalStatus, governanceApproval, issues: overview.blockers };
+  const governanceIssues = validateGovernanceForAction(governanceApproval, "Launch");
+  const issues = [...overview.blockers, ...governanceIssues];
+  const approvalStatus = governanceApproval.approvalStatus;
+  const launchStatus = overview.readiness.status === "ready" && issues.length === 0 ? "ready" : issues.length > 0 ? "blocked" : "not_started";
+  return { launchStatus, approvalStatus, governanceApproval, issues };
 }
 
 function buildPacketList(project: StoredProjectRecord) {
@@ -570,8 +583,16 @@ export function buildApp(config: RuntimeConfig) {
     try {
       const project = await repo.getProject(req.params.projectId);
       if (!project || !project.plan) return res.status(404).json({ error: "No plan" });
-      // TODO(gate4): enforce governance approval guard before replay in commercial runtime.
       const governanceApproval = getGovernanceApprovalState(project);
+      const missingGovernance = validateGovernanceForAction(governanceApproval, "Replay");
+      if (missingGovernance.length > 0) {
+        return res.status(409).json({
+          error: "Cannot replay: governance requirements not satisfied",
+          issues: missingGovernance,
+          governanceApprovalStatus: governanceApproval.approvalStatus,
+          runtimeProofStatus: governanceApproval.runtimeProofStatus,
+        });
+      }
       const repairablePackets = getRepairablePackets(project);
       if (repairablePackets.length === 0) return res.status(409).json({ error: "No repairable packets", actorId: actor.actorId });
       const replayed: string[] = [];
@@ -647,14 +668,78 @@ export function buildApp(config: RuntimeConfig) {
     }
   });
 
+  app.post("/api/projects/:projectId/governance/approval", requireRole("admin", config), async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+
+      const input = req.body || {};
+      const nextApprovalStatus = input.approvalStatus as GovernanceApprovalState["approvalStatus"] | undefined;
+      const nextRuntimeProofStatus = input.runtimeProofStatus as GovernanceApprovalState["runtimeProofStatus"] | undefined;
+
+      if (nextApprovalStatus && nextApprovalStatus !== "pending" && nextApprovalStatus !== "approved") {
+        return res.status(400).json({ error: "Invalid approvalStatus", allowed: ["pending", "approved"] });
+      }
+
+      if (nextRuntimeProofStatus && nextRuntimeProofStatus !== "required" && nextRuntimeProofStatus !== "captured") {
+        return res.status(400).json({ error: "Invalid runtimeProofStatus", allowed: ["required", "captured"] });
+      }
+
+      const current = getGovernanceApprovalState(project);
+      const updated: GovernanceApprovalState = {
+        ...current,
+        approvalStatus: nextApprovalStatus || current.approvalStatus,
+        runtimeProofStatus: nextRuntimeProofStatus || current.runtimeProofStatus,
+        updatedAt: now(),
+        updatedBy: actor.actorId,
+      };
+
+      if (updated.approvalStatus === "approved" && updated.runtimeProofStatus !== "captured") {
+        return res.status(409).json({
+          error: "Cannot approve governance until runtime proof is captured",
+          governanceApproval: updated,
+        });
+      }
+
+      project.governanceApproval = updated;
+      project.runs = {
+        ...((project.runs || {}) as Record<string, unknown>),
+        [governanceStateRunKey]: updated,
+      };
+      emitEvent(project as any, {
+        id: `evt_${Date.now()}`,
+        projectId: project.projectId,
+        type: "governance_approval_updated",
+        actorId: actor.actorId,
+        role: "admin",
+        timestamp: now(),
+        metadata: { approvalStatus: updated.approvalStatus, runtimeProofStatus: updated.runtimeProofStatus },
+      });
+      await persistProject(config, project);
+
+      return res.json({ success: true, governanceApproval: updated, actorId: actor.actorId });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/projects/:projectId/governance/approval", actor);
+    }
+  });
+
   app.post("/api/projects/:projectId/deploy/promote", requireRole("admin", config), async (req, res) => {
     const actor = await getRequestActor(req, config);
     try {
       const { environment } = req.body;
       const project = await repo.getProject(req.params.projectId);
       if (!project) return res.status(404).json({ error: "Project not found" });
-      // TODO(gate4): enforce explicit governance approval state before promotion once runtime proof is captured.
       const governanceApproval = getGovernanceApprovalState(project);
+      const missingGovernance = validateGovernanceForAction(governanceApproval, "Promotion");
+      if (missingGovernance.length > 0) {
+        return res.status(409).json({
+          error: "Cannot promote: governance requirements not satisfied",
+          issues: missingGovernance,
+          governanceApprovalStatus: governanceApproval.approvalStatus,
+          runtimeProofStatus: governanceApproval.runtimeProofStatus,
+        });
+      }
       const gate = buildGate(project);
       if (gate.launchStatus !== "ready") {
         return res.status(409).json({ error: "Cannot promote: gate not ready", issues: gate.issues });

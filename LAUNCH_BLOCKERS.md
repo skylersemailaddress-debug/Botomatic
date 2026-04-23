@@ -1,11 +1,22 @@
 # Botomatic Launch Blockers
 
-Status: Phase 1
+Status: Phase E active (Gate 5 in progress)
 Purpose: Central source of truth for all launch-blocking gaps preventing enterprise release.
 
 ---
 
 ## P0 — Must be closed for enterprise launch
+
+### Gate Closure Ledger
+
+| Gate | Status | Evidence |
+|---|---|---|
+| Gate 2 | Closed by proof | Prior runtime proof run (in-repo closure note not yet linked) |
+| Gate 3 | Closed by proof | Prior runtime proof run (in-repo closure note not yet linked) |
+| Gate 4 | Closed by proof (2026-04-23) | docs/gate4/GATE4_RUNTIME_PROOF_2026-04-23.md |
+| Gate 5 | Open | Rollback route/proof and deployment persistence proof pending |
+| Gate 6 | Open | Final launch validator and evidence bundle closure pending |
+| Gate 7 | Open | Repo truth consistency final pass pending |
 
 ### UI / Control Plane
 - No fully implemented operator UI system
@@ -16,10 +27,9 @@ Purpose: Central source of truth for all launch-blocking gaps preventing enterpr
 - Missing approval/repair UI
 
 ### Security / Governance
-- No enterprise identity (SSO/OIDC/SAML)
-- No RBAC
-- No approval gating for risky actions
-- No full audit log system
+- Enterprise identity runtime path lacks independent production IdP proof in this environment
+- Governance and RBAC live proof is closed for local OIDC runtime (Gate 4)
+- Full observability-grade auditability remains open under Gate 6
 
 ### Reliability / Execution
 - No defined retry policy by failure class
