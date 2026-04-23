@@ -8,7 +8,7 @@ import { runValidation } from "../../../packages/validation/src/runner";
 import { createGitOperation, GitOperationRequest, GitOperationResult } from "../../../packages/github-adapter/src/operations";
 import { GitHubRuntime } from "../../../packages/github-adapter/src/githubRuntime";
 import { enqueueJob, claimJob, finalizeJob } from "../../../packages/supabase-adapter/src/jobClient";
-import { StoredProjectRecord } from "../../../packages/supabase-adapter/src/types";
+import { GovernanceApprovalState, StoredProjectRecord } from "../../../packages/supabase-adapter/src/types";
 import { RuntimeConfig } from "./config";
 import { type AuthContext } from "./auth/roles";
 import { verifyOidcBearerToken } from "./auth/oidc";
@@ -36,6 +36,7 @@ type ChangedFile = {
 const workerId = process.env.WORKER_ID || `worker_${Math.random().toString(36).slice(2, 8)}`;
 const leaseMs = Number(process.env.QUEUE_LEASE_MS || 30000);
 const workerConcurrency = Math.max(1, Number(process.env.WORKER_CONCURRENCY || 2));
+const governanceStateRunKey = "__governanceGate4Approval";
 let workerStarted = false;
 let activeWorkers = 0;
 
@@ -48,6 +49,7 @@ function toStored(record: {
   name: string;
   request: string;
   status: string;
+  governanceApproval?: GovernanceApprovalState;
   masterTruth?: any;
   plan?: any;
   runs?: any;
@@ -63,6 +65,7 @@ function toStored(record: {
     name: record.name,
     request: record.request,
     status: record.status,
+    governanceApproval: record.governanceApproval ?? null,
     masterTruth: record.masterTruth ?? null,
     plan: record.plan ?? null,
     runs: record.runs ?? null,
@@ -74,6 +77,42 @@ function toStored(record: {
     ...(record.deployments ? { deployments: record.deployments } : {}),
     ...(record.auditEvents ? { auditEvents: record.auditEvents } : {}),
   } as StoredProjectRecord;
+}
+
+function buildDefaultGovernanceApproval(actorId = "system"): GovernanceApprovalState {
+  return {
+    modelVersion: "gate4-minimal-v1",
+    approvalStatus: "pending",
+    runtimeProofRequired: true,
+    runtimeProofStatus: "required",
+    updatedAt: now(),
+    updatedBy: actorId,
+  };
+}
+
+function getGovernanceApprovalState(project: StoredProjectRecord): GovernanceApprovalState {
+  const runs = ((project.runs || {}) as Record<string, unknown>);
+  const fromRuns = runs[governanceStateRunKey] as GovernanceApprovalState | undefined;
+  if (fromRuns && fromRuns.modelVersion === "gate4-minimal-v1") {
+    return fromRuns;
+  }
+  if (project.governanceApproval && project.governanceApproval.modelVersion === "gate4-minimal-v1") {
+    return project.governanceApproval;
+  }
+  return buildDefaultGovernanceApproval();
+}
+
+function ensureGovernanceApprovalState(project: StoredProjectRecord, actorId = "system") {
+  const runs = ((project.runs || {}) as Record<string, unknown>);
+  if (runs[governanceStateRunKey]) {
+    project.governanceApproval = getGovernanceApprovalState(project);
+    return;
+  }
+  const governance = project.governanceApproval && project.governanceApproval.modelVersion === "gate4-minimal-v1"
+    ? project.governanceApproval
+    : buildDefaultGovernanceApproval(actorId);
+  project.runs = { ...runs, [governanceStateRunKey]: governance };
+  project.governanceApproval = governance;
 }
 
 function getExecutor() {
@@ -263,6 +302,7 @@ function validateChangedFiles(changedFiles: ChangedFile[]) {
 }
 
 async function persistProject(config: RuntimeConfig, project: StoredProjectRecord) {
+  ensureGovernanceApprovalState(project);
   (project as any).updatedAt = now();
   await config.repository.repo.upsertProject(project);
 }
@@ -292,9 +332,10 @@ function buildOverview(project: StoredProjectRecord) {
 
 function buildGate(project: StoredProjectRecord) {
   const overview = buildOverview(project);
+  const governanceApproval = getGovernanceApprovalState(project);
   const approvalStatus = overview.blockers.length === 0 ? "approved" : "pending";
   const launchStatus = overview.readiness.status === "ready" && approvalStatus === "approved" ? "ready" : overview.blockers.length > 0 ? "blocked" : "not_started";
-  return { launchStatus, approvalStatus, issues: overview.blockers };
+  return { launchStatus, approvalStatus, governanceApproval, issues: overview.blockers };
 }
 
 function buildPacketList(project: StoredProjectRecord) {
@@ -469,7 +510,8 @@ export function buildApp(config: RuntimeConfig) {
     try {
       const { name, request } = req.body;
       const projectId = `proj_${Date.now()}`;
-      const project = toStored({ projectId, name, request, status: "clarifying" });
+      const project = toStored({ projectId, name, request, status: "clarifying", governanceApproval: buildDefaultGovernanceApproval(actor.actorId) });
+      ensureGovernanceApprovalState(project, actor.actorId);
       emitEvent(project as any, { id: `evt_${Date.now()}`, projectId, type: "intake", actorId: actor.actorId, timestamp: now(), metadata: { name } });
       await repo.upsertProject(project);
       return res.json({ projectId, status: project.status, actorId: actor.actorId });
@@ -528,6 +570,8 @@ export function buildApp(config: RuntimeConfig) {
     try {
       const project = await repo.getProject(req.params.projectId);
       if (!project || !project.plan) return res.status(404).json({ error: "No plan" });
+      // TODO(gate4): enforce governance approval guard before replay in commercial runtime.
+      const governanceApproval = getGovernanceApprovalState(project);
       const repairablePackets = getRepairablePackets(project);
       if (repairablePackets.length === 0) return res.status(409).json({ error: "No repairable packets", actorId: actor.actorId });
       const replayed: string[] = [];
@@ -541,7 +585,7 @@ export function buildApp(config: RuntimeConfig) {
       recomputeProjectStatus(project);
       emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "repair_replay", actorId: actor.actorId, role: "admin", timestamp: now(), metadata: { replayed } });
       await persistProject(config, project);
-      return res.status(202).json({ accepted: true, replayed, actorId: actor.actorId, workerId });
+      return res.status(202).json({ accepted: true, replayed, governanceApprovalStatus: governanceApproval.approvalStatus, actorId: actor.actorId, workerId });
     } catch (error) {
       return handleRouteError(res, config, error, "POST /api/projects/:projectId/repair/replay", actor);
     }
@@ -609,6 +653,8 @@ export function buildApp(config: RuntimeConfig) {
       const { environment } = req.body;
       const project = await repo.getProject(req.params.projectId);
       if (!project) return res.status(404).json({ error: "Project not found" });
+      // TODO(gate4): enforce explicit governance approval state before promotion once runtime proof is captured.
+      const governanceApproval = getGovernanceApprovalState(project);
       const gate = buildGate(project);
       if (gate.launchStatus !== "ready") {
         return res.status(409).json({ error: "Cannot promote: gate not ready", issues: gate.issues });
@@ -617,7 +663,7 @@ export function buildApp(config: RuntimeConfig) {
       (project as any).deployments[environment] = { environment, status: "promoted", promotedAt: now(), promotedBy: actor.actorId };
       emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "promote", actorId: actor.actorId, role: "admin", timestamp: now(), metadata: { environment } });
       await persistProject(config, project);
-      return res.json({ success: true, environment, actorId: actor.actorId });
+      return res.json({ success: true, environment, governanceApprovalStatus: governanceApproval.approvalStatus, actorId: actor.actorId });
     } catch (error) {
       return handleRouteError(res, config, error, "POST deploy/promote", actor);
     }
