@@ -36,9 +36,14 @@ function decodeJwtPart<T = any>(value: string): T {
 }
 
 export function mapClaimsToRole(claims: Record<string, any>): VerifiedIdentity["role"] {
-  const roleClaim = claims["https://botomatic.dev/role"] || claims.role;
-  if (roleClaim === "admin") return "admin";
-  if (roleClaim === "reviewer") return "reviewer";
+  const roleClaim = claims["https://botomatic.dev/role"] ?? claims.role;
+
+  if (typeof roleClaim === "string") {
+    if (roleClaim === "admin") return "admin";
+    if (roleClaim === "reviewer") return "reviewer";
+    if (roleClaim === "operator") return "operator";
+  }
+
   return "operator";
 }
 
