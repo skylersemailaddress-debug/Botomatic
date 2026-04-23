@@ -3,7 +3,7 @@ import { DurableProjectRepository } from "../../../packages/supabase-adapter/src
 import { ProjectRepository } from "../../../packages/supabase-adapter/src/types";
 
 export type RepositoryMode = "memory" | "durable";
-export type AuthImplementation = "bearer_token" | "disabled";
+export type AuthImplementation = "bearer_token" | "oidc" | "disabled";
 export type RuntimeMode = "commercial" | "development";
 
 export type RepositoryContext = {
@@ -12,10 +12,17 @@ export type RepositoryContext = {
   implementation: string;
 };
 
+export type OidcConfig = {
+  issuerUrl: string;
+  clientId: string;
+  audience?: string;
+};
+
 export type AuthContext = {
   enabled: boolean;
   implementation: AuthImplementation;
   token?: string;
+  oidc?: OidcConfig;
 };
 
 export type RuntimeConfig = {
@@ -82,6 +89,21 @@ function createRepositoryContext(runtimeMode: RuntimeMode): RepositoryContext {
 }
 
 function createAuthContext(runtimeMode: RuntimeMode): AuthContext {
+  const oidcIssuer = process.env.OIDC_ISSUER_URL;
+  const oidcClientId = process.env.OIDC_CLIENT_ID;
+
+  if (oidcIssuer && oidcClientId) {
+    return {
+      enabled: true,
+      implementation: "oidc",
+      oidc: {
+        issuerUrl: oidcIssuer,
+        clientId: oidcClientId,
+        audience: process.env.OIDC_AUDIENCE,
+      },
+    };
+  }
+
   const token = process.env.API_AUTH_TOKEN;
 
   if (token) {
@@ -93,7 +115,7 @@ function createAuthContext(runtimeMode: RuntimeMode): AuthContext {
   }
 
   if (runtimeMode === "commercial") {
-    throw new Error("Commercial mode requires API_AUTH_TOKEN");
+    throw new Error("Commercial mode requires OIDC or API_AUTH_TOKEN");
   }
 
   return {
