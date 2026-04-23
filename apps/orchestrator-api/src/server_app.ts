@@ -154,9 +154,44 @@ function handleRouteError(res: express.Response, config: RuntimeConfig, error: u
   });
 }
 
+function getPackets(project: StoredProjectRecord): any[] {
+  const plan = (project.plan || {}) as any;
+  return Array.isArray(plan.packets) ? plan.packets : [];
+}
+
+function recomputeProjectStatus(project: StoredProjectRecord) {
+  const packets = getPackets(project);
+  if (packets.length === 0) {
+    project.status = "queued";
+    return;
+  }
+
+  if (packets.every((packet: any) => packet.status === "complete")) {
+    project.status = "complete";
+    return;
+  }
+
+  if (packets.some((packet: any) => packet.status === "executing")) {
+    project.status = "executing";
+    return;
+  }
+
+  if (packets.some((packet: any) => packet.status === "pending")) {
+    project.status = "queued";
+    return;
+  }
+
+  if (packets.some((packet: any) => packet.status === "blocked")) {
+    project.status = "blocked";
+    return;
+  }
+
+  project.status = "queued";
+}
+
 function setPacketStatus(project: StoredProjectRecord, packetId: string, status: string) {
   const plan = (project.plan || {}) as any;
-  const packets = Array.isArray(plan.packets) ? plan.packets : [];
+  const packets = getPackets(project);
   project.plan = {
     ...plan,
     packets: packets.map((packet: any) => packet.packetId === packetId ? { ...packet, status, updatedAt: now() } : packet),
@@ -164,20 +199,15 @@ function setPacketStatus(project: StoredProjectRecord, packetId: string, status:
 }
 
 function getPacket(project: StoredProjectRecord, packetId: string) {
-  const plan = (project.plan || {}) as any;
-  const packets = Array.isArray(plan.packets) ? plan.packets : [];
-  return packets.find((packet: any) => packet.packetId === packetId) || null;
+  return getPackets(project).find((packet: any) => packet.packetId === packetId) || null;
 }
 
 function getNextPendingPacket(project: StoredProjectRecord) {
-  const plan = (project.plan || {}) as any;
-  const packets = Array.isArray(plan.packets) ? plan.packets : [];
-  return packets.find((packet: any) => packet.status === "pending") || null;
+  return getPackets(project).find((packet: any) => packet.status === "pending") || null;
 }
 
 function getRepairablePackets(project: StoredProjectRecord) {
-  const plan = (project.plan || {}) as any;
-  const packets = Array.isArray(plan.packets) ? plan.packets : [];
+  const packets = getPackets(project);
   const gitResults = (project.gitResults || {}) as Record<string, GitOperationResult>;
 
   return packets.filter((packet: any) => {
@@ -360,7 +390,7 @@ async function processJob(config: RuntimeConfig, job: QueueJobRecord) {
   }
 
   setPacketStatus(project, packet.packetId, "executing");
-  project.status = "executing";
+  recomputeProjectStatus(project);
   await persistProject(config, project);
 
   try {
@@ -375,10 +405,10 @@ async function processJob(config: RuntimeConfig, job: QueueJobRecord) {
     });
 
     if (!result.success) {
-      const failedState = markPacketFailed({ projectId: project.projectId, status: project.status as any, packets: ((project.plan as any)?.packets || []), runs: project.runs as any }, packet.packetId);
+      const failedState = markPacketFailed({ projectId: project.projectId, status: project.status as any, packets: getPackets(project), runs: project.runs as any }, packet.packetId);
       project.plan = { ...((project.plan as any) || {}), packets: failedState.packets };
-      project.status = failedState.status;
       project.runs = failedState.runs || project.runs;
+      recomputeProjectStatus(project);
       await persistProject(config, project);
       await finalizeJob(job.job_id, "failed", result.summary);
       return;
@@ -389,17 +419,17 @@ async function processJob(config: RuntimeConfig, job: QueueJobRecord) {
     const validation = runValidation(project.projectId, packet.packetId);
     project.validations = { ...((project.validations || {}) as Record<string, unknown>), [packet.packetId]: validation };
 
-    const completedState = markPacketComplete({ projectId: project.projectId, status: project.status as any, packets: ((project.plan as any)?.packets || []), runs: project.runs as any }, packet.packetId);
+    const completedState = markPacketComplete({ projectId: project.projectId, status: project.status as any, packets: getPackets(project), runs: project.runs as any }, packet.packetId);
     project.plan = { ...((project.plan as any) || {}), packets: completedState.packets };
-    project.status = completedState.status;
     project.runs = completedState.runs || project.runs;
+    recomputeProjectStatus(project);
     await persistProject(config, project);
     await finalizeJob(job.job_id, "succeeded");
   } catch (error: any) {
-    const failedState = markPacketFailed({ projectId: project.projectId, status: project.status as any, packets: ((project.plan as any)?.packets || []), runs: project.runs as any }, packet.packetId);
+    const failedState = markPacketFailed({ projectId: project.projectId, status: project.status as any, packets: getPackets(project), runs: project.runs as any }, packet.packetId);
     project.plan = { ...((project.plan as any) || {}), packets: failedState.packets };
-    project.status = failedState.status;
     project.runs = failedState.runs || project.runs;
+    recomputeProjectStatus(project);
     await persistProject(config, project);
     await finalizeJob(job.job_id, "failed", String(error?.message || error));
   }
@@ -581,7 +611,7 @@ export function buildApp(config: RuntimeConfig) {
         replayed.push(packet.packetId);
       }
 
-      project.status = "queued";
+      recomputeProjectStatus(project);
       await persistProject(config, project);
 
       return res.status(202).json({
