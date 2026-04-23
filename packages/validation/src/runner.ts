@@ -1,10 +1,10 @@
 import { exec } from "child_process";
 import { promisify } from "util";
-import { ValidationRecord } from "./types";
+import { ValidationRecord, ValidationCheckResult } from "./types";
 
 const execAsync = promisify(exec);
 
-async function runCommand(command: string) {
+async function runCommand(command: string): Promise<ValidationCheckResult> {
   const start = new Date().toISOString();
   try {
     const { stdout, stderr } = await execAsync(command, { timeout: 120000 });
@@ -33,12 +33,12 @@ export async function runValidation(projectId: string, packetId: string): Promis
 
   const checks = [
     "npm install",
-    "npm run lint || true",
-    "npm run typecheck || true",
+    "npm run lint",
+    "npm run typecheck",
     "npm run build"
   ];
 
-  const results = [];
+  const results: ValidationCheckResult[] = [];
 
   for (const cmd of checks) {
     const result = await runCommand(cmd);
@@ -52,8 +52,9 @@ export async function runValidation(projectId: string, packetId: string): Promis
     projectId,
     packetId,
     status: overallStatus,
-    checks: checks,
-    summary: JSON.stringify(results, null, 2),
+    checks,
+    checkResults: results,
+    summary: overallStatus === "passed" ? "All checks passed" : "Validation failed",
     createdAt: now,
     updatedAt: new Date().toISOString()
   };
