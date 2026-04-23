@@ -124,6 +124,31 @@ export function validateDocumentation(root: string): RepoValidatorResult {
   return result("Validate-Botomatic-Documentation", ok, ok ? "Core scope, blockers, validation matrix, and scorecard docs exist." : "Required launch documentation files are missing.", checks);
 }
 
+export function validateAuthGovernanceGate4(root: string): RepoValidatorResult {
+  const checks = [
+    "apps/orchestrator-api/src/server_app.ts",
+    "apps/orchestrator-api/src/auth/oidc.ts",
+  ];
+  const fileOk = checks.every((p) => has(root, p));
+  const server = fileOk ? read(root, "apps/orchestrator-api/src/server_app.ts") : "";
+  const ok =
+    fileOk &&
+    server.includes("requireRole(\"admin\")") &&
+    server.includes("requireRole(\"reviewer\")") &&
+    server.includes("verifyOidcBearerToken") &&
+    server.includes("requireApiAuth(config)") &&
+    server.includes("/ui/gate") &&
+    server.includes("/deploy/promote");
+  return result(
+    "Validate-Botomatic-AuthGovernanceGate4",
+    ok,
+    ok
+      ? "Auth roles, OIDC wiring, and governance endpoints are present; runtime proof still required for Gate 4 closure"
+      : "Gate 4 auth/governance wiring is incomplete; runtime proof still required for Gate 4 closure",
+    checks
+  );
+}
+
 export function runAllRepoValidators(root: string): RepoValidatorResult[] {
   return [
     validateArchitecture(root),
@@ -135,5 +160,6 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateObservability(root),
     validateLaunchReadiness(root),
     validateDocumentation(root),
+    validateAuthGovernanceGate4(root),
   ];
 }
