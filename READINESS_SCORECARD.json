@@ -6,7 +6,7 @@
   },
   "categories": {
     "architecture": {"target": 10, "current": 7.8, "cap_reason": "release posture and final closure docs still incomplete"},
-    "builder_capability": {"target": 10, "current": 7.2, "cap_reason": "blueprint depth and benchmark quality evidence still incomplete"},
+    "builder_capability": {"target": 10, "current": 6.0, "cap_reason": "benchmark now exists but averages 6.0/10 with shallow data/workflow depth and bounded_prototype support"},
     "ui_control_plane": {"target": 10, "current": 7.4, "cap_reason": "final Gate 6 diagnostics closure still pending"},
     "security_governance": {"target": 10, "current": 8.4, "cap_reason": "Gate 4 is closed by local runtime proof; production IdP/runtime environment proof still pending"},
     "reliability": {"target": 10, "current": 8.1, "cap_reason": "dead-letter/idempotency breadth beyond current closure scope still pending"},

@@ -21,6 +21,7 @@ Purpose: Map each launch category to required validators.
 | Documentation | Validate-Botomatic-Documentation | IMPLEMENTED (PASS) |
 | Gate 4 Auth/Governance | Validate-Botomatic-AuthGovernanceGate4 | IMPLEMENTED (PASS) |
 | UI Control-Plane Integration | Validate-Botomatic-UIControlPlaneIntegration | IMPLEMENTED (PASS) |
+| Builder Quality Benchmarks | Validate-Botomatic-BuilderQualityBenchmarks | IMPLEMENTED (PASS) |
 | Behavioral Runtime Coverage | Validate-Botomatic-BehavioralRuntimeCoverage | IMPLEMENTED (PASS) |
 | Final Launch Readiness | Validate-Botomatic-FinalLaunchReadiness | IMPLEMENTED (ACTIVE) |
 
@@ -36,6 +37,7 @@ Purpose: Map each launch category to required validators.
 | Gate 7 | Proof-integrity consistency scenario | PENDING |
 
 Gate 7 proof artifact (this cycle): docs/gate7/GATE7_VALIDATION_DEPTH_PROOF_2026-04-23.md
+Builder benchmark artifact: release-evidence/runtime/builder_quality_benchmark.json
 
 ---
 
