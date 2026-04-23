@@ -1,0 +1,19 @@
+BOTOMATIC ONE-CLICK LAUNCH
+
+Save this as Launch-Botomatic.ps1 on your desktop and run it with PowerShell.
+
+param(
+  [string]$RepoPath = "C:\Botomatic"
+)
+
+$packageJson = Join-Path $RepoPath "package.json"
+if (-not (Test-Path $packageJson)) {
+  Write-Host "Botomatic repo not found at $RepoPath"
+  exit 1
+}
+
+Set-Location $RepoPath
+Start-Process powershell -ArgumentList '-NoExit','-Command','$env:API_AUTH_ENABLED="true"; $env:API_AUTH_IMPLEMENTATION="bearer_token"; $env:API_AUTH_TOKEN="dev-api-token"; npm run api:start'
+Start-Process powershell -ArgumentList '-NoExit','-Command','npm run dev'
+Write-Host "Botomatic launch started."
+Write-Host "API token: dev-api-token"
