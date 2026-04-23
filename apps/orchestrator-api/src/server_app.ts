@@ -508,7 +508,7 @@ export function buildApp(config: RuntimeConfig) {
     }
   });
 
-  app.post("/api/projects/:projectId/dispatch/execute-next", async (req, res) => {
+  app.post("/api/projects/:projectId/dispatch/execute-next", requireRole("reviewer", config), async (req, res) => {
     const actor = await getRequestActor(req, config);
     try {
       const project = await repo.getProject(req.params.projectId);
