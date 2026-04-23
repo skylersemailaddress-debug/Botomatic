@@ -38,7 +38,7 @@ Purpose: Map each launch category to required validators.
 | Gate 6 | Auditability and diagnostics scenario | PASS (2026-04-23) |
 | Gate 7 | Proof-integrity consistency scenario | PENDING |
 
-Gate 7 proof artifact (this cycle): docs/gate7/GATE7_VALIDATION_DEPTH_PROOF_2026-04-23.md
+Gate 7 proof artifact (this cycle): docs/gate7/GATE7_FINAL_CLOSURE_AUDIT_2026-04-23.md
 Builder benchmark artifact: release-evidence/runtime/builder_quality_benchmark.json
 Observability runtime artifact: release-evidence/runtime/ops_observability.json
 
