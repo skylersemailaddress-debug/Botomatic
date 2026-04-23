@@ -20,6 +20,7 @@ Purpose: Map each launch category to required validators.
 | Deployment Rollback (Gate 5) | Validate-Botomatic-DeploymentRollbackGate5 | IMPLEMENTED (PASS) |
 | Documentation | Validate-Botomatic-Documentation | IMPLEMENTED (PASS) |
 | Gate 4 Auth/Governance | Validate-Botomatic-AuthGovernanceGate4 | IMPLEMENTED (PASS) |
+| UI Control-Plane Integration | Validate-Botomatic-UIControlPlaneIntegration | IMPLEMENTED (PASS) |
 | Behavioral Runtime Coverage | Validate-Botomatic-BehavioralRuntimeCoverage | IMPLEMENTED (PASS) |
 | Final Launch Readiness | Validate-Botomatic-FinalLaunchReadiness | IMPLEMENTED (ACTIVE) |
 

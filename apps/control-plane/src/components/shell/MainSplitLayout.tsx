@@ -29,6 +29,8 @@ export default function MainSplitLayout({ left, right }: any) {
           display: "flex",
           flexDirection: "column",
           gap: 12,
+          overflowY: "auto",
+          paddingRight: 4,
         }}
       >
         {right}
