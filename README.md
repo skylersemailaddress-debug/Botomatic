@@ -15,6 +15,34 @@ Botomatic is being built as an enterprise autobuilder control plane that:
 
 See `PRODUCT_SCOPE.md` for the canonical product definition.
 
+## Operator quick start (Phase A bootstrap)
+
+### Requirements
+- Node.js (LTS recommended)
+- npm
+
+### Install
+
+```bash
+npm install
+```
+
+### Start control plane (API + UI)
+
+```bash
+npm run control-plane:dev
+```
+
+Expected:
+- API boots successfully
+- Control-plane UI starts (Next.js dev server)
+
+### Validate
+
+```bash
+npm run validate:all
+```
+
 ## Current implemented surface
 
 The current repository includes a meaningful control-plane backend with:
@@ -36,25 +64,9 @@ Botomatic is governed by a locked enterprise launch contract in this repository:
 - `VALIDATION_MATRIX.md`
 - `PRODUCT_SCOPE.md`
 
-These files define:
-- how launch readiness is scored
-- what blockers cap readiness
-- what evidence is required
-- what validators must pass
-
 ## Current launch status
 
 Botomatic is not yet at enterprise launch readiness.
-
-Current major gaps include:
-- full operator UI / control plane product surface
-- enterprise identity and RBAC
-- governance and approval controls
-- deeper reliability and recovery behavior
-- broader builder depth and output quality guarantees
-- full observability and launch-gate coverage
-
-See `LAUNCH_BLOCKERS.md` for the source of truth.
 
 ## Principles
 
