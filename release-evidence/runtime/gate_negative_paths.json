@@ -1,0 +1,54 @@
+{
+  "generatedAt": "2026-04-23T23:28:59.859Z",
+  "proofGrade": "local_runtime",
+  "suite": {
+    "suite": "GateNegativePaths",
+    "checks": [
+      {
+        "name": "unauthorized_dispatch_denied",
+        "status": "passed",
+        "details": "expected 403, got 403"
+      },
+      {
+        "name": "blocked_governance_promote",
+        "status": "passed",
+        "details": "expected governance 409, got 409"
+      },
+      {
+        "name": "replay_restricted_before_approval",
+        "status": "passed",
+        "details": "expected replay 409, got 409"
+      },
+      {
+        "name": "reviewer_denied_admin_route",
+        "status": "passed",
+        "details": "expected 403, got 403"
+      },
+      {
+        "name": "admin_governance_approval",
+        "status": "passed",
+        "details": "expected 200, got 200"
+      },
+      {
+        "name": "blocked_promote_before_ready",
+        "status": "passed",
+        "details": "expected gate-not-ready 409, got 409"
+      },
+      {
+        "name": "rollback_requires_promoted_state",
+        "status": "passed",
+        "details": "expected 409, got 409"
+      },
+      {
+        "name": "audit_contains_governance_event",
+        "status": "passed",
+        "details": "expected governance event in audit, status=200"
+      }
+    ]
+  },
+  "summary": {
+    "passed": 8,
+    "failed": 0,
+    "skipped": 0
+  }
+}
