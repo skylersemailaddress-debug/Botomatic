@@ -19,6 +19,7 @@ Purpose: Map each launch category to required validators.
 | Launch Readiness | Validate-Botomatic-LaunchReadiness | IMPLEMENTED (PASS) |
 | Documentation | Validate-Botomatic-Documentation | IMPLEMENTED (PASS) |
 | Gate 4 Auth/Governance | Validate-Botomatic-AuthGovernanceGate4 | IMPLEMENTED (PASS) |
+| Final Launch Readiness | Validate-Botomatic-FinalLaunchReadiness | IMPLEMENTED (ACTIVE) |
 
 ## Runtime Proof Matrix
 
@@ -26,7 +27,7 @@ Purpose: Map each launch category to required validators.
 |---|---|---|
 | Gate 4 | Local OIDC role and governance smoke proof | PASS (2026-04-23) |
 | Gate 5 | Promote/rollback runtime scenario | PASS (2026-04-23) |
-| Gate 6 | Auditability and diagnostics scenario | PENDING |
+| Gate 6 | Auditability and diagnostics scenario | PASS (2026-04-23) |
 | Gate 7 | Proof-integrity consistency scenario | PENDING |
 
 ---

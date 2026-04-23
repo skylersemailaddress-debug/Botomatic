@@ -1,0 +1,39 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-04-23T23:06:00Z",
+  "gates": {
+    "gate2": {
+      "status": "closed_by_proof",
+      "evidencePath": "pending-link-required"
+    },
+    "gate3": {
+      "status": "closed_by_proof",
+      "evidencePath": "pending-link-required"
+    },
+    "gate4": {
+      "status": "closed_by_proof",
+      "evidencePath": "docs/gate4/GATE4_RUNTIME_PROOF_2026-04-23.md"
+    },
+    "gate5": {
+      "status": "closed_by_proof",
+      "evidencePath": "docs/gate5/GATE5_RUNTIME_PROOF_2026-04-23.md"
+    },
+    "gate6": {
+      "status": "closed_by_proof",
+      "evidencePath": "docs/gate6/GATE6_RUNTIME_PROOF_2026-04-23.md"
+    },
+    "gate7": {
+      "status": "open",
+      "evidencePath": null
+    }
+  },
+  "launchClaim": {
+    "enterpriseReady": false,
+    "blockedBy": [
+      "gate7_open",
+      "p0_blockers_open",
+      "gate2_evidence_link_missing",
+      "gate3_evidence_link_missing"
+    ]
+  }
+}

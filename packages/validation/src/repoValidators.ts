@@ -177,6 +177,52 @@ export function validateAuthGovernanceGate4(root: string): RepoValidatorResult {
   );
 }
 
+export function validateFinalLaunchReadiness(root: string): RepoValidatorResult {
+  const checks = [
+    "LAUNCH_BLOCKERS.md",
+    "VALIDATION_MATRIX.md",
+    "READINESS_SCORECARD.json",
+    "FINAL_LAUNCH_READINESS_CRITERIA.md",
+    "release-evidence/manifest.json",
+    "docs/gate4/GATE4_RUNTIME_PROOF_2026-04-23.md",
+    "docs/gate5/GATE5_RUNTIME_PROOF_2026-04-23.md",
+    "docs/gate6/GATE6_RUNTIME_PROOF_2026-04-23.md",
+  ];
+  const fileOk = checks.every((p) => has(root, p));
+  if (!fileOk) {
+    return result(
+      "Validate-Botomatic-FinalLaunchReadiness",
+      false,
+      "Final launch readiness bundle is incomplete.",
+      checks
+    );
+  }
+
+  const blockers = read(root, "LAUNCH_BLOCKERS.md");
+  const matrix = read(root, "VALIDATION_MATRIX.md");
+  const manifest = JSON.parse(read(root, "release-evidence/manifest.json")) as any;
+
+  const gate2Closed = blockers.includes("| Gate 2 | Closed by proof");
+  const gate3Closed = blockers.includes("| Gate 3 | Closed by proof");
+  const gate4Closed = blockers.includes("| Gate 4 | Closed by proof");
+  const gate5Closed = blockers.includes("| Gate 5 | Closed by proof");
+  const gate6Closed = blockers.includes("| Gate 6 | Closed by proof");
+  const noP0Open = !blockers.includes("| Gate 7 | Open") && !blockers.includes("No fully implemented operator UI system");
+  const validatorsImplemented = matrix.includes("Validate-Botomatic-FinalLaunchReadiness") && matrix.includes("Validate-Botomatic-DeploymentRollbackGate5");
+  const manifestAligned = manifest?.gates?.gate4?.status === "closed_by_proof" && manifest?.gates?.gate5?.status === "closed_by_proof" && manifest?.gates?.gate6?.status === "closed_by_proof";
+
+  const ok = gate2Closed && gate3Closed && gate4Closed && gate5Closed && gate6Closed && noP0Open && validatorsImplemented && manifestAligned;
+
+  return result(
+    "Validate-Botomatic-FinalLaunchReadiness",
+    ok,
+    ok
+      ? "Final launch criteria are satisfied and enterprise launch can be claimed."
+      : "Final launch criteria are not yet satisfied; enterprise launch claim remains blocked.",
+    checks
+  );
+}
+
 export function runAllRepoValidators(root: string): RepoValidatorResult[] {
   return [
     validateArchitecture(root),
@@ -190,5 +236,6 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateDeploymentRollbackGate5(root),
     validateDocumentation(root),
     validateAuthGovernanceGate4(root),
+    validateFinalLaunchReadiness(root),
   ];
 }
