@@ -1,6 +1,6 @@
 # Botomatic Validation Matrix
 
-Status: Phase E active
+Status: Phase F active
 Purpose: Map each launch category to required validators.
 
 ---
@@ -25,7 +25,7 @@ Purpose: Map each launch category to required validators.
 | Gate | Runtime Proof | Status |
 |---|---|---|
 | Gate 4 | Local OIDC role and governance smoke proof | PASS (2026-04-23) |
-| Gate 5 | Promote/rollback runtime scenario | PENDING |
+| Gate 5 | Promote/rollback runtime scenario | PASS (2026-04-23) |
 | Gate 6 | Auditability and diagnostics scenario | PENDING |
 | Gate 7 | Proof-integrity consistency scenario | PENDING |
 

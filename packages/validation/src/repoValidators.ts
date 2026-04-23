@@ -113,6 +113,32 @@ export function validateLaunchReadiness(root: string): RepoValidatorResult {
   return result("Validate-Botomatic-LaunchReadiness", ok, ok ? "Gate logic and launch-blocking promotion checks are present." : "Launch-readiness gate wiring is incomplete.", checks);
 }
 
+export function validateDeploymentRollbackGate5(root: string): RepoValidatorResult {
+  const checks = [
+    "apps/orchestrator-api/src/server_app.ts",
+    "apps/control-plane/src/components/overview/DeploymentPanel.tsx",
+    "apps/control-plane/src/services/deployments.ts",
+  ];
+  const fileOk = checks.every((p) => has(root, p));
+  const server = fileOk ? read(root, "apps/orchestrator-api/src/server_app.ts") : "";
+  const ok =
+    fileOk &&
+    server.includes("/deploy/promote") &&
+    server.includes("/deploy/rollback") &&
+    server.includes("Cannot promote: gate not ready") &&
+    server.includes("Cannot rollback: environment has not been promoted") &&
+    server.includes("type: \"promote\"") &&
+    server.includes("type: \"rollback\"");
+  return result(
+    "Validate-Botomatic-DeploymentRollbackGate5",
+    ok,
+    ok
+      ? "Promote and rollback routes are wired with gate checks, persistent deployment state, and audit events."
+      : "Gate 5 deployment promote/rollback wiring is incomplete.",
+    checks
+  );
+}
+
 export function validateDocumentation(root: string): RepoValidatorResult {
   const checks = [
     "PRODUCT_SCOPE.md",
@@ -161,6 +187,7 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateReliability(root),
     validateObservability(root),
     validateLaunchReadiness(root),
+    validateDeploymentRollbackGate5(root),
     validateDocumentation(root),
     validateAuthGovernanceGate4(root),
   ];
