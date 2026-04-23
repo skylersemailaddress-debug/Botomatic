@@ -12,6 +12,7 @@
     "control-plane:dev": "concurrently \"npm run api:dev\" \"npm run ui:dev\"",
     "validate:all": "tsx packages/validation/src/cli.ts",
     "validate:behavioral": "tsx packages/validation/src/runtime/cli.ts",
+    "validate:observability": "tsx packages/validation/src/runtime/opsObservability.ts",
     "benchmark:builder": "tsx packages/validation/src/runtime/builderQualityBenchmark.ts"
   },
   "dependencies": {

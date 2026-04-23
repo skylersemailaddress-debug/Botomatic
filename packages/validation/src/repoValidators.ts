@@ -94,11 +94,77 @@ export function validateObservability(root: string): RepoValidatorResult {
   const checks = [
     "apps/orchestrator-api/src/audit/types.ts",
     "apps/orchestrator-api/src/server_app.ts",
+    "apps/control-plane/src/services/ops.ts",
   ];
   const fileOk = checks.every((p) => has(root, p));
   const server = fileOk ? read(root, "apps/orchestrator-api/src/server_app.ts") : "";
-  const ok = fileOk && server.includes("/ui/audit") && server.includes("emitEvent(") && server.includes("route_error");
-  return result("Validate-Botomatic-Observability", ok, ok ? "Audit API, audit emission, and structured route error logging exist." : "Observability/audit wiring is incomplete.", checks);
+  const ok =
+    fileOk &&
+    server.includes("/ui/audit") &&
+    server.includes("emitEvent(") &&
+    server.includes("route_error") &&
+    server.includes("/api/ops/metrics") &&
+    server.includes("/api/ops/errors") &&
+    server.includes("/api/ops/queue") &&
+    server.includes("x-request-id");
+  return result(
+    "Validate-Botomatic-Observability",
+    ok,
+    ok ? "Audit API, ops endpoints, and request correlation logging exist." : "Observability wiring is incomplete (audit/ops/correlation).",
+    checks
+  );
+}
+
+export function validateObservabilityRuntimeEvidence(root: string): RepoValidatorResult {
+  const checks = [
+    "release-evidence/runtime/ops_observability.json",
+  ];
+
+  if (!has(root, checks[0])) {
+    return result(
+      "Validate-Botomatic-ObservabilityRuntimeEvidence",
+      false,
+      "Observability runtime evidence is missing. Run npm run validate:observability.",
+      checks
+    );
+  }
+
+  let payload: any;
+  try {
+    payload = JSON.parse(read(root, checks[0]));
+  } catch {
+    return result(
+      "Validate-Botomatic-ObservabilityRuntimeEvidence",
+      false,
+      "Observability runtime evidence JSON is invalid.",
+      checks
+    );
+  }
+
+  const summary = payload?.summary || {};
+  const checkNames = Array.isArray(payload?.suite?.checks)
+    ? payload.suite.checks.map((c: any) => c?.name)
+    : [];
+
+  const requiredChecks = [
+    "ops_metrics_endpoint_live",
+    "ops_queue_endpoint_live",
+    "ops_errors_endpoint_live",
+    "request_id_header_present",
+  ];
+
+  const hasAllChecks = requiredChecks.every((name) => checkNames.includes(name));
+  const ok = Number(summary.failed || 0) === 0 && hasAllChecks;
+  const proofGrade = payload?.proofGrade === "production_like" ? "production-like" : "local";
+
+  return result(
+    "Validate-Botomatic-ObservabilityRuntimeEvidence",
+    ok,
+    ok
+      ? `Observability runtime checks passed (${proofGrade} proof).`
+      : `Observability runtime checks are incomplete or failing (${proofGrade} proof).`,
+    checks
+  );
 }
 
 export function validateLaunchReadiness(root: string): RepoValidatorResult {
@@ -362,6 +428,7 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateUIControlPlaneIntegration(root),
     validateBuilderQualityBenchmarks(root),
     validateBehavioralRuntimeCoverage(root),
+    validateObservabilityRuntimeEvidence(root),
     validateFinalLaunchReadiness(root),
   ];
 }

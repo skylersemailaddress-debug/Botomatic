@@ -10,8 +10,8 @@
     "ui_control_plane": {"target": 10, "current": 7.4, "cap_reason": "final Gate 6 diagnostics closure still pending"},
     "security_governance": {"target": 10, "current": 8.4, "cap_reason": "Gate 4 is closed by local runtime proof; production IdP/runtime environment proof still pending"},
     "reliability": {"target": 10, "current": 8.1, "cap_reason": "dead-letter/idempotency breadth beyond current closure scope still pending"},
-    "observability": {"target": 10, "current": 8.2, "cap_reason": "Gate 6 closed by local runtime proof; broader operational telemetry depth still pending"},
-    "validation": {"target": 10, "current": 8.0, "cap_reason": "final launch validator implemented but proof-integrity closure still pending"},
-    "documentation": {"target": 10, "current": 8.3, "cap_reason": "Gate 7 consistency pass pending and Gate 2/3 evidence links unresolved"}
+    "observability": {"target": 10, "current": 8.8, "cap_reason": "Ops endpoints and request-correlation proof are now runtime-validated; production telemetry depth still pending"},
+    "validation": {"target": 10, "current": 8.3, "cap_reason": "launch validator implemented with behavioral and observability runtime evidence; final Gate 7 closure still pending"},
+    "documentation": {"target": 10, "current": 8.5, "cap_reason": "Gate 7 consistency pass pending"}
   }
 }

@@ -7,7 +7,7 @@ import { ClaudeCodeExecutor } from "../../../packages/executor-adapters/src/clau
 import { runValidation } from "../../../packages/validation/src/runner";
 import { createGitOperation, GitOperationRequest, GitOperationResult } from "../../../packages/github-adapter/src/operations";
 import { GitHubRuntime } from "../../../packages/github-adapter/src/githubRuntime";
-import { enqueueJob, claimJob, finalizeJob } from "../../../packages/supabase-adapter/src/jobClient";
+import { enqueueJob, claimJob, finalizeJob, getQueueStats } from "../../../packages/supabase-adapter/src/jobClient";
 import { GovernanceApprovalState, StoredProjectRecord } from "../../../packages/supabase-adapter/src/types";
 import { RuntimeConfig } from "./config";
 import { type AuthContext } from "./auth/roles";
@@ -41,8 +41,48 @@ const deploymentStateRunKey = "__deploymentState";
 let workerStarted = false;
 let activeWorkers = 0;
 
+type OpsErrorType = "route_error" | "packet_failed" | "promotion_failed" | "auth_failed";
+type OpsErrorEvent = {
+  id: string;
+  type: OpsErrorType;
+  message: string;
+  timestamp: string;
+  metadata?: Record<string, any>;
+};
+
+const recentOpsErrors: OpsErrorEvent[] = [];
+let packetSuccessCount = 0;
+let packetFailureCount = 0;
+let validationPassCount = 0;
+let validationFailCount = 0;
+let promotionCount = 0;
+let routeErrorCount = 0;
+let telemetryUpdatedAt = now();
+
 function now(): string {
   return new Date().toISOString();
+}
+
+function makeRequestId(): string {
+  return `req_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function updateTelemetryTimestamp() {
+  telemetryUpdatedAt = now();
+}
+
+function recordOpsError(type: OpsErrorType, message: string, metadata?: Record<string, any>) {
+  recentOpsErrors.unshift({
+    id: `ops_err_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    type,
+    message,
+    timestamp: now(),
+    metadata,
+  });
+  if (recentOpsErrors.length > 200) {
+    recentOpsErrors.length = 200;
+  }
+  updateTelemetryTimestamp();
 }
 
 function toStored(record: {
@@ -181,10 +221,20 @@ function requireRole(required: AuthContext["role"], config: RuntimeConfig): expr
     try {
       const auth = await getVerifiedAuth(req, config);
       if (rank[auth.role] < rank[required]) {
+        recordOpsError("auth_failed", "Role check denied", {
+          route: `${req.method} ${req.path}`,
+          requiredRole: required,
+          actualRole: auth.role,
+          userId: auth.userId,
+        });
         return res.status(403).json({ error: "Forbidden", requiredRole: required, actualRole: auth.role });
       }
       return next();
     } catch (error: any) {
+      recordOpsError("auth_failed", String(error?.message || error), {
+        route: `${req.method} ${req.path}`,
+        requiredRole: required,
+      });
       return res.status(401).json({ error: String(error?.message || error) });
     }
   };
@@ -199,6 +249,9 @@ function requireApiAuth(config: RuntimeConfig): express.RequestHandler {
       await getVerifiedAuth(req, config);
       return next();
     } catch (error: any) {
+      recordOpsError("auth_failed", String(error?.message || error), {
+        route: `${req.method} ${req.path}`,
+      });
       return res.status(401).json({ error: String(error?.message || error), authImplementation: config.auth.implementation });
     }
   };
@@ -206,8 +259,12 @@ function requireApiAuth(config: RuntimeConfig): express.RequestHandler {
 
 function handleRouteError(res: express.Response, _config: RuntimeConfig, error: unknown, route: string, actor?: RequestActor) {
   const message = String((error as any)?.message || error);
-  console.error(JSON.stringify({ event: "route_error", route, actorId: actor?.actorId || "unknown", message, workerId, timestamp: now() }));
-  return res.status(500).json({ error: message, workerId });
+  const requestId = String((res.locals as any)?.requestId || "unknown");
+  routeErrorCount += 1;
+  updateTelemetryTimestamp();
+  recordOpsError("route_error", message, { route, actorId: actor?.actorId || "unknown", requestId, workerId });
+  console.error(JSON.stringify({ event: "route_error", route, actorId: actor?.actorId || "unknown", message, workerId, requestId, timestamp: now() }));
+  return res.status(500).json({ error: message, workerId, requestId });
 }
 
 function getPackets(project: StoredProjectRecord): any[] {
@@ -236,6 +293,51 @@ function ensureAudit(project: any) {
 function emitEvent(project: any, event: any) {
   ensureAudit(project);
   project.auditEvents.unshift(event);
+  if (event?.type === "promote") {
+    promotionCount += 1;
+    updateTelemetryTimestamp();
+  }
+}
+
+async function getQueueDepth(config: RuntimeConfig): Promise<number> {
+  if (config.repository.mode !== "durable") return 0;
+  try {
+    const stats = await getQueueStats();
+    return Number(stats.queued || 0);
+  } catch {
+    return 0;
+  }
+}
+
+async function buildOpsQueue(config: RuntimeConfig) {
+  const queueDepth = await getQueueDepth(config);
+  return {
+    queueDepth,
+    activeWorkers,
+    workerConcurrency,
+    leaseMs,
+    workerId,
+    queueMode: "dedicated_jobs_table_parallel",
+    repositoryMode: config.repository.mode,
+    lastUpdatedAt: telemetryUpdatedAt,
+  };
+}
+
+async function buildOpsMetrics(config: RuntimeConfig) {
+  const queueDepth = await getQueueDepth(config);
+  return {
+    queueDepth,
+    activeWorkers,
+    workerConcurrency,
+    packetSuccessCount,
+    packetFailureCount,
+    validationPassCount,
+    validationFailCount,
+    promotionCount,
+    routeErrorCount,
+    repositoryMode: config.repository.mode,
+    lastUpdatedAt: telemetryUpdatedAt,
+  };
 }
 
 function recomputeProjectStatus(project: StoredProjectRecord) {
@@ -450,6 +552,11 @@ async function processJob(config: RuntimeConfig, job: QueueJobRecord) {
     const executor = getExecutor();
     const result = await executor.execute({ projectId: project.projectId, packetId: packet.packetId, branchName: packet.branchName, goal: packet.goal, requirements: packet.requirements, constraints: packet.constraints });
     if (!result.success) {
+      packetFailureCount += 1;
+      recordOpsError("packet_failed", String((result as any).summary || "Executor returned unsuccessful result"), {
+        projectId: project.projectId,
+        packetId: packet.packetId,
+      });
       const failedState = markPacketFailed({ projectId: project.projectId, status: project.status as any, packets: getPackets(project), runs: project.runs as any }, packet.packetId);
       project.plan = { ...((project.plan as any) || {}), packets: (failedState as any).packets };
       project.runs = (failedState as any).runs || project.runs;
@@ -462,6 +569,19 @@ async function processJob(config: RuntimeConfig, job: QueueJobRecord) {
 
     await runGitHubLifecycle(config, project, packet, (result as any).changedFiles as ChangedFile[]);
     const validation = runValidation(project.projectId, packet.packetId);
+    if ((validation as any).status === "passed") {
+      validationPassCount += 1;
+      packetSuccessCount += 1;
+    } else {
+      validationFailCount += 1;
+      packetFailureCount += 1;
+      recordOpsError("packet_failed", "Validation returned non-passed status", {
+        projectId: project.projectId,
+        packetId: packet.packetId,
+        status: (validation as any).status,
+      });
+    }
+    updateTelemetryTimestamp();
     project.validations = { ...((project.validations || {}) as Record<string, unknown>), [packet.packetId]: validation };
     emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "validation", actorId: workerId, role: "system", timestamp: now(), metadata: { packetId: packet.packetId } });
     const completedState = markPacketComplete({ projectId: project.projectId, status: project.status as any, packets: getPackets(project), runs: project.runs as any }, packet.packetId);
@@ -471,6 +591,11 @@ async function processJob(config: RuntimeConfig, job: QueueJobRecord) {
     await persistProject(config, project);
     await finalizeJob(job.job_id, "succeeded");
   } catch (error: any) {
+    packetFailureCount += 1;
+    recordOpsError("packet_failed", String(error?.message || error), {
+      projectId: project.projectId,
+      packetId: packet.packetId,
+    });
     const failedState = markPacketFailed({ projectId: project.projectId, status: project.status as any, packets: getPackets(project), runs: project.runs as any }, packet.packetId);
     project.plan = { ...((project.plan as any) || {}), packets: (failedState as any).packets };
     project.runs = (failedState as any).runs || project.runs;
@@ -509,13 +634,55 @@ export function buildApp(config: RuntimeConfig) {
     startQueueWorker(config);
   }
   app.use(express.json());
+  app.use((req, res, next) => {
+    const requestId = req.header("x-request-id") || makeRequestId();
+    (res.locals as any).requestId = requestId;
+    res.setHeader("x-request-id", requestId);
+    next();
+  });
 
   app.get("/api/health", async (req, res) => {
     try {
       const auth = await getVerifiedAuth(req, config);
-      return res.json({ status: "ok", appName: config.appName, runtimeMode: config.runtimeMode, repositoryMode: config.repository.mode, repositoryImplementation: config.repository.implementation, durableEnvPresent: config.durableEnvPresent, authEnabled: config.auth.enabled, authImplementation: config.auth.implementation, commitSha: config.commitSha, startupTimestamp: config.startupTimestamp, queueEnabled: config.repository.mode === "durable", activeWorkers, workerConcurrency, workerId, leaseMs, queueMode: "dedicated_jobs_table_parallel", role: auth.role, userId: auth.userId, issuer: auth.issuer || null });
+      return res.json({ status: "ok", appName: config.appName, runtimeMode: config.runtimeMode, repositoryMode: config.repository.mode, repositoryImplementation: config.repository.implementation, durableEnvPresent: config.durableEnvPresent, authEnabled: config.auth.enabled, authImplementation: config.auth.implementation, commitSha: config.commitSha, startupTimestamp: config.startupTimestamp, queueEnabled: config.repository.mode === "durable", activeWorkers, workerConcurrency, workerId, leaseMs, queueMode: "dedicated_jobs_table_parallel", role: auth.role, userId: auth.userId, issuer: auth.issuer || null, requestId: (res.locals as any).requestId });
     } catch {
-      return res.json({ status: "ok", appName: config.appName, runtimeMode: config.runtimeMode, repositoryMode: config.repository.mode, repositoryImplementation: config.repository.implementation, durableEnvPresent: config.durableEnvPresent, authEnabled: config.auth.enabled, authImplementation: config.auth.implementation, commitSha: config.commitSha, startupTimestamp: config.startupTimestamp, queueEnabled: config.repository.mode === "durable", activeWorkers, workerConcurrency, workerId, leaseMs, queueMode: "dedicated_jobs_table_parallel", role: null, userId: null, issuer: null });
+      return res.json({ status: "ok", appName: config.appName, runtimeMode: config.runtimeMode, repositoryMode: config.repository.mode, repositoryImplementation: config.repository.implementation, durableEnvPresent: config.durableEnvPresent, authEnabled: config.auth.enabled, authImplementation: config.auth.implementation, commitSha: config.commitSha, startupTimestamp: config.startupTimestamp, queueEnabled: config.repository.mode === "durable", activeWorkers, workerConcurrency, workerId, leaseMs, queueMode: "dedicated_jobs_table_parallel", role: null, userId: null, issuer: null, requestId: (res.locals as any).requestId });
+    }
+  });
+
+  app.use("/api/ops", requireApiAuth(config));
+
+  app.get("/api/ops/metrics", requireRole("reviewer", config), async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const metrics = await buildOpsMetrics(config);
+      return res.json({ ...metrics, actorId: actor.actorId, requestId: (res.locals as any).requestId });
+    } catch (error) {
+      return handleRouteError(res, config, error, "GET /api/ops/metrics", actor);
+    }
+  });
+
+  app.get("/api/ops/errors", requireRole("reviewer", config), async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      return res.json({
+        errors: recentOpsErrors.slice(0, 100),
+        count: recentOpsErrors.length,
+        actorId: actor.actorId,
+        requestId: (res.locals as any).requestId,
+      });
+    } catch (error) {
+      return handleRouteError(res, config, error, "GET /api/ops/errors", actor);
+    }
+  });
+
+  app.get("/api/ops/queue", requireRole("reviewer", config), async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const queue = await buildOpsQueue(config);
+      return res.json({ ...queue, actorId: actor.actorId, requestId: (res.locals as any).requestId });
+    } catch (error) {
+      return handleRouteError(res, config, error, "GET /api/ops/queue", actor);
     }
   });
 
