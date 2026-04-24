@@ -94,15 +94,23 @@ export function validateObservability(root: string): RepoValidatorResult {
   const checks = [
     "apps/orchestrator-api/src/audit/types.ts",
     "apps/orchestrator-api/src/server_app.ts",
+    "apps/orchestrator-api/src/config.ts",
     "apps/control-plane/src/services/ops.ts",
   ];
   const fileOk = checks.every((p) => has(root, p));
   const server = fileOk ? read(root, "apps/orchestrator-api/src/server_app.ts") : "";
+  const config = fileOk ? read(root, "apps/orchestrator-api/src/config.ts") : "";
   const ok =
     fileOk &&
     server.includes("/ui/audit") &&
     server.includes("emitEvent(") &&
     server.includes("route_error") &&
+    server.includes("emitRouteErrorAlert") &&
+    server.includes("alertDeliverySuccessCount") &&
+    server.includes("alertDeliveryFailureCount") &&
+    server.includes("alertSinkConfigured") &&
+    config.includes("BOTOMATIC_ALERT_WEBHOOK_URL") &&
+    config.includes("SLACK_WEBHOOK_URL") &&
     server.includes("/api/ops/metrics") &&
     server.includes("/api/ops/errors") &&
     server.includes("/api/ops/queue") &&
@@ -110,7 +118,7 @@ export function validateObservability(root: string): RepoValidatorResult {
   return result(
     "Validate-Botomatic-Observability",
     ok,
-    ok ? "Audit API, ops endpoints, and request correlation logging exist." : "Observability wiring is incomplete (audit/ops/correlation).",
+    ok ? "Audit API, ops endpoints, request correlation, and alert sink wiring exist." : "Observability wiring is incomplete (audit/ops/correlation/alerts).",
     checks
   );
 }

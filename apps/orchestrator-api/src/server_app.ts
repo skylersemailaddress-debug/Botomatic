@@ -41,7 +41,7 @@ const deploymentStateRunKey = "__deploymentState";
 let workerStarted = false;
 let activeWorkers = 0;
 
-type OpsErrorType = "route_error" | "packet_failed" | "promotion_failed" | "auth_failed";
+type OpsErrorType = "route_error" | "packet_failed" | "promotion_failed" | "auth_failed" | "alert_delivery_failed";
 type OpsErrorEvent = {
   id: string;
   type: OpsErrorType;
@@ -57,6 +57,8 @@ let validationPassCount = 0;
 let validationFailCount = 0;
 let promotionCount = 0;
 let routeErrorCount = 0;
+let alertDeliverySuccessCount = 0;
+let alertDeliveryFailureCount = 0;
 let telemetryUpdatedAt = now();
 
 function now(): string {
@@ -260,11 +262,71 @@ function requireApiAuth(config: RuntimeConfig): express.RequestHandler {
 function handleRouteError(res: express.Response, _config: RuntimeConfig, error: unknown, route: string, actor?: RequestActor) {
   const message = String((error as any)?.message || error);
   const requestId = String((res.locals as any)?.requestId || "unknown");
+  const occurredAt = now();
   routeErrorCount += 1;
   updateTelemetryTimestamp();
-  recordOpsError("route_error", message, { route, actorId: actor?.actorId || "unknown", requestId, workerId });
-  console.error(JSON.stringify({ event: "route_error", route, actorId: actor?.actorId || "unknown", message, workerId, requestId, timestamp: now() }));
+  recordOpsError("route_error", message, { route, actorId: actor?.actorId || "unknown", requestId, workerId, runtimeMode: _config.runtimeMode });
+  void emitRouteErrorAlert(_config, {
+    category: "route_error",
+    route,
+    message,
+    requestId,
+    actorId: actor?.actorId || "unknown",
+    timestamp: occurredAt,
+  });
+  console.error(JSON.stringify({ event: "route_error", route, actorId: actor?.actorId || "unknown", message, workerId, requestId, timestamp: occurredAt }));
   return res.status(500).json({ error: message, workerId, requestId });
+}
+
+type RouteErrorAlertPayload = {
+  category: "route_error";
+  route: string;
+  message: string;
+  requestId: string;
+  actorId: string;
+  timestamp: string;
+};
+
+async function emitRouteErrorAlert(config: RuntimeConfig, payload: RouteErrorAlertPayload): Promise<void> {
+  if (!config.alertWebhookUrl) {
+    return;
+  }
+
+  const body = {
+    source: "botomatic-orchestrator-api",
+    event: payload.category,
+    category: payload.category,
+    route: payload.route,
+    message: payload.message,
+    requestId: payload.requestId,
+    actorId: payload.actorId,
+    timestamp: payload.timestamp,
+    runtimeMode: config.runtimeMode,
+  };
+
+  try {
+    const response = await fetch(config.alertWebhookUrl, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(3000),
+    });
+    if (!response.ok) {
+      throw new Error(`Alert sink responded ${response.status}`);
+    }
+    alertDeliverySuccessCount += 1;
+    updateTelemetryTimestamp();
+  } catch (error: any) {
+    alertDeliveryFailureCount += 1;
+    recordOpsError("alert_delivery_failed", String(error?.message || error), {
+      route: payload.route,
+      requestId: payload.requestId,
+      runtimeMode: config.runtimeMode,
+      sinkConfigured: true,
+    });
+  }
 }
 
 function getPackets(project: StoredProjectRecord): any[] {
@@ -335,6 +397,9 @@ async function buildOpsMetrics(config: RuntimeConfig) {
     validationFailCount,
     promotionCount,
     routeErrorCount,
+    alertDeliverySuccessCount,
+    alertDeliveryFailureCount,
+    alertSinkConfigured: Boolean(config.alertWebhookUrl),
     repositoryMode: config.repository.mode,
     lastUpdatedAt: telemetryUpdatedAt,
   };
