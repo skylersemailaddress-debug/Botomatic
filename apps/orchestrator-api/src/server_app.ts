@@ -292,16 +292,18 @@ async function emitRouteErrorAlert(config: RuntimeConfig, payload: RouteErrorAle
     return;
   }
 
+  const summaryText = `Botomatic alert: ${payload.category} ${payload.route} ${payload.requestId} [${config.runtimeMode}] at ${payload.timestamp}`;
   const body = {
-    source: "botomatic-orchestrator-api",
-    event: payload.category,
-    category: payload.category,
-    route: payload.route,
-    message: payload.message,
-    requestId: payload.requestId,
-    actorId: payload.actorId,
-    timestamp: payload.timestamp,
-    runtimeMode: config.runtimeMode,
+    text: summaryText,
+    blocks: [
+      {
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: `*Botomatic Alert*\n*Category:* ${payload.category}\n*Route:* ${payload.route}\n*Request ID:* ${payload.requestId}\n*Runtime Mode:* ${config.runtimeMode}\n*Timestamp:* ${payload.timestamp}\n*Message:* ${payload.message}`,
+        },
+      },
+    ],
   };
 
   try {
