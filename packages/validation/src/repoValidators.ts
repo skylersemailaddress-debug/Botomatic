@@ -299,10 +299,12 @@ export function validateFinalLaunchReadiness(root: string): RepoValidatorResult 
     "READINESS_SCORECARD.json",
     "FINAL_LAUNCH_READINESS_CRITERIA.md",
     "release-evidence/manifest.json",
+    "release-evidence/proof_profile.json",
     "docs/gate4/GATE4_RUNTIME_PROOF_2026-04-23.md",
     "docs/gate5/GATE5_RUNTIME_PROOF_2026-04-23.md",
     "docs/gate6/GATE6_RUNTIME_PROOF_2026-04-23.md",
   ];
+
   const fileOk = checks.every((p) => has(root, p));
   if (!fileOk) {
     return result(
@@ -313,27 +315,123 @@ export function validateFinalLaunchReadiness(root: string): RepoValidatorResult 
     );
   }
 
-  const blockers = read(root, "LAUNCH_BLOCKERS.md");
-  const matrix = read(root, "VALIDATION_MATRIX.md");
-  const manifest = JSON.parse(read(root, "release-evidence/manifest.json")) as any;
+  let blockers = "";
+  let matrix = "";
+  let manifest: any;
+  let profile: any;
+  let oidcRuntimeProof: any = null;
+
+  try {
+    blockers = read(root, "LAUNCH_BLOCKERS.md");
+    matrix = read(root, "VALIDATION_MATRIX.md");
+    manifest = JSON.parse(read(root, "release-evidence/manifest.json"));
+    profile = JSON.parse(read(root, "release-evidence/proof_profile.json"));
+  } catch {
+    return result(
+      "Validate-Botomatic-FinalLaunchReadiness",
+      false,
+      "Final launch readiness metadata could not be parsed.",
+      checks
+    );
+  }
+
+  const oidcArtifactPath = "release-evidence/runtime/oidc_rbac_governance_production_like.json";
+  const oidcArtifactExists = has(root, oidcArtifactPath);
+
+  if (oidcArtifactExists) {
+    try {
+      oidcRuntimeProof = JSON.parse(read(root, oidcArtifactPath));
+    } catch {
+      oidcRuntimeProof = null;
+    }
+  }
 
   const gate2Closed = blockers.includes("| Gate 2 | Closed by proof");
   const gate3Closed = blockers.includes("| Gate 3 | Closed by proof");
   const gate4Closed = blockers.includes("| Gate 4 | Closed by proof");
   const gate5Closed = blockers.includes("| Gate 5 | Closed by proof");
   const gate6Closed = blockers.includes("| Gate 6 | Closed by proof");
-  const noP0Open = !blockers.includes("| Gate 7 | Open") && !blockers.includes("No fully implemented operator UI system");
-  const validatorsImplemented = matrix.includes("Validate-Botomatic-FinalLaunchReadiness") && matrix.includes("Validate-Botomatic-DeploymentRollbackGate5");
-  const manifestAligned = manifest?.gates?.gate4?.status === "closed_by_proof" && manifest?.gates?.gate5?.status === "closed_by_proof" && manifest?.gates?.gate6?.status === "closed_by_proof";
+  const gate7Closed = blockers.includes("| Gate 7 | Closed by proof");
 
-  const ok = gate2Closed && gate3Closed && gate4Closed && gate5Closed && gate6Closed && noP0Open && validatorsImplemented && manifestAligned;
+  const validatorsImplemented =
+    matrix.includes("Validate-Botomatic-FinalLaunchReadiness") &&
+    matrix.includes("Validate-Botomatic-DeploymentRollbackGate5");
+
+  const manifestAligned =
+    manifest?.gates?.gate4?.status === "closed_by_proof" &&
+    manifest?.gates?.gate5?.status === "closed_by_proof" &&
+    manifest?.gates?.gate6?.status === "closed_by_proof" &&
+    manifest?.gates?.gate7?.status === "closed_by_proof";
+
+  const enterpriseReadyTrue = manifest?.launchClaim?.enterpriseReady === true;
+  const blockedByEmpty =
+    Array.isArray(manifest?.launchClaim?.blockedBy) &&
+    manifest.launchClaim.blockedBy.length === 0;
+
+  const enterpriseProductionProofTrue = profile?.enterpriseProductionProof === true;
+  const proofGradeProductionLike =
+    profile?.proofGrade === "production_like" ||
+    profile?.proofGrade === "staging_production_like" ||
+    profile?.proofGrade === "production";
+
+  const productionGapsEmpty =
+    Array.isArray(profile?.productionGaps) && profile.productionGaps.length === 0;
+
+  const p0Section = blockers.split("## P1")[0] || blockers;
+  const p0PolicyPresent = blockers.includes(
+    "No audit may claim enterprise readiness while any P0 blocker remains open."
+  );
+
+  const noOpenP0Rows = !/\|\s*Gate\s+\d+\s*\|\s*Open\b/i.test(p0Section);
+  const noOpenP0Bullets = p0Section
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith("- "))
+    .every((line) => line.startsWith("- ~~") || line.toLowerCase().includes("closed:"));
+
+  const oidcCheckNames = Array.isArray(oidcRuntimeProof?.checks)
+    ? oidcRuntimeProof.checks.map((c: any) => c?.name)
+    : [];
+
+  const oidcCoverage = [
+    "invalid_issuer_denied",
+    "invalid_audience_denied",
+    "expired_token_denied",
+    "malformed_role_defaults_safe",
+    "operator_denied_dangerous_route",
+    "reviewer_denied_admin_route",
+    "admin_governance_approval_allowed",
+  ].every((name) => oidcCheckNames.includes(name));
+
+  const oidcProofValid =
+    oidcArtifactExists && Number(oidcRuntimeProof?.summary?.failed || 0) === 0;
+
+  const failedCriteria: string[] = [];
+
+  if (!gate2Closed) failedCriteria.push("gate2_not_closed_by_proof");
+  if (!gate3Closed) failedCriteria.push("gate3_not_closed_by_proof");
+  if (!gate4Closed) failedCriteria.push("gate4_not_closed_by_proof");
+  if (!gate5Closed) failedCriteria.push("gate5_not_closed_by_proof");
+  if (!gate6Closed) failedCriteria.push("gate6_not_closed_by_proof");
+  if (!gate7Closed) failedCriteria.push("gate7_not_closed_by_proof");
+  if (!validatorsImplemented) failedCriteria.push("required_validators_missing");
+  if (!manifestAligned) failedCriteria.push("manifest_gates_not_aligned");
+  if (!enterpriseReadyTrue) failedCriteria.push("manifest_launch_claim_not_enterprise_ready");
+  if (!blockedByEmpty) failedCriteria.push("manifest_blocked_by_not_empty");
+  if (!enterpriseProductionProofTrue) failedCriteria.push("proof_profile_enterprise_production_proof_false");
+  if (!proofGradeProductionLike) failedCriteria.push("proof_profile_grade_not_production_like");
+  if (!productionGapsEmpty) failedCriteria.push("proof_profile_production_gaps_not_empty");
+  if (!noOpenP0Rows || !noOpenP0Bullets || !p0PolicyPresent) failedCriteria.push("p0_bullet_blockers_open");
+  if (!oidcArtifactExists || !oidcCoverage || !oidcProofValid) failedCriteria.push("oidc_production_proof_missing_or_incomplete");
+
+  const ok = failedCriteria.length === 0;
 
   return result(
     "Validate-Botomatic-FinalLaunchReadiness",
     ok,
     ok
       ? "Final launch criteria are satisfied and enterprise launch can be claimed."
-      : "Final launch criteria are not yet satisfied; enterprise launch claim remains blocked.",
+      : `Final launch readiness remains blocked: ${failedCriteria.join(", ")}.`,
     checks
   );
 }
