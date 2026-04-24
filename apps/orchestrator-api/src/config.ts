@@ -34,6 +34,7 @@ export type RuntimeConfig = {
   durableEnvPresent: boolean;
   repository: RepositoryContext;
   auth: AuthContext;
+  alertWebhookUrl: string | null;
 };
 
 function now(): string {
@@ -129,6 +130,7 @@ export function createRuntimeConfig(): RuntimeConfig {
   const durableEnvPresent = Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
   const repository = createRepositoryContext(runtimeMode);
   const auth = createAuthContext(runtimeMode);
+  const alertWebhookUrl = process.env.BOTOMATIC_ALERT_WEBHOOK_URL || process.env.SLACK_WEBHOOK_URL || null;
 
   return {
     appName: "botomatic-orchestrator-api",
@@ -139,5 +141,6 @@ export function createRuntimeConfig(): RuntimeConfig {
     durableEnvPresent,
     repository,
     auth,
+    alertWebhookUrl,
   };
 }
