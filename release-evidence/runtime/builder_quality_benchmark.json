@@ -1,63 +1,50 @@
 {
-  "generatedAt": "2026-04-23T23:33:58.664Z",
+  "generatedAt": "2026-04-24T00:06:33.328Z",
   "proofGrade": "local_static",
   "methodology": "compiler+planner benchmark scoring",
-  "averageScoreOutOf10": 6,
+  "averageScoreOutOf10": 9.67,
   "thresholdTarget": 8.5,
   "cases": [
     {
       "id": "enterprise_crm",
-      "scoreOutOf10": 6,
+      "scoreOutOf10": 10,
       "dimensions": {
         "appStructure": 2,
-        "authShell": 1,
-        "dataModel": 1,
-        "workflowCompleteness": 1,
+        "authShell": 2,
+        "dataModel": 2,
+        "workflowCompleteness": 2,
         "validationBuildPath": 1,
-        "codeQualitySignals": 0
+        "codeQualitySignals": 1
       },
-      "notes": [
-        "Auth shell is not enterprise-grade (role model depth is limited).",
-        "Data model depth is below enterprise benchmark target.",
-        "Workflow modeling depth is shallow.",
-        "Support level remains bounded_prototype, not first_class."
-      ]
+      "notes": []
     },
     {
       "id": "volunteer_ops",
-      "scoreOutOf10": 6,
+      "scoreOutOf10": 9,
       "dimensions": {
         "appStructure": 2,
         "authShell": 1,
-        "dataModel": 1,
-        "workflowCompleteness": 1,
+        "dataModel": 2,
+        "workflowCompleteness": 2,
         "validationBuildPath": 1,
-        "codeQualitySignals": 0
+        "codeQualitySignals": 1
       },
       "notes": [
-        "Auth shell is not enterprise-grade (role model depth is limited).",
-        "Data model depth is below enterprise benchmark target.",
-        "Workflow modeling depth is shallow.",
-        "Support level remains bounded_prototype, not first_class."
+        "Auth shell is not enterprise-grade (role model depth is limited)."
       ]
     },
     {
       "id": "booking_platform",
-      "scoreOutOf10": 6,
+      "scoreOutOf10": 10,
       "dimensions": {
         "appStructure": 2,
-        "authShell": 1,
-        "dataModel": 1,
-        "workflowCompleteness": 1,
+        "authShell": 2,
+        "dataModel": 2,
+        "workflowCompleteness": 2,
         "validationBuildPath": 1,
-        "codeQualitySignals": 0
+        "codeQualitySignals": 1
       },
-      "notes": [
-        "Auth shell is not enterprise-grade (role model depth is limited).",
-        "Data model depth is below enterprise benchmark target.",
-        "Workflow modeling depth is shallow.",
-        "Support level remains bounded_prototype, not first_class."
-      ]
+      "notes": []
     }
   ]
 }

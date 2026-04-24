@@ -23,16 +23,14 @@
       "evidencePath": "docs/gate6/GATE6_RUNTIME_PROOF_2026-04-23.md"
     },
     "gate7": {
-      "status": "open",
-      "evidencePath": null
+      "status": "closed_by_proof",
+      "evidencePath": "docs/gate7/GATE7_FINAL_CLOSURE_AUDIT_2026-04-23.md"
     }
   },
   "proofProfilePath": "release-evidence/proof_profile.json",
   "launchClaim": {
     "enterpriseReady": false,
     "blockedBy": [
-      "gate7_open",
-      "p0_blockers_open",
       "non_production_proof_grade"
     ]
   }
