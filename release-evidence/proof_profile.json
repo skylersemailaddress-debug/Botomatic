@@ -47,6 +47,10 @@
     "builderBenchmarks": {
       "artifactPath": "release-evidence/runtime/builder_quality_benchmark.json",
       "proofGrade": "local_runtime"
+    },
+    "uiControlPlane": {
+      "artifactPath": "release-evidence/runtime/ui_control_plane_workflow.json",
+      "proofGrade": "local_runtime"
     }
   },
   "productionGaps": [

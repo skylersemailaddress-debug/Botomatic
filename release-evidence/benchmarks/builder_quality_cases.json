@@ -1,17 +1,42 @@
 [
   {
-    "id": "enterprise_crm",
-    "appName": "Enterprise CRM",
-    "request": "Build an enterprise CRM with login, role based access, analytics dashboard, messaging, and customer workflow automation."
+    "id": "internal_crm",
+    "appName": "Internal CRM",
+    "request": "Build an internal CRM for sales and customer success with lead intake, account hierarchy, role-based access for reps/managers/admins, task workflows, approvals for discounts, and KPI dashboards."
   },
   {
-    "id": "volunteer_ops",
-    "appName": "Volunteer Ops",
-    "request": "Need volunteer operations platform with event scheduling, communications, approval workflow, and reporting dashboard."
+    "id": "approval_workflow_app",
+    "appName": "Approval Workflow App",
+    "request": "Create an enterprise approval workflow application for procurement and legal reviews with multi-step approvals, escalation rules, reviewer comments, and full audit history."
   },
   {
-    "id": "booking_platform",
-    "appName": "Booking Platform",
-    "request": "Create appointment booking system with authentication, customer portal, admin dashboard, reminders, and analytics."
+    "id": "operations_dashboard",
+    "appName": "Operations Dashboard",
+    "request": "Generate an operations dashboard platform with incident tracking, service health views, on-call role segregation, and governance controls for release approvals."
+  },
+  {
+    "id": "inventory_asset_tracker",
+    "appName": "Inventory & Asset Tracker",
+    "request": "Build an inventory and asset tracking app for IT and facilities with lifecycle states, transfer workflows, barcode lookup endpoints, approval gates, and analytics."
+  },
+  {
+    "id": "compliance_review_workflow",
+    "appName": "Compliance Review Workflow",
+    "request": "Create a compliance review workflow system with policy entities, evidence submission, reviewer/admin roles, exception approvals, and deploy-readiness reporting."
+  },
+  {
+    "id": "employee_onboarding_system",
+    "appName": "Employee Onboarding System",
+    "request": "Generate an employee onboarding platform with HR/IT/manager roles, checklist workflows, provisioning approvals, and status dashboards with audit events."
+  },
+  {
+    "id": "support_ticket_triage",
+    "appName": "Support Ticket Triage App",
+    "request": "Build a support ticket triage app with customer and agent portals, severity-based routing workflows, escalation approvals, and service-level reporting."
+  },
+  {
+    "id": "multi_role_admin_portal",
+    "appName": "Multi-role Admin Portal",
+    "request": "Create a multi-role admin portal with operator/reviewer/admin separation, policy-managed actions, deployment controls, rollback workflows, and observability dashboards."
   }
 ]

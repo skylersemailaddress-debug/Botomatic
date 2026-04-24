@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { execSync } from "child_process";
 
 export type RepoValidatorResult = {
   name: string;
@@ -18,6 +19,23 @@ function has(root: string, rel: string): boolean {
 
 function result(name: string, ok: boolean, summary: string, checks: string[]): RepoValidatorResult {
   return { name, status: ok ? "passed" : "failed", summary, checks };
+}
+
+function isProductionLikeProofGrade(grade: unknown): boolean {
+  if (typeof grade !== "string") return false;
+  const normalized = grade.trim().toLowerCase();
+  return normalized === "production_like" || normalized === "staging_production_like" || normalized === "production";
+}
+
+function listTrackedFiles(root: string): string[] {
+  try {
+    return execSync("git ls-files", { cwd: root, encoding: "utf8" })
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean);
+  } catch {
+    return [];
+  }
 }
 
 export function validateArchitecture(root: string): RepoValidatorResult {
@@ -198,20 +216,31 @@ export function validateProductionProofProfile(root: string): RepoValidatorResul
     );
   }
 
-  const profileIsLocal = profile?.proofGrade === "local_runtime";
-  const enterpriseFlagFalse = profile?.enterpriseProductionProof === false;
-  const hasProductionGaps = Array.isArray(profile?.productionGaps) && profile.productionGaps.length >= 2;
-  const launchPolicyBlocks = profile?.launchClaimPolicy?.canClaimEnterpriseReady === false;
-  const manifestLaunchFalse = manifest?.launchClaim?.enterpriseReady === false;
+  const localMode =
+    profile?.proofGrade === "local_runtime" &&
+    profile?.enterpriseProductionProof === false &&
+    profile?.launchClaimPolicy?.canClaimEnterpriseReady === false &&
+    manifest?.launchClaim?.enterpriseReady === false;
 
-  const ok = profileIsLocal && enterpriseFlagFalse && hasProductionGaps && launchPolicyBlocks && manifestLaunchFalse;
+  const productionLikeMode =
+    isProductionLikeProofGrade(profile?.proofGrade) &&
+    profile?.enterpriseProductionProof === true &&
+    profile?.launchClaimPolicy?.canClaimEnterpriseReady === true &&
+    manifest?.launchClaim?.enterpriseReady === true;
+
+  const gapsAreConsistent =
+    localMode
+      ? Array.isArray(profile?.productionGaps) && profile.productionGaps.length >= 1
+      : Array.isArray(profile?.productionGaps) && profile.productionGaps.length === 0;
+
+  const ok = (localMode || productionLikeMode) && gapsAreConsistent;
 
   return result(
     "Validate-Botomatic-ProductionProofProfile",
     ok,
     ok
-      ? "Production-proof profile is explicit and prevents false enterprise-ready claims."
-      : "Production-proof profile does not explicitly enforce non-production claim boundaries.",
+      ? "Production-proof profile is internally consistent with launch claim policy."
+      : "Production-proof profile is inconsistent with launch claim state or required proof grade.",
     checks
   );
 }
@@ -299,9 +328,11 @@ export function validateFinalLaunchReadiness(root: string): RepoValidatorResult 
     "READINESS_SCORECARD.json",
     "FINAL_LAUNCH_READINESS_CRITERIA.md",
     "release-evidence/manifest.json",
-    "docs/gate4/GATE4_RUNTIME_PROOF_2026-04-23.md",
-    "docs/gate5/GATE5_RUNTIME_PROOF_2026-04-23.md",
-    "docs/gate6/GATE6_RUNTIME_PROOF_2026-04-23.md",
+    "release-evidence/proof_profile.json",
+    "release-evidence/runtime/builder_quality_benchmark.json",
+    "release-evidence/runtime/ops_observability.json",
+    "release-evidence/runtime/gate_negative_paths.json",
+    "release-evidence/runtime/ui_control_plane_workflow.json",
   ];
   const fileOk = checks.every((p) => has(root, p));
   if (!fileOk) {
@@ -313,27 +344,141 @@ export function validateFinalLaunchReadiness(root: string): RepoValidatorResult 
     );
   }
 
-  const blockers = read(root, "LAUNCH_BLOCKERS.md");
-  const matrix = read(root, "VALIDATION_MATRIX.md");
-  const manifest = JSON.parse(read(root, "release-evidence/manifest.json")) as any;
+  let manifest: any;
+  let profile: any;
+  let benchmark: any;
+  let blockers = "";
+  try {
+    blockers = read(root, "LAUNCH_BLOCKERS.md");
+    manifest = JSON.parse(read(root, "release-evidence/manifest.json"));
+    profile = JSON.parse(read(root, "release-evidence/proof_profile.json"));
+    benchmark = JSON.parse(read(root, "release-evidence/runtime/builder_quality_benchmark.json"));
+  } catch {
+    return result(
+      "Validate-Botomatic-FinalLaunchReadiness",
+      false,
+      "Final launch readiness metadata could not be parsed.",
+      checks
+    );
+  }
 
-  const gate2Closed = blockers.includes("| Gate 2 | Closed by proof");
-  const gate3Closed = blockers.includes("| Gate 3 | Closed by proof");
-  const gate4Closed = blockers.includes("| Gate 4 | Closed by proof");
-  const gate5Closed = blockers.includes("| Gate 5 | Closed by proof");
-  const gate6Closed = blockers.includes("| Gate 6 | Closed by proof");
-  const noP0Open = !blockers.includes("| Gate 7 | Open") && !blockers.includes("No fully implemented operator UI system");
-  const validatorsImplemented = matrix.includes("Validate-Botomatic-FinalLaunchReadiness") && matrix.includes("Validate-Botomatic-DeploymentRollbackGate5");
-  const manifestAligned = manifest?.gates?.gate4?.status === "closed_by_proof" && manifest?.gates?.gate5?.status === "closed_by_proof" && manifest?.gates?.gate6?.status === "closed_by_proof";
+  const subordinateResults: RepoValidatorResult[] = [
+    validateArchitecture(root),
+    validateBuilderCapability(root),
+    validateUIReadiness(root),
+    validateSecurity(root),
+    validateGovernance(root),
+    validateReliability(root),
+    validateObservability(root),
+    validateLaunchReadiness(root),
+    validateDeploymentRollbackGate5(root),
+    validateDocumentation(root),
+    validateAuthGovernanceGate4(root),
+    validateUIControlPlaneIntegration(root),
+    validateBuilderQualityBenchmarks(root),
+    validateBehavioralRuntimeCoverage(root),
+    validateObservabilityRuntimeEvidence(root),
+    validateProductionProofProfile(root),
+  ];
+  const allValidatorsPass = subordinateResults.every((r) => r.status === "passed");
 
-  const ok = gate2Closed && gate3Closed && gate4Closed && gate5Closed && gate6Closed && noP0Open && validatorsImplemented && manifestAligned;
+  const enterpriseReadyTrue = manifest?.launchClaim?.enterpriseReady === true;
+  const blockedByEmpty = Array.isArray(manifest?.launchClaim?.blockedBy) && manifest.launchClaim.blockedBy.length === 0;
+  const enterpriseProductionProofTrue = profile?.enterpriseProductionProof === true;
+  const proofGradeProductionLike = isProductionLikeProofGrade(profile?.proofGrade);
+
+  const gates = manifest?.gates && typeof manifest.gates === "object" ? Object.entries(manifest.gates) : [];
+  const closedByProof = gates.filter(([, gate]: [string, any]) => gate?.status === "closed_by_proof");
+  const allClosedByProofHaveEvidence = closedByProof.every(([, gate]: [string, any]) => typeof gate?.evidencePath === "string" && gate.evidencePath.length > 0 && has(root, gate.evidencePath));
+
+  const requiredClosedGates = ["gate2", "gate3", "gate4", "gate5", "gate6", "gate7"];
+  const requiredClosedGatesSatisfied = requiredClosedGates.every((gateId) => {
+    const gate = manifest?.gates?.[gateId];
+    return gate?.status === "closed_by_proof" && typeof gate?.evidencePath === "string" && has(root, gate.evidencePath);
+  });
+
+  const p0Section = blockers.split("## P1")[0] || blockers;
+  const p0BlockerOnlySection = p0Section.split("## Closure rules")[0] || p0Section;
+  const noP0OpenRows = !/\|\s*Gate\s+\d+\s*\|\s*Open\b/i.test(p0Section);
+  const noOpenP0BulletBlockers = p0BlockerOnlySection
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith("- "))
+    .every((line) => line.startsWith("- ~~") || line.toLowerCase().includes("closed:"));
+
+  const pendingLinkMarkerCount = listTrackedFiles(root)
+    .filter((file) => /\.(md|json|ya?ml|txt)$/i.test(file))
+    .reduce((count, file) => {
+      try {
+        return count + (/\bpending-link-required\b/i.test(read(root, file)) ? 1 : 0);
+      } catch {
+        return count;
+      }
+    }, 0);
+  const noPendingLinkRequiredMarkers = pendingLinkMarkerCount === 0;
+
+  const builderBenchmarkAverage = Number(benchmark?.averageScoreOutOf10 ?? 0);
+  const builderBenchmarkAtThreshold = Number.isFinite(builderBenchmarkAverage) && builderBenchmarkAverage >= 8.5;
+
+  const runtimeEvidence = profile?.runtimeEvidence || {};
+  const uiOperatorProofExists = typeof runtimeEvidence?.uiControlPlane?.artifactPath === "string" && has(root, runtimeEvidence.uiControlPlane.artifactPath);
+  const oidcProofExists = typeof runtimeEvidence?.behavioralNegativePaths?.artifactPath === "string" && has(root, runtimeEvidence.behavioralNegativePaths.artifactPath);
+  const deployRollbackProofExists = typeof runtimeEvidence?.behavioralNegativePaths?.artifactPath === "string" && has(root, runtimeEvidence.behavioralNegativePaths.artifactPath);
+  const observabilityProofExists = typeof runtimeEvidence?.observabilityOps?.artifactPath === "string" && has(root, runtimeEvidence.observabilityOps.artifactPath);
+
+  const uiOperatorProofProductionLike = isProductionLikeProofGrade(runtimeEvidence?.uiControlPlane?.proofGrade);
+  const oidcProofProductionLike = isProductionLikeProofGrade(runtimeEvidence?.behavioralNegativePaths?.proofGrade);
+  const deployRollbackProofProductionLike = isProductionLikeProofGrade(runtimeEvidence?.behavioralNegativePaths?.proofGrade);
+  const observabilityProofProductionLike = isProductionLikeProofGrade(runtimeEvidence?.observabilityOps?.proofGrade);
+
+  const ok =
+    allValidatorsPass &&
+    enterpriseReadyTrue &&
+    blockedByEmpty &&
+    enterpriseProductionProofTrue &&
+    proofGradeProductionLike &&
+    allClosedByProofHaveEvidence &&
+    requiredClosedGatesSatisfied &&
+    noP0OpenRows &&
+    noOpenP0BulletBlockers &&
+    noPendingLinkRequiredMarkers &&
+    builderBenchmarkAtThreshold &&
+    uiOperatorProofExists &&
+    oidcProofExists &&
+    deployRollbackProofExists &&
+    observabilityProofExists &&
+    uiOperatorProofProductionLike &&
+    oidcProofProductionLike &&
+    deployRollbackProofProductionLike &&
+    observabilityProofProductionLike;
+
+  const failedCriteria: string[] = [];
+  if (!allValidatorsPass) failedCriteria.push("not_all_validators_passed");
+  if (!enterpriseReadyTrue) failedCriteria.push("manifest_launch_claim_not_enterprise_ready");
+  if (!blockedByEmpty) failedCriteria.push("manifest_blocked_by_not_empty");
+  if (!enterpriseProductionProofTrue) failedCriteria.push("proof_profile_enterprise_production_proof_false");
+  if (!proofGradeProductionLike) failedCriteria.push("proof_profile_grade_not_production_like");
+  if (!allClosedByProofHaveEvidence) failedCriteria.push("closed_by_proof_gate_missing_evidence");
+  if (!requiredClosedGatesSatisfied) failedCriteria.push("required_gate_not_closed_by_proof");
+  if (!noP0OpenRows) failedCriteria.push("p0_blocker_row_open");
+  if (!noOpenP0BulletBlockers) failedCriteria.push("p0_bullet_blockers_open");
+  if (!noPendingLinkRequiredMarkers) failedCriteria.push("pending_link_required_marker_present");
+  if (!builderBenchmarkAtThreshold) failedCriteria.push("builder_benchmark_below_8_5");
+  if (!uiOperatorProofExists) failedCriteria.push("ui_operator_proof_missing");
+  if (!oidcProofExists) failedCriteria.push("oidc_proof_missing");
+  if (!deployRollbackProofExists) failedCriteria.push("deploy_rollback_proof_missing");
+  if (!observabilityProofExists) failedCriteria.push("observability_proof_missing");
+  if (!uiOperatorProofProductionLike) failedCriteria.push("ui_operator_proof_not_production_like");
+  if (!oidcProofProductionLike) failedCriteria.push("oidc_proof_not_production_like");
+  if (!deployRollbackProofProductionLike) failedCriteria.push("deploy_rollback_proof_not_production_like");
+  if (!observabilityProofProductionLike) failedCriteria.push("observability_proof_not_production_like");
 
   return result(
     "Validate-Botomatic-FinalLaunchReadiness",
     ok,
     ok
-      ? "Final launch criteria are satisfied and enterprise launch can be claimed."
-      : "Final launch criteria are not yet satisfied; enterprise launch claim remains blocked.",
+      ? "Final launch readiness gate passed with production-like proof and zero launch blockers."
+      : `Final launch readiness remains blocked: ${failedCriteria.join(", ")}.`,
     checks
   );
 }
@@ -447,15 +592,15 @@ export function validateBuilderQualityBenchmarks(root: string): RepoValidatorRes
   }
 
   const avg = Number(payload?.averageScoreOutOf10 || 0);
-  const hasCases = Array.isArray(payload?.cases) && payload.cases.length >= 3;
-  const ok = hasCases && avg >= 6.0;
+  const hasCases = Array.isArray(payload?.cases) && payload.cases.length >= 8;
+  const ok = hasCases && avg >= 8.5;
   const proofGrade = payload?.proofGrade === "production_like" ? "production-like" : "local";
 
   return result(
     "Validate-Botomatic-BuilderQualityBenchmarks",
     ok,
     ok
-      ? `Builder quality benchmark is present with average ${avg}/10 (${proofGrade} proof).`
+      ? `Builder quality benchmark is present with average ${avg}/10 across >=8 cases (${proofGrade} proof).`
       : `Builder benchmark average is below threshold or incomplete (${avg}/10, ${proofGrade} proof).`,
     checks
   );

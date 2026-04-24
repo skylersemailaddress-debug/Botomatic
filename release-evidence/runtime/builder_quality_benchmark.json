@@ -1,25 +1,12 @@
 {
-  "generatedAt": "2026-04-24T00:06:33.328Z",
+  "generatedAt": "2026-04-24T00:50:50.738Z",
   "proofGrade": "local_static",
   "methodology": "compiler+planner benchmark scoring",
-  "averageScoreOutOf10": 9.67,
+  "averageScoreOutOf10": 9,
   "thresholdTarget": 8.5,
   "cases": [
     {
-      "id": "enterprise_crm",
-      "scoreOutOf10": 10,
-      "dimensions": {
-        "appStructure": 2,
-        "authShell": 2,
-        "dataModel": 2,
-        "workflowCompleteness": 2,
-        "validationBuildPath": 1,
-        "codeQualitySignals": 1
-      },
-      "notes": []
-    },
-    {
-      "id": "volunteer_ops",
+      "id": "internal_crm",
       "scoreOutOf10": 9,
       "dimensions": {
         "appStructure": 2,
@@ -34,17 +21,109 @@
       ]
     },
     {
-      "id": "booking_platform",
-      "scoreOutOf10": 10,
+      "id": "approval_workflow_app",
+      "scoreOutOf10": 9,
       "dimensions": {
         "appStructure": 2,
-        "authShell": 2,
+        "authShell": 1,
         "dataModel": 2,
         "workflowCompleteness": 2,
         "validationBuildPath": 1,
         "codeQualitySignals": 1
       },
-      "notes": []
+      "notes": [
+        "Auth shell is not enterprise-grade (role model depth is limited)."
+      ]
+    },
+    {
+      "id": "operations_dashboard",
+      "scoreOutOf10": 9,
+      "dimensions": {
+        "appStructure": 2,
+        "authShell": 1,
+        "dataModel": 2,
+        "workflowCompleteness": 2,
+        "validationBuildPath": 1,
+        "codeQualitySignals": 1
+      },
+      "notes": [
+        "Auth shell is not enterprise-grade (role model depth is limited)."
+      ]
+    },
+    {
+      "id": "inventory_asset_tracker",
+      "scoreOutOf10": 9,
+      "dimensions": {
+        "appStructure": 2,
+        "authShell": 1,
+        "dataModel": 2,
+        "workflowCompleteness": 2,
+        "validationBuildPath": 1,
+        "codeQualitySignals": 1
+      },
+      "notes": [
+        "Auth shell is not enterprise-grade (role model depth is limited)."
+      ]
+    },
+    {
+      "id": "compliance_review_workflow",
+      "scoreOutOf10": 9,
+      "dimensions": {
+        "appStructure": 2,
+        "authShell": 1,
+        "dataModel": 2,
+        "workflowCompleteness": 2,
+        "validationBuildPath": 1,
+        "codeQualitySignals": 1
+      },
+      "notes": [
+        "Auth shell is not enterprise-grade (role model depth is limited)."
+      ]
+    },
+    {
+      "id": "employee_onboarding_system",
+      "scoreOutOf10": 9,
+      "dimensions": {
+        "appStructure": 2,
+        "authShell": 1,
+        "dataModel": 2,
+        "workflowCompleteness": 2,
+        "validationBuildPath": 1,
+        "codeQualitySignals": 1
+      },
+      "notes": [
+        "Auth shell is not enterprise-grade (role model depth is limited)."
+      ]
+    },
+    {
+      "id": "support_ticket_triage",
+      "scoreOutOf10": 9,
+      "dimensions": {
+        "appStructure": 2,
+        "authShell": 1,
+        "dataModel": 2,
+        "workflowCompleteness": 2,
+        "validationBuildPath": 1,
+        "codeQualitySignals": 1
+      },
+      "notes": [
+        "Auth shell is not enterprise-grade (role model depth is limited)."
+      ]
+    },
+    {
+      "id": "multi_role_admin_portal",
+      "scoreOutOf10": 9,
+      "dimensions": {
+        "appStructure": 2,
+        "authShell": 1,
+        "dataModel": 2,
+        "workflowCompleteness": 2,
+        "validationBuildPath": 1,
+        "codeQualitySignals": 1
+      },
+      "notes": [
+        "Auth shell is not enterprise-grade (role model depth is limited)."
+      ]
     }
   ]
 }
