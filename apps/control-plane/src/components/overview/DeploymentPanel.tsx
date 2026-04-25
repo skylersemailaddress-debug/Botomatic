@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import { getProjectDeployments, promoteProject, rollbackProject } from "@/services/deployments";
 import { getProjectGate } from "@/services/gate";

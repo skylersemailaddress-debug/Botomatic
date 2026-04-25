@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import { getDeploymentHistory } from "@/services/deployments";
 import Panel from "@/components/ui/Panel";

@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import { getProjectPackets } from "@/services/packets";
 import { replayRepair } from "@/services/actions";

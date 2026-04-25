@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import Panel from "@/components/ui/Panel";
 import { getProjectAudit } from "@/services/audit";

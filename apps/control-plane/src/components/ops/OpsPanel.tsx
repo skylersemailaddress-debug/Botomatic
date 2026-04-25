@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import { getOpsMetrics, getOpsErrors, getOpsQueue } from "@/services/ops";
 import Panel from "@/components/ui/Panel";
