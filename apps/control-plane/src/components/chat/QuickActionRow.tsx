@@ -1,7 +1,7 @@
 import { compileProject, planProject, executeNext } from "@/services/actions";
 
 export default function QuickActionRow({ projectId }: { projectId: string }) {
-  async function run(fn: () => Promise<void>) {
+  async function run(fn: () => Promise<unknown>) {
     try {
       await fn();
       location.reload();

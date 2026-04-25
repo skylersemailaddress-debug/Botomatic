@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import { getProjectGate } from "@/services/gate";
 import Panel from "@/components/ui/Panel";
