@@ -1,4 +1,6 @@
 import express from "express";
+import multer from "multer";
+import { PDFParse } from "pdf-parse";
 import { compileConversationToMasterTruth } from "../../../packages/master-truth/src/compiler";
 import { generatePlan } from "../../../packages/packet-engine/src/generator";
 import { markPacketComplete, markPacketFailed } from "../../../packages/execution/src/runner";
@@ -38,6 +40,7 @@ const leaseMs = Number(process.env.QUEUE_LEASE_MS || 30000);
 const workerConcurrency = Math.max(1, Number(process.env.WORKER_CONCURRENCY || 2));
 const governanceStateRunKey = "__governanceGate4Approval";
 const deploymentStateRunKey = "__deploymentState";
+const intakeArtifactsRunKey = "__intakeArtifacts";
 let workerStarted = false;
 let activeWorkers = 0;
 
@@ -352,6 +355,22 @@ function ensureAudit(project: any) {
   if (!project.auditEvents) {
     project.auditEvents = [];
   }
+}
+
+function getIntakeArtifacts(project: StoredProjectRecord): Record<string, any> {
+  const fromProject = ((project as any).intakeArtifacts || null) as Record<string, any> | null;
+  if (fromProject && typeof fromProject === "object") {
+    return fromProject;
+  }
+  const runs = ((project.runs || {}) as Record<string, unknown>);
+  const fromRuns = runs[intakeArtifactsRunKey] as Record<string, any> | undefined;
+  return fromRuns && typeof fromRuns === "object" ? fromRuns : {};
+}
+
+function setIntakeArtifacts(project: StoredProjectRecord, artifacts: Record<string, any>) {
+  const runs = ((project.runs || {}) as Record<string, unknown>);
+  project.runs = { ...runs, [intakeArtifactsRunKey]: artifacts };
+  (project as any).intakeArtifacts = artifacts;
 }
 
 function emitEvent(project: any, event: any) {
@@ -770,12 +789,143 @@ export function buildApp(config: RuntimeConfig) {
     }
   });
 
+  const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB max
+    fileFilter: (_req, file, cb) => {
+      const allowed = ["text/plain", "text/markdown", "application/json", "text/csv", "application/pdf"];
+      if (allowed.includes(file.mimetype) || file.originalname.match(/\.(txt|md|json|csv|pdf)$/i)) {
+        cb(null, true);
+      } else {
+        cb(new Error(`Unsupported file type: ${file.mimetype}`));
+      }
+    },
+  });
+
+  app.post("/api/projects/:projectId/intake/file", (req, res, next) => {
+    upload.single("file")(req, res, (error: any) => {
+      if (!error) {
+        return next();
+      }
+      if (error instanceof multer.MulterError) {
+        if (error.code === "LIMIT_FILE_SIZE") {
+          return res.status(400).json({ error: "File too large. Max size is 10 MB." });
+        }
+        return res.status(400).json({ error: `Upload failed: ${error.code}` });
+      }
+      return res.status(400).json({ error: String(error?.message || error) });
+    });
+  }, async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+
+      const uploadedFile = (req as any).file as Express.Multer.File | undefined;
+      if (!uploadedFile) return res.status(400).json({ error: "No file uploaded" });
+
+      const MAX_EXTRACT_BYTES = 500_000;
+      const CHUNK_SIZE = 4000;
+      const sizeBytes = uploadedFile.size;
+      const fileName = uploadedFile.originalname;
+      const mimeType = uploadedFile.mimetype;
+      const uploadedAt = now();
+
+      let extractedText = "";
+      let parseError: string | null = null;
+
+      if (mimeType === "application/pdf" || fileName.toLowerCase().endsWith(".pdf")) {
+        try {
+          const parser = new PDFParse({ data: uploadedFile.buffer });
+          const pdfData = await parser.getText();
+          await parser.destroy();
+          extractedText = pdfData.text || "";
+        } catch (err: any) {
+          parseError = `PDF parse failed: ${String(err?.message || err)}`;
+          extractedText = "";
+        }
+      } else {
+        try {
+          extractedText = uploadedFile.buffer.toString("utf8");
+        } catch (err: any) {
+          parseError = `Text decode failed: ${String(err?.message || err)}`;
+          extractedText = "";
+        }
+      }
+
+      const truncated = extractedText.length > MAX_EXTRACT_BYTES;
+      const fullText = truncated ? extractedText.slice(0, MAX_EXTRACT_BYTES) : extractedText;
+      const extractedTextPreview = fullText.slice(0, 500);
+
+      const chunks: string[] = [];
+      for (let i = 0; i < fullText.length; i += CHUNK_SIZE) {
+        chunks.push(fullText.slice(i, i + CHUNK_SIZE));
+      }
+
+      const artifactId = `intake_file_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      const artifact = {
+        artifactId,
+        fileName,
+        mimeType,
+        sizeBytes,
+        uploadedAt,
+        actorId: actor.actorId,
+        extractedTextPreview,
+        extractedText: fullText,
+        truncated,
+        chunkCount: chunks.length,
+        chunkPreviews: chunks.slice(0, 3).map((c, i) => ({ index: i, preview: c.slice(0, 200) })),
+        parseError,
+      };
+
+      const existingIntake = getIntakeArtifacts(project);
+      setIntakeArtifacts(project, { ...existingIntake, [artifactId]: artifact });
+      emitEvent(project as any, {
+        id: `evt_${Date.now()}`,
+        projectId: project.projectId,
+        type: "intake_file",
+        actorId: actor.actorId,
+        timestamp: uploadedAt,
+        metadata: { fileName, mimeType, sizeBytes, artifactId, extractedChars: fullText.length, truncated, parseError },
+      });
+      await persistProject(config, project);
+
+      return res.json({
+        ok: true,
+        artifactId,
+        fileName,
+        mimeType,
+        sizeBytes,
+        extractedChars: fullText.length,
+        extractedTextPreview,
+        truncated,
+        chunkCount: chunks.length,
+        parseError,
+        actorId: actor.actorId,
+        message: parseError
+          ? `Uploaded ${fileName}; parse error occurred; metadata stored.`
+          : `Uploaded ${fileName}; extracted ${fullText.length} characters; available to planning.`,
+      });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/projects/:projectId/intake/file", actor);
+    }
+  });
+
   app.post("/api/projects/:projectId/compile", async (req, res) => {
     const actor = await getRequestActor(req, config);
     try {
       const project = await repo.getProject(req.params.projectId);
       if (!project) return res.status(404).json({ error: "Project not found" });
-      const truth = compileConversationToMasterTruth({ projectId: project.projectId, appName: project.name, request: project.request });
+      const intakeArtifacts = getIntakeArtifacts(project);
+      const intakeContext = intakeArtifacts
+        ? Object.values(intakeArtifacts)
+            .map((a: any) => `[Uploaded: ${a.fileName}]\n${a.extractedText || a.extractedTextPreview || ""}`)
+            .join("\n\n")
+        : "";
+      const enrichedRequest = intakeContext
+        ? `${project.request}\n\n--- Uploaded Specs ---\n${intakeContext}`
+        : project.request;
+      const truth = compileConversationToMasterTruth({ projectId: project.projectId, appName: project.name, request: enrichedRequest });
       const updated = { ...project, masterTruth: truth, status: (truth as any).status, updatedAt: now() } as StoredProjectRecord;
       emitEvent(updated as any, { id: `evt_${Date.now()}`, projectId: updated.projectId, type: "compile", actorId: actor.actorId, timestamp: now() });
       await repo.upsertProject(updated);
@@ -854,7 +1004,8 @@ export function buildApp(config: RuntimeConfig) {
     try {
       const project = await repo.getProject(req.params.projectId);
       if (!project) return res.status(404).json({ error: "Project not found" });
-      return res.json({ ...project, actorId: actor.actorId, workerId });
+      const intakeArtifacts = getIntakeArtifacts(project);
+      return res.json({ ...project, intakeArtifacts, actorId: actor.actorId, workerId });
     } catch (error) {
       return handleRouteError(res, config, error, "GET /api/projects/:projectId/status", actor);
     }

@@ -581,6 +581,50 @@ export function validateBuilderQualityBenchmarks(root: string): RepoValidatorRes
   );
 }
 
+export function validateFileIngestion(root: string): RepoValidatorResult {
+  const checks = [
+    "apps/orchestrator-api/src/server_app.ts",
+    "apps/control-plane/src/components/chat/Composer.tsx",
+    "apps/control-plane/src/services/api.ts",
+    "apps/control-plane/src/services/intake.ts",
+  ];
+  const fileOk = checks.every((p) => has(root, p));
+  if (!fileOk) {
+    return result(
+      "Validate-Botomatic-FileIngestion",
+      false,
+      "File ingestion infrastructure files are missing.",
+      checks
+    );
+  }
+  const server = read(root, "apps/orchestrator-api/src/server_app.ts");
+  const composer = read(root, "apps/control-plane/src/components/chat/Composer.tsx");
+  const api = read(root, "apps/control-plane/src/services/api.ts");
+  const intakeSvc = read(root, "apps/control-plane/src/services/intake.ts");
+
+  const ok =
+    server.includes("/intake/file") &&
+    server.includes("multer") &&
+    server.includes("pdf-parse") &&
+    server.includes("intakeArtifacts") &&
+    server.includes("Uploaded Specs") &&
+    composer.includes("onFileUpload") &&
+    composer.includes("onKeyDown") &&
+    composer.includes("Shift+Enter") &&
+    api.includes("postMultipart") &&
+    intakeSvc.includes("uploadIntakeFile") &&
+    intakeSvc.includes("postMultipart");
+
+  return result(
+    "Validate-Botomatic-FileIngestion",
+    ok,
+    ok
+      ? "File upload route, multipart API helper, keyboard shortcuts, and intake service wiring exist."
+      : "File ingestion wiring is incomplete (route/multipart/composer/shortcuts).",
+    checks
+  );
+}
+
 export function runAllRepoValidators(root: string): RepoValidatorResult[] {
   return [
     validateArchitecture(root),
@@ -600,5 +644,6 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateObservabilityRuntimeEvidence(root),
     validateProductionProofProfile(root),
     validateFinalLaunchReadiness(root),
+    validateFileIngestion(root),
   ];
 }

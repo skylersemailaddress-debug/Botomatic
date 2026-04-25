@@ -6,6 +6,7 @@ import MessageList from "./MessageList";
 import QuickActionRow from "./QuickActionRow";
 import { compileProject, planProject, executeNext } from "@/services/actions";
 import { getProjectOverview } from "@/services/overview";
+import { uploadIntakeFile } from "@/services/intake";
 
 export default function ConversationPane({ projectId }: { projectId: string }) {
   const [input, setInput] = useState("");
@@ -85,12 +86,22 @@ export default function ConversationPane({ projectId }: { projectId: string }) {
     setLoading(false);
   }
 
+  async function handleFileUpload(file: File) {
+    const result = await uploadIntakeFile(projectId, file);
+    setMessages((m) => [...m, {
+      id: `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      role: "system",
+      content: result.message || `Uploaded ${result.fileName}; extracted ${result.extractedChars} characters; available to planning.`,
+      timestamp: new Date().toISOString(),
+    }]);
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", padding: 16, gap: 16 }}>
       <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Project {projectId}</div>
       <MessageList messages={messages} />
       <QuickActionRow projectId={projectId} />
-      <Composer value={input} onChange={setInput} onSubmit={handleSubmit} disabled={loading} />
+      <Composer value={input} onChange={setInput} onSubmit={handleSubmit} onFileUpload={handleFileUpload} disabled={loading} />
     </div>
   );
 }

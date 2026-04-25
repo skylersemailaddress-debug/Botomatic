@@ -26,6 +26,7 @@ Purpose: Map each launch category to required validators.
 | Observability Runtime Evidence | Validate-Botomatic-ObservabilityRuntimeEvidence | IMPLEMENTED (PASS) |
 | Production Proof Profile | Validate-Botomatic-ProductionProofProfile | IMPLEMENTED (PASS) |
 | Final Launch Readiness | Validate-Botomatic-FinalLaunchReadiness | IMPLEMENTED (PASS) |
+| File Ingestion | Validate-Botomatic-FileIngestion | IMPLEMENTED (PASS) |
 
 ## Runtime Proof Matrix
 
