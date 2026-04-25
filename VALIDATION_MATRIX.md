@@ -30,6 +30,7 @@ Purpose: Map each launch category to required validators.
 | Chat-First Operator Routing | Validate-Botomatic-ChatFirstOperatorRouting | IMPLEMENTED (PASS) |
 | Universal Builder Readiness | Validate-Botomatic-UniversalBuilderReadiness | IMPLEMENTED (PASS) |
 | Self-Upgrading Factory Readiness | Validate-Botomatic-SelfUpgradingFactoryReadiness | IMPLEMENTED (PASS) |
+| Dirty Repo Rescue Readiness | Validate-Botomatic-DirtyRepoRescueReadiness | IMPLEMENTED (PASS) |
 
 Current constraint:
 - `Validate-Botomatic-BuilderQualityBenchmarks` is expected to fail until benchmark quality reaches strict thresholds (>= 8.5 launchable, >= 9.2 universal, zero critical failures).

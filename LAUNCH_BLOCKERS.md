@@ -18,6 +18,7 @@ Important:
 - Open: Universal-builder launch claim remains blocked until generated-app validators and benchmark thresholds pass together.
 - Open: Domain-specific generated-output validator depth is incomplete (registry exists; per-domain launch rubrics/runtime proof must be expanded).
 - Open: Repo truth alignment is in transition from legacy enterprise gate closure posture to chat-first universal-builder posture.
+- Open: Dirty-repo rescue/completion runtime proof is not yet captured at production-like depth (intake/audit/repair/completion scaffolding is implemented but proof depth remains pending).
 
 ### Legacy Enterprise Gate Closure Ledger
 

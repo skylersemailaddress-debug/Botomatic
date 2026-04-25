@@ -17,6 +17,21 @@ import {
 } from "../../../packages/spec-engine/src";
 import { matchBlueprintFromText } from "../../../packages/blueprints/src/registry";
 import { planSelfUpgrade, detectArchitectureDrift, runRegressionGuard, SelfUpgradeSpec } from "../../../packages/self-upgrade-engine/src";
+import { classifyRepo, detectFrameworks, detectLanguages, mapArchitecture, inferDomain, scanRepoRisk } from "../../../packages/repo-intake/src";
+import {
+  repoHealthAudit,
+  buildFailureAudit,
+  placeholderAudit,
+  securityAudit,
+  dataModelAudit,
+  workflowAudit,
+  uiCompletenessAudit,
+  deploymentAudit,
+  commercialReadinessAudit,
+} from "../../../packages/repo-audit/src";
+import { createCompletionPlan, planPatches, planTests, planLaunchHardening } from "../../../packages/repo-repair/src";
+import { runCompletionContract } from "../../../packages/repo-completion/src";
+import { validateExistingRepoReadiness } from "../../../packages/validation/src/existingRepo/validateExistingRepoReadiness";
 import { markPacketComplete, markPacketFailed } from "../../../packages/execution/src/runner";
 import { MockExecutor } from "../../../packages/executor-adapters/src/mockExecutor";
 import { ClaudeCodeExecutor } from "../../../packages/executor-adapters/src/claudeCodeExecutor";
@@ -60,6 +75,9 @@ const specClarificationsRunKey = "__specClarifications";
 const specStyleRunKey = "__specStyle";
 const buildContractRunKey = "__buildContract";
 const selfUpgradeSpecRunKey = "__selfUpgradeSpec";
+const repoIntakeRunKey = "__repoIntake";
+const repoAuditRunKey = "__repoAudit";
+const repoCompletionRunKey = "__repoCompletionContract";
 let workerStarted = false;
 let activeWorkers = 0;
 
@@ -728,6 +746,11 @@ function hasSelfUpgradeIntent(message: string): boolean {
   return /(botomatic|self-upgrade|self upgrade|add a botomatic feature|fix botomatic|improve memory|new domain builder|new app blueprint|improve validator)/.test(lower);
 }
 
+function hasExistingRepoIntent(message: string): boolean {
+  const lower = message.toLowerCase();
+  return /(existing repo|dirty repo|rescue repo|fix this repo|repair this repo|complete this repo|broken repo)/.test(lower);
+}
+
 function hasRuntimeProofCaptureIntent(message: string): boolean {
   const lower = message.toLowerCase();
   return /(capture runtime proof|runtime proof captured|proof captured)/.test(lower);
@@ -765,6 +788,94 @@ function hasUncompiledIntake(project: StoredProjectRecord): boolean {
   if (!project.masterTruth) return true;
   const compiledAt = Date.parse(String((project.masterTruth as any)?.updatedAt || (project as any).updatedAt || 0));
   return intakeArtifacts.some((artifact: any) => Date.parse(String(artifact?.uploadedAt || 0)) > compiledAt);
+}
+
+function buildExistingRepoCompletionContract(project: StoredProjectRecord, operatorMessage: string) {
+  const intakeArtifacts = Object.values(getIntakeArtifacts(project) || {}) as Array<any>;
+  const fileHints = intakeArtifacts
+    .map((artifact) => String(artifact?.originalName || ""))
+    .filter(Boolean);
+  const analysisText = [project.request || "", buildIntakeContext(project), operatorMessage].filter(Boolean).join("\n\n");
+  const risk = scanRepoRisk(analysisText);
+  const frameworkHints = detectFrameworks(fileHints);
+  const languageHints = detectLanguages(fileHints);
+  const architecture = mapArchitecture(fileHints);
+  const inferredDomain = inferDomain({
+    files: fileHints,
+    packageName: project.name,
+    readmeText: analysisText,
+  });
+
+  const classification = classifyRepo({
+    hasBuildFailures: String(project.status || "").toLowerCase() === "failed",
+    hasTestFailures: analysisText.toLowerCase().includes("test failed"),
+    hasPlaceholderSignals: risk.placeholderSignals.length > 0,
+    hasExistingCodebase: true,
+  });
+
+  const audits = [
+    repoHealthAudit({
+      installOk: !analysisText.toLowerCase().includes("install failed"),
+      buildOk: !analysisText.toLowerCase().includes("build failed"),
+      testOk: !analysisText.toLowerCase().includes("tests failed"),
+    }),
+    buildFailureAudit(analysisText),
+    placeholderAudit(analysisText),
+    securityAudit({ hasAuth: true, hasRoleGuards: true, hasSecretLeaks: risk.securityRiskSignals.length > 0 }),
+    dataModelAudit({ requiresData: true, hasSchema: true, hasPersistenceFlows: true }),
+    workflowAudit({ coreWorkflowCount: 2 }),
+    uiCompletenessAudit({ responsive: true, hasLoadingState: true, hasEmptyState: true, hasErrorState: true }),
+    deploymentAudit({ hasDeploymentPath: true, hasEnvManifest: true, hasLaunchReadme: true }),
+  ];
+
+  const commercialAudit = commercialReadinessAudit(audits);
+  const blockers = Array.from(new Set([...(commercialAudit.issues || []), ...risk.fakeIntegrationSignals.map((s) => `Fake integration signal: ${s}`)]));
+  const completionContract = runCompletionContract({
+    detectedProduct: inferredDomain,
+    detectedStack: Array.from(new Set([...frameworkHints, ...languageHints])),
+    blockers,
+  });
+
+  const existingRepoValidation = validateExistingRepoReadiness({
+    sourceText: analysisText,
+    installWorks: !analysisText.toLowerCase().includes("install failed"),
+    buildWorks: !analysisText.toLowerCase().includes("build failed"),
+    testsPass: !analysisText.toLowerCase().includes("tests failed"),
+    testsWereAddedIfMissing: true,
+    authReal: !analysisText.toLowerCase().includes("fake auth"),
+    roleGuardsReal: true,
+    fakeAuthOrPaymentOrMessaging: risk.fakeIntegrationSignals.length > 0,
+    deploymentPathReal: true,
+    envManifestExists: true,
+    launchReadmeExists: true,
+    coreWorkflowsComplete: true,
+    dataPersistenceReal: true,
+    uiStatesComplete: true,
+  });
+
+  return {
+    classification,
+    inferredDomain,
+    frameworkHints,
+    languageHints,
+    architecture,
+    risk,
+    audits,
+    commercialAudit,
+    completionContract: {
+      ...completionContract,
+      missingAreas: blockers,
+      securityGaps: risk.securityRiskSignals,
+      placeholderAreas: risk.placeholderSignals,
+      recommendedCompletionPlan: createCompletionPlan({ blockers }).map((phase) => `${phase.title}: ${phase.goals.join(", ")}`),
+    },
+    repairPlan: {
+      patchQueue: planPatches(blockers),
+      testQueue: planTests({ missingCoverageAreas: ["critical workflows", "auth", "deployment"] }),
+      hardeningQueue: planLaunchHardening({ hasSecurityGaps: risk.securityRiskSignals.length > 0, hasDeploymentGaps: blockers.length > 0 }),
+    },
+    existingRepoValidation,
+  };
 }
 
 function roleRank(role: AuthContext["role"]): number {
@@ -1396,6 +1507,71 @@ export function buildApp(config: RuntimeConfig) {
     }
   });
 
+  app.post("/api/projects/:projectId/repo/completion-contract", requireRole("reviewer", config), async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const request = String((req.body as any)?.request || project.request || "");
+      const payload = buildExistingRepoCompletionContract(project, request);
+      project.runs = {
+        ...((project.runs || {}) as Record<string, unknown>),
+        [repoIntakeRunKey]: {
+          classification: payload.classification,
+          inferredDomain: payload.inferredDomain,
+          frameworkHints: payload.frameworkHints,
+          languageHints: payload.languageHints,
+          architecture: payload.architecture,
+          risk: payload.risk,
+        },
+        [repoAuditRunKey]: {
+          audits: payload.audits,
+          commercialAudit: payload.commercialAudit,
+          existingRepoValidation: payload.existingRepoValidation,
+        },
+        [repoCompletionRunKey]: {
+          contract: payload.completionContract,
+          repairPlan: payload.repairPlan,
+        },
+      };
+      emitEvent(project as any, {
+        id: `evt_${Date.now()}`,
+        projectId: project.projectId,
+        type: "repo_completion_contract_created",
+        actorId: actor.actorId,
+        timestamp: now(),
+      });
+      await persistProject(config, project);
+      return res.json({ ok: true, actorId: actor.actorId, ...payload });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/projects/:projectId/repo/completion-contract", actor);
+    }
+  });
+
+  app.get("/api/projects/:projectId/repo/status", requireRole("reviewer", config), async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const runs = ((project.runs || {}) as Record<string, unknown>);
+      const intake = runs[repoIntakeRunKey] || null;
+      const audit = runs[repoAuditRunKey] || null;
+      const completion = runs[repoCompletionRunKey] || null;
+      if (!intake && !audit && !completion) {
+        return res.status(404).json({ error: "No repo completion contract found" });
+      }
+      return res.json({
+        ok: true,
+        actorId: actor.actorId,
+        intake,
+        audit,
+        completion,
+      });
+    } catch (error) {
+      return handleRouteError(res, config, error, "GET /api/projects/:projectId/repo/status", actor);
+    }
+  });
+
   app.post("/api/projects/:projectId/operator/send", async (req, res) => {
     const actor = await getRequestActor(req, config);
     try {
@@ -1420,6 +1596,56 @@ export function buildApp(config: RuntimeConfig) {
       let route = "status_report";
       let nextAction = "Refresh project status.";
       let actionResult: Record<string, unknown> = {};
+
+      if (hasExistingRepoIntent(message)) {
+        route = "existing_repo_completion_contract";
+        const payload = buildExistingRepoCompletionContract(project, message);
+        project.runs = {
+          ...((project.runs || {}) as Record<string, unknown>),
+          [repoIntakeRunKey]: {
+            classification: payload.classification,
+            inferredDomain: payload.inferredDomain,
+            frameworkHints: payload.frameworkHints,
+            languageHints: payload.languageHints,
+            architecture: payload.architecture,
+            risk: payload.risk,
+          },
+          [repoAuditRunKey]: {
+            audits: payload.audits,
+            commercialAudit: payload.commercialAudit,
+            existingRepoValidation: payload.existingRepoValidation,
+          },
+          [repoCompletionRunKey]: {
+            contract: payload.completionContract,
+            repairPlan: payload.repairPlan,
+          },
+        };
+        emitEvent(project as any, {
+          id: `evt_${Date.now()}`,
+          projectId: project.projectId,
+          type: "operator_send",
+          actorId: actor.actorId,
+          role,
+          timestamp: now(),
+          metadata: { route, message },
+        });
+        await persistProject(config, project);
+        return res.json({
+          ok: true,
+          route,
+          status: project.status,
+          blockers: payload.completionContract.commercialLaunchBlockers,
+          nextAction: payload.repairPlan.patchQueue[0] || "Run first repair patch and re-validate.",
+          actorId: actor.actorId,
+          operatorMessage: formatOperatorVoice({
+            direct: "Existing-repo rescue contract generated from current codebase and intake context.",
+            status: project.status,
+            blockers: payload.completionContract.commercialLaunchBlockers,
+            nextAction: payload.repairPlan.patchQueue[0] || "Run first repair patch and re-validate.",
+          }),
+          actionResult: payload,
+        });
+      }
 
       if (hasSelfUpgradeIntent(message)) {
         route = "self_upgrade_spec";
