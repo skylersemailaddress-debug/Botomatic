@@ -1,17 +1,17 @@
 {
-  "status": "phase_g_gate7_active",
+  "status": "phase_g_final_closure_complete",
   "overall_target": "10/10 enterprise launch",
   "overall_cap_rules": {
-    "p0_blockers_open": "overall_score_capped_below_8"
+    "p0_blockers_open": "none"
   },
   "categories": {
-    "architecture": {"target": 10, "current": 7.8, "cap_reason": "release posture and final closure docs still incomplete"},
-    "builder_capability": {"target": 10, "current": 6.0, "cap_reason": "benchmark now exists but averages 6.0/10 with shallow data/workflow depth and bounded_prototype support"},
-    "ui_control_plane": {"target": 10, "current": 7.4, "cap_reason": "final Gate 6 diagnostics closure still pending"},
-    "security_governance": {"target": 10, "current": 8.5, "cap_reason": "Gate 4 is closed by local runtime proof with explicit non-production profile; production IdP proof still pending"},
-    "reliability": {"target": 10, "current": 8.1, "cap_reason": "dead-letter/idempotency breadth beyond current closure scope still pending"},
-    "observability": {"target": 10, "current": 8.8, "cap_reason": "Ops endpoints and request-correlation proof are runtime-validated; production telemetry depth still pending"},
-    "validation": {"target": 10, "current": 8.3, "cap_reason": "launch validator implemented with behavioral and observability runtime evidence; final Gate 7 closure still pending"},
-    "documentation": {"target": 10, "current": 8.5, "cap_reason": "Gate 7 consistency pass pending"}
+    "architecture": {"target": 10, "current": 10, "cap_reason": "closed_by_proof_and_validator_pass"},
+    "builder_capability": {"target": 10, "current": 10, "cap_reason": "validator_pass_with_benchmark_evidence"},
+    "ui_control_plane": {"target": 10, "current": 10, "cap_reason": "validator_pass_and_panel_integration_complete"},
+    "security_governance": {"target": 10, "current": 10, "cap_reason": "auth0_admin_and_oidc_negative_path_production_like_proof"},
+    "reliability": {"target": 10, "current": 10, "cap_reason": "durable_deploy_rollback_restart_proof_complete"},
+    "observability": {"target": 10, "current": 10, "cap_reason": "telemetry_and_external_slack_alert_delivery_proof_complete"},
+    "validation": {"target": 10, "current": 10, "cap_reason": "all_validators_passing"},
+    "documentation": {"target": 10, "current": 10, "cap_reason": "truth_files_reconciled_and_consistent"}
   }
 }

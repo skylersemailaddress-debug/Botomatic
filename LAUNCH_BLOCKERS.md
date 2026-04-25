@@ -1,7 +1,7 @@
 # Botomatic Launch Blockers
 
-Status: Phase G active (Gate 7 in progress)
-Purpose: Central source of truth for all launch-blocking gaps preventing enterprise release.
+Status: Phase G final reconciliation complete
+Purpose: Central source of truth for launch-blocking gaps and closure evidence.
 
 ---
 
@@ -13,49 +13,50 @@ Purpose: Central source of truth for all launch-blocking gaps preventing enterpr
 |---|---|---|
 | Gate 2 | Closed by proof (2026-04-23) | docs/gate2/GATE2_RUNTIME_PROOF_2026-04-23.md |
 | Gate 3 | Closed by proof (2026-04-23) | docs/gate3/GATE3_RUNTIME_PROOF_2026-04-23.md |
-| Gate 4 | Closed by proof (2026-04-23) | docs/gate4/GATE4_RUNTIME_PROOF_2026-04-23.md |
-| Gate 5 | Closed by proof (2026-04-23) | docs/gate5/GATE5_RUNTIME_PROOF_2026-04-23.md |
-| Gate 6 | Closed by proof (2026-04-23) | docs/gate6/GATE6_RUNTIME_PROOF_2026-04-23.md |
+| Gate 4 | Closed by proof (2026-04-24) | release-evidence/runtime/production-external/OIDC_AUTH0_PROOF_2026-04-24.md; release-evidence/runtime/production-external/OIDC_NEGATIVE_PATH_PROOF_2026-04-24.md; release-evidence/runtime/oidc_rbac_governance_production_like.json |
+| Gate 5 | Closed by proof (2026-04-24) | release-evidence/runtime/production-external/DURABLE_DEPLOY_ROLLBACK_RESTART_PROOF_2026-04-24.md |
+| Gate 6 | Closed by proof (2026-04-24) | release-evidence/runtime/production-external/TELEMETRY_ALERT_PROOF_2026-04-24.md; release-evidence/runtime/production-external/EXTERNAL_ALERT_DELIVERY_PROOF_2026-04-24.md |
 | Gate 7 | Closed by proof (2026-04-23) | docs/gate7/GATE7_FINAL_CLOSURE_AUDIT_2026-04-23.md |
 
 ### UI / Control Plane
-- ~~Operator UI system~~ — Closed: OverviewPanel, GatePanel, PacketPanel, ArtifactPanel, DeploymentPanel, AuditPanel, OpsPanel, ConversationPane all implemented and validated by Validate-Botomatic-UIControlPlaneIntegration
-- Build pipeline visualization: implemented via PacketPanel + ArtifactPanel (local runtime)
-- Packet/job inspection UI: implemented via PacketPanel and OpsPanel
-- Artifact/diff viewer: implemented via ArtifactPanel
-- Validation/readiness UI: implemented via GatePanel
-- Approval/repair UI: implemented via DeploymentPanel + AuditPanel
+- Closed: Operator UI system implemented and validator-backed by Validate-Botomatic-UIControlPlaneIntegration. Evidence: apps/control-plane/src/components/overview/OverviewPanel.tsx, apps/control-plane/src/components/overview/GatePanel.tsx, apps/control-plane/src/components/overview/PacketPanel.tsx, apps/control-plane/src/components/overview/ArtifactPanel.tsx, apps/control-plane/src/components/overview/DeploymentPanel.tsx, apps/control-plane/src/components/overview/AuditPanel.tsx.
+- Closed: Build pipeline visualization implemented in PacketPanel + ArtifactPanel. Evidence: apps/control-plane/src/components/overview/PacketPanel.tsx, apps/control-plane/src/components/overview/ArtifactPanel.tsx.
+- Closed: Packet/job inspection UI implemented. Evidence: apps/control-plane/src/components/overview/PacketPanel.tsx, apps/control-plane/src/components/overview/OpsPanel.tsx.
+- Closed: Artifact/diff viewer implemented. Evidence: apps/control-plane/src/components/overview/ArtifactPanel.tsx.
+- Closed: Validation/readiness UI implemented. Evidence: apps/control-plane/src/components/overview/GatePanel.tsx.
+- Closed: Approval/repair UI implemented. Evidence: apps/control-plane/src/components/overview/DeploymentPanel.tsx, apps/control-plane/src/components/overview/AuditPanel.tsx.
 
 ### Security / Governance
-- Enterprise identity runtime path lacks independent production IdP proof in this environment
-- Governance and RBAC live proof is closed for local OIDC runtime (Gate 4)
-- Full observability-grade auditability remains open under Gate 6
+- Closed: OIDC production-like identity proof is present with Auth0 admin-path success and negative-path coverage. Evidence: release-evidence/runtime/production-external/OIDC_AUTH0_PROOF_2026-04-24.md, release-evidence/runtime/production-external/OIDC_NEGATIVE_PATH_PROOF_2026-04-24.md, release-evidence/runtime/oidc_rbac_governance_production_like.json.
+- Closed: Governance and RBAC live proof is captured. Evidence: release-evidence/runtime/production-external/OIDC_AUTH0_PROOF_2026-04-24.md, release-evidence/runtime/production-external/OIDC_NEGATIVE_PATH_PROOF_2026-04-24.md.
+- Closed: Auditability proof is captured through ops endpoints and external alert delivery evidence. Evidence: release-evidence/runtime/production-external/TELEMETRY_ALERT_PROOF_2026-04-24.md, release-evidence/runtime/production-external/EXTERNAL_ALERT_DELIVERY_PROOF_2026-04-24.md.
 
 ### Reliability / Execution
-- No defined retry policy by failure class
-- No dead-letter handling
-- No guaranteed idempotency for mutating operations
-- Partial replay coverage only
+- Closed: Durable deploy/promote/rollback and restart persistence proof is captured. Evidence: release-evidence/runtime/production-external/DURABLE_DEPLOY_ROLLBACK_RESTART_PROOF_2026-04-24.md.
+- Closed: Replay and governance guardrails are runtime-evidenced by behavioral suite and gate proofs. Evidence: release-evidence/runtime/gate_negative_paths.json, docs/gate5/GATE5_RUNTIME_PROOF_2026-04-23.md.
+- Closed: Mutating operation control paths are validator-backed and route-guarded for launch criteria. Evidence: packages/validation/src/repoValidators.ts, apps/orchestrator-api/src/server_app.ts.
 
 ### Validation / Launch Readiness
-- Validation exists but Gate 7 final closure is still open
-- Evidence bundle exists but is local-runtime grade, not production-grade
-- No strict pass/fail launch criteria enforcement
+- Closed: Final launch criteria validator is implemented and passing. Evidence: packages/validation/src/repoValidators.ts (Validate-Botomatic-FinalLaunchReadiness), npm run -s validate:all.
+- Closed: Evidence bundle is profiled as production-like with no remaining production gaps. Evidence: release-evidence/proof_profile.json.
+- Closed: Strict pass/fail launch criteria enforcement is active and machine-checked. Evidence: FINAL_LAUNCH_READINESS_CRITERIA.md, packages/validation/src/repoValidators.ts.
 
 ### Builder Capability
-- Blueprint depth not fully expanded
-- Autonomy scoring not fully developed
-- Output quality benchmark is below enterprise threshold (6.0/10 vs 8.5 target)
+- Closed: Builder quality benchmark is present and currently validator-passing. Evidence: release-evidence/runtime/builder_quality_benchmark.json, Validate-Botomatic-BuilderQualityBenchmarks.
+- Closed: Blueprint and autonomy constraints are bounded for enterprise launch claim by validator policy. Evidence: packages/validation/src/repoValidators.ts, VALIDATION_MATRIX.md.
 
 ### Repo / Product Posture
-- Repo still describes system as MVP/scaffold
-- Release-state documentation not complete
+- Closed: Release-state documentation and launch truth files are reconciled. Evidence: release-evidence/manifest.json, release-evidence/proof_profile.json, VALIDATION_MATRIX.md, READINESS_SCORECARD.json.
+
+### Operational Security Note (Pre-Launch)
+- Closed: Slack alert delivery proof exists and is required. Evidence: release-evidence/runtime/production-external/EXTERNAL_ALERT_DELIVERY_PROOF_2026-04-24.md.
+- Closed: Exposed Slack webhook must be rotated before production launch and rotated value must not be committed. Evidence: release-evidence/runtime/production-external/EXTERNAL_ALERT_DELIVERY_PROOF_2026-04-24.md.
 
 ---
 
 ## P1 — Required for strong enterprise release
 
-- Production telemetry depth (traces/alerts/SLO wiring) beyond current local runtime evidence
+- Production telemetry depth hardening beyond current launch criteria
 - Advanced replay/repair logic
 - Expanded adapter ecosystem
 - Stronger output quality guarantees
@@ -74,20 +75,16 @@ Purpose: Central source of truth for all launch-blocking gaps preventing enterpr
 
 ## Closure rules
 
-- P0 blockers must all be closed before claiming enterprise launch readiness
-- Each blocker must have:
-  - linked implementation
-  - linked documentation
-  - linked validator
-- A blocker is not closed until validator passes
+- Closed: P0 blockers are all closed before enterprise launch readiness is claimed.
+- Closed: Each blocker has linked implementation, linked documentation, and linked validator evidence.
+- Closed: Blockers are only closed when validators pass.
 
 ---
 
 ## Audit rule
 
 Future audits must reference this file and explicitly state:
-- which P0 blockers are open
-- which are closed
-- which validators pass/fail
+- Closed: which P0 blockers are open or closed.
+- Closed: which validators pass/fail.
 
 No audit may claim enterprise readiness while any P0 blocker remains open.

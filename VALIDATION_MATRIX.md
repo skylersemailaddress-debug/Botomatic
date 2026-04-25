@@ -1,6 +1,6 @@
 # Botomatic Validation Matrix
 
-Status: Phase G active
+Status: Phase G final closure
 Purpose: Map each launch category to required validators.
 
 ---
@@ -25,7 +25,7 @@ Purpose: Map each launch category to required validators.
 | Behavioral Runtime Coverage | Validate-Botomatic-BehavioralRuntimeCoverage | IMPLEMENTED (PASS) |
 | Observability Runtime Evidence | Validate-Botomatic-ObservabilityRuntimeEvidence | IMPLEMENTED (PASS) |
 | Production Proof Profile | Validate-Botomatic-ProductionProofProfile | IMPLEMENTED (PASS) |
-| Final Launch Readiness | Validate-Botomatic-FinalLaunchReadiness | IMPLEMENTED (ACTIVE) |
+| Final Launch Readiness | Validate-Botomatic-FinalLaunchReadiness | IMPLEMENTED (PASS) |
 
 ## Runtime Proof Matrix
 
@@ -33,14 +33,14 @@ Purpose: Map each launch category to required validators.
 |---|---|---|
 | Gate 2 | End-to-end operator workflow scenario | PASS (2026-04-23) |
 | Gate 3 | Runtime safety/restart continuity scenario | PASS (2026-04-23) |
-| Gate 4 | Local OIDC role and governance smoke proof | PASS (2026-04-23) |
-| Gate 5 | Promote/rollback runtime scenario | PASS (2026-04-23) |
-| Gate 6 | Auditability and diagnostics scenario | PASS (2026-04-23) |
-| Gate 7 | Proof-integrity consistency scenario | PENDING |
+| Gate 4 | External Auth0 OIDC admin proof + OIDC negative-path coverage | PASS (2026-04-24) |
+| Gate 5 | Durable deploy/promote/rollback/restart continuity | PASS (2026-04-24) |
+| Gate 6 | Telemetry + external Slack delivery proof | PASS (2026-04-24) |
+| Gate 7 | Proof-integrity consistency scenario | PASS (2026-04-23) |
 
-Gate 7 proof artifact (this cycle): docs/gate7/GATE7_FINAL_CLOSURE_AUDIT_2026-04-23.md
-Builder benchmark artifact: release-evidence/runtime/builder_quality_benchmark.json
-Observability runtime artifact: release-evidence/runtime/ops_observability.json
+Gate 4 artifacts: release-evidence/runtime/production-external/OIDC_AUTH0_PROOF_2026-04-24.md, release-evidence/runtime/production-external/OIDC_NEGATIVE_PATH_PROOF_2026-04-24.md, release-evidence/runtime/oidc_rbac_governance_production_like.json
+Gate 5 artifact: release-evidence/runtime/production-external/DURABLE_DEPLOY_ROLLBACK_RESTART_PROOF_2026-04-24.md
+Gate 6 artifacts: release-evidence/runtime/production-external/TELEMETRY_ALERT_PROOF_2026-04-24.md, release-evidence/runtime/production-external/EXTERNAL_ALERT_DELIVERY_PROOF_2026-04-24.md
 
 ---
 
@@ -52,4 +52,4 @@ No category may reach 10/10 without:
 
 No gate may be marked closed by proof without runtime evidence captured in-repo.
 
-No enterprise launch claim allowed until all validators pass.
+Enterprise launch claim is allowed only when all validators pass.

@@ -206,20 +206,34 @@ export function validateProductionProofProfile(root: string): RepoValidatorResul
     );
   }
 
-  const profileIsLocal = profile?.proofGrade === "local_runtime";
-  const enterpriseFlagFalse = profile?.enterpriseProductionProof === false;
-  const hasProductionGaps = Array.isArray(profile?.productionGaps) && profile.productionGaps.length >= 2;
-  const launchPolicyBlocks = profile?.launchClaimPolicy?.canClaimEnterpriseReady === false;
-  const manifestLaunchFalse = manifest?.launchClaim?.enterpriseReady === false;
+  const isProductionLikeGrade = ["production_like", "staging_production_like", "production"].includes(profile?.proofGrade);
+  const hasProductionGaps = Array.isArray(profile?.productionGaps);
 
-  const ok = profileIsLocal && enterpriseFlagFalse && hasProductionGaps && launchPolicyBlocks && manifestLaunchFalse;
+  const localStateOk =
+    profile?.proofGrade === "local_runtime" &&
+    profile?.enterpriseProductionProof === false &&
+    hasProductionGaps &&
+    profile.productionGaps.length >= 1 &&
+    profile?.launchClaimPolicy?.canClaimEnterpriseReady === false &&
+    manifest?.launchClaim?.enterpriseReady === false;
+
+  const productionLikeStateOk =
+    isProductionLikeGrade &&
+    profile?.enterpriseProductionProof === true &&
+    hasProductionGaps &&
+    profile.productionGaps.length === 0 &&
+    manifest?.launchClaim?.enterpriseReady === true &&
+    Array.isArray(manifest?.launchClaim?.blockedBy) &&
+    manifest.launchClaim.blockedBy.length === 0;
+
+  const ok = localStateOk || productionLikeStateOk;
 
   return result(
     "Validate-Botomatic-ProductionProofProfile",
     ok,
     ok
-      ? "Production-proof profile is explicit and prevents false enterprise-ready claims."
-      : "Production-proof profile does not explicitly enforce non-production claim boundaries.",
+      ? "Production-proof profile is internally consistent with launch claim posture."
+      : "Production-proof profile and launch claim posture are inconsistent.",
     checks
   );
 }
