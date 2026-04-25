@@ -1,38 +1,61 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createLaunchProject } from "@/services/intake";
 
 export default function Page() {
-  useEffect(() => {
-    async function initializeProject() {
-      try {
-        const result = await createLaunchProject("Launch Project");
-        // Use window.location to redirect since we're in a client component
-        // after server action completes
-        window.location.href = `/projects/${result.projectId}`;
-      } catch (error) {
-        console.error("Failed to create launch project:", error);
-        // Show error to user
-        const errorMsg =
-          error instanceof Error ? error.message : "Failed to create launch project";
-        document.body.innerHTML = `
-          <div style="padding: 40px; font-family: system-ui; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #d4423f; margin-top: 40px;">Launch Error</h1>
-            <p style="color: #666; line-height: 1.6; margin-top: 16px;">${errorMsg}</p>
-            <p style="color: #999; font-size: 14px; margin-top: 20px;">
-              Please check that the backend API is running and properly configured.
-            </p>
-            <button onclick="location.reload()" style="margin-top: 20px; padding: 8px 16px; background: #0070f3; color: white; border: none; border-radius: 4px; cursor: pointer;">
-              Retry
-            </button>
-          </div>
-        `;
-      }
-    }
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
 
-    initializeProject();
+  async function bootstrap() {
+    setError(null);
+    try {
+      const result = await createLaunchProject("Launch Project");
+      router.replace(`/projects/${result.projectId}`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to create launch project";
+      setError(msg);
+    }
+  }
+
+  useEffect(() => {
+    bootstrap();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  if (error) {
+    return (
+      <div
+        style={{
+          padding: "40px",
+          fontFamily: "system-ui",
+          maxWidth: "600px",
+          margin: "0 auto",
+        }}
+      >
+        <h1 style={{ color: "#d4423f", marginTop: "40px" }}>Launch Error</h1>
+        <p style={{ color: "#666", lineHeight: "1.6", marginTop: "16px" }}>{error}</p>
+        <p style={{ color: "#999", fontSize: "14px", marginTop: "20px" }}>
+          Please check that the backend API is running and properly configured.
+        </p>
+        <button
+          onClick={bootstrap}
+          style={{
+            marginTop: "20px",
+            padding: "8px 16px",
+            background: "#0070f3",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer",
+          }}
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div
