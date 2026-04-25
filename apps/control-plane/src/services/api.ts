@@ -5,9 +5,12 @@ function normalizeApiBaseUrl(url: string): string {
 }
 
 export function getApiBaseUrl(): string {
-  return normalizeApiBaseUrl(
-    process.env.NEXT_PUBLIC_API_BASE_URL || DEFAULT_API_BASE_URL,
-  );
+  const configuredBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  if (configuredBaseUrl) {
+    return normalizeApiBaseUrl(configuredBaseUrl);
+  }
+
+  return DEFAULT_API_BASE_URL;
 }
 
 export function buildApiUrl(path: string): string {
@@ -16,7 +19,13 @@ export function buildApiUrl(path: string): string {
   }
 
   if (path.startsWith("/api/")) {
-    return `${getApiBaseUrl()}${path}`;
+    const configuredBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+    if (configuredBaseUrl) {
+      return `${normalizeApiBaseUrl(configuredBaseUrl)}${path}`;
+    }
+
+    // Keep API paths relative by default so Next.js rewrites can proxy in development.
+    return path;
   }
 
   return path;
@@ -25,51 +34,48 @@ export function buildApiUrl(path: string): string {
 function buildHeaders(overrides: Record<string, string> = {}): Record<string, string> {
   const headers: Record<string, string> = {};
 
-  // Add Authorization header if dev bearer token is provided
-  if (process.env.NEXT_PUBLIC_DEV_BEARER_TOKEN) {
+  // Add dev bearer token only in development builds.
+  if (process.env.NODE_ENV === "development" && process.env.NEXT_PUBLIC_DEV_BEARER_TOKEN) {
     headers["Authorization"] = `Bearer ${process.env.NEXT_PUBLIC_DEV_BEARER_TOKEN}`;
   }
 
   return { ...headers, ...overrides };
 }
 
+async function buildFetchError(response: Response, finalUrl: string): Promise<Error> {
+  let responseBody = "<empty>";
+  try {
+    responseBody = await response.text();
+  } catch {
+    responseBody = "<unreadable>";
+  }
+
+  return new Error(
+    `Request failed: ${response.status} ${response.statusText} (${finalUrl}) Body: ${responseBody}`,
+  );
+}
+
 export async function getJson<T>(url: string): Promise<T> {
-  const response = await fetch(buildApiUrl(url), {
+  const finalUrl = buildApiUrl(url);
+  const response = await fetch(finalUrl, {
     cache: "no-store",
     headers: buildHeaders(),
   });
   if (!response.ok) {
-    let errorMessage = `Request failed: ${response.status}`;
-    try {
-      const data = await response.json();
-      if (data.error) {
-        errorMessage = data.error;
-      }
-    } catch {
-      // Fall back to status-only error message
-    }
-    throw new Error(errorMessage);
+    throw await buildFetchError(response, finalUrl);
   }
   return response.json() as Promise<T>;
 }
 
 export async function postJson<T>(url: string, body?: unknown): Promise<T> {
-  const response = await fetch(buildApiUrl(url), {
+  const finalUrl = buildApiUrl(url);
+  const response = await fetch(finalUrl, {
     method: "POST",
     headers: buildHeaders({ "Content-Type": "application/json" }),
     body: body ? JSON.stringify(body) : undefined,
   });
   if (!response.ok) {
-    let errorMessage = `Request failed: ${response.status}`;
-    try {
-      const data = await response.json();
-      if (data.error) {
-        errorMessage = data.error;
-      }
-    } catch {
-      // Fall back to status-only error message
-    }
-    throw new Error(errorMessage);
+    throw await buildFetchError(response, finalUrl);
   }
   return response.json() as Promise<T>;
 }
