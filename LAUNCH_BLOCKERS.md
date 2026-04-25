@@ -16,6 +16,7 @@ Important:
 
 - Open: Generated-app benchmark does not meet strict quality threshold (`release-evidence/runtime/builder_quality_benchmark.json` currently below 8.5 and includes critical failures).
 - Open: Universal-builder launch claim remains blocked until generated-app validators and benchmark thresholds pass together.
+- Open: Domain-specific generated-output validator depth is incomplete (registry exists; per-domain launch rubrics/runtime proof must be expanded).
 - Open: Repo truth alignment is in transition from legacy enterprise gate closure posture to chat-first universal-builder posture.
 
 ### Legacy Enterprise Gate Closure Ledger

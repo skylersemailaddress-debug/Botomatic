@@ -16,6 +16,7 @@ import {
   SpecRecommendation,
 } from "../../../packages/spec-engine/src";
 import { matchBlueprintFromText } from "../../../packages/blueprints/src/registry";
+import { planSelfUpgrade, detectArchitectureDrift, runRegressionGuard, SelfUpgradeSpec } from "../../../packages/self-upgrade-engine/src";
 import { markPacketComplete, markPacketFailed } from "../../../packages/execution/src/runner";
 import { MockExecutor } from "../../../packages/executor-adapters/src/mockExecutor";
 import { ClaudeCodeExecutor } from "../../../packages/executor-adapters/src/claudeCodeExecutor";
@@ -58,6 +59,7 @@ const specStateRunKey = "__masterSpec";
 const specClarificationsRunKey = "__specClarifications";
 const specStyleRunKey = "__specStyle";
 const buildContractRunKey = "__buildContract";
+const selfUpgradeSpecRunKey = "__selfUpgradeSpec";
 let workerStarted = false;
 let activeWorkers = 0;
 
@@ -418,6 +420,17 @@ function getBuildContract(project: StoredProjectRecord): BuildContract | null {
   return value || null;
 }
 
+function getSelfUpgradeSpec(project: StoredProjectRecord): SelfUpgradeSpec | null {
+  const runs = ((project.runs || {}) as Record<string, unknown>);
+  const value = runs[selfUpgradeSpecRunKey] as SelfUpgradeSpec | undefined;
+  return value || null;
+}
+
+function setSelfUpgradeSpec(project: StoredProjectRecord, spec: SelfUpgradeSpec) {
+  const runs = ((project.runs || {}) as Record<string, unknown>);
+  project.runs = { ...runs, [selfUpgradeSpecRunKey]: spec };
+}
+
 function setBuildContract(project: StoredProjectRecord, contract: BuildContract) {
   const runs = ((project.runs || {}) as Record<string, unknown>);
   project.runs = { ...runs, [buildContractRunKey]: contract };
@@ -708,6 +721,11 @@ function getBuildBlockers(project: StoredProjectRecord): string[] {
 function hasLaunchIntent(message: string): boolean {
   const lower = message.toLowerCase();
   return /(launch|go live|promote|deploy\s+prod|release)/.test(lower);
+}
+
+function hasSelfUpgradeIntent(message: string): boolean {
+  const lower = message.toLowerCase();
+  return /(botomatic|self-upgrade|self upgrade|add a botomatic feature|fix botomatic|improve memory|new domain builder|new app blueprint|improve validator)/.test(lower);
 }
 
 function hasRuntimeProofCaptureIntent(message: string): boolean {
@@ -1335,6 +1353,49 @@ export function buildApp(config: RuntimeConfig) {
     }
   });
 
+  app.post("/api/projects/:projectId/self-upgrade/spec", requireRole("reviewer", config), async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const request = String((req.body as any)?.request || "");
+      if (!request.trim()) return res.status(400).json({ error: "Self-upgrade request is required" });
+
+      const spec = planSelfUpgrade(request);
+      const drift = detectArchitectureDrift(spec);
+      setSelfUpgradeSpec(project, spec);
+
+      emitEvent(project as any, {
+        id: `evt_${Date.now()}`,
+        projectId: project.projectId,
+        type: "self_upgrade_spec_created",
+        actorId: actor.actorId,
+        timestamp: now(),
+        metadata: { driftDetected: drift.driftDetected, reasons: drift.reasons, affectedModules: spec.affectedModules },
+      });
+      await persistProject(config, project);
+
+      return res.json({ ok: true, spec, drift, actorId: actor.actorId });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/projects/:projectId/self-upgrade/spec", actor);
+    }
+  });
+
+  app.get("/api/projects/:projectId/self-upgrade/status", requireRole("reviewer", config), async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const spec = getSelfUpgradeSpec(project);
+      if (!spec) return res.status(404).json({ error: "No self-upgrade spec found" });
+      const drift = detectArchitectureDrift(spec);
+      const regression = runRegressionGuard(spec, 1);
+      return res.json({ ok: true, spec, drift, regression, actorId: actor.actorId });
+    } catch (error) {
+      return handleRouteError(res, config, error, "GET /api/projects/:projectId/self-upgrade/status", actor);
+    }
+  });
+
   app.post("/api/projects/:projectId/operator/send", async (req, res) => {
     const actor = await getRequestActor(req, config);
     try {
@@ -1359,6 +1420,42 @@ export function buildApp(config: RuntimeConfig) {
       let route = "status_report";
       let nextAction = "Refresh project status.";
       let actionResult: Record<string, unknown> = {};
+
+      if (hasSelfUpgradeIntent(message)) {
+        route = "self_upgrade_spec";
+        const selfUpgradeSpec = planSelfUpgrade(message);
+        const drift = detectArchitectureDrift(selfUpgradeSpec);
+        setSelfUpgradeSpec(project, selfUpgradeSpec);
+        emitEvent(project as any, {
+          id: `evt_${Date.now()}`,
+          projectId: project.projectId,
+          type: "self_upgrade_spec_created",
+          actorId: actor.actorId,
+          role,
+          timestamp: now(),
+          metadata: { driftDetected: drift.driftDetected, reasons: drift.reasons, affectedModules: selfUpgradeSpec.affectedModules },
+        });
+        await persistProject(config, project);
+        return res.json({
+          ok: true,
+          route,
+          status: project.status,
+          blockers: drift.driftDetected ? drift.reasons : [],
+          nextAction: drift.driftDetected
+            ? "Resolve architecture drift blockers before applying self-upgrade changes."
+            : "Create a PR-sized branch change, run targeted and regression validators, and request human approval.",
+          actorId: actor.actorId,
+          operatorMessage: formatOperatorVoice({
+            direct: "Self-upgrade request captured. Generated SelfUpgradeSpec.",
+            status: project.status,
+            blockers: drift.driftDetected ? drift.reasons : [],
+            nextAction: drift.driftDetected
+              ? "Resolve architecture drift blockers before applying self-upgrade changes."
+              : "Create a PR-sized branch change, run targeted and regression validators, and request human approval.",
+          }),
+          actionResult: { selfUpgradeSpec, drift },
+        });
+      }
 
       if (hasLaunchIntent(message)) {
         route = "launch_gate";

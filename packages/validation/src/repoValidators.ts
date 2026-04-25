@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { validateUniversalBuilderReadiness } from "./repoValidators/universalBuilderReadiness";
+import { validateSelfUpgradingFactoryReadiness } from "./repoValidators/selfUpgradingFactoryReadiness";
 
 export type RepoValidatorResult = {
   name: string;
@@ -708,5 +709,6 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateFileIngestion(root),
     validateChatFirstOperatorRouting(root),
     validateUniversalBuilderReadiness(root),
+    validateSelfUpgradingFactoryReadiness(root),
   ];
 }
