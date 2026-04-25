@@ -36,7 +36,11 @@ export default function OverviewPanel({ projectId }: { projectId: string }) {
   }, [projectId]);
 
   if (error) {
-    return <div style={{ padding: 16 }}>Overview failed to load.</div>;
+    return (
+      <div style={{ padding: 16, color: "#d4423f" }}>
+        <strong>Overview Error:</strong> {error}
+      </div>
+    );
   }
 
   if (!data) {
