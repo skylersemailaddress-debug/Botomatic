@@ -1,3 +1,11 @@
 node_modules
 
-.trigger
+.trigger.env.local
+
+# Local secrets / runtime env
+.env.local
+.env.*.local
+
+# Next.js build output
+apps/control-plane/.next/
+.next/
