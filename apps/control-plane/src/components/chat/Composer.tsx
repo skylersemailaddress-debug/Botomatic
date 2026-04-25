@@ -75,6 +75,7 @@ export default function Composer({
 
   async function handleSend() {
     if (disabled) return;
+    const hadPendingFile = pendingFile && pendingFile.status === "pending";
     if (pendingFile && pendingFile.status === "pending" && onFileUpload) {
       setPendingFile((p) => p ? { ...p, status: "uploading" } : p);
       try {
@@ -85,7 +86,7 @@ export default function Composer({
         return;
       }
     }
-    if (value.trim()) onSubmit();
+    if (value.trim() || hadPendingFile) onSubmit();
   }
 
   const canSend = !disabled && (value.trim().length > 0 || (pendingFile != null && pendingFile.status === "pending"));

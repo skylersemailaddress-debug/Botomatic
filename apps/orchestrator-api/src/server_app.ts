@@ -542,6 +542,83 @@ function buildGate(project: StoredProjectRecord) {
   return { launchStatus, approvalStatus, governanceApproval, issues };
 }
 
+function buildIntakeContext(project: StoredProjectRecord): string {
+  const intakeArtifacts = getIntakeArtifacts(project);
+  const values = Object.values(intakeArtifacts || {});
+  if (!values.length) return "";
+  return values
+    .map((a: any) => `[Uploaded: ${a.fileName}]\n${a.extractedText || a.extractedTextPreview || ""}`)
+    .join("\n\n");
+}
+
+function compileProjectWithIntake(project: StoredProjectRecord): StoredProjectRecord {
+  const intakeContext = buildIntakeContext(project);
+  const enrichedRequest = intakeContext
+    ? `${project.request}\n\n--- Uploaded Specs ---\n${intakeContext}`
+    : project.request;
+  const truth = compileConversationToMasterTruth({
+    projectId: project.projectId,
+    appName: project.name,
+    request: enrichedRequest,
+  });
+  return {
+    ...project,
+    masterTruth: truth,
+    status: (truth as any).status,
+    updatedAt: now(),
+  } as StoredProjectRecord;
+}
+
+function hasLaunchIntent(message: string): boolean {
+  const lower = message.toLowerCase();
+  return /(launch|go live|promote|deploy\s+prod|release)/.test(lower);
+}
+
+function hasRuntimeProofCaptureIntent(message: string): boolean {
+  const lower = message.toLowerCase();
+  return /(capture runtime proof|runtime proof captured|proof captured)/.test(lower);
+}
+
+function hasGovernanceApproveIntent(message: string): boolean {
+  const lower = message.toLowerCase();
+  return /(approve governance|governance approved|approve launch|approval approved)/.test(lower);
+}
+
+function formatOperatorVoice(input: {
+  direct: string;
+  status: string;
+  blockers: string[];
+  nextAction: string;
+}) {
+  const blockerText = input.blockers.length > 0 ? input.blockers.join("; ") : "none";
+  return [
+    `Direct: ${input.direct}`,
+    `Status: ${input.status}`,
+    `Exact blockers: ${blockerText}`,
+    `Exact next action: ${input.nextAction}`,
+  ].join("\n");
+}
+
+function hasMissingValidation(project: StoredProjectRecord): boolean {
+  const packets = getPackets(project);
+  const validations = (project.validations || {}) as Record<string, unknown>;
+  return packets.some((packet: any) => packet.status === "complete" && !validations[packet.packetId]);
+}
+
+function hasUncompiledIntake(project: StoredProjectRecord): boolean {
+  const intakeArtifacts = Object.values(getIntakeArtifacts(project) || {});
+  if (intakeArtifacts.length === 0) return false;
+  if (!project.masterTruth) return true;
+  const compiledAt = Date.parse(String((project.masterTruth as any)?.updatedAt || (project as any).updatedAt || 0));
+  return intakeArtifacts.some((artifact: any) => Date.parse(String(artifact?.uploadedAt || 0)) > compiledAt);
+}
+
+function roleRank(role: AuthContext["role"]): number {
+  if (role === "admin") return 3;
+  if (role === "reviewer") return 2;
+  return 1;
+}
+
 function buildPacketList(project: StoredProjectRecord) {
   return getPackets(project).map((p: any) => ({ packetId: p.packetId, status: p.status, goal: p.goal, branchName: p.branchName }));
 }
@@ -911,22 +988,383 @@ export function buildApp(config: RuntimeConfig) {
     }
   });
 
+  app.post("/api/projects/:projectId/operator/send", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const auth = await getVerifiedAuth(req, config);
+      const role = auth.role;
+      const message = String((req.body as any)?.message || "");
+
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+
+      ensureGovernanceApprovalState(project, actor.actorId);
+      ensureDeploymentState(project as any);
+
+      let route = "status_report";
+      let nextAction = "Refresh project status.";
+      let actionResult: Record<string, unknown> = {};
+
+      if (hasLaunchIntent(message)) {
+        route = "launch_gate";
+        let governance = getGovernanceApprovalState(project);
+
+        if (hasRuntimeProofCaptureIntent(message) && role === "admin") {
+          governance = {
+            ...governance,
+            runtimeProofStatus: "captured",
+            updatedAt: now(),
+            updatedBy: actor.actorId,
+          };
+          project.runs = { ...((project.runs || {}) as Record<string, unknown>), [governanceStateRunKey]: governance };
+          project.governanceApproval = governance;
+          emitEvent(project as any, {
+            id: `evt_${Date.now()}`,
+            projectId: project.projectId,
+            type: "governance_approval_updated",
+            actorId: actor.actorId,
+            role,
+            timestamp: now(),
+            metadata: { runtimeProofStatus: governance.runtimeProofStatus, approvalStatus: governance.approvalStatus },
+          });
+        }
+
+        if (hasGovernanceApproveIntent(message) && role === "admin") {
+          governance = getGovernanceApprovalState(project);
+          if (governance.runtimeProofStatus === "captured") {
+            governance = {
+              ...governance,
+              approvalStatus: "approved",
+              updatedAt: now(),
+              updatedBy: actor.actorId,
+            };
+            project.runs = { ...((project.runs || {}) as Record<string, unknown>), [governanceStateRunKey]: governance };
+            project.governanceApproval = governance;
+            emitEvent(project as any, {
+              id: `evt_${Date.now()}`,
+              projectId: project.projectId,
+              type: "governance_approval_updated",
+              actorId: actor.actorId,
+              role,
+              timestamp: now(),
+              metadata: { runtimeProofStatus: governance.runtimeProofStatus, approvalStatus: governance.approvalStatus },
+            });
+          }
+        }
+
+        const gate = buildGate(project);
+        const governanceIssues = validateGovernanceForAction(getGovernanceApprovalState(project), "Launch");
+
+        if (governanceIssues.length > 0) {
+          nextAction = governanceIssues[0];
+          actionResult = {
+            gateStatus: gate.launchStatus,
+            governanceApprovalStatus: gate.governanceApproval.approvalStatus,
+            runtimeProofStatus: gate.governanceApproval.runtimeProofStatus,
+          };
+        } else if (gate.launchStatus !== "ready") {
+          nextAction = gate.issues[0] || "Resolve gate blockers before launch.";
+          actionResult = {
+            gateStatus: gate.launchStatus,
+            issues: gate.issues,
+          };
+        } else if (role !== "admin") {
+          nextAction = "Escalate to an admin to promote production deployment.";
+          actionResult = {
+            gateStatus: gate.launchStatus,
+            requiredRole: "admin",
+            actualRole: role,
+          };
+        } else {
+          route = "launch_promote";
+          const environment = "prod";
+          (project as any).deployments[environment] = {
+            environment,
+            status: "promoted",
+            promotedAt: now(),
+            promotedBy: actor.actorId,
+          };
+          emitEvent(project as any, {
+            id: `evt_${Date.now()}`,
+            projectId: project.projectId,
+            type: "promote",
+            actorId: actor.actorId,
+            role,
+            timestamp: now(),
+            metadata: { environment, via: "operator_send" },
+          });
+          nextAction = "Monitor production health and audit signals.";
+          actionResult = { promoted: true, environment };
+        }
+
+        recomputeProjectStatus(project);
+        await persistProject(config, project);
+        const overview = buildOverview(project);
+        const operatorMessage = formatOperatorVoice({
+          direct: route === "launch_promote"
+            ? "Launch promoted to production."
+            : "Launch request received; governance or gate conditions are not yet satisfied.",
+          status: project.status,
+          blockers: buildGate(project).issues,
+          nextAction,
+        });
+        emitEvent(project as any, {
+          id: `evt_${Date.now()}`,
+          projectId: project.projectId,
+          type: "operator_send",
+          actorId: actor.actorId,
+          role,
+          timestamp: now(),
+          metadata: { route, message },
+        });
+        await persistProject(config, project);
+        return res.json({
+          ok: true,
+          route,
+          status: project.status,
+          blockers: buildGate(project).issues,
+          nextAction,
+          actorId: actor.actorId,
+          operatorMessage,
+          actionResult: { ...actionResult, readiness: overview.readiness.status },
+        });
+      }
+
+      if (hasUncompiledIntake(project) || !project.masterTruth) {
+        route = "compile";
+        const updated = compileProjectWithIntake(project);
+        emitEvent(updated as any, {
+          id: `evt_${Date.now()}`,
+          projectId: updated.projectId,
+          type: "compile",
+          actorId: actor.actorId,
+          role,
+          timestamp: now(),
+          metadata: { via: "operator_send" },
+        });
+        emitEvent(updated as any, {
+          id: `evt_${Date.now()}_op`,
+          projectId: updated.projectId,
+          type: "operator_send",
+          actorId: actor.actorId,
+          role,
+          timestamp: now(),
+          metadata: { route, message },
+        });
+        await repo.upsertProject(updated);
+        return res.json({
+          ok: true,
+          route,
+          status: updated.status,
+          blockers: buildOverview(updated).blockers,
+          nextAction: "Generate an execution plan.",
+          actorId: actor.actorId,
+          operatorMessage: formatOperatorVoice({
+            direct: "Compiled updated project spec from operator input and uploaded artifacts.",
+            status: updated.status,
+            blockers: buildOverview(updated).blockers,
+            nextAction: "Generate an execution plan.",
+          }),
+          actionResult: { compiled: true },
+        });
+      }
+
+      if (!project.plan) {
+        route = "plan";
+        const plan = generatePlan(project.masterTruth as any);
+        const updated = { ...project, plan, status: "queued", updatedAt: now() } as StoredProjectRecord;
+        emitEvent(updated as any, {
+          id: `evt_${Date.now()}`,
+          projectId: updated.projectId,
+          type: "plan",
+          actorId: actor.actorId,
+          role,
+          timestamp: now(),
+          metadata: { via: "operator_send" },
+        });
+        emitEvent(updated as any, {
+          id: `evt_${Date.now()}_op`,
+          projectId: updated.projectId,
+          type: "operator_send",
+          actorId: actor.actorId,
+          role,
+          timestamp: now(),
+          metadata: { route, message },
+        });
+        await repo.upsertProject(updated);
+        return res.json({
+          ok: true,
+          route,
+          status: updated.status,
+          blockers: buildOverview(updated).blockers,
+          nextAction: "Dispatch next packet for execution.",
+          actorId: actor.actorId,
+          operatorMessage: formatOperatorVoice({
+            direct: "Plan generated and queued for execution.",
+            status: updated.status,
+            blockers: buildOverview(updated).blockers,
+            nextAction: "Dispatch next packet for execution.",
+          }),
+          actionResult: { planned: true, packetCount: getPackets(updated).length },
+        });
+      }
+
+      if (hasMissingValidation(project)) {
+        route = "validate_missing";
+        const packets = getPackets(project);
+        const missing = packets.find((packet: any) => packet.status === "complete" && !((project.validations || {}) as Record<string, unknown>)[packet.packetId]);
+        if (missing) {
+          const validation = runValidation(project.projectId, missing.packetId);
+          project.validations = {
+            ...((project.validations || {}) as Record<string, unknown>),
+            [missing.packetId]: validation,
+          };
+          emitEvent(project as any, {
+            id: `evt_${Date.now()}`,
+            projectId: project.projectId,
+            type: "validation",
+            actorId: actor.actorId,
+            role,
+            timestamp: now(),
+            metadata: { packetId: missing.packetId, via: "operator_send" },
+          });
+          emitEvent(project as any, {
+            id: `evt_${Date.now()}_op`,
+            projectId: project.projectId,
+            type: "operator_send",
+            actorId: actor.actorId,
+            role,
+            timestamp: now(),
+            metadata: { route, message },
+          });
+          await persistProject(config, project);
+          const overview = buildOverview(project);
+          const direct = (validation as any)?.status === "passed"
+            ? `Validation completed for ${missing.packetId}.`
+            : `Validation reported issues for ${missing.packetId}.`;
+          const nextAction = (validation as any)?.status === "passed"
+            ? "Execute next pending packet or request launch readiness check."
+            : "Review validation findings and repair blocked packets.";
+          return res.json({
+            ok: true,
+            route,
+            status: project.status,
+            blockers: overview.blockers,
+            nextAction,
+            actorId: actor.actorId,
+            operatorMessage: formatOperatorVoice({ direct, status: project.status, blockers: overview.blockers, nextAction }),
+            actionResult: { packetId: missing.packetId, validation },
+          });
+        }
+      }
+
+      const pendingPacket = getNextPendingPacket(project);
+      if (pendingPacket) {
+        if (roleRank(role) < roleRank("reviewer")) {
+          const overview = buildOverview(project);
+          const nextAction = "Reviewer or admin must authorize execute-next dispatch.";
+          emitEvent(project as any, {
+            id: `evt_${Date.now()}`,
+            projectId: project.projectId,
+            type: "operator_send",
+            actorId: actor.actorId,
+            role,
+            timestamp: now(),
+            metadata: { route: "execute_report", message },
+          });
+          await persistProject(config, project);
+          return res.json({
+            ok: true,
+            route: "execute_report",
+            status: project.status,
+            blockers: overview.blockers,
+            nextAction,
+            actorId: actor.actorId,
+            operatorMessage: formatOperatorVoice({
+              direct: `Execution is ready for packet ${pendingPacket.packetId}, but your role cannot dispatch jobs.`,
+              status: project.status,
+              blockers: overview.blockers,
+              nextAction,
+            }),
+            actionResult: { packetId: pendingPacket.packetId, requiredRole: "reviewer" },
+          });
+        }
+
+        route = "execute_next";
+        const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        await enqueueJob({ job_id: jobId, project_id: project.projectId, packet_id: pendingPacket.packetId });
+        emitEvent(project as any, {
+          id: `evt_${Date.now()}`,
+          projectId: project.projectId,
+          type: "operator_send",
+          actorId: actor.actorId,
+          role,
+          timestamp: now(),
+          metadata: { route, packetId: pendingPacket.packetId, jobId, message },
+        });
+        await persistProject(config, project);
+        const overview = buildOverview(project);
+        return res.json({
+          ok: true,
+          route,
+          status: project.status,
+          blockers: overview.blockers,
+          nextAction: "Monitor execution progress and wait for packet completion.",
+          actorId: actor.actorId,
+          operatorMessage: formatOperatorVoice({
+            direct: `Queued execution for ${pendingPacket.packetId}.`,
+            status: project.status,
+            blockers: overview.blockers,
+            nextAction: "Monitor execution progress and wait for packet completion.",
+          }),
+          actionResult: { jobId, packetId: pendingPacket.packetId },
+        });
+      }
+
+      const overview = buildOverview(project);
+      const gate = buildGate(project);
+      nextAction = overview.blockers[0] || gate.issues[0] || "Project is idle; provide more scope or request launch readiness.";
+      emitEvent(project as any, {
+        id: `evt_${Date.now()}`,
+        projectId: project.projectId,
+        type: "operator_send",
+        actorId: actor.actorId,
+        role,
+        timestamp: now(),
+        metadata: { route, message },
+      });
+      await persistProject(config, project);
+      return res.json({
+        ok: true,
+        route,
+        status: project.status,
+        blockers: [...overview.blockers, ...gate.issues],
+        nextAction,
+        actorId: actor.actorId,
+        operatorMessage: formatOperatorVoice({
+          direct: "No automatic transition was triggered; reporting current execution state.",
+          status: project.status,
+          blockers: [...overview.blockers, ...gate.issues],
+          nextAction,
+        }),
+        actionResult: {
+          packetCount: overview.summary.packetCount,
+          completedPackets: overview.summary.completedPackets,
+          failedPackets: overview.summary.failedPackets,
+          launchStatus: gate.launchStatus,
+        },
+      });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/projects/:projectId/operator/send", actor);
+    }
+  });
+
   app.post("/api/projects/:projectId/compile", async (req, res) => {
     const actor = await getRequestActor(req, config);
     try {
       const project = await repo.getProject(req.params.projectId);
       if (!project) return res.status(404).json({ error: "Project not found" });
-      const intakeArtifacts = getIntakeArtifacts(project);
-      const intakeContext = intakeArtifacts
-        ? Object.values(intakeArtifacts)
-            .map((a: any) => `[Uploaded: ${a.fileName}]\n${a.extractedText || a.extractedTextPreview || ""}`)
-            .join("\n\n")
-        : "";
-      const enrichedRequest = intakeContext
-        ? `${project.request}\n\n--- Uploaded Specs ---\n${intakeContext}`
-        : project.request;
-      const truth = compileConversationToMasterTruth({ projectId: project.projectId, appName: project.name, request: enrichedRequest });
-      const updated = { ...project, masterTruth: truth, status: (truth as any).status, updatedAt: now() } as StoredProjectRecord;
+      const updated = compileProjectWithIntake(project);
       emitEvent(updated as any, { id: `evt_${Date.now()}`, projectId: updated.projectId, type: "compile", actorId: actor.actorId, timestamp: now() });
       await repo.upsertProject(updated);
       return res.json({ projectId: updated.projectId, status: updated.status, actorId: actor.actorId });

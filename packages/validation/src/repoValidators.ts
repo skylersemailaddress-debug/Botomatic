@@ -625,6 +625,53 @@ export function validateFileIngestion(root: string): RepoValidatorResult {
   );
 }
 
+export function validateChatFirstOperatorRouting(root: string): RepoValidatorResult {
+  const checks = [
+    "apps/orchestrator-api/src/server_app.ts",
+    "apps/control-plane/src/components/chat/ConversationPane.tsx",
+    "apps/control-plane/src/components/chat/QuickActionRow.tsx",
+    "apps/control-plane/src/services/operator.ts",
+    "packages/master-truth/src/compiler.ts",
+  ];
+
+  const fileOk = checks.every((p) => has(root, p));
+  if (!fileOk) {
+    return result(
+      "Validate-Botomatic-ChatFirstOperatorRouting",
+      false,
+      "Chat-first operator routing files are missing.",
+      checks
+    );
+  }
+
+  const server = read(root, "apps/orchestrator-api/src/server_app.ts");
+  const conversation = read(root, "apps/control-plane/src/components/chat/ConversationPane.tsx");
+  const quickActions = read(root, "apps/control-plane/src/components/chat/QuickActionRow.tsx");
+  const operatorSvc = read(root, "apps/control-plane/src/services/operator.ts");
+  const compiler = read(root, "packages/master-truth/src/compiler.ts");
+
+  const ok =
+    server.includes("/operator/send") &&
+    server.includes("formatOperatorVoice") &&
+    server.includes("hasUncompiledIntake") &&
+    server.includes("hasLaunchIntent") &&
+    conversation.includes("sendOperatorMessage") &&
+    quickActions.includes("Advanced") &&
+    operatorSvc.includes("/operator/send") &&
+    compiler.includes("canonicalSpec") &&
+    compiler.includes("productIntent") &&
+    compiler.includes("openQuestions");
+
+  return result(
+    "Validate-Botomatic-ChatFirstOperatorRouting",
+    ok,
+    ok
+      ? "Chat-first operator route, advanced-only manual controls, and canonical spec v2 compilation are wired."
+      : "Chat-first operator routing or canonical spec v2 wiring is incomplete.",
+    checks
+  );
+}
+
 export function runAllRepoValidators(root: string): RepoValidatorResult[] {
   return [
     validateArchitecture(root),
@@ -645,5 +692,6 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateProductionProofProfile(root),
     validateFinalLaunchReadiness(root),
     validateFileIngestion(root),
+    validateChatFirstOperatorRouting(root),
   ];
 }

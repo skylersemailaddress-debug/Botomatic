@@ -4,9 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import Composer from "./Composer";
 import MessageList from "./MessageList";
 import QuickActionRow from "./QuickActionRow";
-import { compileProject, planProject, executeNext } from "@/services/actions";
 import { getProjectOverview } from "@/services/overview";
 import { uploadIntakeFile } from "@/services/intake";
+import { sendOperatorMessage } from "@/services/operator";
 
 export default function ConversationPane({ projectId }: { projectId: string }) {
   const [input, setInput] = useState("");
@@ -62,25 +62,31 @@ export default function ConversationPane({ projectId }: { projectId: string }) {
   }, [projectId]);
 
   async function handleSubmit() {
-    if (!input.trim()) return;
+    const message = input.trim();
 
-    const userMsg = { id: Date.now().toString(), role: "operator", content: input, timestamp: new Date().toISOString() };
-    setMessages((m) => [...m, userMsg]);
+    if (message) {
+      const userMsg = { id: Date.now().toString(), role: "operator", content: message, timestamp: new Date().toISOString() };
+      setMessages((m) => [...m, userMsg]);
+    }
     setInput("");
 
     setLoading(true);
 
     try {
-      await compileProject(projectId);
-      setMessages((m) => [...m, { id: Date.now().toString(), role: "system", content: "Compile completed.", timestamp: new Date().toISOString() }]);
-
-      await planProject(projectId);
-      setMessages((m) => [...m, { id: Date.now().toString(), role: "system", content: "Plan generated.", timestamp: new Date().toISOString() }]);
-
-      await executeNext(projectId);
-      setMessages((m) => [...m, { id: Date.now().toString(), role: "system", content: "Execution started.", timestamp: new Date().toISOString() }]);
-    } catch {
-      setMessages((m) => [...m, { id: Date.now().toString(), role: "system", content: "Request failed.", timestamp: new Date().toISOString() }]);
+      const response = await sendOperatorMessage(projectId, message);
+      setMessages((m) => [...m, {
+        id: Date.now().toString(),
+        role: "system",
+        content: response.operatorMessage,
+        timestamp: new Date().toISOString(),
+      }]);
+    } catch (error: any) {
+      setMessages((m) => [...m, {
+        id: Date.now().toString(),
+        role: "system",
+        content: `Request failed: ${String(error?.message || error)}`,
+        timestamp: new Date().toISOString(),
+      }]);
     }
 
     setLoading(false);

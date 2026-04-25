@@ -27,6 +27,7 @@ Purpose: Map each launch category to required validators.
 | Production Proof Profile | Validate-Botomatic-ProductionProofProfile | IMPLEMENTED (PASS) |
 | Final Launch Readiness | Validate-Botomatic-FinalLaunchReadiness | IMPLEMENTED (PASS) |
 | File Ingestion | Validate-Botomatic-FileIngestion | IMPLEMENTED (PASS) |
+| Chat-First Operator Routing | Validate-Botomatic-ChatFirstOperatorRouting | IMPLEMENTED (PASS) |
 
 ## Runtime Proof Matrix
 
