@@ -3,6 +3,7 @@ import path from "path";
 import { validateUniversalBuilderReadiness } from "./repoValidators/universalBuilderReadiness";
 import { validateSelfUpgradingFactoryReadiness } from "./repoValidators/selfUpgradingFactoryReadiness";
 import { validateDirtyRepoRescueReadiness } from "./repoValidators/dirtyRepoRescueReadiness";
+import { validateUniversalCapabilityStressReadiness } from "./repoValidators/universalCapabilityStressReadiness";
 
 export type RepoValidatorResult = {
   name: string;
@@ -712,5 +713,6 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateUniversalBuilderReadiness(root),
     validateSelfUpgradingFactoryReadiness(root),
     validateDirtyRepoRescueReadiness(root),
+    validateUniversalCapabilityStressReadiness(root),
   ];
 }

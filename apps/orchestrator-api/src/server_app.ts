@@ -32,6 +32,17 @@ import {
 import { createCompletionPlan, planPatches, planTests, planLaunchHardening } from "../../../packages/repo-repair/src";
 import { runCompletionContract } from "../../../packages/repo-completion/src";
 import { validateExistingRepoReadiness } from "../../../packages/validation/src/existingRepo/validateExistingRepoReadiness";
+import { appendEvent, EVENT_SPINE_SUPPORTED_DOMAINS } from "../../../packages/event-spine/src";
+import { extractProductTruth, recommendArchitecture } from "../../../packages/truth-engine/src";
+import { buildCausalWorldModel } from "../../../packages/causal-world-model/src";
+import { createPredictionLedger } from "../../../packages/prediction-ledger/src";
+import { runSimulation } from "../../../packages/simulation-engine/src";
+import { planInterventions } from "../../../packages/intervention-engine/src";
+import { defaultGovernanceRules } from "../../../packages/governance-engine/src";
+import { resolveAutonomyTier, allowedActionsForTier } from "../../../packages/autonomy-tiers/src";
+import { reflectAndRevise } from "../../../packages/reflection-engine/src";
+import { proposeEvolution } from "../../../packages/evolution-engine/src";
+import { listAllUIBlueprints } from "../../../packages/ui-blueprint-registry/src";
 import { markPacketComplete, markPacketFailed } from "../../../packages/execution/src/runner";
 import { MockExecutor } from "../../../packages/executor-adapters/src/mockExecutor";
 import { ClaudeCodeExecutor } from "../../../packages/executor-adapters/src/claudeCodeExecutor";
@@ -78,6 +89,7 @@ const selfUpgradeSpecRunKey = "__selfUpgradeSpec";
 const repoIntakeRunKey = "__repoIntake";
 const repoAuditRunKey = "__repoAudit";
 const repoCompletionRunKey = "__repoCompletionContract";
+const universalCapabilityRunKey = "__universalCapabilityArtifacts";
 let workerStarted = false;
 let activeWorkers = 0;
 
@@ -751,6 +763,11 @@ function hasExistingRepoIntent(message: string): boolean {
   return /(existing repo|dirty repo|rescue repo|fix this repo|repair this repo|complete this repo|broken repo)/.test(lower);
 }
 
+function hasUniversalCapabilityStressIntent(message: string): boolean {
+  const lower = message.toLowerCase();
+  return /(messy product input|universal capability|capability stress|synthetic intelligence|autonomous enterprise|intelligence cockpit)/.test(lower);
+}
+
 function hasRuntimeProofCaptureIntent(message: string): boolean {
   const lower = message.toLowerCase();
   return /(capture runtime proof|runtime proof captured|proof captured)/.test(lower);
@@ -875,6 +892,184 @@ function buildExistingRepoCompletionContract(project: StoredProjectRecord, opera
       hardeningQueue: planLaunchHardening({ hasSecurityGaps: risk.securityRiskSignals.length > 0, hasDeploymentGaps: blockers.length > 0 }),
     },
     existingRepoValidation,
+  };
+}
+
+function buildUniversalCapabilityArtifacts(project: StoredProjectRecord, inputText: string, actorId: string) {
+  const intakeContext = buildIntakeContext(project);
+  const combined = [project.request || "", intakeContext, inputText].filter(Boolean).join("\n\n");
+  const extracted = extractProductTruth({
+    projectId: project.projectId,
+    appName: project.name,
+    messyInput: combined,
+  });
+
+  const blueprint = matchBlueprintFromText(combined);
+  const analyzed = analyzeSpec({
+    appName: project.name,
+    request: combined,
+    blueprint,
+    actorId,
+  });
+  const contract = generateBuildContract(project.projectId, analyzed.spec);
+  const plan = generatePlan(extracted.masterTruth);
+
+  const worldModel = buildCausalWorldModel({
+    outcomes: [analyzed.spec.coreOutcome],
+    constraints: extracted.masterTruth.constraints,
+    risks: analyzed.spec.risks,
+  });
+
+  const predictionLedger = createPredictionLedger([
+    {
+      claim: "Commercial-readiness validators can pass once blockers are resolved.",
+      confidence: contract.readyToBuild ? 0.8 : 0.55,
+      rationale: contract.readyToBuild ? "Spec and build contract are structurally ready." : "Contract blockers remain open.",
+    },
+    {
+      claim: "Launch packet can be produced without fake systems.",
+      confidence: analyzed.spec.openQuestions.length === 0 ? 0.78 : 0.5,
+      rationale: analyzed.spec.openQuestions.length === 0 ? "No unresolved high-risk questions." : "Open questions still require resolution.",
+    },
+  ]);
+
+  const simulationScenarios = [
+    {
+      id: "sim_best_case",
+      name: "Best-case execution",
+      assumptions: ["All critical packets execute cleanly"],
+      expectedOutcome: "Fast path to validator pass",
+    },
+    {
+      id: "sim_risk_case",
+      name: "Risk-heavy execution",
+      assumptions: ["Security and workflow regressions appear"],
+      expectedOutcome: "Repair loop required before launch",
+    },
+  ];
+  const simulationResults = runSimulation(simulationScenarios, predictionLedger);
+
+  const interventions = planInterventions({
+    blockers: contract.blockers,
+    risks: analyzed.spec.risks,
+  });
+
+  const governanceRules = defaultGovernanceRules();
+  const unresolvedHighRiskQuestions = analyzed.clarifications.filter((item) => item.mustAsk).length;
+  const autonomyTier = resolveAutonomyTier({ delegated: true, unresolvedHighRiskQuestions });
+  const autonomyActions = allowedActionsForTier(autonomyTier);
+
+  const failedValidatorNames = contract.readyToBuild ? [] : ["build_contract_ready_to_build"];
+  const reflection = reflectAndRevise({
+    failedValidators: failedValidatorNames,
+    executionErrors: [],
+  });
+
+  const evolution = proposeEvolution({
+    subsystemGaps: [
+      ...(contract.blockers.length > 0 ? ["spec_build_contract"] : []),
+      ...(analyzed.spec.risks.length > 0 ? ["risk_controls"] : []),
+    ],
+  });
+
+  const architecture = recommendArchitecture(extracted.masterTruth);
+  const buildGraphNodes = [
+    { id: "event_spine", kind: "capability" },
+    { id: "truth_memory", kind: "capability" },
+    { id: "causal_world_model", kind: "capability" },
+    { id: "prediction_ledger", kind: "capability" },
+    { id: "simulation_engine", kind: "capability" },
+    { id: "intervention_engine", kind: "capability" },
+    { id: "governance_engine", kind: "capability" },
+    { id: "runtime_execution", kind: "capability" },
+    { id: "reflection_revision", kind: "capability" },
+    { id: "evolution_engine", kind: "capability" },
+    { id: "proof_engine", kind: "capability" },
+    { id: "intelligence_cockpit_ui", kind: "capability" },
+  ];
+  const buildGraphEdges = [
+    ["event_spine", "truth_memory"],
+    ["truth_memory", "causal_world_model"],
+    ["causal_world_model", "prediction_ledger"],
+    ["prediction_ledger", "simulation_engine"],
+    ["simulation_engine", "intervention_engine"],
+    ["intervention_engine", "governance_engine"],
+    ["governance_engine", "runtime_execution"],
+    ["runtime_execution", "reflection_revision"],
+    ["reflection_revision", "evolution_engine"],
+    ["runtime_execution", "proof_engine"],
+    ["truth_memory", "intelligence_cockpit_ui"],
+  ].map(([from, to]) => ({ from, to }));
+
+  const generatedCode = plan.packets.slice(0, 12).map((packet) => ({
+    packetId: packet.packetId,
+    goal: packet.goal,
+    suggestedFiles: packet.filesToTouch,
+    validationCommands: packet.validationCommands,
+  }));
+
+  const validationProof = {
+    requiredChecks: [
+      "no_placeholders",
+      "no_fake_systems",
+      "build_passes",
+      "tests_pass",
+      "validators_pass",
+      "proof_ledger_records_readiness",
+    ],
+    unresolvedBlockers: contract.blockers,
+  };
+
+  const launchPacket = {
+    launchClaimAllowed: contract.readyToBuild && contract.blockers.length === 0,
+    blockers: contract.blockers,
+    requiredApprovals: extracted.masterTruth.requiredApprovals,
+    productionChecklist: [
+      "all critical packets complete",
+      "validators all pass",
+      "governance approval captured",
+      "runtime proof captured",
+    ],
+  };
+
+  const eventSpine = appendEvent([], {
+    stream: `project_${project.projectId}`,
+    type: "universal_capability_stress_processed",
+    payload: {
+      projectId: project.projectId,
+      autonomyTier,
+      unresolvedQuestions: extracted.missingQuestions.length,
+    },
+  });
+
+  return {
+    extractedProductTruth: extracted.masterTruth,
+    missingQuestions: extracted.missingQuestions,
+    assumptions: extracted.assumptions,
+    architectureRecommendation: architecture,
+    buildContract: contract,
+    buildGraph: { nodes: buildGraphNodes, edges: buildGraphEdges },
+    implementationPlan: plan,
+    generatedCode,
+    validationProof,
+    launchPacket,
+    reusableSubsystems: {
+      eventSpine,
+      truthEngine: { canonicalSpec: extracted.masterTruth.canonicalSpec || null },
+      memoryEngine: { assumptions: extracted.assumptions.length },
+      causalWorldModel: worldModel,
+      predictionLedger,
+      simulationEngine: { scenarios: simulationScenarios, results: simulationResults },
+      interventionEngine: interventions,
+      governanceEngine: governanceRules,
+      autonomyTiers: { tier: autonomyTier, allowedActions: autonomyActions },
+      reflectionRevisionEngine: reflection,
+      evolutionEngine: evolution,
+      proofEngine: validationProof,
+      domainBuilderRegistry: { supportedDomains: EVENT_SPINE_SUPPORTED_DOMAINS },
+      uiBlueprintRegistry: listAllUIBlueprints(),
+      composition: "event_spine + truth_memory + world_model + prediction + simulation + intervention + governance + runtime + reflection + evolution + proof + intelligence_cockpit_ui",
+    },
   };
 }
 
@@ -1572,6 +1767,44 @@ export function buildApp(config: RuntimeConfig) {
     }
   });
 
+  app.post("/api/projects/:projectId/universal/capability-pipeline", requireRole("reviewer", config), async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const inputText = String((req.body as any)?.input || project.request || "");
+      const artifacts = buildUniversalCapabilityArtifacts(project, inputText, actor.actorId);
+      project.runs = {
+        ...((project.runs || {}) as Record<string, unknown>),
+        [universalCapabilityRunKey]: artifacts,
+      };
+      emitEvent(project as any, {
+        id: `evt_${Date.now()}`,
+        projectId: project.projectId,
+        type: "universal_capability_pipeline_generated",
+        actorId: actor.actorId,
+        timestamp: now(),
+      });
+      await persistProject(config, project);
+      return res.json({ ok: true, actorId: actor.actorId, ...artifacts });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/projects/:projectId/universal/capability-pipeline", actor);
+    }
+  });
+
+  app.get("/api/projects/:projectId/universal/capability-pipeline", requireRole("reviewer", config), async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const artifacts = (((project.runs || {}) as Record<string, unknown>)[universalCapabilityRunKey] as Record<string, unknown> | undefined) || null;
+      if (!artifacts) return res.status(404).json({ error: "No universal capability artifacts found" });
+      return res.json({ ok: true, actorId: actor.actorId, ...artifacts });
+    } catch (error) {
+      return handleRouteError(res, config, error, "GET /api/projects/:projectId/universal/capability-pipeline", actor);
+    }
+  });
+
   app.post("/api/projects/:projectId/operator/send", async (req, res) => {
     const actor = await getRequestActor(req, config);
     try {
@@ -1596,6 +1829,40 @@ export function buildApp(config: RuntimeConfig) {
       let route = "status_report";
       let nextAction = "Refresh project status.";
       let actionResult: Record<string, unknown> = {};
+
+      if (hasUniversalCapabilityStressIntent(message)) {
+        route = "universal_capability_pipeline";
+        const artifacts = buildUniversalCapabilityArtifacts(project, message, actor.actorId);
+        project.runs = {
+          ...((project.runs || {}) as Record<string, unknown>),
+          [universalCapabilityRunKey]: artifacts,
+        };
+        emitEvent(project as any, {
+          id: `evt_${Date.now()}`,
+          projectId: project.projectId,
+          type: "operator_send",
+          actorId: actor.actorId,
+          role,
+          timestamp: now(),
+          metadata: { route, message },
+        });
+        await persistProject(config, project);
+        return res.json({
+          ok: true,
+          route,
+          status: project.status,
+          blockers: artifacts.launchPacket.blockers,
+          nextAction: artifacts.launchPacket.blockers[0] || "Dispatch implementation packets and run readiness validators.",
+          actorId: actor.actorId,
+          operatorMessage: formatOperatorVoice({
+            direct: "Universal capability pipeline generated from messy product input.",
+            status: project.status,
+            blockers: artifacts.launchPacket.blockers,
+            nextAction: artifacts.launchPacket.blockers[0] || "Dispatch implementation packets and run readiness validators.",
+          }),
+          actionResult: artifacts,
+        });
+      }
 
       if (hasExistingRepoIntent(message)) {
         route = "existing_repo_completion_contract";
