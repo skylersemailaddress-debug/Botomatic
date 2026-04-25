@@ -1,6 +1,6 @@
 {
-  "version": "1.1.0",
-  "generatedAt": "2026-04-23T23:52:00Z",
+  "version": "1.2.0",
+  "generatedAt": "2026-04-25T00:05:00Z",
   "gates": {
     "gate2": {
       "status": "closed_by_proof",
@@ -12,15 +12,15 @@
     },
     "gate4": {
       "status": "closed_by_proof",
-      "evidencePath": "docs/gate4/GATE4_RUNTIME_PROOF_2026-04-23.md"
+      "evidencePath": "release-evidence/runtime/production-external/OIDC_AUTH0_PROOF_2026-04-24.md"
     },
     "gate5": {
       "status": "closed_by_proof",
-      "evidencePath": "docs/gate5/GATE5_RUNTIME_PROOF_2026-04-23.md"
+      "evidencePath": "release-evidence/runtime/production-external/DURABLE_DEPLOY_ROLLBACK_RESTART_PROOF_2026-04-24.md"
     },
     "gate6": {
       "status": "closed_by_proof",
-      "evidencePath": "docs/gate6/GATE6_RUNTIME_PROOF_2026-04-23.md"
+      "evidencePath": "release-evidence/runtime/production-external/TELEMETRY_ALERT_PROOF_2026-04-24.md"
     },
     "gate7": {
       "status": "closed_by_proof",
@@ -29,9 +29,7 @@
   },
   "proofProfilePath": "release-evidence/proof_profile.json",
   "launchClaim": {
-    "enterpriseReady": false,
-    "blockedBy": [
-      "non_production_proof_grade"
-    ]
+    "enterpriseReady": true,
+    "blockedBy": []
   }
 }
