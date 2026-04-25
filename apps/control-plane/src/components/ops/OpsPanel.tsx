@@ -1,13 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getOpsMetrics, getOpsErrors, getOpsQueue } from "@/services/ops";
+import {
+  getOpsMetrics,
+  getOpsErrors,
+  getOpsQueue,
+  type OpsError,
+  type OpsMetrics,
+  type OpsQueue,
+} from "@/services/ops";
 import Panel from "@/components/ui/Panel";
 
 export default function OpsPanel() {
-  const [metrics, setMetrics] = useState<any>(null);
-  const [errors, setErrors] = useState<any[]>([]);
-  const [queue, setQueue] = useState<any>(null);
+  const [metrics, setMetrics] = useState<OpsMetrics | null>(null);
+  const [errors, setErrors] = useState<OpsError[]>([]);
+  const [queue, setQueue] = useState<OpsQueue | null>(null);
 
   useEffect(() => {
     const load = async () => {

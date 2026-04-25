@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getDeploymentHistory } from "@/services/deployments";
+import { getDeploymentHistory, type DeploymentHistoryItem } from "@/services/deployments";
 import Panel from "@/components/ui/Panel";
 
 export default function DeploymentHistoryPanel({ projectId }: { projectId: string }) {
-  const [history, setHistory] = useState<any[]>([]);
+  const [history, setHistory] = useState<DeploymentHistoryItem[]>([]);
 
   useEffect(() => {
     const load = async () => {
