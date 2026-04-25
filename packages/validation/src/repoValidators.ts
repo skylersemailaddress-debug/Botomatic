@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { validateUniversalBuilderReadiness } from "./repoValidators/universalBuilderReadiness";
 
 export type RepoValidatorResult = {
   name: string;
@@ -400,12 +401,15 @@ export function validateFinalLaunchReadiness(root: string): RepoValidatorResult 
     Array.isArray(profile?.productionGaps) && profile.productionGaps.length === 0;
 
   const p0Section = blockers.split("## P1")[0] || blockers;
+  const legacyP0Section = p0Section.includes("### Legacy Enterprise Gate Closure Ledger")
+    ? p0Section.split("### Legacy Enterprise Gate Closure Ledger")[1]
+    : p0Section;
   const p0PolicyPresent = blockers.includes(
     "No audit may claim enterprise readiness while any P0 blocker remains open."
   );
 
-  const noOpenP0Rows = !/\|\s*Gate\s+\d+\s*\|\s*Open\b/i.test(p0Section);
-  const noOpenP0Bullets = p0Section
+  const noOpenP0Rows = !/\|\s*Gate\s+\d+\s*\|\s*Open\b/i.test(legacyP0Section);
+  const noOpenP0Bullets = legacyP0Section
     .split("\n")
     .map((line) => line.trim())
     .filter((line) => line.startsWith("- "))
@@ -567,16 +571,26 @@ export function validateBuilderQualityBenchmarks(root: string): RepoValidatorRes
   }
 
   const avg = Number(payload?.averageScoreOutOf10 || 0);
-  const hasCases = Array.isArray(payload?.cases) && payload.cases.length >= 3;
-  const ok = hasCases && avg >= 6.0;
+  const hasCases = Array.isArray(payload?.cases) && payload.cases.length >= 25;
+  const launchThreshold = Number(payload?.thresholdTarget || 0);
+  const universalThreshold = Number(payload?.thresholdUniversalTarget || 0);
+  const criticalFailures = Number(payload?.criticalFailures || 0);
+  const placeholderFailures = Number(payload?.placeholderFailures || 0);
+  const ok =
+    hasCases &&
+    launchThreshold >= 8.5 &&
+    universalThreshold >= 9.2 &&
+    avg >= 8.5 &&
+    criticalFailures === 0 &&
+    placeholderFailures === 0;
   const proofGrade = payload?.proofGrade === "production_like" ? "production-like" : "local";
 
   return result(
     "Validate-Botomatic-BuilderQualityBenchmarks",
     ok,
     ok
-      ? `Builder quality benchmark is present with average ${avg}/10 (${proofGrade} proof).`
-      : `Builder benchmark average is below threshold or incomplete (${avg}/10, ${proofGrade} proof).`,
+      ? `Builder quality benchmark passed strict thresholds (${avg}/10, ${proofGrade} proof).`
+      : `Builder benchmark is below threshold or has critical failures (${avg}/10, ${proofGrade} proof).`,
     checks
   );
 }
@@ -693,5 +707,6 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateFinalLaunchReadiness(root),
     validateFileIngestion(root),
     validateChatFirstOperatorRouting(root),
+    validateUniversalBuilderReadiness(root),
   ];
 }

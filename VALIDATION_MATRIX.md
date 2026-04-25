@@ -1,6 +1,6 @@
 # Botomatic Validation Matrix
 
-Status: Phase G final closure
+Status: Universal-builder transition in progress
 Purpose: Map each launch category to required validators.
 
 ---
@@ -28,6 +28,10 @@ Purpose: Map each launch category to required validators.
 | Final Launch Readiness | Validate-Botomatic-FinalLaunchReadiness | IMPLEMENTED (PASS) |
 | File Ingestion | Validate-Botomatic-FileIngestion | IMPLEMENTED (PASS) |
 | Chat-First Operator Routing | Validate-Botomatic-ChatFirstOperatorRouting | IMPLEMENTED (PASS) |
+| Universal Builder Readiness | Validate-Botomatic-UniversalBuilderReadiness | IMPLEMENTED (PASS) |
+
+Current constraint:
+- `Validate-Botomatic-BuilderQualityBenchmarks` is expected to fail until benchmark quality reaches strict thresholds (>= 8.5 launchable, >= 9.2 universal, zero critical failures).
 
 ## Runtime Proof Matrix
 
@@ -54,4 +58,4 @@ No category may reach 10/10 without:
 
 No gate may be marked closed by proof without runtime evidence captured in-repo.
 
-Enterprise launch claim is allowed only when all validators pass.
+Commercial universal-builder launch claim is allowed only when all validators pass and strict builder benchmark thresholds are met.

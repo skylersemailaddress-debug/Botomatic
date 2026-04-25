@@ -4,6 +4,7 @@
     "apps/orchestrator-api"
   ],
   "scripts": {
+    "build": "npm run ui:build",
     "api:start": "PORT=3001 tsx apps/orchestrator-api/src/bootstrap.ts",
     "api:dev": "PORT=3001 tsx apps/orchestrator-api/src/bootstrap.ts",
     "ui:dev": "npm --prefix apps/control-plane run dev",
@@ -13,7 +14,12 @@
     "validate:all": "tsx packages/validation/src/cli.ts",
     "validate:behavioral": "tsx packages/validation/src/runtime/cli.ts",
     "validate:observability": "tsx packages/validation/src/runtime/opsObservability.ts",
-    "benchmark:builder": "tsx packages/validation/src/runtime/builderQualityBenchmark.ts"
+    "benchmark:builder": "tsx packages/validation/src/runtime/builderQualityBenchmark.ts",
+    "test:spec-engine": "tsx packages/spec-engine/src/tests/specEngine.test.ts",
+    "test:build-contract": "tsx packages/spec-engine/src/tests/buildContract.test.ts",
+    "test:blueprints": "tsx packages/blueprints/src/tests/registry.test.ts",
+    "test:no-placeholder": "tsx packages/validation/src/generatedApp/tests/noPlaceholder.test.ts",
+    "test:universal": "npm run -s test:spec-engine && npm run -s test:build-contract && npm run -s test:blueprints && npm run -s test:no-placeholder"
   },
   "dependencies": {
     "@trigger.dev/sdk": "^4.4.4"

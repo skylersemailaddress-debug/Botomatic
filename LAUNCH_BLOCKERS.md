@@ -1,11 +1,24 @@
 # Botomatic Launch Blockers
 
-Status: Phase G final reconciliation complete
+Status: Universal-builder transition in progress
 Purpose: Central source of truth for launch-blocking gaps and closure evidence.
+
+Important:
+- Legacy enterprise control-plane gate evidence remains recorded below.
+- This file now also tracks universal-builder launch blockers.
+- Universal-builder launch claim is currently blocked.
 
 ---
 
 ## P0 — Must be closed for enterprise launch
+
+### Universal Builder P0 (Current)
+
+- Open: Generated-app benchmark does not meet strict quality threshold (`release-evidence/runtime/builder_quality_benchmark.json` currently below 8.5 and includes critical failures).
+- Open: Universal-builder launch claim remains blocked until generated-app validators and benchmark thresholds pass together.
+- Open: Repo truth alignment is in transition from legacy enterprise gate closure posture to chat-first universal-builder posture.
+
+### Legacy Enterprise Gate Closure Ledger
 
 ### Gate Closure Ledger
 
@@ -88,3 +101,5 @@ Future audits must reference this file and explicitly state:
 - Closed: which validators pass/fail.
 
 No audit may claim enterprise readiness while any P0 blocker remains open.
+
+No audit may claim universal-builder commercial launch readiness while universal-builder P0 blockers remain open.

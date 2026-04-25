@@ -1,50 +1,573 @@
 {
-  "generatedAt": "2026-04-24T00:06:33.328Z",
+  "generatedAt": "2026-04-25T22:12:45.652Z",
   "proofGrade": "local_static",
-  "methodology": "compiler+planner benchmark scoring",
-  "averageScoreOutOf10": 9.67,
+  "methodology": "spec+plan+generated-app-validator benchmark scoring",
+  "averageScoreOutOf10": 5.17,
   "thresholdTarget": 8.5,
+  "thresholdUniversalTarget": 9.2,
+  "criticalFailures": 31,
+  "placeholderFailures": 0,
+  "caseCount": 31,
+  "launchablePass": false,
+  "universalPass": false,
   "cases": [
     {
-      "id": "enterprise_crm",
-      "scoreOutOf10": 10,
-      "dimensions": {
-        "appStructure": 2,
-        "authShell": 2,
-        "dataModel": 2,
-        "workflowCompleteness": 2,
-        "validationBuildPath": 1,
-        "codeQualitySignals": 1
-      },
-      "notes": []
+      "id": "vague_founder_ramble",
+      "scoreOutOf10": 5.17,
+      "criticalFailed": true,
+      "failedChecks": [
+        "authRbac",
+        "dataModel",
+        "forms",
+        "integrations",
+        "responsiveUi",
+        "uxStates",
+        "security",
+        "deployment"
+      ],
+      "notes": [
+        "Critical validator failure detected."
+      ]
     },
     {
-      "id": "volunteer_ops",
-      "scoreOutOf10": 9,
-      "dimensions": {
-        "appStructure": 2,
-        "authShell": 1,
-        "dataModel": 2,
-        "workflowCompleteness": 2,
-        "validationBuildPath": 1,
-        "codeQualitySignals": 1
-      },
+      "id": "detailed_saas_dashboard",
+      "scoreOutOf10": 5.17,
+      "criticalFailed": true,
+      "failedChecks": [
+        "authRbac",
+        "dataModel",
+        "forms",
+        "integrations",
+        "responsiveUi",
+        "uxStates",
+        "security",
+        "deployment"
+      ],
       "notes": [
-        "Auth shell is not enterprise-grade (role model depth is limited)."
+        "Critical validator failure detected."
+      ]
+    },
+    {
+      "id": "crm",
+      "scoreOutOf10": 5.17,
+      "criticalFailed": true,
+      "failedChecks": [
+        "authRbac",
+        "dataModel",
+        "forms",
+        "integrations",
+        "responsiveUi",
+        "uxStates",
+        "security",
+        "deployment"
+      ],
+      "notes": [
+        "Critical validator failure detected."
       ]
     },
     {
       "id": "booking_platform",
-      "scoreOutOf10": 10,
-      "dimensions": {
-        "appStructure": 2,
-        "authShell": 2,
-        "dataModel": 2,
-        "workflowCompleteness": 2,
-        "validationBuildPath": 1,
-        "codeQualitySignals": 1
-      },
-      "notes": []
+      "scoreOutOf10": 5.17,
+      "criticalFailed": true,
+      "failedChecks": [
+        "authRbac",
+        "dataModel",
+        "forms",
+        "integrations",
+        "responsiveUi",
+        "uxStates",
+        "security",
+        "deployment"
+      ],
+      "notes": [
+        "Critical validator failure detected."
+      ]
+    },
+    {
+      "id": "ecommerce",
+      "scoreOutOf10": 5.17,
+      "criticalFailed": true,
+      "failedChecks": [
+        "authRbac",
+        "dataModel",
+        "forms",
+        "integrations",
+        "responsiveUi",
+        "uxStates",
+        "security",
+        "deployment"
+      ],
+      "notes": [
+        "Critical validator failure detected."
+      ]
+    },
+    {
+      "id": "marketplace",
+      "scoreOutOf10": 5.17,
+      "criticalFailed": true,
+      "failedChecks": [
+        "authRbac",
+        "dataModel",
+        "forms",
+        "integrations",
+        "responsiveUi",
+        "uxStates",
+        "security",
+        "deployment"
+      ],
+      "notes": [
+        "Critical validator failure detected."
+      ]
+    },
+    {
+      "id": "marketing_website",
+      "scoreOutOf10": 5.17,
+      "criticalFailed": true,
+      "failedChecks": [
+        "authRbac",
+        "dataModel",
+        "forms",
+        "integrations",
+        "responsiveUi",
+        "uxStates",
+        "security",
+        "deployment"
+      ],
+      "notes": [
+        "Critical validator failure detected."
+      ]
+    },
+    {
+      "id": "landing_page",
+      "scoreOutOf10": 5.17,
+      "criticalFailed": true,
+      "failedChecks": [
+        "authRbac",
+        "dataModel",
+        "forms",
+        "integrations",
+        "responsiveUi",
+        "uxStates",
+        "security",
+        "deployment"
+      ],
+      "notes": [
+        "Critical validator failure detected."
+      ]
+    },
+    {
+      "id": "membership_community",
+      "scoreOutOf10": 5.17,
+      "criticalFailed": true,
+      "failedChecks": [
+        "authRbac",
+        "dataModel",
+        "forms",
+        "integrations",
+        "responsiveUi",
+        "uxStates",
+        "security",
+        "deployment"
+      ],
+      "notes": [
+        "Critical validator failure detected."
+      ]
+    },
+    {
+      "id": "lms",
+      "scoreOutOf10": 5.17,
+      "criticalFailed": true,
+      "failedChecks": [
+        "authRbac",
+        "dataModel",
+        "forms",
+        "integrations",
+        "responsiveUi",
+        "uxStates",
+        "security",
+        "deployment"
+      ],
+      "notes": [
+        "Critical validator failure detected."
+      ]
+    },
+    {
+      "id": "job_board",
+      "scoreOutOf10": 5.17,
+      "criticalFailed": true,
+      "failedChecks": [
+        "authRbac",
+        "dataModel",
+        "forms",
+        "integrations",
+        "responsiveUi",
+        "uxStates",
+        "security",
+        "deployment"
+      ],
+      "notes": [
+        "Critical validator failure detected."
+      ]
+    },
+    {
+      "id": "directory_listings",
+      "scoreOutOf10": 5.17,
+      "criticalFailed": true,
+      "failedChecks": [
+        "authRbac",
+        "dataModel",
+        "forms",
+        "integrations",
+        "responsiveUi",
+        "uxStates",
+        "security",
+        "deployment"
+      ],
+      "notes": [
+        "Critical validator failure detected."
+      ]
+    },
+    {
+      "id": "internal_admin_tool",
+      "scoreOutOf10": 5.17,
+      "criticalFailed": true,
+      "failedChecks": [
+        "authRbac",
+        "dataModel",
+        "forms",
+        "integrations",
+        "responsiveUi",
+        "uxStates",
+        "security",
+        "deployment"
+      ],
+      "notes": [
+        "Critical validator failure detected."
+      ]
+    },
+    {
+      "id": "workflow_operations_system",
+      "scoreOutOf10": 5.17,
+      "criticalFailed": true,
+      "failedChecks": [
+        "authRbac",
+        "dataModel",
+        "forms",
+        "integrations",
+        "responsiveUi",
+        "uxStates",
+        "security",
+        "deployment"
+      ],
+      "notes": [
+        "Critical validator failure detected."
+      ]
+    },
+    {
+      "id": "customer_portal",
+      "scoreOutOf10": 5.17,
+      "criticalFailed": true,
+      "failedChecks": [
+        "authRbac",
+        "dataModel",
+        "forms",
+        "integrations",
+        "responsiveUi",
+        "uxStates",
+        "security",
+        "deployment"
+      ],
+      "notes": [
+        "Critical validator failure detected."
+      ]
+    },
+    {
+      "id": "analytics_reporting",
+      "scoreOutOf10": 5.17,
+      "criticalFailed": true,
+      "failedChecks": [
+        "authRbac",
+        "dataModel",
+        "forms",
+        "integrations",
+        "responsiveUi",
+        "uxStates",
+        "security",
+        "deployment"
+      ],
+      "notes": [
+        "Critical validator failure detected."
+      ]
+    },
+    {
+      "id": "event_platform",
+      "scoreOutOf10": 5.17,
+      "criticalFailed": true,
+      "failedChecks": [
+        "authRbac",
+        "dataModel",
+        "forms",
+        "integrations",
+        "responsiveUi",
+        "uxStates",
+        "security",
+        "deployment"
+      ],
+      "notes": [
+        "Critical validator failure detected."
+      ]
+    },
+    {
+      "id": "content_media_site",
+      "scoreOutOf10": 5.17,
+      "criticalFailed": true,
+      "failedChecks": [
+        "authRbac",
+        "dataModel",
+        "forms",
+        "integrations",
+        "responsiveUi",
+        "uxStates",
+        "security",
+        "deployment"
+      ],
+      "notes": [
+        "Critical validator failure detected."
+      ]
+    },
+    {
+      "id": "ai_chatbot_app",
+      "scoreOutOf10": 5.17,
+      "criticalFailed": true,
+      "failedChecks": [
+        "authRbac",
+        "dataModel",
+        "forms",
+        "integrations",
+        "responsiveUi",
+        "uxStates",
+        "security",
+        "deployment"
+      ],
+      "notes": [
+        "Critical validator failure detected."
+      ]
+    },
+    {
+      "id": "ai_agent_workflow",
+      "scoreOutOf10": 5.17,
+      "criticalFailed": true,
+      "failedChecks": [
+        "authRbac",
+        "dataModel",
+        "forms",
+        "integrations",
+        "responsiveUi",
+        "uxStates",
+        "security",
+        "deployment"
+      ],
+      "notes": [
+        "Critical validator failure detected."
+      ]
+    },
+    {
+      "id": "document_processing",
+      "scoreOutOf10": 5.17,
+      "criticalFailed": true,
+      "failedChecks": [
+        "authRbac",
+        "dataModel",
+        "forms",
+        "integrations",
+        "responsiveUi",
+        "uxStates",
+        "security",
+        "deployment"
+      ],
+      "notes": [
+        "Critical validator failure detected."
+      ]
+    },
+    {
+      "id": "inventory_order_management",
+      "scoreOutOf10": 5.17,
+      "criticalFailed": true,
+      "failedChecks": [
+        "authRbac",
+        "dataModel",
+        "forms",
+        "integrations",
+        "responsiveUi",
+        "uxStates",
+        "security",
+        "deployment"
+      ],
+      "notes": [
+        "Critical validator failure detected."
+      ]
+    },
+    {
+      "id": "support_helpdesk",
+      "scoreOutOf10": 5.17,
+      "criticalFailed": true,
+      "failedChecks": [
+        "authRbac",
+        "dataModel",
+        "forms",
+        "integrations",
+        "responsiveUi",
+        "uxStates",
+        "security",
+        "deployment"
+      ],
+      "notes": [
+        "Critical validator failure detected."
+      ]
+    },
+    {
+      "id": "real_estate_listings",
+      "scoreOutOf10": 5.17,
+      "criticalFailed": true,
+      "failedChecks": [
+        "authRbac",
+        "dataModel",
+        "forms",
+        "integrations",
+        "responsiveUi",
+        "uxStates",
+        "security",
+        "deployment"
+      ],
+      "notes": [
+        "Critical validator failure detected."
+      ]
+    },
+    {
+      "id": "field_service",
+      "scoreOutOf10": 5.17,
+      "criticalFailed": true,
+      "failedChecks": [
+        "authRbac",
+        "dataModel",
+        "forms",
+        "integrations",
+        "responsiveUi",
+        "uxStates",
+        "security",
+        "deployment"
+      ],
+      "notes": [
+        "Critical validator failure detected."
+      ]
+    },
+    {
+      "id": "nonprofit_volunteer_ops",
+      "scoreOutOf10": 5.17,
+      "criticalFailed": true,
+      "failedChecks": [
+        "authRbac",
+        "dataModel",
+        "forms",
+        "integrations",
+        "responsiveUi",
+        "uxStates",
+        "security",
+        "deployment"
+      ],
+      "notes": [
+        "Critical validator failure detected."
+      ]
+    },
+    {
+      "id": "campaign_ops",
+      "scoreOutOf10": 5.17,
+      "criticalFailed": true,
+      "failedChecks": [
+        "authRbac",
+        "dataModel",
+        "forms",
+        "integrations",
+        "responsiveUi",
+        "uxStates",
+        "security",
+        "deployment"
+      ],
+      "notes": [
+        "Critical validator failure detected."
+      ]
+    },
+    {
+      "id": "payments_heavy",
+      "scoreOutOf10": 5.17,
+      "criticalFailed": true,
+      "failedChecks": [
+        "authRbac",
+        "dataModel",
+        "forms",
+        "integrations",
+        "responsiveUi",
+        "uxStates",
+        "security",
+        "deployment"
+      ],
+      "notes": [
+        "Critical validator failure detected."
+      ]
+    },
+    {
+      "id": "compliance_sensitive",
+      "scoreOutOf10": 5.17,
+      "criticalFailed": true,
+      "failedChecks": [
+        "authRbac",
+        "dataModel",
+        "forms",
+        "integrations",
+        "responsiveUi",
+        "uxStates",
+        "security",
+        "deployment"
+      ],
+      "notes": [
+        "Critical validator failure detected."
+      ]
+    },
+    {
+      "id": "conflicting_requirements",
+      "scoreOutOf10": 5.17,
+      "criticalFailed": true,
+      "failedChecks": [
+        "authRbac",
+        "dataModel",
+        "forms",
+        "integrations",
+        "responsiveUi",
+        "uxStates",
+        "security",
+        "deployment"
+      ],
+      "notes": [
+        "Critical validator failure detected."
+      ]
+    },
+    {
+      "id": "decide_everything_for_me",
+      "scoreOutOf10": 5.17,
+      "criticalFailed": true,
+      "failedChecks": [
+        "authRbac",
+        "dataModel",
+        "forms",
+        "integrations",
+        "responsiveUi",
+        "uxStates",
+        "security",
+        "deployment"
+      ],
+      "notes": [
+        "Critical validator failure detected."
+      ]
     }
   ]
 }

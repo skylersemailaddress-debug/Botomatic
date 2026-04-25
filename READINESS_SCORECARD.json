@@ -1,17 +1,28 @@
 {
-  "status": "phase_g_final_closure_complete",
-  "overall_target": "10/10 enterprise launch",
-  "overall_cap_rules": {
-    "p0_blockers_open": "none"
+  "status": "universal_builder_transition_in_progress",
+  "overall_target": "chat-first universal commercial builder",
+  "enterprise_control_plane_track": {
+    "legacy_gate_program": "historically closed by proof in repository evidence",
+    "note": "This does not imply universal-builder launch readiness."
+  },
+  "universal_builder_track": {
+    "launch_claim_allowed": false,
+    "blocking_reason": "builder benchmark and strict generated-app quality gates are not yet passing",
+    "lastKnownBenchmark": {
+      "averageScoreOutOf10": 5.17,
+      "thresholdLaunchable": 8.5,
+      "thresholdUniversal": 9.2,
+      "criticalFailures": 31,
+      "launchablePass": false,
+      "universalPass": false
+    }
   },
   "categories": {
-    "architecture": {"target": 10, "current": 10, "cap_reason": "closed_by_proof_and_validator_pass"},
-    "builder_capability": {"target": 10, "current": 10, "cap_reason": "validator_pass_with_benchmark_evidence"},
-    "ui_control_plane": {"target": 10, "current": 10, "cap_reason": "validator_pass_and_panel_integration_complete"},
-    "security_governance": {"target": 10, "current": 10, "cap_reason": "auth0_admin_and_oidc_negative_path_production_like_proof"},
-    "reliability": {"target": 10, "current": 10, "cap_reason": "durable_deploy_rollback_restart_proof_complete"},
-    "observability": {"target": 10, "current": 10, "cap_reason": "telemetry_and_external_slack_alert_delivery_proof_complete"},
-    "validation": {"target": 10, "current": 10, "cap_reason": "all_validators_passing"},
-    "documentation": {"target": 10, "current": 10, "cap_reason": "truth_files_reconciled_and_consistent"}
+    "chat_first_orchestration": {"target": 10, "current": 7, "cap_reason": "operator routing and UI support panels exist; deeper runtime proof still required"},
+    "spec_intelligence": {"target": 10, "current": 6, "cap_reason": "spec engine implemented; production-depth contradiction and recommendation proof still maturing"},
+    "build_contract_governance": {"target": 10, "current": 7, "cap_reason": "build contract and approval gates implemented; broader approval/runtime evidence still required"},
+    "generated_app_quality": {"target": 10, "current": 3, "cap_reason": "strict validators implemented but benchmark currently fails thresholds"},
+    "benchmark_coverage": {"target": 10, "current": 6, "cap_reason": "31 cases implemented; quality score target not yet met"},
+    "documentation_truth": {"target": 10, "current": 7, "cap_reason": "transition docs added; full launch truth reconciliation is ongoing"}
   }
 }

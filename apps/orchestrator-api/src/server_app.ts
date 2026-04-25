@@ -3,6 +3,19 @@ import multer from "multer";
 import { PDFParse } from "pdf-parse";
 import { compileConversationToMasterTruth } from "../../../packages/master-truth/src/compiler";
 import { generatePlan } from "../../../packages/packet-engine/src/generator";
+import {
+  analyzeSpec,
+  approveAssumptions,
+  approveBuildContract,
+  applyRecommendationStatus,
+  computeBuildBlockStatus,
+  generateBuildContract,
+  MasterSpec,
+  BuildContract,
+  SpecAssumption,
+  SpecRecommendation,
+} from "../../../packages/spec-engine/src";
+import { matchBlueprintFromText } from "../../../packages/blueprints/src/registry";
 import { markPacketComplete, markPacketFailed } from "../../../packages/execution/src/runner";
 import { MockExecutor } from "../../../packages/executor-adapters/src/mockExecutor";
 import { ClaudeCodeExecutor } from "../../../packages/executor-adapters/src/claudeCodeExecutor";
@@ -41,6 +54,10 @@ const workerConcurrency = Math.max(1, Number(process.env.WORKER_CONCURRENCY || 2
 const governanceStateRunKey = "__governanceGate4Approval";
 const deploymentStateRunKey = "__deploymentState";
 const intakeArtifactsRunKey = "__intakeArtifacts";
+const specStateRunKey = "__masterSpec";
+const specClarificationsRunKey = "__specClarifications";
+const specStyleRunKey = "__specStyle";
+const buildContractRunKey = "__buildContract";
 let workerStarted = false;
 let activeWorkers = 0;
 
@@ -373,6 +390,70 @@ function setIntakeArtifacts(project: StoredProjectRecord, artifacts: Record<stri
   (project as any).intakeArtifacts = artifacts;
 }
 
+function getMasterSpec(project: StoredProjectRecord): MasterSpec | null {
+  const runs = ((project.runs || {}) as Record<string, unknown>);
+  const value = runs[specStateRunKey] as MasterSpec | undefined;
+  return value || null;
+}
+
+function setMasterSpec(project: StoredProjectRecord, spec: MasterSpec) {
+  const runs = ((project.runs || {}) as Record<string, unknown>);
+  project.runs = { ...runs, [specStateRunKey]: spec };
+}
+
+function getSpecClarifications(project: StoredProjectRecord): any[] {
+  const runs = ((project.runs || {}) as Record<string, unknown>);
+  const value = runs[specClarificationsRunKey] as any[] | undefined;
+  return Array.isArray(value) ? value : [];
+}
+
+function setSpecClarifications(project: StoredProjectRecord, clarifications: any[]) {
+  const runs = ((project.runs || {}) as Record<string, unknown>);
+  project.runs = { ...runs, [specClarificationsRunKey]: clarifications };
+}
+
+function getBuildContract(project: StoredProjectRecord): BuildContract | null {
+  const runs = ((project.runs || {}) as Record<string, unknown>);
+  const value = runs[buildContractRunKey] as BuildContract | undefined;
+  return value || null;
+}
+
+function setBuildContract(project: StoredProjectRecord, contract: BuildContract) {
+  const runs = ((project.runs || {}) as Record<string, unknown>);
+  project.runs = { ...runs, [buildContractRunKey]: contract };
+}
+
+function mergeSpecWithExisting(existing: MasterSpec | null, next: MasterSpec): MasterSpec {
+  if (!existing) return next;
+
+  const approvedAssumptions = new Set(
+    (existing.assumptions || [])
+      .filter((a: any) => a?.approved)
+      .map((a: any) => `${String(a?.field || "").toLowerCase()}::${String(a?.decision || "").toLowerCase()}`)
+  );
+
+  const assumptions = (next.assumptions || []).map((assumption: any) => {
+    const key = `${String(assumption?.field || "").toLowerCase()}::${String(assumption?.decision || "").toLowerCase()}`;
+    if (approvedAssumptions.has(key)) {
+      return { ...assumption, approved: true };
+    }
+    return assumption;
+  });
+
+  const recommendationStatusByArea = new Map(
+    (existing.recommendations || []).map((r: any) => [String(r?.area || "").toLowerCase(), r?.status])
+  );
+  const recommendations = (next.recommendations || []).map((rec: any) => {
+    const prior = recommendationStatusByArea.get(String(rec?.area || "").toLowerCase());
+    if (prior === "accepted" || prior === "rejected") {
+      return { ...rec, status: prior };
+    }
+    return rec;
+  });
+
+  return { ...next, assumptions, recommendations };
+}
+
 function emitEvent(project: any, event: any) {
   ensureAudit(project);
   project.auditEvents.unshift(event);
@@ -556,17 +637,72 @@ function compileProjectWithIntake(project: StoredProjectRecord): StoredProjectRe
   const enrichedRequest = intakeContext
     ? `${project.request}\n\n--- Uploaded Specs ---\n${intakeContext}`
     : project.request;
+  const blueprint = matchBlueprintFromText(enrichedRequest);
   const truth = compileConversationToMasterTruth({
     projectId: project.projectId,
     appName: project.name,
     request: enrichedRequest,
   });
+  const analyzed = analyzeSpec({
+    appName: project.name,
+    request: enrichedRequest,
+    blueprint,
+    actorId: "system",
+  });
+  const mergedSpec = mergeSpecWithExisting(getMasterSpec(project), analyzed.spec);
+  const spec: MasterSpec = {
+    ...mergedSpec,
+    appType: analyzed.spec.appType || blueprint.category,
+    pages: mergedSpec.pages.length > 0 ? mergedSpec.pages : blueprint.defaultPages,
+    components: mergedSpec.components.length > 0 ? mergedSpec.components : blueprint.defaultComponents,
+    roles: mergedSpec.roles.length > 0 ? mergedSpec.roles : blueprint.defaultRoles,
+    permissions: mergedSpec.permissions.length > 0 ? mergedSpec.permissions : blueprint.defaultPermissions,
+    dataEntities: mergedSpec.dataEntities.length > 0 ? mergedSpec.dataEntities : blueprint.defaultEntities,
+    relationships: mergedSpec.relationships.length > 0 ? mergedSpec.relationships : blueprint.defaultRelationships,
+    workflows: mergedSpec.workflows.length > 0 ? mergedSpec.workflows : blueprint.defaultWorkflows,
+    integrations: mergedSpec.integrations.length > 0 ? mergedSpec.integrations : blueprint.defaultIntegrations,
+  };
+
+  (truth as any).canonicalSpec = {
+    ...((truth as any).canonicalSpec || {}),
+    productIntent: spec.coreOutcome,
+    users: spec.targetUsers,
+    pages: spec.pages,
+    workflows: spec.workflows,
+    dataModel: spec.dataEntities,
+    integrations: spec.integrations,
+    acceptanceCriteria: spec.acceptanceCriteria,
+    openQuestions: spec.openQuestions,
+  };
+
+  const runs = ((project.runs || {}) as Record<string, unknown>);
   return {
     ...project,
     masterTruth: truth,
     status: (truth as any).status,
+    runs: {
+      ...runs,
+      [specStateRunKey]: spec,
+      [specClarificationsRunKey]: analyzed.clarifications,
+      [specStyleRunKey]: analyzed.style,
+    },
     updatedAt: now(),
   } as StoredProjectRecord;
+}
+
+function getBuildBlockers(project: StoredProjectRecord): string[] {
+  const spec = getMasterSpec(project);
+  if (!spec) {
+    return ["Spec analysis is missing. Run spec analysis before planning."];
+  }
+  const contract = getBuildContract(project);
+  const block = computeBuildBlockStatus(spec, Boolean(contract), false);
+  const contractReady = contract?.readyToBuild && Boolean(contract?.approvedAt);
+  const blockers = [...block.blockers];
+  if (!contractReady) {
+    blockers.push("Build contract is not approved and ready.");
+  }
+  return Array.from(new Set(blockers));
 }
 
 function hasLaunchIntent(message: string): boolean {
@@ -858,6 +994,11 @@ export function buildApp(config: RuntimeConfig) {
       const projectId = `proj_${Date.now()}`;
       const project = toStored({ projectId, name, request, status: "clarifying", governanceApproval: buildDefaultGovernanceApproval(actor.actorId) });
       ensureGovernanceApprovalState(project, actor.actorId);
+      const blueprint = matchBlueprintFromText(request || name || "");
+      const analyzed = analyzeSpec({ appName: name, request: String(request || ""), blueprint, actorId: actor.actorId });
+      setMasterSpec(project, analyzed.spec);
+      setSpecClarifications(project, analyzed.clarifications);
+      project.runs = { ...((project.runs || {}) as Record<string, unknown>), [specStyleRunKey]: analyzed.style };
       emitEvent(project as any, { id: `evt_${Date.now()}`, projectId, type: "intake", actorId: actor.actorId, timestamp: now(), metadata: { name } });
       await repo.upsertProject(project);
       return res.json({ projectId, status: project.status, actorId: actor.actorId });
@@ -988,6 +1129,212 @@ export function buildApp(config: RuntimeConfig) {
     }
   });
 
+  app.post("/api/projects/:projectId/spec/analyze", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const intakeContext = buildIntakeContext(project);
+      const text = [project.request, intakeContext, String((req.body as any)?.message || "")].filter(Boolean).join("\n\n");
+      const blueprint = matchBlueprintFromText(text);
+      const analyzed = analyzeSpec({ appName: project.name, request: text, blueprint, actorId: actor.actorId });
+      const mergedSpec = mergeSpecWithExisting(getMasterSpec(project), analyzed.spec);
+      setMasterSpec(project, mergedSpec);
+      setSpecClarifications(project, analyzed.clarifications);
+      const runs = ((project.runs || {}) as Record<string, unknown>);
+      project.runs = { ...runs, [specStyleRunKey]: analyzed.style };
+      emitEvent(project as any, {
+        id: `evt_${Date.now()}`,
+        projectId: project.projectId,
+        type: "spec_analyzed",
+        actorId: actor.actorId,
+        timestamp: now(),
+        metadata: { style: analyzed.style, openQuestions: mergedSpec.openQuestions.length },
+      });
+      await persistProject(config, project);
+      return res.json({
+        ok: true,
+        style: analyzed.style,
+        readinessScore: mergedSpec.readinessScore,
+        completeness: mergedSpec.completeness,
+        openQuestions: mergedSpec.openQuestions,
+        actorId: actor.actorId,
+      });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/projects/:projectId/spec/analyze", actor);
+    }
+  });
+
+  app.post("/api/projects/:projectId/spec/clarify", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const spec = getMasterSpec(project);
+      if (!spec) return res.status(404).json({ error: "Spec is missing. Analyze first." });
+      const clarifications = getSpecClarifications(project);
+      const grouped = {
+        mustAsk: clarifications.filter((q: any) => q.mustAsk),
+        approvalNeeded: clarifications.filter((q: any) => !q.mustAsk && q.requiresApproval),
+        safeDefaults: clarifications.filter((q: any) => q.suggestedDefault),
+      };
+      return res.json({ ok: true, grouped, openQuestions: spec.openQuestions, actorId: actor.actorId });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/projects/:projectId/spec/clarify", actor);
+    }
+  });
+
+  app.post("/api/projects/:projectId/spec/assumptions/accept", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const ids = Array.isArray((req.body as any)?.assumptionIds) ? ((req.body as any).assumptionIds as string[]) : [];
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const spec = getMasterSpec(project);
+      if (!spec) return res.status(404).json({ error: "Spec is missing. Analyze first." });
+
+      const assumptions = approveAssumptions(spec.assumptions as SpecAssumption[], ids);
+      const nextSpec: MasterSpec = { ...spec, assumptions };
+      setMasterSpec(project, nextSpec);
+      const existingContract = getBuildContract(project);
+      if (existingContract) {
+        setBuildContract(project, {
+          ...existingContract,
+          assumptions,
+          updatedAt: now(),
+        });
+      }
+      emitEvent(project as any, {
+        id: `evt_${Date.now()}`,
+        projectId: project.projectId,
+        type: "assumptions_accepted",
+        actorId: actor.actorId,
+        timestamp: now(),
+        metadata: { acceptedCount: ids.length },
+      });
+      await persistProject(config, project);
+      return res.json({ ok: true, assumptions, actorId: actor.actorId });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/projects/:projectId/spec/assumptions/accept", actor);
+    }
+  });
+
+  app.post("/api/projects/:projectId/spec/recommendations/apply", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const acceptedIds = Array.isArray((req.body as any)?.acceptedIds) ? ((req.body as any).acceptedIds as string[]) : [];
+      const rejectedIds = Array.isArray((req.body as any)?.rejectedIds) ? ((req.body as any).rejectedIds as string[]) : [];
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const spec = getMasterSpec(project);
+      if (!spec) return res.status(404).json({ error: "Spec is missing. Analyze first." });
+      const recommendations = applyRecommendationStatus(spec.recommendations as SpecRecommendation[], acceptedIds, rejectedIds);
+      const nextSpec: MasterSpec = { ...spec, recommendations };
+      setMasterSpec(project, nextSpec);
+      emitEvent(project as any, {
+        id: `evt_${Date.now()}`,
+        projectId: project.projectId,
+        type: "recommendations_applied",
+        actorId: actor.actorId,
+        timestamp: now(),
+        metadata: { accepted: acceptedIds.length, rejected: rejectedIds.length },
+      });
+      await persistProject(config, project);
+      return res.json({ ok: true, recommendations, actorId: actor.actorId });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/projects/:projectId/spec/recommendations/apply", actor);
+    }
+  });
+
+  app.post("/api/projects/:projectId/spec/build-contract", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const spec = getMasterSpec(project);
+      if (!spec) return res.status(404).json({ error: "Spec is missing. Analyze first." });
+      const contract = generateBuildContract(project.projectId, spec);
+      setBuildContract(project, contract);
+      emitEvent(project as any, {
+        id: `evt_${Date.now()}`,
+        projectId: project.projectId,
+        type: "build_contract_generated",
+        actorId: actor.actorId,
+        timestamp: now(),
+        metadata: { readyToBuild: contract.readyToBuild, blockerCount: contract.blockers.length },
+      });
+      await persistProject(config, project);
+      return res.json({ ok: true, contract, actorId: actor.actorId });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/projects/:projectId/spec/build-contract", actor);
+    }
+  });
+
+  app.post("/api/projects/:projectId/spec/approve", requireRole("reviewer", config), async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const contract = getBuildContract(project);
+      if (!contract) return res.status(404).json({ error: "Build contract missing. Generate contract first." });
+      if (!contract.readyToBuild) {
+        return res.status(409).json({ error: "Build contract is not ready to approve", blockers: contract.blockers });
+      }
+      const approved = approveBuildContract(contract, actor.actorId);
+      setBuildContract(project, approved);
+      emitEvent(project as any, {
+        id: `evt_${Date.now()}`,
+        projectId: project.projectId,
+        type: "build_contract_approved",
+        actorId: actor.actorId,
+        timestamp: now(),
+        metadata: { approvedAt: approved.approvedAt },
+      });
+      await persistProject(config, project);
+      return res.json({ ok: true, contract: approved, actorId: actor.actorId });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/projects/:projectId/spec/approve", actor);
+    }
+  });
+
+  app.get("/api/projects/:projectId/spec/status", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const spec = getMasterSpec(project);
+      const contract = getBuildContract(project);
+      const block = spec ? computeBuildBlockStatus(spec, Boolean(contract), false) : {
+        blocked: true,
+        blockers: ["Spec missing."],
+        readiness: {
+          criticalCompleteness: 0,
+          commercialCompleteness: 0,
+          implementationCompleteness: 0,
+          launchCompleteness: 0,
+          riskCompleteness: 0,
+        },
+        unresolvedHighRiskQuestions: 0,
+        hasBuildContract: Boolean(contract),
+        hasCriticalContradiction: false,
+      };
+
+      return res.json({
+        ok: true,
+        style: ((project.runs || {}) as Record<string, unknown>)[specStyleRunKey] || null,
+        spec,
+        clarifications: getSpecClarifications(project),
+        contract,
+        buildBlocked: block.blocked || !Boolean(contract?.approvedAt),
+        blockers: block.blockers,
+        readiness: block.readiness,
+        actorId: actor.actorId,
+      });
+    } catch (error) {
+      return handleRouteError(res, config, error, "GET /api/projects/:projectId/spec/status", actor);
+    }
+  });
+
   app.post("/api/projects/:projectId/operator/send", async (req, res) => {
     const actor = await getRequestActor(req, config);
     try {
@@ -1000,6 +1347,14 @@ export function buildApp(config: RuntimeConfig) {
 
       ensureGovernanceApprovalState(project, actor.actorId);
       ensureDeploymentState(project as any);
+
+      const analysisText = [project.request, buildIntakeContext(project), message].filter(Boolean).join("\n\n");
+      const analysisBlueprint = matchBlueprintFromText(analysisText);
+      const analyzed = analyzeSpec({ appName: project.name, request: analysisText, blueprint: analysisBlueprint, actorId: actor.actorId });
+      const mergedSpec = mergeSpecWithExisting(getMasterSpec(project), analyzed.spec);
+      setMasterSpec(project, mergedSpec);
+      setSpecClarifications(project, analyzed.clarifications);
+      project.runs = { ...((project.runs || {}) as Record<string, unknown>), [specStyleRunKey]: analyzed.style };
 
       let route = "status_report";
       let nextAction = "Refresh project status.";
@@ -1170,6 +1525,24 @@ export function buildApp(config: RuntimeConfig) {
       }
 
       if (!project.plan) {
+        const buildBlockers = getBuildBlockers(project);
+        if (buildBlockers.length > 0) {
+          return res.json({
+            ok: true,
+            route: "build_blocked",
+            status: project.status,
+            blockers: buildBlockers,
+            nextAction: "Resolve spec clarifications and approve build contract before planning.",
+            actorId: actor.actorId,
+            operatorMessage: formatOperatorVoice({
+              direct: "Build is blocked until contract/spec requirements are complete.",
+              status: project.status,
+              blockers: buildBlockers,
+              nextAction: "Resolve spec clarifications and approve build contract before planning.",
+            }),
+            actionResult: { blocked: true },
+          });
+        }
         route = "plan";
         const plan = generatePlan(project.masterTruth as any);
         const updated = { ...project, plan, status: "queued", updatedAt: now() } as StoredProjectRecord;
@@ -1260,6 +1633,24 @@ export function buildApp(config: RuntimeConfig) {
 
       const pendingPacket = getNextPendingPacket(project);
       if (pendingPacket) {
+        const buildBlockers = getBuildBlockers(project);
+        if (buildBlockers.length > 0) {
+          return res.json({
+            ok: true,
+            route: "build_blocked",
+            status: project.status,
+            blockers: buildBlockers,
+            nextAction: "Resolve spec/build blockers before execution.",
+            actorId: actor.actorId,
+            operatorMessage: formatOperatorVoice({
+              direct: "Execution is blocked by unresolved spec or contract requirements.",
+              status: project.status,
+              blockers: buildBlockers,
+              nextAction: "Resolve spec/build blockers before execution.",
+            }),
+            actionResult: { blocked: true, packetId: pendingPacket.packetId },
+          });
+        }
         if (roleRank(role) < roleRank("reviewer")) {
           const overview = buildOverview(project);
           const nextAction = "Reviewer or admin must authorize execute-next dispatch.";
@@ -1378,6 +1769,10 @@ export function buildApp(config: RuntimeConfig) {
     try {
       const project = await repo.getProject(req.params.projectId);
       if (!project || !project.masterTruth) return res.status(404).json({ error: "No master truth" });
+      const buildBlockers = getBuildBlockers(project);
+      if (buildBlockers.length > 0) {
+        return res.status(409).json({ error: "Build is blocked until contract/spec requirements are satisfied", blockers: buildBlockers });
+      }
       const plan = generatePlan(project.masterTruth as any);
       const updated = { ...project, plan, status: "queued", updatedAt: now() } as StoredProjectRecord;
       emitEvent(updated as any, { id: `evt_${Date.now()}`, projectId: updated.projectId, type: "plan", actorId: actor.actorId, timestamp: now() });
@@ -1393,6 +1788,10 @@ export function buildApp(config: RuntimeConfig) {
     try {
       const project = await repo.getProject(req.params.projectId);
       if (!project || !project.plan) return res.status(404).json({ error: "No plan" });
+      const buildBlockers = getBuildBlockers(project);
+      if (buildBlockers.length > 0) {
+        return res.status(409).json({ error: "Execution blocked: spec/build contract not ready", blockers: buildBlockers });
+      }
       const packet = getNextPendingPacket(project);
       if (!packet) return res.status(409).json({ error: "No pending packet", actorId: actor.actorId });
       const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;

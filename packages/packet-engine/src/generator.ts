@@ -47,10 +47,33 @@ export function generatePlan(truth: MasterTruth): {
 } {
   const milestones = createMilestones(truth.projectId);
 
+  const canonicalPages = Array.isArray((truth as any)?.canonicalSpec?.pages)
+    ? ((truth as any).canonicalSpec.pages as string[])
+    : [];
+  const canonicalWorkflows = Array.isArray((truth as any)?.canonicalSpec?.workflows)
+    ? ((truth as any).canonicalSpec.workflows as string[])
+    : [];
+  const canonicalDataModel = Array.isArray((truth as any)?.canonicalSpec?.dataModel)
+    ? ((truth as any).canonicalSpec.dataModel as string[])
+    : [];
+
   const packets: Packet[] = [];
 
   milestones.forEach((m, i) => {
     packets.push(createPacket(truth.projectId, m, m.title, i + 1));
+  });
+
+  // Add deterministic packets from enriched spec so planner reflects real product scope.
+  canonicalPages.slice(0, 6).forEach((page, idx) => {
+    packets.push(createPacket(truth.projectId, milestones[3], `Implement page: ${page}`, idx + 10));
+  });
+
+  canonicalWorkflows.slice(0, 6).forEach((workflow, idx) => {
+    packets.push(createPacket(truth.projectId, milestones[4], `Implement workflow: ${workflow}`, idx + 20));
+  });
+
+  canonicalDataModel.slice(0, 6).forEach((entity, idx) => {
+    packets.push(createPacket(truth.projectId, milestones[2], `Implement data entity: ${entity}`, idx + 30));
   });
 
   return { milestones, packets };

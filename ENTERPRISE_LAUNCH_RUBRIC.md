@@ -4,6 +4,11 @@ Status: Phase 1 locked launch contract
 Applies to: Entire Botomatic product surface
 Purpose: Freeze the scoring standard for enterprise launch readiness so future audits score against the same criteria, evidence, and validators.
 
+Transition note:
+- This rubric governs the legacy enterprise control-plane launch program.
+- Botomatic is now also pursuing a chat-first universal-builder target with stricter generated-app quality gates.
+- Passing this rubric alone does not authorize universal-builder commercial launch claims.
+
 ---
 
 ## Scoring rules
