@@ -1,0 +1,41 @@
+{
+  "proofGrade": "production_like",
+  "summary": {
+    "passed": 7,
+    "failed": 0
+  },
+  "checks": [
+    {
+      "name": "invalid_issuer_denied",
+      "status": "passed"
+    },
+    {
+      "name": "invalid_audience_denied",
+      "status": "passed"
+    },
+    {
+      "name": "expired_token_denied",
+      "status": "passed"
+    },
+    {
+      "name": "malformed_role_defaults_safe",
+      "status": "passed"
+    },
+    {
+      "name": "operator_denied_dangerous_route",
+      "status": "passed"
+    },
+    {
+      "name": "reviewer_denied_admin_route",
+      "status": "passed"
+    },
+    {
+      "name": "admin_governance_approval_allowed",
+      "status": "passed"
+    }
+  ],
+  "evidence": [
+    "release-evidence/runtime/production-external/OIDC_AUTH0_PROOF_2026-04-24.md",
+    "release-evidence/runtime/production-external/OIDC_NEGATIVE_PATH_PROOF_2026-04-24.md"
+  ]
+}
