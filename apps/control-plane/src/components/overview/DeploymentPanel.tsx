@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { getProjectDeployments, promoteProject, rollbackProject } from "@/services/deployments";
 import { getProjectGate } from "@/services/gate";
+import { buildDeploymentSecretPreflight } from "@/services/secrets";
 import Panel from "@/components/ui/Panel";
 import LoadingSkeleton from "@/components/ui/LoadingSkeleton";
 
@@ -51,6 +52,7 @@ export default function DeploymentPanel({ projectId }: { projectId: string }) {
 
   const canPromote = gate.role === "admin" && gate.launchStatus === "ready";
   const isAdmin = gate.role === "admin";
+  const secretPreflight = buildDeploymentSecretPreflight("prod");
 
   return (
     <Panel
@@ -64,6 +66,10 @@ export default function DeploymentPanel({ projectId }: { projectId: string }) {
       }
     >
       <div style={{ display: "grid", gap: 8 }}>
+        <div className={`state-callout ${secretPreflight.blockedByMissingSecrets ? "warning" : "success"}`}>
+          Secret preflight (PROD): configured {secretPreflight.configuredSecretCount} / required {secretPreflight.requiredSecretCount};
+          missing {secretPreflight.missingSecretCount}; rotation due {secretPreflight.rotationDueCount}.
+        </div>
         {(["dev", "staging", "prod"] as const).map((env) => {
           const d = deployments[env];
           const canRollback = isAdmin && Boolean(d?.promotedAt) && d?.status !== "rolled_back";

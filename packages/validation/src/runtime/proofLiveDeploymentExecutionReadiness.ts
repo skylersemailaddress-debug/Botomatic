@@ -11,6 +11,7 @@ import {
   type ProviderExecutionAdapterContract,
   type RollbackExecutionPlan,
 } from "./liveDeploymentExecutionSchemas";
+import { buildDeploymentSecretPreflight, createInMemorySecretStore } from "./secretsCredentialManagement";
 
 type DomainId =
   | "web_saas_app"
@@ -207,6 +208,13 @@ function buildProof() {
 
   const credentialed = has(credentialProofPath) ? loadJson(credentialProofPath) : null;
   const external = has(externalProofPath) ? loadJson(externalProofPath) : null;
+  const secretStore = createInMemorySecretStore();
+  const secretAuditEvents: any[] = [];
+  const secretPreflightByEnv = {
+    dev: buildDeploymentSecretPreflight(secretStore, secretAuditEvents, "dev"),
+    staging: buildDeploymentSecretPreflight(secretStore, secretAuditEvents, "staging"),
+    prod: buildDeploymentSecretPreflight(secretStore, secretAuditEvents, "prod"),
+  };
 
   const approvals: DeploymentApprovalRequest[] = [];
   const bindings: CredentialBindingContract[] = [];
@@ -388,6 +396,9 @@ function buildProof() {
     liveExecutionBlockedByDefault: true,
     realProviderApisCalled: false,
     realSecretsUsed: false,
+    deploymentPreflightIncludesSecrets: true,
+    liveDeploymentBlockedWhenSecretsMissing: secretPreflightByEnv.prod.blockedByMissingSecrets,
+    secretPreflightByEnvironment: secretPreflightByEnv,
     domains: REQUIRED_DOMAINS.map((domainId) => ({
       domainId,
       providerId: DOMAIN_PROVIDER[domainId],

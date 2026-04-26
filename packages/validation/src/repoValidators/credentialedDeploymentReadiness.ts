@@ -105,6 +105,20 @@ export function validateCredentialedDeploymentReadiness(root: string): RepoValid
     return result(false, "Proof is missing deploymentModeSeparation or separationEnforced=true.", checks);
   }
 
+  const spc = proof?.secretPreflightContract;
+  if (typeof spc !== "object" || spc === null) {
+    return result(false, "Proof is missing secretPreflightContract.", checks);
+  }
+  if (spc?.deploymentPreflightIncludesSecrets !== true) {
+    return result(false, "secretPreflightContract must assert deploymentPreflightIncludesSecrets=true.", checks);
+  }
+  if (spc?.noPlaintextSecretValuesStored !== true) {
+    return result(false, "secretPreflightContract must assert noPlaintextSecretValuesStored=true.", checks);
+  }
+  if (spc?.liveDeploymentBlockedWhenSecretsMissing !== true) {
+    return result(false, "secretPreflightContract must assert liveDeploymentBlockedWhenSecretsMissing=true.", checks);
+  }
+
   // Must assert approvalGateStatus is blocked (not approved/live)
   const allowedGateStatuses = ["blocked_default", "blocked_no_credentials", "not_requested"];
   if (!allowedGateStatuses.includes(String(proof?.approvalGateStatus))) {

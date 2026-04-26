@@ -73,7 +73,9 @@ Botomatic is governed by a locked enterprise launch contract in this repository:
 - Caveat: this is representative multi-domain emitted-file proof and should not be generalized as exhaustive universal full-production emission for every blueprint permutation, integration path, or deployment environment without additional emitted runtime evidence.
 - Caveat: runnable-output proof demonstrates local command execution readiness for representative emitted domain trees; it is not an exhaustive claim of production deployment success across all infrastructure, integrations, or environment-specific release paths.
 - Live deployment execution readiness posture: execution-layer deployment contracts, approval requests, credential bindings, provider adapters, pre-deploy checklists, blocked execution plans, smoke-test plans, rollback plans, and audit event contracts are proof-backed across required domains.
+- Secrets and credentials posture: metadata-only secret references and provider/environment credential profiles are supported across Vercel, Supabase, GitHub, OpenAI, Anthropic, Stripe, Twilio, SendGrid, Roblox, Steam, and generic HTTP APIs with redacted audit events and deployment preflight secret gating.
 - Caveat: live deployment remains blocked by default in this repository proof pass; no live provider deployment was executed, no real provider APIs were called, and no real secrets were used. Actual live deployment requires explicit user approval and user-supplied credentials at execution time.
+- Caveat: secret references are stored as metadata only (`secret://` URI + fingerprint) and real secret values are never committed to this repository.
 - Universal-builder launch posture remains evidence-bound: claims are valid only while `npm run -s validate:all` and proof commands remain passing on current repository truth.
 
 ## Principles

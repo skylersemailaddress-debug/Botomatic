@@ -36,6 +36,7 @@ Purpose: Map each launch category to required validators.
 | Credentialed Deployment Readiness | Validate-Botomatic-CredentialedDeploymentReadiness | IMPLEMENTED (PASS) |
 | Live Deployment Execution Readiness | Validate-Botomatic-LiveDeploymentExecutionReadiness | IMPLEMENTED (PASS) |
 | Final Commercial Release Evidence | Validate-Botomatic-FinalCommercialReleaseEvidence | IMPLEMENTED (PASS) |
+| Secrets & Credential Management Readiness | Validate-Botomatic-SecretsCredentialManagementReadiness | IMPLEMENTED (PASS) |
 | Self-Upgrading Factory Readiness | Validate-Botomatic-SelfUpgradingFactoryReadiness | IMPLEMENTED (PASS) |
 | Dirty Repo Rescue Readiness | Validate-Botomatic-DirtyRepoRescueReadiness | IMPLEMENTED (PASS) |
 | Universal Capability Stress Readiness | Validate-Botomatic-UniversalCapabilityStressReadiness | IMPLEMENTED (PASS) |
@@ -56,6 +57,7 @@ Runtime-proof harness requirements (content-inspected validators):
 - `Validate-Botomatic-CredentialedDeploymentReadiness` requires `release-evidence/runtime/credentialed_deployment_readiness_proof.json` and fails closed on missing required domain credential rows, absent approval-gate block-by-default assertions, missing provider adapter preflight contract, missing dry-run/live separation model, missing secret-policy pass signals, or any domain not marked ready_for_approved_credentialed_deployment.
 - `Validate-Botomatic-LiveDeploymentExecutionReadiness` requires `release-evidence/runtime/live_deployment_execution_readiness_proof.json` and fails closed on any live-execution claim, missing required domain/provider coverage, missing approval/credential/checklist/execution/smoke/rollback/audit contracts, pre-approved approvals in proof mode, secret-like credential binding content, or missing caveat.
 - `Validate-Botomatic-FinalCommercialReleaseEvidence` validates final commercial release evidence completeness and launch-safety posture using `release-evidence/runtime/final_commercial_release_evidence.json`; enforced flags: `noLiveDeploymentClaim=true`, `noRealSecretsUsed=true`, `noRealProviderApisCalled=true`, `liveDeploymentBlockedByDefault=true`, `representativeNotExhaustive=true`.
+- `Validate-Botomatic-SecretsCredentialManagementReadiness` requires `release-evidence/runtime/secrets_credential_management_readiness_proof.json` and fails closed when secret-reference model/workflows/profiles are missing, `.gitignore` does not protect env files, proof artifacts contain secret-like plaintext values, secrets UI surface is missing, audit events are not redacted, deployment preflight lacks secret status, or live deployment would proceed while required secrets are missing.
 - `Validate-Botomatic-Documentation` enforces launch-truth alignment across `LAUNCH_BLOCKERS.md`, `READINESS_SCORECARD.json`, `release-evidence/manifest.json`, and `README.md`.
 - `Validate-Botomatic-UIReadiness` and `Validate-Botomatic-UIControlPlaneIntegration` now enforce enterprise surface wiring, no-placeholder UI signals, loading/error/empty states, and real API service bindings.
 
@@ -70,6 +72,7 @@ Proof harness commands:
 - `npm run -s proof:deployment-dry-run`
 - `npm run -s proof:credentialed-deployment-readiness`
 - `npm run -s proof:live-deployment-execution-readiness`
+- `npm run -s proof:secrets-credential-management`
 - `npm run -s proof:all`
 
 ## Runtime Proof Matrix

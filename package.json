@@ -25,6 +25,7 @@
     "proof:deployment-dry-run": "tsx packages/validation/src/runtime/proofDeploymentDryRun.ts",
     "proof:credentialed-deployment-readiness": "tsx packages/validation/src/runtime/proofCredentialedDeploymentReadiness.ts",
     "proof:live-deployment-execution-readiness": "tsx packages/validation/src/runtime/proofLiveDeploymentExecutionReadiness.ts",
+    "proof:secrets-credential-management": "tsx packages/validation/src/runtime/proofSecretsCredentialManagement.ts",
     "proof:all": "tsx packages/validation/src/runtime/proofAll.ts",
     "test:spec-engine": "tsx packages/spec-engine/src/tests/specEngine.test.ts",
     "test:build-contract": "tsx packages/spec-engine/src/tests/buildContract.test.ts",

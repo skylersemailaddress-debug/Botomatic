@@ -79,6 +79,16 @@ export function validateLiveDeploymentExecutionReadiness(root: string): RepoVali
   if (proof?.realProviderApisCalled !== false) return result(false, "Proof must assert realProviderApisCalled=false.", checks);
   if (proof?.realSecretsUsed !== false) return result(false, "Proof must assert realSecretsUsed=false.", checks);
   if (proof?.liveExecutionBlockedByDefault !== true) return result(false, "Proof must assert liveExecutionBlockedByDefault=true.", checks);
+  if (proof?.deploymentPreflightIncludesSecrets !== true) return result(false, "Proof must assert deploymentPreflightIncludesSecrets=true.", checks);
+  if (proof?.liveDeploymentBlockedWhenSecretsMissing !== true) return result(false, "Proof must assert liveDeploymentBlockedWhenSecretsMissing=true.", checks);
+
+  const secretPreflight = proof?.secretPreflightByEnvironment;
+  if (!secretPreflight || typeof secretPreflight !== "object") {
+    return result(false, "Proof is missing secretPreflightByEnvironment.", checks);
+  }
+  if (secretPreflight?.prod?.blockedByMissingSecrets !== true) {
+    return result(false, "Proof must assert prod preflight is blocked when required secrets are missing.", checks);
+  }
 
   const domains = Array.isArray(proof?.domains) ? proof.domains : [];
   const adapters = Array.isArray(proof?.providerAdapters) ? proof.providerAdapters : [];

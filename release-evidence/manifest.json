@@ -59,7 +59,12 @@
     "liveDeploymentExecutionReadinessTruth": "representative_multi_domain_live_deployment_execution_contracts_proven",
     "liveDeploymentExecutionBlockedByDefault": true,
     "liveDeploymentExecutionPerformed": false,
-    "liveDeploymentExecutionCaveat": "Live deployment execution readiness proof captures execution-layer contracts, approval and credential guards, provider adapter orchestration, smoke-test planning, rollback planning, and audit preparation without executing live provider deployment or using real secrets."
+    "liveDeploymentExecutionCaveat": "Live deployment execution readiness proof captures execution-layer contracts, approval and credential guards, provider adapter orchestration, smoke-test planning, rollback planning, and audit preparation without executing live provider deployment or using real secrets.",
+    "secretsCredentialManagementReadinessProofPath": "release-evidence/runtime/secrets_credential_management_readiness_proof.json",
+    "secretsCredentialManagementReadinessTruth": "metadata_only_secret_references_and_profiles_proven",
+    "secretsCredentialManagementNoPlaintextStored": true,
+    "secretsCredentialManagementLiveBlockedWhenMissing": true,
+    "secretsCredentialManagementCaveat": "Secret references are represented as secret:// URIs and fingerprints only; real secret values are not stored in repository evidence and live deployment remains blocked when required secrets are missing."
   },
   "launchClaim": {
     "enterpriseReady": true,

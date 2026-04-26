@@ -27,6 +27,7 @@ import {
   type DomainCredentialManifest,
   validateDomainCredentialManifest,
 } from "./credentialedDeploymentSchemas";
+import { buildDeploymentSecretPreflight, createInMemorySecretStore } from "./secretsCredentialManagement";
 
 const ROOT = process.cwd();
 const PROOF_OUT = path.join(ROOT, "release-evidence", "runtime", "credentialed_deployment_readiness_proof.json");
@@ -535,6 +536,9 @@ function main() {
 
   const allPassed = failedDomains.length === 0;
   const status = allPassed ? "passed" : "failed";
+  const secretStore = createInMemorySecretStore();
+  const secretAuditEvents: any[] = [];
+  const secretPreflightProd = buildDeploymentSecretPreflight(secretStore, secretAuditEvents, "prod");
   const secretsCommitted = domainResults.some((d) =>
     d.secretPolicyChecks.some((c) => c.checkId === "no_real_secrets_in_committed_env" && !c.passed)
   );
@@ -563,6 +567,14 @@ function main() {
       dryRunMode: "structural_and_policy_validation_only",
       liveMode: "credentialed_user_approved_execution",
       separationEnforced: true,
+    },
+    secretPreflightContract: {
+      deploymentPreflightIncludesSecrets: true,
+      noPlaintextSecretValuesStored: true,
+      liveDeploymentBlockedWhenSecretsMissing: secretPreflightProd.blockedByMissingSecrets,
+      requiredSecretCount: secretPreflightProd.requiredSecretCount,
+      configuredSecretCount: secretPreflightProd.configuredSecretCount,
+      missingSecretCount: secretPreflightProd.missingSecretCount,
     },
     caveat: "Credentialed deployment readiness proof declares credential requirements, approval gate model, provider adapter interfaces, and secret handling policies per domain. No credentials are stored, validated, or used. Live deployment is blocked by default and requires explicit user approval and user-supplied credentials. This is not proof of live deployment.",
     domainResults: domainResults.map((d) => ({

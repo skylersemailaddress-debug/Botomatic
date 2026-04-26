@@ -66,6 +66,7 @@ export function validateFinalCommercialReleaseEvidence(root: string): RepoValida
     "deployment_dry_run_proof.json",
     "credentialed_deployment_readiness_proof.json",
     "live_deployment_execution_readiness_proof.json",
+    "secrets_credential_management_readiness_proof.json",
   ];
 
   for (const proofFile of requiredProofs) {
@@ -102,6 +103,7 @@ export function validateFinalCommercialReleaseEvidence(root: string): RepoValida
     "deploymentDryRunSummary",
     "credentialedDeploymentReadinessSummary",
     "liveDeploymentExecutionReadinessSummary",
+    "secretsCredentialManagementReadinessSummary",
     "explicitCaveats",
     "noLiveDeploymentClaim",
     "noRealSecretsUsed",

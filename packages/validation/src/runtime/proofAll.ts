@@ -11,6 +11,7 @@ const proofs = [
   "proof:deployment-dry-run",
   "proof:credentialed-deployment-readiness",
   "proof:live-deployment-execution-readiness",
+  "proof:secrets-credential-management",
 ];
 
 function run() {

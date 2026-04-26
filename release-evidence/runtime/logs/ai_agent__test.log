@@ -1,8 +1,8 @@
 domain=ai_agent
 commandId=test
 kind=test
-startedAt=2026-04-26T21:29:50.057Z
-finishedAt=2026-04-26T21:29:50.545Z
+startedAt=2026-04-26T22:35:14.754Z
+finishedAt=2026-04-26T22:35:15.261Z
 status=passed
 exitCode=0
 --- stdout ---

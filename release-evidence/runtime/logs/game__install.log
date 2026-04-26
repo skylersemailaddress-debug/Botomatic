@@ -1,8 +1,8 @@
 domain=game
 commandId=install
 kind=install
-startedAt=2026-04-26T21:29:51.072Z
-finishedAt=2026-04-26T21:29:51.672Z
+startedAt=2026-04-26T22:35:15.836Z
+finishedAt=2026-04-26T22:35:16.545Z
 status=passed
 exitCode=0
 --- stdout ---
