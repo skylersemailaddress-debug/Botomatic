@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-26T21:25:49.490Z",
+  "generatedAt": "2026-04-26T23:33:15.145Z",
   "proofGrade": "local_static",
   "methodology": "spec+plan+generated-app-validator benchmark scoring",
   "averageScoreOutOf10": 10,
@@ -19,7 +19,7 @@
       "appType": "website",
       "domain": "website",
       "buildContract": {
-        "id": "contract_bench_vague_founder_ramble_1777238749472",
+        "id": "contract_bench_vague_founder_ramble_1777246395123",
         "readyToBuild": true,
         "blockers": []
       },
@@ -241,6 +241,7 @@
         "securityHardening": true,
         "deploymentConfig": true,
         "launchPacketExists": true,
+        "launchPackageExists": true,
         "finalValidationProofExists": true,
         "fakeAuthSignals": false,
         "fakePaymentSignals": false,
@@ -269,7 +270,7 @@
       "appType": "saas",
       "domain": "saas",
       "buildContract": {
-        "id": "contract_bench_detailed_saas_dashboard_1777238749475",
+        "id": "contract_bench_detailed_saas_dashboard_1777246395126",
         "readyToBuild": true,
         "blockers": []
       },
@@ -491,6 +492,7 @@
         "securityHardening": true,
         "deploymentConfig": true,
         "launchPacketExists": true,
+        "launchPackageExists": true,
         "finalValidationProofExists": true,
         "fakeAuthSignals": false,
         "fakePaymentSignals": false,
@@ -519,7 +521,7 @@
       "appType": "business",
       "domain": "business",
       "buildContract": {
-        "id": "contract_bench_crm_1777238749476",
+        "id": "contract_bench_crm_1777246395129",
         "readyToBuild": true,
         "blockers": []
       },
@@ -741,6 +743,7 @@
         "securityHardening": true,
         "deploymentConfig": true,
         "launchPacketExists": true,
+        "launchPackageExists": true,
         "finalValidationProofExists": true,
         "fakeAuthSignals": false,
         "fakePaymentSignals": false,
@@ -769,7 +772,7 @@
       "appType": "operations",
       "domain": "operations",
       "buildContract": {
-        "id": "contract_bench_booking_platform_1777238749476",
+        "id": "contract_bench_booking_platform_1777246395130",
         "readyToBuild": true,
         "blockers": []
       },
@@ -991,6 +994,7 @@
         "securityHardening": true,
         "deploymentConfig": true,
         "launchPacketExists": true,
+        "launchPackageExists": true,
         "finalValidationProofExists": true,
         "fakeAuthSignals": false,
         "fakePaymentSignals": false,
@@ -1019,7 +1023,7 @@
       "appType": "commerce",
       "domain": "commerce",
       "buildContract": {
-        "id": "contract_bench_ecommerce_1777238749477",
+        "id": "contract_bench_ecommerce_1777246395130",
         "readyToBuild": true,
         "blockers": []
       },
@@ -1241,6 +1245,7 @@
         "securityHardening": true,
         "deploymentConfig": true,
         "launchPacketExists": true,
+        "launchPackageExists": true,
         "finalValidationProofExists": true,
         "fakeAuthSignals": false,
         "fakePaymentSignals": false,
@@ -1269,7 +1274,7 @@
       "appType": "commerce",
       "domain": "commerce",
       "buildContract": {
-        "id": "contract_bench_marketplace_1777238749478",
+        "id": "contract_bench_marketplace_1777246395131",
         "readyToBuild": true,
         "blockers": []
       },
@@ -1491,6 +1496,7 @@
         "securityHardening": true,
         "deploymentConfig": true,
         "launchPacketExists": true,
+        "launchPackageExists": true,
         "finalValidationProofExists": true,
         "fakeAuthSignals": false,
         "fakePaymentSignals": false,
@@ -1519,7 +1525,7 @@
       "appType": "website",
       "domain": "website",
       "buildContract": {
-        "id": "contract_bench_marketing_website_1777238749478",
+        "id": "contract_bench_marketing_website_1777246395132",
         "readyToBuild": true,
         "blockers": []
       },
@@ -1741,6 +1747,7 @@
         "securityHardening": true,
         "deploymentConfig": true,
         "launchPacketExists": true,
+        "launchPackageExists": true,
         "finalValidationProofExists": true,
         "fakeAuthSignals": false,
         "fakePaymentSignals": false,
@@ -1769,7 +1776,7 @@
       "appType": "website",
       "domain": "website",
       "buildContract": {
-        "id": "contract_bench_landing_page_1777238749479",
+        "id": "contract_bench_landing_page_1777246395133",
         "readyToBuild": true,
         "blockers": []
       },
@@ -1991,6 +1998,7 @@
         "securityHardening": true,
         "deploymentConfig": true,
         "launchPacketExists": true,
+        "launchPackageExists": true,
         "finalValidationProofExists": true,
         "fakeAuthSignals": false,
         "fakePaymentSignals": false,
@@ -2019,7 +2027,7 @@
       "appType": "community",
       "domain": "community",
       "buildContract": {
-        "id": "contract_bench_membership_community_1777238749479",
+        "id": "contract_bench_membership_community_1777246395134",
         "readyToBuild": true,
         "blockers": []
       },
@@ -2241,6 +2249,7 @@
         "securityHardening": true,
         "deploymentConfig": true,
         "launchPacketExists": true,
+        "launchPackageExists": true,
         "finalValidationProofExists": true,
         "fakeAuthSignals": false,
         "fakePaymentSignals": false,
@@ -2269,7 +2278,7 @@
       "appType": "education",
       "domain": "education",
       "buildContract": {
-        "id": "contract_bench_lms_1777238749480",
+        "id": "contract_bench_lms_1777246395135",
         "readyToBuild": true,
         "blockers": []
       },
@@ -2491,6 +2500,7 @@
         "securityHardening": true,
         "deploymentConfig": true,
         "launchPacketExists": true,
+        "launchPackageExists": true,
         "finalValidationProofExists": true,
         "fakeAuthSignals": false,
         "fakePaymentSignals": false,
@@ -2519,7 +2529,7 @@
       "appType": "listings",
       "domain": "listings",
       "buildContract": {
-        "id": "contract_bench_job_board_1777238749481",
+        "id": "contract_bench_job_board_1777246395136",
         "readyToBuild": true,
         "blockers": []
       },
@@ -2741,6 +2751,7 @@
         "securityHardening": true,
         "deploymentConfig": true,
         "launchPacketExists": true,
+        "launchPackageExists": true,
         "finalValidationProofExists": true,
         "fakeAuthSignals": false,
         "fakePaymentSignals": false,
@@ -2769,7 +2780,7 @@
       "appType": "listings",
       "domain": "listings",
       "buildContract": {
-        "id": "contract_bench_directory_listings_1777238749482",
+        "id": "contract_bench_directory_listings_1777246395137",
         "readyToBuild": true,
         "blockers": []
       },
@@ -2991,6 +3002,7 @@
         "securityHardening": true,
         "deploymentConfig": true,
         "launchPacketExists": true,
+        "launchPackageExists": true,
         "finalValidationProofExists": true,
         "fakeAuthSignals": false,
         "fakePaymentSignals": false,
@@ -3019,7 +3031,7 @@
       "appType": "operations",
       "domain": "operations",
       "buildContract": {
-        "id": "contract_bench_internal_admin_tool_1777238749482",
+        "id": "contract_bench_internal_admin_tool_1777246395137",
         "readyToBuild": true,
         "blockers": []
       },
@@ -3241,6 +3253,7 @@
         "securityHardening": true,
         "deploymentConfig": true,
         "launchPacketExists": true,
+        "launchPackageExists": true,
         "finalValidationProofExists": true,
         "fakeAuthSignals": false,
         "fakePaymentSignals": false,
@@ -3269,7 +3282,7 @@
       "appType": "operations",
       "domain": "operations",
       "buildContract": {
-        "id": "contract_bench_workflow_operations_system_1777238749482",
+        "id": "contract_bench_workflow_operations_system_1777246395137",
         "readyToBuild": true,
         "blockers": []
       },
@@ -3491,6 +3504,7 @@
         "securityHardening": true,
         "deploymentConfig": true,
         "launchPacketExists": true,
+        "launchPackageExists": true,
         "finalValidationProofExists": true,
         "fakeAuthSignals": false,
         "fakePaymentSignals": false,
@@ -3519,7 +3533,7 @@
       "appType": "portal",
       "domain": "portal",
       "buildContract": {
-        "id": "contract_bench_customer_portal_1777238749483",
+        "id": "contract_bench_customer_portal_1777246395138",
         "readyToBuild": true,
         "blockers": []
       },
@@ -3741,6 +3755,7 @@
         "securityHardening": true,
         "deploymentConfig": true,
         "launchPacketExists": true,
+        "launchPackageExists": true,
         "finalValidationProofExists": true,
         "fakeAuthSignals": false,
         "fakePaymentSignals": false,
@@ -3769,7 +3784,7 @@
       "appType": "analytics",
       "domain": "analytics",
       "buildContract": {
-        "id": "contract_bench_analytics_reporting_1777238749483",
+        "id": "contract_bench_analytics_reporting_1777246395138",
         "readyToBuild": true,
         "blockers": []
       },
@@ -3991,6 +4006,7 @@
         "securityHardening": true,
         "deploymentConfig": true,
         "launchPacketExists": true,
+        "launchPackageExists": true,
         "finalValidationProofExists": true,
         "fakeAuthSignals": false,
         "fakePaymentSignals": false,
@@ -4019,7 +4035,7 @@
       "appType": "website",
       "domain": "website",
       "buildContract": {
-        "id": "contract_bench_event_platform_1777238749484",
+        "id": "contract_bench_event_platform_1777246395139",
         "readyToBuild": true,
         "blockers": []
       },
@@ -4241,6 +4257,7 @@
         "securityHardening": true,
         "deploymentConfig": true,
         "launchPacketExists": true,
+        "launchPackageExists": true,
         "finalValidationProofExists": true,
         "fakeAuthSignals": false,
         "fakePaymentSignals": false,
@@ -4269,7 +4286,7 @@
       "appType": "media",
       "domain": "media",
       "buildContract": {
-        "id": "contract_bench_content_media_site_1777238749485",
+        "id": "contract_bench_content_media_site_1777246395139",
         "readyToBuild": true,
         "blockers": []
       },
@@ -4491,6 +4508,7 @@
         "securityHardening": true,
         "deploymentConfig": true,
         "launchPacketExists": true,
+        "launchPackageExists": true,
         "finalValidationProofExists": true,
         "fakeAuthSignals": false,
         "fakePaymentSignals": false,
@@ -4519,7 +4537,7 @@
       "appType": "website",
       "domain": "website",
       "buildContract": {
-        "id": "contract_bench_ai_chatbot_app_1777238749485",
+        "id": "contract_bench_ai_chatbot_app_1777246395140",
         "readyToBuild": true,
         "blockers": []
       },
@@ -4741,6 +4759,7 @@
         "securityHardening": true,
         "deploymentConfig": true,
         "launchPacketExists": true,
+        "launchPackageExists": true,
         "finalValidationProofExists": true,
         "fakeAuthSignals": false,
         "fakePaymentSignals": false,
@@ -4769,7 +4788,7 @@
       "appType": "website",
       "domain": "website",
       "buildContract": {
-        "id": "contract_bench_ai_agent_workflow_1777238749485",
+        "id": "contract_bench_ai_agent_workflow_1777246395140",
         "readyToBuild": true,
         "blockers": []
       },
@@ -4991,6 +5010,7 @@
         "securityHardening": true,
         "deploymentConfig": true,
         "launchPacketExists": true,
+        "launchPackageExists": true,
         "finalValidationProofExists": true,
         "fakeAuthSignals": false,
         "fakePaymentSignals": false,
@@ -5019,7 +5039,7 @@
       "appType": "website",
       "domain": "website",
       "buildContract": {
-        "id": "contract_bench_document_processing_1777238749486",
+        "id": "contract_bench_document_processing_1777246395141",
         "readyToBuild": true,
         "blockers": []
       },
@@ -5241,6 +5261,7 @@
         "securityHardening": true,
         "deploymentConfig": true,
         "launchPacketExists": true,
+        "launchPackageExists": true,
         "finalValidationProofExists": true,
         "fakeAuthSignals": false,
         "fakePaymentSignals": false,
@@ -5269,7 +5290,7 @@
       "appType": "website",
       "domain": "website",
       "buildContract": {
-        "id": "contract_bench_inventory_order_management_1777238749486",
+        "id": "contract_bench_inventory_order_management_1777246395141",
         "readyToBuild": true,
         "blockers": []
       },
@@ -5491,6 +5512,7 @@
         "securityHardening": true,
         "deploymentConfig": true,
         "launchPacketExists": true,
+        "launchPackageExists": true,
         "finalValidationProofExists": true,
         "fakeAuthSignals": false,
         "fakePaymentSignals": false,
@@ -5519,7 +5541,7 @@
       "appType": "support",
       "domain": "support",
       "buildContract": {
-        "id": "contract_bench_support_helpdesk_1777238749487",
+        "id": "contract_bench_support_helpdesk_1777246395142",
         "readyToBuild": true,
         "blockers": []
       },
@@ -5741,6 +5763,7 @@
         "securityHardening": true,
         "deploymentConfig": true,
         "launchPacketExists": true,
+        "launchPackageExists": true,
         "finalValidationProofExists": true,
         "fakeAuthSignals": false,
         "fakePaymentSignals": false,
@@ -5769,7 +5792,7 @@
       "appType": "listings",
       "domain": "listings",
       "buildContract": {
-        "id": "contract_bench_real_estate_listings_1777238749487",
+        "id": "contract_bench_real_estate_listings_1777246395142",
         "readyToBuild": true,
         "blockers": []
       },
@@ -5991,6 +6014,7 @@
         "securityHardening": true,
         "deploymentConfig": true,
         "launchPacketExists": true,
+        "launchPackageExists": true,
         "finalValidationProofExists": true,
         "fakeAuthSignals": false,
         "fakePaymentSignals": false,
@@ -6019,7 +6043,7 @@
       "appType": "operations",
       "domain": "operations",
       "buildContract": {
-        "id": "contract_bench_field_service_1777238749487",
+        "id": "contract_bench_field_service_1777246395142",
         "readyToBuild": true,
         "blockers": []
       },
@@ -6241,6 +6265,7 @@
         "securityHardening": true,
         "deploymentConfig": true,
         "launchPacketExists": true,
+        "launchPackageExists": true,
         "finalValidationProofExists": true,
         "fakeAuthSignals": false,
         "fakePaymentSignals": false,
@@ -6269,7 +6294,7 @@
       "appType": "nonprofit",
       "domain": "nonprofit",
       "buildContract": {
-        "id": "contract_bench_nonprofit_volunteer_ops_1777238749487",
+        "id": "contract_bench_nonprofit_volunteer_ops_1777246395143",
         "readyToBuild": true,
         "blockers": []
       },
@@ -6491,6 +6516,7 @@
         "securityHardening": true,
         "deploymentConfig": true,
         "launchPacketExists": true,
+        "launchPackageExists": true,
         "finalValidationProofExists": true,
         "fakeAuthSignals": false,
         "fakePaymentSignals": false,
@@ -6519,7 +6545,7 @@
       "appType": "operations",
       "domain": "operations",
       "buildContract": {
-        "id": "contract_bench_campaign_ops_1777238749488",
+        "id": "contract_bench_campaign_ops_1777246395144",
         "readyToBuild": true,
         "blockers": []
       },
@@ -6741,6 +6767,7 @@
         "securityHardening": true,
         "deploymentConfig": true,
         "launchPacketExists": true,
+        "launchPackageExists": true,
         "finalValidationProofExists": true,
         "fakeAuthSignals": false,
         "fakePaymentSignals": false,
@@ -6769,7 +6796,7 @@
       "appType": "website",
       "domain": "website",
       "buildContract": {
-        "id": "contract_bench_payments_heavy_1777238749488",
+        "id": "contract_bench_payments_heavy_1777246395144",
         "readyToBuild": true,
         "blockers": []
       },
@@ -6991,6 +7018,7 @@
         "securityHardening": true,
         "deploymentConfig": true,
         "launchPacketExists": true,
+        "launchPackageExists": true,
         "finalValidationProofExists": true,
         "fakeAuthSignals": false,
         "fakePaymentSignals": false,
@@ -7019,7 +7047,7 @@
       "appType": "website",
       "domain": "website",
       "buildContract": {
-        "id": "contract_bench_compliance_sensitive_1777238749489",
+        "id": "contract_bench_compliance_sensitive_1777246395144",
         "readyToBuild": true,
         "blockers": []
       },
@@ -7241,6 +7269,7 @@
         "securityHardening": true,
         "deploymentConfig": true,
         "launchPacketExists": true,
+        "launchPackageExists": true,
         "finalValidationProofExists": true,
         "fakeAuthSignals": false,
         "fakePaymentSignals": false,
@@ -7269,7 +7298,7 @@
       "appType": "website",
       "domain": "website",
       "buildContract": {
-        "id": "contract_bench_conflicting_requirements_1777238749489",
+        "id": "contract_bench_conflicting_requirements_1777246395145",
         "readyToBuild": true,
         "blockers": []
       },
@@ -7491,6 +7520,7 @@
         "securityHardening": true,
         "deploymentConfig": true,
         "launchPacketExists": true,
+        "launchPackageExists": true,
         "finalValidationProofExists": true,
         "fakeAuthSignals": false,
         "fakePaymentSignals": false,
@@ -7519,7 +7549,7 @@
       "appType": "website",
       "domain": "website",
       "buildContract": {
-        "id": "contract_bench_decide_everything_for_me_1777238749489",
+        "id": "contract_bench_decide_everything_for_me_1777246395145",
         "readyToBuild": true,
         "blockers": []
       },
@@ -7741,6 +7771,7 @@
         "securityHardening": true,
         "deploymentConfig": true,
         "launchPacketExists": true,
+        "launchPackageExists": true,
         "finalValidationProofExists": true,
         "fakeAuthSignals": false,
         "fakePaymentSignals": false,

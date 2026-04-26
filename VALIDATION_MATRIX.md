@@ -37,6 +37,13 @@ Purpose: Map each launch category to required validators.
 | Live Deployment Execution Readiness | Validate-Botomatic-LiveDeploymentExecutionReadiness | IMPLEMENTED (PASS) |
 | Final Commercial Release Evidence | Validate-Botomatic-FinalCommercialReleaseEvidence | IMPLEMENTED (PASS) |
 | Secrets & Credential Management Readiness | Validate-Botomatic-SecretsCredentialManagementReadiness | IMPLEMENTED (PASS) |
+| Autonomous Complex Build Readiness | Validate-Botomatic-AutonomousComplexBuildReadiness | IMPLEMENTED (PASS) |
+| Domain Quality Scorecards Readiness | Validate-Botomatic-DomainQualityScorecardsReadiness | IMPLEMENTED (PASS) |
+| Eval Suite Readiness | Validate-Botomatic-EvalSuiteReadiness | IMPLEMENTED (PASS) |
+| Security Center Readiness | Validate-Botomatic-SecurityCenterReadiness | IMPLEMENTED (PASS) |
+| First-Run Experience Readiness | Validate-Botomatic-FirstRunExperienceReadiness | IMPLEMENTED (PASS) |
+| Validation Cache Readiness | Validate-Botomatic-ValidationCacheReadiness | IMPLEMENTED (PASS) |
+| Installer Runtime Readiness | Validate-Botomatic-InstallerRuntimeReadiness | IMPLEMENTED (PASS) |
 | Self-Upgrading Factory Readiness | Validate-Botomatic-SelfUpgradingFactoryReadiness | IMPLEMENTED (PASS) |
 | Dirty Repo Rescue Readiness | Validate-Botomatic-DirtyRepoRescueReadiness | IMPLEMENTED (PASS) |
 | Universal Capability Stress Readiness | Validate-Botomatic-UniversalCapabilityStressReadiness | IMPLEMENTED (PASS) |
@@ -58,6 +65,13 @@ Runtime-proof harness requirements (content-inspected validators):
 - `Validate-Botomatic-LiveDeploymentExecutionReadiness` requires `release-evidence/runtime/live_deployment_execution_readiness_proof.json` and fails closed on any live-execution claim, missing required domain/provider coverage, missing approval/credential/checklist/execution/smoke/rollback/audit contracts, pre-approved approvals in proof mode, secret-like credential binding content, or missing caveat.
 - `Validate-Botomatic-FinalCommercialReleaseEvidence` validates final commercial release evidence completeness and launch-safety posture using `release-evidence/runtime/final_commercial_release_evidence.json`; enforced flags: `noLiveDeploymentClaim=true`, `noRealSecretsUsed=true`, `noRealProviderApisCalled=true`, `liveDeploymentBlockedByDefault=true`, `representativeNotExhaustive=true`.
 - `Validate-Botomatic-SecretsCredentialManagementReadiness` requires `release-evidence/runtime/secrets_credential_management_readiness_proof.json` and fails closed when secret-reference model/workflows/profiles are missing, `.gitignore` does not protect env files, proof artifacts contain secret-like plaintext values, secrets UI surface is missing, audit events are not redacted, deployment preflight lacks secret status, or live deployment would proceed while required secrets are missing.
+- `Validate-Botomatic-AutonomousComplexBuildReadiness` requires `release-evidence/runtime/autonomous_complex_build_readiness_proof.json` and fails closed when autonomous build package components are missing, milestone/checkpoint/repair/escalation/final-assembler readiness is absent, one-click launch package requirement is missing, low-risk autonomy or high-risk escalation policy is missing, proof claims live deployment, or caveat language is missing.
+- `Validate-Botomatic-DomainQualityScorecardsReadiness` requires `release-evidence/runtime/domain_quality_scorecards.json` and fails closed when per-domain readiness scorecards are missing, below strict thresholds, or missing representative caveat language.
+- `Validate-Botomatic-EvalSuiteReadiness` requires `release-evidence/runtime/eval_suite_runtime_proof.json` and fails closed when required eval categories are missing or any eval status fails.
+- `Validate-Botomatic-SecurityCenterReadiness` enforces Security Center API and UI presence for threat model, RBAC matrix, data privacy posture, dependency risk scan, supply-chain checks, and security audit surface.
+- `Validate-Botomatic-FirstRunExperienceReadiness` enforces first-run onboarding + What's Next panel coverage for build-from-idea, spec upload, dirty-repo upload, key configuration, local launch, and deployment preparation paths.
+- `Validate-Botomatic-ValidationCacheReadiness` enforces fast command wiring and content-hash validator cache implementation (`validate:fast`, `validate:changed`, `proof:fast`, `cache:clear`).
+- `Validate-Botomatic-InstallerRuntimeReadiness` enforces installer/doctor/easy-start runtime anchors, package script wiring, and Linux shell-script executable permission checks.
 - `Validate-Botomatic-Documentation` enforces launch-truth alignment across `LAUNCH_BLOCKERS.md`, `READINESS_SCORECARD.json`, `release-evidence/manifest.json`, and `README.md`.
 - `Validate-Botomatic-UIReadiness` and `Validate-Botomatic-UIControlPlaneIntegration` now enforce enterprise surface wiring, no-placeholder UI signals, loading/error/empty states, and real API service bindings.
 
@@ -66,6 +80,8 @@ Proof harness commands:
 - `npm run -s proof:dirty-repo`
 - `npm run -s proof:self-upgrade`
 - `npm run -s proof:universal-pipeline`
+- `npm run -s proof:domain-scorecards`
+- `npm run -s proof:eval-suite`
 - `npm run -s proof:multi-domain-emitted-output`
 - `npm run -s proof:domain-runtime-commands`
 - `npm run -s proof:external-deployment-readiness`
@@ -73,7 +89,14 @@ Proof harness commands:
 - `npm run -s proof:credentialed-deployment-readiness`
 - `npm run -s proof:live-deployment-execution-readiness`
 - `npm run -s proof:secrets-credential-management`
+- `npm run -s proof:autonomous-complex-build`
+- `npm run -s proof:fast`
 - `npm run -s proof:all`
+
+Fast commands:
+- `npm run -s validate:fast`
+- `npm run -s validate:changed`
+- `npm run -s cache:clear`
 
 ## Runtime Proof Matrix
 

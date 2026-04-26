@@ -1,5 +1,6 @@
 import { createProofEntry, verifyClaim } from "../../../../packages/proof-engine/src";
 import { validateGeneratedApp } from "../generatedApp/validateGeneratedApp";
+import { buildLaunchPackageFiles } from "../generatedApp/launchPackage";
 import fs from "fs";
 import path from "path";
 import {
@@ -14,15 +15,15 @@ function ensureDir(dirPath: string) {
   fs.mkdirSync(dirPath, { recursive: true });
 }
 
-function writeFile(base: string, rel: string, content: string) {
+function writeFile(base: string, rel: string, content: string, encoding: "utf8" | "base64" = "utf8") {
   const target = path.join(base, rel);
   ensureDir(path.dirname(target));
-  fs.writeFileSync(target, content);
+  fs.writeFileSync(target, content, encoding === "base64" ? "base64" : "utf8");
 }
 
 function emitGeneratedAppTree(projectId: string, appName: string): { rootDir: string; fileCount: number; files: string[] } {
   const rootDir = path.join(process.cwd(), "release-evidence", "generated-apps", projectId);
-  const files: Array<{ rel: string; content: string }> = [
+  const files: Array<{ rel: string; content: string; encoding?: "utf8" | "base64" }> = [
     {
       rel: "package.json",
       content: JSON.stringify({
@@ -113,19 +114,40 @@ function emitGeneratedAppTree(projectId: string, appName: string): { rootDir: st
       rel: "RUNBOOK.md",
       content: "# Runbook\n\n## Deploy\n1. Configure environment values from .env.example\n2. Run npm run build\n3. Deploy with Vercel config\n\n## Validate\n1. Run npm test\n2. Check API /api/health\n",
     },
-    {
-      rel: "launch/launch_packet.json",
-      content: JSON.stringify({
-        generatedAt: new Date().toISOString(),
-        projectId,
-        validators: ["build", "tests", "no-gap-policy", "security"],
-        launchReadiness: "candidate",
-      }, null, 2),
-    },
   ];
 
+  const launchPackageFiles = buildLaunchPackageFiles({
+    appName,
+    domainId: projectId,
+    localLaunchCommand: "npm run build && npm run start",
+    localLaunchPowerShellCommand: "npm run build; npm run start",
+    secretRequirements: [
+      {
+        providerId: "runtime_provider",
+        environment: "production",
+        keyName: "DATABASE_URL",
+        required: true,
+        secretUri: "secret://runtime_provider/production/DATABASE_URL",
+      },
+    ],
+    deploymentTargets: [
+      {
+        id: "vercel",
+        label: "Vercel",
+        approvalRequired: true,
+        credentialed: true,
+        liveBlockedByDefault: true,
+      },
+    ],
+    validators: ["build", "tests", "no-gap-policy", "security"],
+    artifactPaths: ["README.md", "RUNBOOK.md", "launch/launch_packet.json"],
+    logs: ["Greenfield proof generated representative launch package."],
+  });
+
+  files.push(...launchPackageFiles);
+
   for (const file of files) {
-    writeFile(rootDir, file.rel, file.content);
+    writeFile(rootDir, file.rel, file.content, file.encoding || "utf8");
   }
 
   return { rootDir, fileCount: files.length, files: files.map((f) => f.rel) };
@@ -276,6 +298,7 @@ async function run() {
       securityHardening: packets.some((p: any) => String(p?.goal || "").toLowerCase().includes("security")),
       deploymentConfig: packets.some((p: any) => String(p?.goal || "").toLowerCase().includes("deployment")),
       launchPacketExists: true,
+      launchPackageExists: true,
       finalValidationProofExists: true,
       fakeAuthSignals: false,
       fakePaymentSignals: false,

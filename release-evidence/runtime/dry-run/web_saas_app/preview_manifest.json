@@ -1,6 +1,6 @@
 {
   "domainId": "web_saas_app",
-  "generatedAt": "2026-04-26T22:35:57.860Z",
+  "generatedAt": "2026-04-26T23:35:10.453Z",
   "emittedPath": "/workspaces/Botomatic/release-evidence/generated-apps/web_saas_app",
   "emittedFileCount": 111,
   "emittedFiles": [
@@ -75,6 +75,8 @@
     ".next/server/server-reference-manifest.js",
     ".next/server/server-reference-manifest.json",
     ".next/server/webpack-runtime.js",
+    ".next/static/7eunIdeyzLpcoAFCTyERf/_buildManifest.js",
+    ".next/static/7eunIdeyzLpcoAFCTyERf/_ssgManifest.js",
     ".next/static/chunks/594-f8c2b09a5fb6b0d7.js",
     ".next/static/chunks/app/_not-found/page-83fa322cfc54ce2b.js",
     ".next/static/chunks/app/dashboard/page-7bbd6ecc1b270b30.js",
@@ -88,8 +90,6 @@
     ".next/static/chunks/pages/_error-2594f39b9eb1ab63.js",
     ".next/static/chunks/polyfills-78c92fac7aa8fdd8.js",
     ".next/static/chunks/webpack-100b9e646d9c912e.js",
-    ".next/static/h6S7X0chIuirSyitbgwcj/_buildManifest.js",
-    ".next/static/h6S7X0chIuirSyitbgwcj/_ssgManifest.js",
     ".next/trace",
     ".next/types/app/api/workflows/execute/route.ts",
     ".next/types/app/dashboard/page.ts",

@@ -12,6 +12,13 @@ import { validateCredentialedDeploymentReadiness } from "./repoValidators/creden
 import { validateLiveDeploymentExecutionReadiness } from "./repoValidators/liveDeploymentExecutionReadiness";
 import { validateFinalCommercialReleaseEvidence } from "./repoValidators/finalCommercialReleaseEvidence";
 import { validateSecretsCredentialManagementReadiness } from "./repoValidators/secretsCredentialManagementReadiness";
+import { validateAutonomousComplexBuildReadiness } from "./repoValidators/autonomousComplexBuildReadiness";
+import { validateDomainQualityScorecardsReadiness } from "./repoValidators/domainQualityScorecardsReadiness";
+import { validateEvalSuiteReadiness } from "./repoValidators/evalSuiteReadiness";
+import { validateSecurityCenterReadiness } from "./repoValidators/securityCenterReadiness";
+import { validateFirstRunExperienceReadiness } from "./repoValidators/firstRunExperienceReadiness";
+import { validateValidationCacheReadiness } from "./repoValidators/validationCacheReadiness";
+import { validateInstallerRuntimeReadiness } from "./repoValidators/installerRuntimeReadiness";
 
 export type RepoValidatorResult = {
   name: string;
@@ -1041,5 +1048,12 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateLiveDeploymentExecutionReadiness(root),
     validateFinalCommercialReleaseEvidence(root),
     validateSecretsCredentialManagementReadiness(root),
+    validateAutonomousComplexBuildReadiness(root),
+    validateDomainQualityScorecardsReadiness(root),
+    validateEvalSuiteReadiness(root),
+    validateSecurityCenterReadiness(root),
+    validateFirstRunExperienceReadiness(root),
+    validateValidationCacheReadiness(root),
+    validateInstallerRuntimeReadiness(root),
   ];
 }

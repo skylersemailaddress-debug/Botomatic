@@ -1,8 +1,8 @@
 domain=mobile_app
 commandId=test
 kind=test
-startedAt=2026-04-26T22:35:07.527Z
-finishedAt=2026-04-26T22:35:08.082Z
+startedAt=2026-04-26T23:34:14.871Z
+finishedAt=2026-04-26T23:34:15.629Z
 status=passed
 exitCode=0
 --- stdout ---

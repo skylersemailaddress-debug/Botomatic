@@ -5,6 +5,8 @@ const proofs = [
   "proof:dirty-repo",
   "proof:self-upgrade",
   "proof:universal-pipeline",
+  "proof:domain-scorecards",
+  "proof:eval-suite",
   "proof:multi-domain-emitted-output",
   "proof:domain-runtime-commands",
   "proof:external-deployment-readiness",
@@ -12,6 +14,7 @@ const proofs = [
   "proof:credentialed-deployment-readiness",
   "proof:live-deployment-execution-readiness",
   "proof:secrets-credential-management",
+  "proof:autonomous-complex-build",
 ];
 
 function run() {

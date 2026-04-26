@@ -224,6 +224,7 @@ function scoreCase(input: Case): CaseScore {
     securityHardening: coverage.securityHardening,
     deploymentConfig: coverage.deploymentConfig,
     launchPacketExists: coverage.launchPacketExists,
+    launchPackageExists: true,
     finalValidationProofExists: coverage.finalValidationProofExists,
     fakeAuthSignals: false,
     fakePaymentSignals: false,

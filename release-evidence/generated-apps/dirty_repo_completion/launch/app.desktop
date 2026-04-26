@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Botomatic dirty_repo_completion
+Exec=bash -lc 'bash launch/launch-local.sh'
+Icon=app.png
+Terminal=true
+Categories=Development;

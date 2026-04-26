@@ -19,6 +19,9 @@ import RepoRescuePanel from "@/components/overview/RepoRescuePanel";
 import SelfUpgradePanel from "@/components/overview/SelfUpgradePanel";
 import LaunchReadinessPanel from "@/components/overview/LaunchReadinessPanel";
 import SecretsCredentialsPanel from "@/components/overview/SecretsCredentialsPanel";
+import AutonomousBuildRunPanel from "@/components/overview/AutonomousBuildRunPanel";
+import FirstRunWhatsNextPanel from "@/components/overview/FirstRunWhatsNextPanel";
+import SecurityCenterPanel from "@/components/overview/SecurityCenterPanel";
 
 export default async function ProjectPage({ params }: { params: { projectId: string } }) {
   const projectId = params.projectId;
@@ -34,7 +37,10 @@ export default async function ProjectPage({ params }: { params: { projectId: str
             <PacketPanel projectId={projectId} />
             <ArtifactPanel projectId={projectId} />
             <DeploymentPanel projectId={projectId} />
+            <FirstRunWhatsNextPanel projectId={projectId} />
             <SecretsCredentialsPanel projectId={projectId} />
+            <SecurityCenterPanel projectId={projectId} />
+            <AutonomousBuildRunPanel projectId={projectId} />
             <AuditPanel projectId={projectId} />
             <SpecCompletenessPanel projectId={projectId} />
             <OpenQuestionsPanel projectId={projectId} />

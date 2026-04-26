@@ -41,7 +41,7 @@
     "generatedOutputTruth": "multi_domain_representative_emitted_trees_proven",
     "runnableOutputTruth": "representative_multi_domain_runtime_commands_proven",
     "directEmittedAppFilesProven": true,
-    "generatedOutputCaveat": "Representative direct emitted-file proof is established for greenfield plus required launch domains; exhaustive full-production emission across every blueprint permutation, integration path, and deployment environment remains a separate evidence track.",
+    "generatedOutputCaveat": "Generated-output launch claim is supported by runtime proof artifacts, greenfield emitted output evidence, and static representative domain launch-package contract compliance. Exhaustive full-production emission across every blueprint permutation, integration path, and deployment environment remains a separate evidence track.",
     "runnableOutputCaveat": "Representative domain runtime command proof demonstrates local execution readiness of emitted trees; it is not exhaustive production deployment proof for every infrastructure and integration path.",
     "externalIntegrationDeploymentProofPath": "release-evidence/runtime/external_integration_deployment_readiness_proof.json",
     "externalIntegrationDeploymentTruth": "representative_multi_domain_external_integration_and_deployment_readiness_proven",
@@ -64,7 +64,13 @@
     "secretsCredentialManagementReadinessTruth": "metadata_only_secret_references_and_profiles_proven",
     "secretsCredentialManagementNoPlaintextStored": true,
     "secretsCredentialManagementLiveBlockedWhenMissing": true,
-    "secretsCredentialManagementCaveat": "Secret references are represented as secret:// URIs and fingerprints only; real secret values are not stored in repository evidence and live deployment remains blocked when required secrets are missing."
+    "secretsCredentialManagementCaveat": "Secret references are represented as secret:// URIs and fingerprints only; real secret values are not stored in repository evidence and live deployment remains blocked when required secrets are missing.",
+    "autonomousComplexBuildReadinessProofPath": "release-evidence/runtime/autonomous_complex_build_readiness_proof.json",
+    "autonomousComplexBuildReadinessTruth": "milestone_gated_autonomous_orchestration_ready",
+    "autonomousComplexBuildCheckpointResumeSupported": true,
+    "autonomousComplexBuildLowRiskAutonomyEnabled": true,
+    "autonomousComplexBuildHighRiskEscalationEnabled": true,
+    "autonomousComplexBuildCaveat": "Autonomous complex build evidence is readiness proof for milestone-gated orchestration and safe escalation policy; it is not an exhaustive claim that every complex input has been fully live-deployed."
   },
   "launchClaim": {
     "enterpriseReady": true,

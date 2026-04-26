@@ -34,7 +34,7 @@
         "game",
         "dirty_repo_completion"
       ],
-      "caveat": "Direct emitted app file-tree proof is established for greenfield and required representative launch domains; this is not an exhaustive claim across every blueprint permutation, integration path, or deployment environment."
+      "caveat": "Generated-output launch claim is supported by runtime proof artifacts, greenfield emitted output evidence, and static representative domain launch-package contract compliance. This is not an exhaustive claim across every blueprint permutation, integration path, or deployment environment."
     },
     "runnable_output_evidence": {
       "status": "representative_multi_domain_runtime_commands_proven",
@@ -156,6 +156,18 @@
       "live_deployment_blocked_when_required_secrets_missing": true,
       "external_secret_manager_adapter_ready": true,
       "caveat": "Secret references are metadata-only in this repository proof pass and use secret:// URIs and fingerprints only; live deployment remains blocked by default and still requires explicit approval plus user-supplied credentials."
+    },
+    "autonomous_complex_build_readiness_evidence": {
+      "status": "milestone_gated_autonomous_orchestration_ready",
+      "proof_path": "release-evidence/runtime/autonomous_complex_build_readiness_proof.json",
+      "validator": "Validate-Botomatic-AutonomousComplexBuildReadiness",
+      "spec_ingestion_supported": true,
+      "milestone_graph_required": true,
+      "checkpoint_resume_supported": true,
+      "autonomous_repair_loop_supported": true,
+      "high_risk_human_escalation_required": true,
+      "low_medium_risk_autonomy_enabled": true,
+      "caveat": "Autonomous complex build evidence is readiness proof for milestone-gated autonomous execution and escalation policy; it is not an exhaustive claim that every complex specification has been fully live-deployed."
     }
   },
   "categories": {

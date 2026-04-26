@@ -3,7 +3,7 @@
   "branch": "feat/control-plane-file-ingestion",
   "repo": "skylersemailaddress-debug/Botomatic",
   "finalStatus": "ready_for_commercial_release",
-  "validatorCount": 31,
+  "validatorCount": 38,
   "failedValidatorCount": 0,
   "benchmarkSummary": {
     "proofArtifact": "builder_quality_benchmark.json",
@@ -106,6 +106,7 @@
     "Credentialed deployment readiness proof declares what credentials and approvals are required; does not validate real credentials or execute live deployment.",
     "Live deployment execution readiness proof demonstrates approval-gated and credential-gated execution orchestration only; does not execute live deployment or validate real credentials.",
     "Secrets and credentials are represented by metadata-only references and fingerprints; plaintext secret values are never committed to repository evidence.",
+    "Static representative domain sample folders under release-evidence/generated-apps/<domain>/ satisfy the same launch-package contract as canonical emitted output in this pass.",
     "No exhaustive proof is provided over every possible blueprint/domain/provider/integration permutation. Proof is representative of core launch-critical surfaces."
   ],
   "noLiveDeploymentClaim": true,
@@ -129,9 +130,9 @@
     "secrets_credential_management_readiness_proof.json"
   ],
   "validatorConsistency": {
-    "expectedValidatorCountAfterThisPass": 31,
-    "passingValidators": 31,
+    "expectedValidatorCountAfterThisPass": 38,
+    "passingValidators": 38,
     "failingValidators": 0,
-    "newValidatorInThisPass": "Validate-Botomatic-SecretsCredentialManagementReadiness"
+    "newValidatorInThisPass": "Validate-Botomatic-InstallerRuntimeReadiness"
   }
 }

@@ -251,7 +251,6 @@ export default function SecretsCredentialsPanel({ projectId }: { projectId: stri
             </div>
             <div className="state-callout warning">
               External secret manager sync is adapter-ready but not connected in this UI pass.
-              <button disabled style={{ marginLeft: 8 }}>Sync to external manager</button>
             </div>
           </div>
         </div>

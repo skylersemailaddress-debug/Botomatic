@@ -32,6 +32,7 @@ export function validateCommercialReadiness(app: any): RuleResult {
     [Boolean(app?.securityHardening), "Security hardening is missing."],
     [Boolean(app?.deploymentConfig), "Deployment configuration is missing."],
     [Boolean(app?.launchPacketExists), "Launch packet is missing."],
+    [Boolean(app?.launchPackageExists), "Launch package is missing or incomplete."],
     [Boolean(app?.finalValidationProofExists), "Final validation proof is missing."],
     [!Boolean(app?.fakeAuthSignals), "Fake auth signal detected."],
     [!Boolean(app?.fakePaymentSignals), "Fake payment signal detected."],

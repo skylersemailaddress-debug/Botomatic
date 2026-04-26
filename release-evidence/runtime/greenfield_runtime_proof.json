@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-26T22:34:13.647Z",
+  "generatedAt": "2026-04-26T23:33:16.906Z",
   "proofGrade": "local_runtime",
   "pathId": "greenfield_app_build",
   "inputUsed": {
@@ -15,49 +15,49 @@
     },
     {
       "method": "POST",
-      "path": "/api/projects/proj_1777242853589/spec/analyze",
+      "path": "/api/projects/proj_1777246396829/spec/analyze",
       "status": 200,
       "ok": true
     },
     {
       "method": "GET",
-      "path": "/api/projects/proj_1777242853589/spec/status",
+      "path": "/api/projects/proj_1777246396829/spec/status",
       "status": 200,
       "ok": true
     },
     {
       "method": "POST",
-      "path": "/api/projects/proj_1777242853589/spec/assumptions/accept",
+      "path": "/api/projects/proj_1777246396829/spec/assumptions/accept",
       "status": 200,
       "ok": true
     },
     {
       "method": "POST",
-      "path": "/api/projects/proj_1777242853589/spec/build-contract",
+      "path": "/api/projects/proj_1777246396829/spec/build-contract",
       "status": 200,
       "ok": true
     },
     {
       "method": "POST",
-      "path": "/api/projects/proj_1777242853589/spec/approve",
+      "path": "/api/projects/proj_1777246396829/spec/approve",
       "status": 200,
       "ok": true
     },
     {
       "method": "POST",
-      "path": "/api/projects/proj_1777242853589/compile",
+      "path": "/api/projects/proj_1777246396829/compile",
       "status": 200,
       "ok": true
     },
     {
       "method": "POST",
-      "path": "/api/projects/proj_1777242853589/plan",
+      "path": "/api/projects/proj_1777246396829/plan",
       "status": 200,
       "ok": true
     },
     {
       "method": "GET",
-      "path": "/api/projects/proj_1777242853589/status",
+      "path": "/api/projects/proj_1777246396829/status",
       "status": 200,
       "ok": true
     }
@@ -74,8 +74,8 @@
   "contract": {
     "type": "build_contract",
     "payload": {
-      "id": "contract_proj_1777242853589_1777242853618",
-      "projectId": "proj_1777242853589",
+      "id": "contract_proj_1777246396829_1777246396870",
+      "projectId": "proj_1777246396829",
       "appSummary": "Proof Greenfield SaaS: Deliver a production-grade application with validated workflows.",
       "targetUsers": [
         "admin",
@@ -152,7 +152,7 @@
       ],
       "assumptions": [
         {
-          "id": "assumption_1777242853603_1rvvj4",
+          "id": "assumption_1777246396859_aom8h7",
           "field": "notification provider",
           "decision": "Email is enabled by default",
           "reason": "Low-risk baseline for transactional workflows",
@@ -162,10 +162,10 @@
           "requiresApproval": false,
           "approved": true,
           "canChangeLater": true,
-          "createdAt": "2026-04-26T22:34:13.603Z"
+          "createdAt": "2026-04-26T23:33:16.859Z"
         },
         {
-          "id": "assumption_1777242853603_qx2w2m",
+          "id": "assumption_1777246396859_g6df7s",
           "field": "auth/security",
           "decision": "OIDC with role guards",
           "reason": "Enterprise-safe default",
@@ -175,7 +175,7 @@
           "requiresApproval": true,
           "approved": true,
           "canChangeLater": true,
-          "createdAt": "2026-04-26T22:34:13.603Z"
+          "createdAt": "2026-04-26T23:33:16.859Z"
         }
       ],
       "excludedItems": [
@@ -186,8 +186,8 @@
       "readinessScore": 97,
       "readyToBuild": true,
       "blockers": [],
-      "createdAt": "2026-04-26T22:34:13.618Z",
-      "updatedAt": "2026-04-26T22:34:13.618Z"
+      "createdAt": "2026-04-26T23:33:16.869Z",
+      "updatedAt": "2026-04-26T23:33:16.869Z"
     }
   },
   "generatedPlanOrBuildGraph": {
@@ -224,11 +224,30 @@
         ".env.example",
         "README.md",
         "RUNBOOK.md",
-        "launch/launch_packet.json"
+        "launch/README_LAUNCH.md",
+        "launch/ONE_CLICK_LOCAL_LAUNCH.md",
+        "launch/SECRETS_SETUP.md",
+        "launch/CLOUD_DEPLOY.md",
+        "launch/DEPLOYMENT_PREFLIGHT.md",
+        "launch/ROLLBACK.md",
+        "launch/SMOKE_TESTS.md",
+        "launch/launch-local.sh",
+        "launch/launch-local.ps1",
+        "launch/install-desktop-launcher-linux.sh",
+        "launch/install-desktop-launcher-windows.ps1",
+        "launch/app.desktop",
+        "launch/app.ico",
+        "launch/app.png",
+        "launch/env.example",
+        "launch/secret-requirements.json",
+        "launch/deployment-targets.json",
+        "launch/launch_packet.json",
+        "launch/run_checkpoint.json",
+        "launch/milestones.json"
       ],
-      "emittedFileCount": 20,
+      "emittedFileCount": 39,
       "packetTargetCount": 34,
-      "emittedOutputDir": "/workspaces/Botomatic/release-evidence/generated-apps/proj_1777242853589",
+      "emittedOutputDir": "/workspaces/Botomatic/release-evidence/generated-apps/proj_1777246396829",
       "caveat": "Runtime path now emits a representative generated app tree and validates both emitted files and packet-target planning."
     }
   },
@@ -252,14 +271,14 @@
     "noPlaceholderScanPassed": true,
     "generatedAppValidatorsPassed": true,
     "generationReality": "direct_emitted_app_tree",
-    "emittedOutputDir": "/workspaces/Botomatic/release-evidence/generated-apps/proj_1777242853589",
+    "emittedOutputDir": "/workspaces/Botomatic/release-evidence/generated-apps/proj_1777246396829",
     "caveat": "Runtime path now emits a representative generated app tree and validates both emitted files and packet-target planning."
   },
   "executedSteps": [
     {
       "step": "intake_project",
       "status": "passed",
-      "details": "status=200 projectId=proj_1777242853589"
+      "details": "status=200 projectId=proj_1777246396829"
     },
     {
       "step": "analyze_spec",
@@ -337,8 +356,8 @@
         "validatorSummary": "greenfield_contract_and_plan_integrity:passed, generated_app_validator:passed, no_placeholder_validator:passed",
         "outcome": "passed",
         "rollbackPlan": "Revert greenfield planner and contract changes; rerun benchmark and validators.",
-        "id": "proof_1777242853646_jte6k5",
-        "timestamp": "2026-04-26T22:34:13.647Z"
+        "id": "proof_1777246396906_jrm9ag",
+        "timestamp": "2026-04-26T23:33:16.906Z"
       },
       "claimVerification": {
         "ok": true,

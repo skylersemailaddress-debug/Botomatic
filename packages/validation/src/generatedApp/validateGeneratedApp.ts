@@ -51,6 +51,13 @@ export function validateGeneratedApp(input: {
         : { ok: true, issues: [] },
       critical: Boolean(input.emittedOutputDir),
     },
+    {
+      name: "launchPackage",
+      result: input.emittedOutputDir
+        ? validateEmittedOutput(input.emittedOutputDir)
+        : { ok: true, issues: [] },
+      critical: Boolean(input.emittedOutputDir),
+    },
   ];
 
   const passed = checks.filter((c) => c.result.ok).length;

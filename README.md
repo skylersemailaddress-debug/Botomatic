@@ -74,8 +74,15 @@ Botomatic is governed by a locked enterprise launch contract in this repository:
 - Caveat: runnable-output proof demonstrates local command execution readiness for representative emitted domain trees; it is not an exhaustive claim of production deployment success across all infrastructure, integrations, or environment-specific release paths.
 - Live deployment execution readiness posture: execution-layer deployment contracts, approval requests, credential bindings, provider adapters, pre-deploy checklists, blocked execution plans, smoke-test plans, rollback plans, and audit event contracts are proof-backed across required domains.
 - Secrets and credentials posture: metadata-only secret references and provider/environment credential profiles are supported across Vercel, Supabase, GitHub, OpenAI, Anthropic, Stripe, Twilio, SendGrid, Roblox, Steam, and generic HTTP APIs with redacted audit events and deployment preflight secret gating.
+- Autonomous complex build orchestration posture: large uploaded specs/repo zips are ingested into milestone-gated autonomous execution plans with checkpoint/resume, autonomous low/medium-risk repair continuation, and high-risk human escalation policy.
+- First-run and What's Next posture: control-plane onboarding includes build-from-idea, spec-zip upload, dirty-repo upload, key-configuration prompt, local launch path, and deployment preparation actions.
+- Security Center posture: threat model, RBAC matrix, data privacy posture, dependency-risk scan surface, supply-chain checks, and security-focused audit log are available in control plane.
+- Domain readiness posture: per-domain quality scorecards are generated with strict readiness thresholds and represented as non-exhaustive readiness evidence.
+- Eval suite posture: runtime eval coverage includes messy prompts, giant specs, dirty repos, games, mobile, bots, AI agents, and decide-for-me prompt paths.
+- Fast validation posture: content-hash validator cache is available via `npm run -s validate:fast`, `npm run -s validate:changed`, `npm run -s proof:fast`, and `npm run -s cache:clear`.
 - Caveat: live deployment remains blocked by default in this repository proof pass; no live provider deployment was executed, no real provider APIs were called, and no real secrets were used. Actual live deployment requires explicit user approval and user-supplied credentials at execution time.
 - Caveat: secret references are stored as metadata only (`secret://` URI + fingerprint) and real secret values are never committed to this repository.
+- Caveat: autonomous complex build evidence is readiness proof for milestone-gated orchestration; it is not an exhaustive claim that every possible complex system spec is fully live-deployed by one pass.
 - Universal-builder launch posture remains evidence-bound: claims are valid only while `npm run -s validate:all` and proof commands remain passing on current repository truth.
 
 ## Principles

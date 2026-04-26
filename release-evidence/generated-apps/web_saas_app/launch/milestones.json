@@ -1,0 +1,32 @@
+[
+  {
+    "milestoneId": "web_saas_app_foundation",
+    "name": "Foundation",
+    "goal": "Establish core structure and local launch path.",
+    "dependencies": [],
+    "requiredSpecs": ["product intent", "build contract", "launch package"],
+    "outputArtifacts": ["launch/README_LAUNCH.md", "launch/env.example", "launch/run_checkpoint.json"],
+    "validators": ["Validate-GeneratedAppLaunchPackage"],
+    "launchCriteria": ["local launcher exists", "secret requirements declared", "resume hint written"]
+  },
+  {
+    "milestoneId": "web_saas_app_integration",
+    "name": "Integration",
+    "goal": "Wire integrations and deployment targets without live deployment.",
+    "dependencies": ["web_saas_app_foundation"],
+    "requiredSpecs": ["integration contract", "deployment targets", "smoke tests"],
+    "outputArtifacts": ["launch/CLOUD_DEPLOY.md", "launch/deployment-targets.json", "launch/SMOKE_TESTS.md"],
+    "validators": ["Validate-GeneratedAppLaunchPackage"],
+    "launchCriteria": ["deployment targets declared", "smoke checks documented", "approval gates preserved"]
+  },
+  {
+    "milestoneId": "web_saas_app_launch",
+    "name": "Launch Gate",
+    "goal": "Package for local launch and approval-gated deployment handoff.",
+    "dependencies": ["web_saas_app_integration"],
+    "requiredSpecs": ["rollback plan", "launch packet", "validator summary"],
+    "outputArtifacts": ["launch/ROLLBACK.md", "launch/launch_packet.json", "launch/ONE_CLICK_LOCAL_LAUNCH.md"],
+    "validators": ["Validate-GeneratedAppLaunchPackage"],
+    "launchCriteria": ["launch docs complete", "validator set declared", "deployment remains approval-gated"]
+  }
+]
