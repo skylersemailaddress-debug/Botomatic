@@ -1,8 +1,8 @@
 domain=dirty_repo_completion
 commandId=install
 kind=install
-startedAt=2026-04-26T20:37:16.009Z
-finishedAt=2026-04-26T20:37:16.285Z
+startedAt=2026-04-26T21:29:53.568Z
+finishedAt=2026-04-26T21:29:53.844Z
 status=passed
 exitCode=0
 --- stdout ---

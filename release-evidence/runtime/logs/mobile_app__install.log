@@ -1,8 +1,8 @@
 domain=mobile_app
 commandId=install
 kind=install
-startedAt=2026-04-26T20:37:03.039Z
-finishedAt=2026-04-26T20:37:03.697Z
+startedAt=2026-04-26T21:29:41.239Z
+finishedAt=2026-04-26T21:29:41.925Z
 status=passed
 exitCode=0
 --- stdout ---

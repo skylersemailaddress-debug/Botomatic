@@ -10,6 +10,7 @@ import { validateExternalIntegrationDeploymentReadiness } from "./repoValidators
 import { validateDeploymentDryRunReadiness } from "./repoValidators/deploymentDryRunReadiness";
 import { validateCredentialedDeploymentReadiness } from "./repoValidators/credentialedDeploymentReadiness";
 import { validateLiveDeploymentExecutionReadiness } from "./repoValidators/liveDeploymentExecutionReadiness";
+import { validateFinalCommercialReleaseEvidence } from "./repoValidators/finalCommercialReleaseEvidence";
 
 export type RepoValidatorResult = {
   name: string;
@@ -1037,5 +1038,6 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateDeploymentDryRunReadiness(root),
     validateCredentialedDeploymentReadiness(root),
     validateLiveDeploymentExecutionReadiness(root),
+    validateFinalCommercialReleaseEvidence(root),
   ];
 }

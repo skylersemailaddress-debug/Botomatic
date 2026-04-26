@@ -1,0 +1,11 @@
+{
+  "generatedAt": "2026-04-26T21:28:49.774Z",
+  "projectId": "proj_1777238929708",
+  "validators": [
+    "build",
+    "tests",
+    "no-gap-policy",
+    "security"
+  ],
+  "launchReadiness": "candidate"
+}

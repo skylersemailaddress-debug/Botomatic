@@ -1,7 +1,7 @@
 {
   "pathId": "live_deployment_execution_readiness",
   "status": "passed",
-  "generatedAt": "2026-04-26T20:37:58.757Z",
+  "generatedAt": "2026-04-26T21:30:34.928Z",
   "liveExecutionPerformed": false,
   "liveExecutionBlockedByDefault": true,
   "realProviderApisCalled": false,
@@ -291,8 +291,8 @@
       "approvalRequired": true,
       "explicitUserApprovalRequired": true,
       "approvalEvidence": null,
-      "expiresAt": "2026-04-27T20:37:58.756Z",
-      "createdAt": "2026-04-26T20:37:58.756Z"
+      "expiresAt": "2026-04-27T21:30:34.927Z",
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "approvalRequestId": "approval_req_marketing_website",
@@ -306,8 +306,8 @@
       "approvalRequired": true,
       "explicitUserApprovalRequired": true,
       "approvalEvidence": null,
-      "expiresAt": "2026-04-27T20:37:58.756Z",
-      "createdAt": "2026-04-26T20:37:58.756Z"
+      "expiresAt": "2026-04-27T21:30:34.927Z",
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "approvalRequestId": "approval_req_api_service",
@@ -321,8 +321,8 @@
       "approvalRequired": true,
       "explicitUserApprovalRequired": true,
       "approvalEvidence": null,
-      "expiresAt": "2026-04-27T20:37:58.756Z",
-      "createdAt": "2026-04-26T20:37:58.756Z"
+      "expiresAt": "2026-04-27T21:30:34.927Z",
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "approvalRequestId": "approval_req_mobile_app",
@@ -336,8 +336,8 @@
       "approvalRequired": true,
       "explicitUserApprovalRequired": true,
       "approvalEvidence": null,
-      "expiresAt": "2026-04-27T20:37:58.757Z",
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "expiresAt": "2026-04-27T21:30:34.927Z",
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "approvalRequestId": "approval_req_bot",
@@ -351,8 +351,8 @@
       "approvalRequired": true,
       "explicitUserApprovalRequired": true,
       "approvalEvidence": null,
-      "expiresAt": "2026-04-27T20:37:58.757Z",
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "expiresAt": "2026-04-27T21:30:34.928Z",
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "approvalRequestId": "approval_req_ai_agent",
@@ -366,8 +366,8 @@
       "approvalRequired": true,
       "explicitUserApprovalRequired": true,
       "approvalEvidence": null,
-      "expiresAt": "2026-04-27T20:37:58.757Z",
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "expiresAt": "2026-04-27T21:30:34.928Z",
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "approvalRequestId": "approval_req_game",
@@ -381,8 +381,8 @@
       "approvalRequired": true,
       "explicitUserApprovalRequired": true,
       "approvalEvidence": null,
-      "expiresAt": "2026-04-27T20:37:58.757Z",
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "expiresAt": "2026-04-27T21:30:34.928Z",
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "approvalRequestId": "approval_req_dirty_repo_completion",
@@ -396,8 +396,8 @@
       "approvalRequired": true,
       "explicitUserApprovalRequired": true,
       "approvalEvidence": null,
-      "expiresAt": "2026-04-27T20:37:58.757Z",
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "expiresAt": "2026-04-27T21:30:34.928Z",
+      "createdAt": "2026-04-26T21:30:34.928Z"
     }
   ],
   "credentialBindings": [
@@ -422,7 +422,7 @@
       "credentialValidationMode": "metadata_only_non_executing",
       "credentialValidationPerformed": false,
       "credentialValidationSkippedReason": "No user-supplied credentials and no approval in this proof pass.",
-      "createdAt": "2026-04-26T20:37:58.756Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "credentialBindingId": "credential_binding_marketing_website",
@@ -439,7 +439,7 @@
       "credentialValidationMode": "metadata_only_non_executing",
       "credentialValidationPerformed": false,
       "credentialValidationSkippedReason": "No user-supplied credentials and no approval in this proof pass.",
-      "createdAt": "2026-04-26T20:37:58.756Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "credentialBindingId": "credential_binding_api_service",
@@ -460,7 +460,7 @@
       "credentialValidationMode": "metadata_only_non_executing",
       "credentialValidationPerformed": false,
       "credentialValidationSkippedReason": "No user-supplied credentials and no approval in this proof pass.",
-      "createdAt": "2026-04-26T20:37:58.756Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "credentialBindingId": "credential_binding_mobile_app",
@@ -483,7 +483,7 @@
       "credentialValidationMode": "metadata_only_non_executing",
       "credentialValidationPerformed": false,
       "credentialValidationSkippedReason": "No user-supplied credentials and no approval in this proof pass.",
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "credentialBindingId": "credential_binding_bot",
@@ -504,7 +504,7 @@
       "credentialValidationMode": "metadata_only_non_executing",
       "credentialValidationPerformed": false,
       "credentialValidationSkippedReason": "No user-supplied credentials and no approval in this proof pass.",
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "credentialBindingId": "credential_binding_ai_agent",
@@ -525,7 +525,7 @@
       "credentialValidationMode": "metadata_only_non_executing",
       "credentialValidationPerformed": false,
       "credentialValidationSkippedReason": "No user-supplied credentials and no approval in this proof pass.",
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "credentialBindingId": "credential_binding_game",
@@ -544,7 +544,7 @@
       "credentialValidationMode": "metadata_only_non_executing",
       "credentialValidationPerformed": false,
       "credentialValidationSkippedReason": "No user-supplied credentials and no approval in this proof pass.",
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "credentialBindingId": "credential_binding_dirty_repo_completion",
@@ -563,7 +563,7 @@
       "credentialValidationMode": "metadata_only_non_executing",
       "credentialValidationPerformed": false,
       "credentialValidationSkippedReason": "No user-supplied credentials and no approval in this proof pass.",
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     }
   ],
   "preDeployChecklists": [
@@ -582,7 +582,7 @@
       "noCommittedSecrets": true,
       "currentValidationStatusPass": true,
       "status": "prepared",
-      "createdAt": "2026-04-26T20:37:58.756Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "preDeployChecklistId": "predeploy_checklist_marketing_website",
@@ -599,7 +599,7 @@
       "noCommittedSecrets": true,
       "currentValidationStatusPass": true,
       "status": "prepared",
-      "createdAt": "2026-04-26T20:37:58.756Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "preDeployChecklistId": "predeploy_checklist_api_service",
@@ -616,7 +616,7 @@
       "noCommittedSecrets": true,
       "currentValidationStatusPass": true,
       "status": "prepared",
-      "createdAt": "2026-04-26T20:37:58.756Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "preDeployChecklistId": "predeploy_checklist_mobile_app",
@@ -633,7 +633,7 @@
       "noCommittedSecrets": true,
       "currentValidationStatusPass": true,
       "status": "prepared",
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "preDeployChecklistId": "predeploy_checklist_bot",
@@ -650,7 +650,7 @@
       "noCommittedSecrets": true,
       "currentValidationStatusPass": true,
       "status": "prepared",
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "preDeployChecklistId": "predeploy_checklist_ai_agent",
@@ -667,7 +667,7 @@
       "noCommittedSecrets": true,
       "currentValidationStatusPass": true,
       "status": "prepared",
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "preDeployChecklistId": "predeploy_checklist_game",
@@ -684,7 +684,7 @@
       "noCommittedSecrets": true,
       "currentValidationStatusPass": true,
       "status": "prepared",
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "preDeployChecklistId": "predeploy_checklist_dirty_repo_completion",
@@ -701,7 +701,7 @@
       "noCommittedSecrets": true,
       "currentValidationStatusPass": true,
       "status": "prepared",
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     }
   ],
   "executionPlans": [
@@ -741,7 +741,7 @@
       "rollbackDependency": "rollback_plan_web_saas_app",
       "status": "blocked_pending_approval",
       "liveExecutionPerformed": false,
-      "createdAt": "2026-04-26T20:37:58.756Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "executionPlanId": "execution_plan_marketing_website",
@@ -775,7 +775,7 @@
       "rollbackDependency": "rollback_plan_marketing_website",
       "status": "blocked_pending_approval",
       "liveExecutionPerformed": false,
-      "createdAt": "2026-04-26T20:37:58.756Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "executionPlanId": "execution_plan_api_service",
@@ -811,7 +811,7 @@
       "rollbackDependency": "rollback_plan_api_service",
       "status": "blocked_pending_approval",
       "liveExecutionPerformed": false,
-      "createdAt": "2026-04-26T20:37:58.756Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "executionPlanId": "execution_plan_mobile_app",
@@ -848,7 +848,7 @@
       "rollbackDependency": "rollback_plan_mobile_app",
       "status": "blocked_pending_approval",
       "liveExecutionPerformed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "executionPlanId": "execution_plan_bot",
@@ -883,7 +883,7 @@
       "rollbackDependency": "rollback_plan_bot",
       "status": "blocked_pending_approval",
       "liveExecutionPerformed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "executionPlanId": "execution_plan_ai_agent",
@@ -918,7 +918,7 @@
       "rollbackDependency": "rollback_plan_ai_agent",
       "status": "blocked_pending_approval",
       "liveExecutionPerformed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "executionPlanId": "execution_plan_game",
@@ -952,7 +952,7 @@
       "rollbackDependency": "rollback_plan_game",
       "status": "blocked_pending_approval",
       "liveExecutionPerformed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "executionPlanId": "execution_plan_dirty_repo_completion",
@@ -987,7 +987,7 @@
       "rollbackDependency": "rollback_plan_dirty_repo_completion",
       "status": "blocked_pending_approval",
       "liveExecutionPerformed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     }
   ],
   "smokeTestPlans": [
@@ -1014,7 +1014,7 @@
         "critical_workflow_failure"
       ],
       "status": "planned_not_executed",
-      "createdAt": "2026-04-26T20:37:58.756Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "postDeploySmokeTestPlanId": "smoke_plan_marketing_website",
@@ -1039,7 +1039,7 @@
         "critical_workflow_failure"
       ],
       "status": "planned_not_executed",
-      "createdAt": "2026-04-26T20:37:58.756Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "postDeploySmokeTestPlanId": "smoke_plan_api_service",
@@ -1064,7 +1064,7 @@
         "critical_workflow_failure"
       ],
       "status": "planned_not_executed",
-      "createdAt": "2026-04-26T20:37:58.756Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "postDeploySmokeTestPlanId": "smoke_plan_mobile_app",
@@ -1089,7 +1089,7 @@
         "critical_workflow_failure"
       ],
       "status": "planned_not_executed",
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "postDeploySmokeTestPlanId": "smoke_plan_bot",
@@ -1114,7 +1114,7 @@
         "critical_workflow_failure"
       ],
       "status": "planned_not_executed",
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "postDeploySmokeTestPlanId": "smoke_plan_ai_agent",
@@ -1139,7 +1139,7 @@
         "critical_workflow_failure"
       ],
       "status": "planned_not_executed",
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "postDeploySmokeTestPlanId": "smoke_plan_game",
@@ -1164,7 +1164,7 @@
         "critical_workflow_failure"
       ],
       "status": "planned_not_executed",
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "postDeploySmokeTestPlanId": "smoke_plan_dirty_repo_completion",
@@ -1189,7 +1189,7 @@
         "critical_workflow_failure"
       ],
       "status": "planned_not_executed",
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     }
   ],
   "rollbackPlans": [
@@ -1204,7 +1204,7 @@
       "operatorApprovalRequirement": "operator_or_owner_approval_required_for_production_rollback",
       "rollbackCommandTemplateOrManualHandoff": "vercel_rollback_last_known_good",
       "status": "planned_not_executed",
-      "createdAt": "2026-04-26T20:37:58.756Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "rollbackPlanId": "rollback_plan_marketing_website",
@@ -1217,7 +1217,7 @@
       "operatorApprovalRequirement": "operator_or_owner_approval_required_for_production_rollback",
       "rollbackCommandTemplateOrManualHandoff": "revert_release_and_restore_previous_artifact",
       "status": "planned_not_executed",
-      "createdAt": "2026-04-26T20:37:58.756Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "rollbackPlanId": "rollback_plan_api_service",
@@ -1230,7 +1230,7 @@
       "operatorApprovalRequirement": "operator_or_owner_approval_required_for_production_rollback",
       "rollbackCommandTemplateOrManualHandoff": "revert_migration_or_restore_snapshot",
       "status": "planned_not_executed",
-      "createdAt": "2026-04-26T20:37:58.756Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "rollbackPlanId": "rollback_plan_mobile_app",
@@ -1243,7 +1243,7 @@
       "operatorApprovalRequirement": "operator_or_owner_approval_required_for_production_rollback",
       "rollbackCommandTemplateOrManualHandoff": "store_rollout_pause_or_revert_track",
       "status": "planned_not_executed",
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "rollbackPlanId": "rollback_plan_bot",
@@ -1256,7 +1256,7 @@
       "operatorApprovalRequirement": "operator_or_owner_approval_required_for_production_rollback",
       "rollbackCommandTemplateOrManualHandoff": "worker_revision_rollback",
       "status": "planned_not_executed",
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "rollbackPlanId": "rollback_plan_ai_agent",
@@ -1269,7 +1269,7 @@
       "operatorApprovalRequirement": "operator_or_owner_approval_required_for_production_rollback",
       "rollbackCommandTemplateOrManualHandoff": "repoint_to_previous_agent_revision",
       "status": "planned_not_executed",
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "rollbackPlanId": "rollback_plan_game",
@@ -1282,7 +1282,7 @@
       "operatorApprovalRequirement": "operator_or_owner_approval_required_for_production_rollback",
       "rollbackCommandTemplateOrManualHandoff": "revert_to_previous_distributed_build",
       "status": "planned_not_executed",
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "rollbackPlanId": "rollback_plan_dirty_repo_completion",
@@ -1295,7 +1295,7 @@
       "operatorApprovalRequirement": "operator_or_owner_approval_required_for_production_rollback",
       "rollbackCommandTemplateOrManualHandoff": "git_revert_and_redeploy_previous_revision",
       "status": "planned_not_executed",
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     }
   ],
   "auditEvents": [
@@ -1306,7 +1306,7 @@
       "eventType": "live_deployment_requested",
       "detail": "Live deployment request object created.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.756Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "auditEventId": "audit_approval_web_saas_app",
@@ -1315,7 +1315,7 @@
       "eventType": "approval_required",
       "detail": "Explicit user approval is required and not granted in this proof.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.756Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "auditEventId": "audit_creds_web_saas_app",
@@ -1324,7 +1324,7 @@
       "eventType": "credentials_required",
       "detail": "Credential key requirements recorded without secret values.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.756Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "auditEventId": "audit_preflight_web_saas_app",
@@ -1333,7 +1333,7 @@
       "eventType": "preflight_prepared",
       "detail": "Provider preflight checklist prepared (non-executing).",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.756Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "auditEventId": "audit_plan_web_saas_app",
@@ -1342,7 +1342,7 @@
       "eventType": "execution_plan_prepared",
       "detail": "Execution plan generated and blocked pending approval.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.756Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "auditEventId": "audit_blocked_web_saas_app",
@@ -1351,7 +1351,7 @@
       "eventType": "live_execution_blocked",
       "detail": "Live execution remains blocked by default policy.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.756Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "auditEventId": "audit_smoke_web_saas_app",
@@ -1360,7 +1360,7 @@
       "eventType": "smoke_test_planned",
       "detail": "Post-deploy smoke-test plan prepared and not executed.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.756Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "auditEventId": "audit_rollback_web_saas_app",
@@ -1369,7 +1369,7 @@
       "eventType": "rollback_planned",
       "detail": "Rollback plan prepared and not executed.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.756Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "auditEventId": "audit_req_marketing_website",
@@ -1378,7 +1378,7 @@
       "eventType": "live_deployment_requested",
       "detail": "Live deployment request object created.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.756Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "auditEventId": "audit_approval_marketing_website",
@@ -1387,7 +1387,7 @@
       "eventType": "approval_required",
       "detail": "Explicit user approval is required and not granted in this proof.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.756Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "auditEventId": "audit_creds_marketing_website",
@@ -1396,7 +1396,7 @@
       "eventType": "credentials_required",
       "detail": "Credential key requirements recorded without secret values.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.756Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "auditEventId": "audit_preflight_marketing_website",
@@ -1405,7 +1405,7 @@
       "eventType": "preflight_prepared",
       "detail": "Provider preflight checklist prepared (non-executing).",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.756Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "auditEventId": "audit_plan_marketing_website",
@@ -1414,7 +1414,7 @@
       "eventType": "execution_plan_prepared",
       "detail": "Execution plan generated and blocked pending approval.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.756Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "auditEventId": "audit_blocked_marketing_website",
@@ -1423,7 +1423,7 @@
       "eventType": "live_execution_blocked",
       "detail": "Live execution remains blocked by default policy.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.756Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "auditEventId": "audit_smoke_marketing_website",
@@ -1432,7 +1432,7 @@
       "eventType": "smoke_test_planned",
       "detail": "Post-deploy smoke-test plan prepared and not executed.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.756Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "auditEventId": "audit_rollback_marketing_website",
@@ -1441,7 +1441,7 @@
       "eventType": "rollback_planned",
       "detail": "Rollback plan prepared and not executed.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.756Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "auditEventId": "audit_req_api_service",
@@ -1450,7 +1450,7 @@
       "eventType": "live_deployment_requested",
       "detail": "Live deployment request object created.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.756Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "auditEventId": "audit_approval_api_service",
@@ -1459,7 +1459,7 @@
       "eventType": "approval_required",
       "detail": "Explicit user approval is required and not granted in this proof.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.756Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "auditEventId": "audit_creds_api_service",
@@ -1468,7 +1468,7 @@
       "eventType": "credentials_required",
       "detail": "Credential key requirements recorded without secret values.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.756Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "auditEventId": "audit_preflight_api_service",
@@ -1477,7 +1477,7 @@
       "eventType": "preflight_prepared",
       "detail": "Provider preflight checklist prepared (non-executing).",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.756Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "auditEventId": "audit_plan_api_service",
@@ -1486,7 +1486,7 @@
       "eventType": "execution_plan_prepared",
       "detail": "Execution plan generated and blocked pending approval.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.756Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "auditEventId": "audit_blocked_api_service",
@@ -1495,7 +1495,7 @@
       "eventType": "live_execution_blocked",
       "detail": "Live execution remains blocked by default policy.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "auditEventId": "audit_smoke_api_service",
@@ -1504,7 +1504,7 @@
       "eventType": "smoke_test_planned",
       "detail": "Post-deploy smoke-test plan prepared and not executed.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "auditEventId": "audit_rollback_api_service",
@@ -1513,7 +1513,7 @@
       "eventType": "rollback_planned",
       "detail": "Rollback plan prepared and not executed.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "auditEventId": "audit_req_mobile_app",
@@ -1522,7 +1522,7 @@
       "eventType": "live_deployment_requested",
       "detail": "Live deployment request object created.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "auditEventId": "audit_approval_mobile_app",
@@ -1531,7 +1531,7 @@
       "eventType": "approval_required",
       "detail": "Explicit user approval is required and not granted in this proof.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "auditEventId": "audit_creds_mobile_app",
@@ -1540,7 +1540,7 @@
       "eventType": "credentials_required",
       "detail": "Credential key requirements recorded without secret values.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "auditEventId": "audit_preflight_mobile_app",
@@ -1549,7 +1549,7 @@
       "eventType": "preflight_prepared",
       "detail": "Provider preflight checklist prepared (non-executing).",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "auditEventId": "audit_plan_mobile_app",
@@ -1558,7 +1558,7 @@
       "eventType": "execution_plan_prepared",
       "detail": "Execution plan generated and blocked pending approval.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "auditEventId": "audit_blocked_mobile_app",
@@ -1567,7 +1567,7 @@
       "eventType": "live_execution_blocked",
       "detail": "Live execution remains blocked by default policy.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "auditEventId": "audit_smoke_mobile_app",
@@ -1576,7 +1576,7 @@
       "eventType": "smoke_test_planned",
       "detail": "Post-deploy smoke-test plan prepared and not executed.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "auditEventId": "audit_rollback_mobile_app",
@@ -1585,7 +1585,7 @@
       "eventType": "rollback_planned",
       "detail": "Rollback plan prepared and not executed.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "auditEventId": "audit_req_bot",
@@ -1594,7 +1594,7 @@
       "eventType": "live_deployment_requested",
       "detail": "Live deployment request object created.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "auditEventId": "audit_approval_bot",
@@ -1603,7 +1603,7 @@
       "eventType": "approval_required",
       "detail": "Explicit user approval is required and not granted in this proof.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "auditEventId": "audit_creds_bot",
@@ -1612,7 +1612,7 @@
       "eventType": "credentials_required",
       "detail": "Credential key requirements recorded without secret values.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "auditEventId": "audit_preflight_bot",
@@ -1621,7 +1621,7 @@
       "eventType": "preflight_prepared",
       "detail": "Provider preflight checklist prepared (non-executing).",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "auditEventId": "audit_plan_bot",
@@ -1630,7 +1630,7 @@
       "eventType": "execution_plan_prepared",
       "detail": "Execution plan generated and blocked pending approval.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "auditEventId": "audit_blocked_bot",
@@ -1639,7 +1639,7 @@
       "eventType": "live_execution_blocked",
       "detail": "Live execution remains blocked by default policy.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "auditEventId": "audit_smoke_bot",
@@ -1648,7 +1648,7 @@
       "eventType": "smoke_test_planned",
       "detail": "Post-deploy smoke-test plan prepared and not executed.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "auditEventId": "audit_rollback_bot",
@@ -1657,7 +1657,7 @@
       "eventType": "rollback_planned",
       "detail": "Rollback plan prepared and not executed.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "auditEventId": "audit_req_ai_agent",
@@ -1666,7 +1666,7 @@
       "eventType": "live_deployment_requested",
       "detail": "Live deployment request object created.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "auditEventId": "audit_approval_ai_agent",
@@ -1675,7 +1675,7 @@
       "eventType": "approval_required",
       "detail": "Explicit user approval is required and not granted in this proof.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "auditEventId": "audit_creds_ai_agent",
@@ -1684,7 +1684,7 @@
       "eventType": "credentials_required",
       "detail": "Credential key requirements recorded without secret values.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "auditEventId": "audit_preflight_ai_agent",
@@ -1693,7 +1693,7 @@
       "eventType": "preflight_prepared",
       "detail": "Provider preflight checklist prepared (non-executing).",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "auditEventId": "audit_plan_ai_agent",
@@ -1702,7 +1702,7 @@
       "eventType": "execution_plan_prepared",
       "detail": "Execution plan generated and blocked pending approval.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "auditEventId": "audit_blocked_ai_agent",
@@ -1711,7 +1711,7 @@
       "eventType": "live_execution_blocked",
       "detail": "Live execution remains blocked by default policy.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "auditEventId": "audit_smoke_ai_agent",
@@ -1720,7 +1720,7 @@
       "eventType": "smoke_test_planned",
       "detail": "Post-deploy smoke-test plan prepared and not executed.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "auditEventId": "audit_rollback_ai_agent",
@@ -1729,7 +1729,7 @@
       "eventType": "rollback_planned",
       "detail": "Rollback plan prepared and not executed.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "auditEventId": "audit_req_game",
@@ -1738,7 +1738,7 @@
       "eventType": "live_deployment_requested",
       "detail": "Live deployment request object created.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "auditEventId": "audit_approval_game",
@@ -1747,7 +1747,7 @@
       "eventType": "approval_required",
       "detail": "Explicit user approval is required and not granted in this proof.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "auditEventId": "audit_creds_game",
@@ -1756,7 +1756,7 @@
       "eventType": "credentials_required",
       "detail": "Credential key requirements recorded without secret values.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "auditEventId": "audit_preflight_game",
@@ -1765,7 +1765,7 @@
       "eventType": "preflight_prepared",
       "detail": "Provider preflight checklist prepared (non-executing).",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "auditEventId": "audit_plan_game",
@@ -1774,7 +1774,7 @@
       "eventType": "execution_plan_prepared",
       "detail": "Execution plan generated and blocked pending approval.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "auditEventId": "audit_blocked_game",
@@ -1783,7 +1783,7 @@
       "eventType": "live_execution_blocked",
       "detail": "Live execution remains blocked by default policy.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "auditEventId": "audit_smoke_game",
@@ -1792,7 +1792,7 @@
       "eventType": "smoke_test_planned",
       "detail": "Post-deploy smoke-test plan prepared and not executed.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "auditEventId": "audit_rollback_game",
@@ -1801,7 +1801,7 @@
       "eventType": "rollback_planned",
       "detail": "Rollback plan prepared and not executed.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "auditEventId": "audit_req_dirty_repo_completion",
@@ -1810,7 +1810,7 @@
       "eventType": "live_deployment_requested",
       "detail": "Live deployment request object created.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "auditEventId": "audit_approval_dirty_repo_completion",
@@ -1819,7 +1819,7 @@
       "eventType": "approval_required",
       "detail": "Explicit user approval is required and not granted in this proof.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "auditEventId": "audit_creds_dirty_repo_completion",
@@ -1828,7 +1828,7 @@
       "eventType": "credentials_required",
       "detail": "Credential key requirements recorded without secret values.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "auditEventId": "audit_preflight_dirty_repo_completion",
@@ -1837,7 +1837,7 @@
       "eventType": "preflight_prepared",
       "detail": "Provider preflight checklist prepared (non-executing).",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "auditEventId": "audit_plan_dirty_repo_completion",
@@ -1846,7 +1846,7 @@
       "eventType": "execution_plan_prepared",
       "detail": "Execution plan generated and blocked pending approval.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "auditEventId": "audit_blocked_dirty_repo_completion",
@@ -1855,7 +1855,7 @@
       "eventType": "live_execution_blocked",
       "detail": "Live execution remains blocked by default policy.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "auditEventId": "audit_smoke_dirty_repo_completion",
@@ -1864,7 +1864,7 @@
       "eventType": "smoke_test_planned",
       "detail": "Post-deploy smoke-test plan prepared and not executed.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "auditEventId": "audit_rollback_dirty_repo_completion",
@@ -1873,7 +1873,7 @@
       "eventType": "rollback_planned",
       "detail": "Rollback plan prepared and not executed.",
       "liveExecutionClaimed": false,
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     }
   ],
   "liveDeploymentContracts": [
@@ -1904,7 +1904,7 @@
       "liveExecutionAllowed": false,
       "liveExecutionPerformed": false,
       "nonExecutionProof": "No explicit user approval and no user-supplied credentials were provided in this pass.",
-      "createdAt": "2026-04-26T20:37:58.756Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "deploymentId": "deployment_attempt_marketing_website",
@@ -1933,7 +1933,7 @@
       "liveExecutionAllowed": false,
       "liveExecutionPerformed": false,
       "nonExecutionProof": "No explicit user approval and no user-supplied credentials were provided in this pass.",
-      "createdAt": "2026-04-26T20:37:58.756Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "deploymentId": "deployment_attempt_api_service",
@@ -1962,7 +1962,7 @@
       "liveExecutionAllowed": false,
       "liveExecutionPerformed": false,
       "nonExecutionProof": "No explicit user approval and no user-supplied credentials were provided in this pass.",
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.927Z"
     },
     {
       "deploymentId": "deployment_attempt_mobile_app",
@@ -1991,7 +1991,7 @@
       "liveExecutionAllowed": false,
       "liveExecutionPerformed": false,
       "nonExecutionProof": "No explicit user approval and no user-supplied credentials were provided in this pass.",
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "deploymentId": "deployment_attempt_bot",
@@ -2020,7 +2020,7 @@
       "liveExecutionAllowed": false,
       "liveExecutionPerformed": false,
       "nonExecutionProof": "No explicit user approval and no user-supplied credentials were provided in this pass.",
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "deploymentId": "deployment_attempt_ai_agent",
@@ -2049,7 +2049,7 @@
       "liveExecutionAllowed": false,
       "liveExecutionPerformed": false,
       "nonExecutionProof": "No explicit user approval and no user-supplied credentials were provided in this pass.",
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "deploymentId": "deployment_attempt_game",
@@ -2078,7 +2078,7 @@
       "liveExecutionAllowed": false,
       "liveExecutionPerformed": false,
       "nonExecutionProof": "No explicit user approval and no user-supplied credentials were provided in this pass.",
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     },
     {
       "deploymentId": "deployment_attempt_dirty_repo_completion",
@@ -2107,7 +2107,7 @@
       "liveExecutionAllowed": false,
       "liveExecutionPerformed": false,
       "nonExecutionProof": "No explicit user approval and no user-supplied credentials were provided in this pass.",
-      "createdAt": "2026-04-26T20:37:58.757Z"
+      "createdAt": "2026-04-26T21:30:34.928Z"
     }
   ],
   "caveat": "This artifact proves live deployment execution readiness contracts, approval gates, credential binding rules, provider adapter coverage, smoke-test planning, rollback planning, and audit preparation. It does not prove that any live deployment was executed. Live execution remains blocked by default and requires explicit user approval plus user-supplied credentials."
