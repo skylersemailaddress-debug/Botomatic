@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "1.0",
+  "domainId": "game",
+  "deploymentTarget": "game_distribution_platform",
+  "deploymentInstructionsPath": "export/build-notes.md",
+  "envManifestPath": null,
+  "envManifestPresent": true,
+  "requiredEnvVarsPresent": true,
+  "requiredEnvVarsMissing": [],
+  "fakeIntegrationScanPassed": true,
+  "fakeIntegrationScanIssues": [],
+  "secretScanPassed": true,
+  "secretScanIssues": [],
+  "dryRunStatus": {
+    "attempted": true,
+    "command": "npm run -s build",
+    "status": "passed",
+    "reason": "Dry-run command succeeded."
+  },
+  "externalServicesNotExecuted": [
+    {
+      "service": "distribution_platform",
+      "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+    },
+    {
+      "service": "steam",
+      "reason": "Optional external integration not executed in local proof harness."
+    },
+    {
+      "service": "roblox",
+      "reason": "Optional external integration not executed in local proof harness."
+    },
+    {
+      "service": "console_stores",
+      "reason": "Optional external integration not executed in local proof harness."
+    }
+  ],
+  "externalExecutionJustified": true,
+  "deploymentReadinessStatus": "passed",
+  "launchCaveat": "Live game deployment requires platform-specific publisher accounts, signing credentials, and compliance submission.",
+  "generatedAt": "2026-04-26T20:37:55.722Z"
+}

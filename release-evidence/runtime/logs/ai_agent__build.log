@@ -1,0 +1,9 @@
+domain=ai_agent
+commandId=build
+kind=build
+startedAt=2026-04-26T20:37:09.993Z
+finishedAt=2026-04-26T20:37:12.129Z
+status=passed
+exitCode=0
+--- stdout ---
+--- stderr ---

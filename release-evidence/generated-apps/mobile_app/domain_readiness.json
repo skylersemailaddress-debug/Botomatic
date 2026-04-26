@@ -1,0 +1,11 @@
+{
+  "domainId": "mobile_app",
+  "runtimeEntrypoint": "src/App.tsx",
+  "deploymentInstructionsPath": "deploy/app-store.md",
+  "environmentManifestPath": "app.config.json",
+  "emittedFileCount": 10,
+  "noPlaceholderScanPassed": true,
+  "noPlaceholderIssues": [],
+  "readinessStatus": "passed",
+  "generatedAt": "2026-04-26T20:36:12.649Z"
+}

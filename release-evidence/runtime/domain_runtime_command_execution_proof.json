@@ -1,0 +1,689 @@
+{
+  "generatedAt": "2026-04-26T20:37:17.472Z",
+  "proofGrade": "local_runtime",
+  "pathId": "domain_runtime_command_execution",
+  "requiredDomains": [
+    "web_saas_app",
+    "marketing_website",
+    "api_service",
+    "mobile_app",
+    "bot",
+    "ai_agent",
+    "game",
+    "dirty_repo_completion"
+  ],
+  "requiredDomainPresence": true,
+  "domainCount": 8,
+  "failedDomainCount": 0,
+  "domainResults": [
+    {
+      "domainId": "web_saas_app",
+      "emittedPath": "/workspaces/Botomatic/release-evidence/generated-apps/web_saas_app",
+      "packageProjectManifest": "package.json",
+      "installCommand": "npm --version",
+      "buildCommand": "npm run -s build",
+      "testCommand": "node tests/readiness.test.ts",
+      "lintTypecheckCommand": "test -f app/page.tsx",
+      "exportDeployValidationCommand": "test -f deploy/vercel.json",
+      "commandsExecuted": [
+        "install",
+        "build",
+        "test",
+        "lint_typecheck",
+        "deploy_validation"
+      ],
+      "commandsSkipped": [],
+      "commandResults": [
+        {
+          "commandId": "install",
+          "kind": "install",
+          "command": "npm --version",
+          "status": "passed",
+          "skipReason": null,
+          "exitCode": 0,
+          "stdoutSummary": "11.9.0",
+          "stderrSummary": "",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/web_saas_app__install.log",
+          "generatedArtifacts": []
+        },
+        {
+          "commandId": "build",
+          "kind": "build",
+          "command": "npm run -s build",
+          "status": "passed",
+          "skipReason": null,
+          "exitCode": 0,
+          "stdoutSummary": "Attention: Next.js now collects completely anonymous telemetry regarding usage. | This information is used to shape Next.js' roadmap and prioritize features. | You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL: | https://nextjs.org/telemetry |   ▲ Next.js 14.2.5 |    Creating an optimized production build ...",
+          "stderrSummary": "",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/web_saas_app__build.log",
+          "generatedArtifacts": [
+            "/workspaces/Botomatic/release-evidence/generated-apps/web_saas_app/.next"
+          ]
+        },
+        {
+          "commandId": "test",
+          "kind": "test",
+          "command": "node tests/readiness.test.ts",
+          "status": "passed",
+          "skipReason": null,
+          "exitCode": 0,
+          "stdoutSummary": "web_saas_app readiness passed",
+          "stderrSummary": "",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/web_saas_app__test.log",
+          "generatedArtifacts": []
+        },
+        {
+          "commandId": "lint_typecheck",
+          "kind": "lint_typecheck",
+          "command": "test -f app/page.tsx",
+          "status": "passed",
+          "skipReason": null,
+          "exitCode": 0,
+          "stdoutSummary": "",
+          "stderrSummary": "",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/web_saas_app__lint_typecheck.log",
+          "generatedArtifacts": []
+        },
+        {
+          "commandId": "deploy_validation",
+          "kind": "deploy_validation",
+          "command": "test -f deploy/vercel.json",
+          "status": "passed",
+          "skipReason": null,
+          "exitCode": 0,
+          "stdoutSummary": "",
+          "stderrSummary": "",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/web_saas_app__deploy_validation.log",
+          "generatedArtifacts": []
+        }
+      ],
+      "finalRunnableReadinessStatus": "passed",
+      "failedRequiredCommands": [],
+      "skippedRequiredCommands": []
+    },
+    {
+      "domainId": "marketing_website",
+      "emittedPath": "/workspaces/Botomatic/release-evidence/generated-apps/marketing_website",
+      "packageProjectManifest": "package.json",
+      "installCommand": "npm --version",
+      "buildCommand": "npm run -s build",
+      "testCommand": "node tests/seo.test.ts",
+      "lintTypecheckCommand": "test -f config/seo.json",
+      "exportDeployValidationCommand": "test -f deploy/static-hosting.md",
+      "commandsExecuted": [
+        "install",
+        "build",
+        "test",
+        "lint_typecheck",
+        "deploy_validation"
+      ],
+      "commandsSkipped": [],
+      "commandResults": [
+        {
+          "commandId": "install",
+          "kind": "install",
+          "command": "npm --version",
+          "status": "passed",
+          "skipReason": null,
+          "exitCode": 0,
+          "stdoutSummary": "11.9.0",
+          "stderrSummary": "",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/marketing_website__install.log",
+          "generatedArtifacts": []
+        },
+        {
+          "commandId": "build",
+          "kind": "build",
+          "command": "npm run -s build",
+          "status": "passed",
+          "skipReason": null,
+          "exitCode": 0,
+          "stdoutSummary": "Attention: Next.js now collects completely anonymous telemetry regarding usage. | This information is used to shape Next.js' roadmap and prioritize features. | You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL: | https://nextjs.org/telemetry |   ▲ Next.js 14.2.5 |    Creating an optimized production build ...",
+          "stderrSummary": "",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/marketing_website__build.log",
+          "generatedArtifacts": [
+            "/workspaces/Botomatic/release-evidence/generated-apps/marketing_website/.next"
+          ]
+        },
+        {
+          "commandId": "test",
+          "kind": "test",
+          "command": "node tests/seo.test.ts",
+          "status": "passed",
+          "skipReason": null,
+          "exitCode": 0,
+          "stdoutSummary": "marketing_website seo test passed",
+          "stderrSummary": "",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/marketing_website__test.log",
+          "generatedArtifacts": []
+        },
+        {
+          "commandId": "lint_typecheck",
+          "kind": "lint_typecheck",
+          "command": "test -f config/seo.json",
+          "status": "passed",
+          "skipReason": null,
+          "exitCode": 0,
+          "stdoutSummary": "",
+          "stderrSummary": "",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/marketing_website__lint_typecheck.log",
+          "generatedArtifacts": []
+        },
+        {
+          "commandId": "deploy_validation",
+          "kind": "deploy_validation",
+          "command": "test -f deploy/static-hosting.md",
+          "status": "passed",
+          "skipReason": null,
+          "exitCode": 0,
+          "stdoutSummary": "",
+          "stderrSummary": "",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/marketing_website__deploy_validation.log",
+          "generatedArtifacts": []
+        }
+      ],
+      "finalRunnableReadinessStatus": "passed",
+      "failedRequiredCommands": [],
+      "skippedRequiredCommands": []
+    },
+    {
+      "domainId": "api_service",
+      "emittedPath": "/workspaces/Botomatic/release-evidence/generated-apps/api_service",
+      "packageProjectManifest": "package.json",
+      "installCommand": "npm --version",
+      "buildCommand": "npm run -s build",
+      "testCommand": "npm run -s test",
+      "lintTypecheckCommand": "test -f openapi/openapi.json",
+      "exportDeployValidationCommand": "test -f deploy/container.md",
+      "commandsExecuted": [
+        "install",
+        "build",
+        "test",
+        "lint_typecheck",
+        "deploy_validation"
+      ],
+      "commandsSkipped": [],
+      "commandResults": [
+        {
+          "commandId": "install",
+          "kind": "install",
+          "command": "npm --version",
+          "status": "passed",
+          "skipReason": null,
+          "exitCode": 0,
+          "stdoutSummary": "11.9.0",
+          "stderrSummary": "",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/api_service__install.log",
+          "generatedArtifacts": []
+        },
+        {
+          "commandId": "build",
+          "kind": "build",
+          "command": "npm run -s build",
+          "status": "passed",
+          "skipReason": null,
+          "exitCode": 0,
+          "stdoutSummary": "",
+          "stderrSummary": "",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/api_service__build.log",
+          "generatedArtifacts": []
+        },
+        {
+          "commandId": "test",
+          "kind": "test",
+          "command": "npm run -s test",
+          "status": "passed",
+          "skipReason": null,
+          "exitCode": 0,
+          "stdoutSummary": "api_service routes test passed",
+          "stderrSummary": "",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/api_service__test.log",
+          "generatedArtifacts": []
+        },
+        {
+          "commandId": "lint_typecheck",
+          "kind": "lint_typecheck",
+          "command": "test -f openapi/openapi.json",
+          "status": "passed",
+          "skipReason": null,
+          "exitCode": 0,
+          "stdoutSummary": "",
+          "stderrSummary": "",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/api_service__lint_typecheck.log",
+          "generatedArtifacts": []
+        },
+        {
+          "commandId": "deploy_validation",
+          "kind": "deploy_validation",
+          "command": "test -f deploy/container.md",
+          "status": "passed",
+          "skipReason": null,
+          "exitCode": 0,
+          "stdoutSummary": "",
+          "stderrSummary": "",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/api_service__deploy_validation.log",
+          "generatedArtifacts": []
+        }
+      ],
+      "finalRunnableReadinessStatus": "passed",
+      "failedRequiredCommands": [],
+      "skippedRequiredCommands": []
+    },
+    {
+      "domainId": "mobile_app",
+      "emittedPath": "/workspaces/Botomatic/release-evidence/generated-apps/mobile_app",
+      "packageProjectManifest": "package.json",
+      "installCommand": "npm --version",
+      "buildCommand": "npm run -s build",
+      "testCommand": "npm run -s test",
+      "lintTypecheckCommand": "test -f src/navigation/index.ts",
+      "exportDeployValidationCommand": "test -f deploy/app-store.md",
+      "commandsExecuted": [
+        "install",
+        "build",
+        "test",
+        "lint_typecheck",
+        "deploy_validation"
+      ],
+      "commandsSkipped": [],
+      "commandResults": [
+        {
+          "commandId": "install",
+          "kind": "install",
+          "command": "npm --version",
+          "status": "passed",
+          "skipReason": null,
+          "exitCode": 0,
+          "stdoutSummary": "11.9.0",
+          "stderrSummary": "",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/mobile_app__install.log",
+          "generatedArtifacts": []
+        },
+        {
+          "commandId": "build",
+          "kind": "build",
+          "command": "npm run -s build",
+          "status": "passed",
+          "skipReason": null,
+          "exitCode": 0,
+          "stdoutSummary": "build",
+          "stderrSummary": "",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/mobile_app__build.log",
+          "generatedArtifacts": []
+        },
+        {
+          "commandId": "test",
+          "kind": "test",
+          "command": "npm run -s test",
+          "status": "passed",
+          "skipReason": null,
+          "exitCode": 0,
+          "stdoutSummary": "mobile_app navigation test passed",
+          "stderrSummary": "",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/mobile_app__test.log",
+          "generatedArtifacts": []
+        },
+        {
+          "commandId": "lint_typecheck",
+          "kind": "lint_typecheck",
+          "command": "test -f src/navigation/index.ts",
+          "status": "passed",
+          "skipReason": null,
+          "exitCode": 0,
+          "stdoutSummary": "",
+          "stderrSummary": "",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/mobile_app__lint_typecheck.log",
+          "generatedArtifacts": []
+        },
+        {
+          "commandId": "deploy_validation",
+          "kind": "deploy_validation",
+          "command": "test -f deploy/app-store.md",
+          "status": "passed",
+          "skipReason": null,
+          "exitCode": 0,
+          "stdoutSummary": "",
+          "stderrSummary": "",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/mobile_app__deploy_validation.log",
+          "generatedArtifacts": []
+        }
+      ],
+      "finalRunnableReadinessStatus": "passed",
+      "failedRequiredCommands": [],
+      "skippedRequiredCommands": []
+    },
+    {
+      "domainId": "bot",
+      "emittedPath": "/workspaces/Botomatic/release-evidence/generated-apps/bot",
+      "packageProjectManifest": "package.json",
+      "installCommand": "npm --version",
+      "buildCommand": "npm run -s build",
+      "testCommand": "npm run -s test",
+      "lintTypecheckCommand": "test -f src/security/permissions.ts",
+      "exportDeployValidationCommand": "test -f deploy/worker.md",
+      "commandsExecuted": [
+        "install",
+        "build",
+        "test",
+        "lint_typecheck",
+        "deploy_validation"
+      ],
+      "commandsSkipped": [],
+      "commandResults": [
+        {
+          "commandId": "install",
+          "kind": "install",
+          "command": "npm --version",
+          "status": "passed",
+          "skipReason": null,
+          "exitCode": 0,
+          "stdoutSummary": "11.9.0",
+          "stderrSummary": "",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/bot__install.log",
+          "generatedArtifacts": []
+        },
+        {
+          "commandId": "build",
+          "kind": "build",
+          "command": "npm run -s build",
+          "status": "passed",
+          "skipReason": null,
+          "exitCode": 0,
+          "stdoutSummary": "",
+          "stderrSummary": "",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/bot__build.log",
+          "generatedArtifacts": []
+        },
+        {
+          "commandId": "test",
+          "kind": "test",
+          "command": "npm run -s test",
+          "status": "passed",
+          "skipReason": null,
+          "exitCode": 0,
+          "stdoutSummary": "bot permission checks passed",
+          "stderrSummary": "",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/bot__test.log",
+          "generatedArtifacts": []
+        },
+        {
+          "commandId": "lint_typecheck",
+          "kind": "lint_typecheck",
+          "command": "test -f src/security/permissions.ts",
+          "status": "passed",
+          "skipReason": null,
+          "exitCode": 0,
+          "stdoutSummary": "",
+          "stderrSummary": "",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/bot__lint_typecheck.log",
+          "generatedArtifacts": []
+        },
+        {
+          "commandId": "deploy_validation",
+          "kind": "deploy_validation",
+          "command": "test -f deploy/worker.md",
+          "status": "passed",
+          "skipReason": null,
+          "exitCode": 0,
+          "stdoutSummary": "",
+          "stderrSummary": "",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/bot__deploy_validation.log",
+          "generatedArtifacts": []
+        }
+      ],
+      "finalRunnableReadinessStatus": "passed",
+      "failedRequiredCommands": [],
+      "skippedRequiredCommands": []
+    },
+    {
+      "domainId": "ai_agent",
+      "emittedPath": "/workspaces/Botomatic/release-evidence/generated-apps/ai_agent",
+      "packageProjectManifest": "package.json",
+      "installCommand": "npm --version",
+      "buildCommand": "npm run -s build",
+      "testCommand": "npm run -s test",
+      "lintTypecheckCommand": "test -f src/safety/policy.ts",
+      "exportDeployValidationCommand": "test -f deploy/agent-runtime.md",
+      "commandsExecuted": [
+        "install",
+        "build",
+        "test",
+        "lint_typecheck",
+        "deploy_validation"
+      ],
+      "commandsSkipped": [],
+      "commandResults": [
+        {
+          "commandId": "install",
+          "kind": "install",
+          "command": "npm --version",
+          "status": "passed",
+          "skipReason": null,
+          "exitCode": 0,
+          "stdoutSummary": "11.9.0",
+          "stderrSummary": "",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/ai_agent__install.log",
+          "generatedArtifacts": []
+        },
+        {
+          "commandId": "build",
+          "kind": "build",
+          "command": "npm run -s build",
+          "status": "passed",
+          "skipReason": null,
+          "exitCode": 0,
+          "stdoutSummary": "",
+          "stderrSummary": "",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/ai_agent__build.log",
+          "generatedArtifacts": []
+        },
+        {
+          "commandId": "test",
+          "kind": "test",
+          "command": "npm run -s test",
+          "status": "passed",
+          "skipReason": null,
+          "exitCode": 0,
+          "stdoutSummary": "ai_agent safety checks passed",
+          "stderrSummary": "",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/ai_agent__test.log",
+          "generatedArtifacts": []
+        },
+        {
+          "commandId": "lint_typecheck",
+          "kind": "lint_typecheck",
+          "command": "test -f src/safety/policy.ts",
+          "status": "passed",
+          "skipReason": null,
+          "exitCode": 0,
+          "stdoutSummary": "",
+          "stderrSummary": "",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/ai_agent__lint_typecheck.log",
+          "generatedArtifacts": []
+        },
+        {
+          "commandId": "deploy_validation",
+          "kind": "deploy_validation",
+          "command": "test -f deploy/agent-runtime.md",
+          "status": "passed",
+          "skipReason": null,
+          "exitCode": 0,
+          "stdoutSummary": "",
+          "stderrSummary": "",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/ai_agent__deploy_validation.log",
+          "generatedArtifacts": []
+        }
+      ],
+      "finalRunnableReadinessStatus": "passed",
+      "failedRequiredCommands": [],
+      "skippedRequiredCommands": []
+    },
+    {
+      "domainId": "game",
+      "emittedPath": "/workspaces/Botomatic/release-evidence/generated-apps/game",
+      "packageProjectManifest": "package.json",
+      "installCommand": "npm --version",
+      "buildCommand": "npm run -s build",
+      "testCommand": "npm run -s test",
+      "lintTypecheckCommand": "test -f src/gameLoop.ts",
+      "exportDeployValidationCommand": "test -f export/build-notes.md",
+      "commandsExecuted": [
+        "install",
+        "build",
+        "test",
+        "lint_typecheck",
+        "deploy_validation"
+      ],
+      "commandsSkipped": [],
+      "commandResults": [
+        {
+          "commandId": "install",
+          "kind": "install",
+          "command": "npm --version",
+          "status": "passed",
+          "skipReason": null,
+          "exitCode": 0,
+          "stdoutSummary": "11.9.0",
+          "stderrSummary": "",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/game__install.log",
+          "generatedArtifacts": []
+        },
+        {
+          "commandId": "build",
+          "kind": "build",
+          "command": "npm run -s build",
+          "status": "passed",
+          "skipReason": null,
+          "exitCode": 0,
+          "stdoutSummary": "build",
+          "stderrSummary": "",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/game__build.log",
+          "generatedArtifacts": []
+        },
+        {
+          "commandId": "test",
+          "kind": "test",
+          "command": "npm run -s test",
+          "status": "passed",
+          "skipReason": null,
+          "exitCode": 0,
+          "stdoutSummary": "game gameplay validation passed",
+          "stderrSummary": "",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/game__test.log",
+          "generatedArtifacts": []
+        },
+        {
+          "commandId": "lint_typecheck",
+          "kind": "lint_typecheck",
+          "command": "test -f src/gameLoop.ts",
+          "status": "passed",
+          "skipReason": null,
+          "exitCode": 0,
+          "stdoutSummary": "",
+          "stderrSummary": "",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/game__lint_typecheck.log",
+          "generatedArtifacts": []
+        },
+        {
+          "commandId": "deploy_validation",
+          "kind": "deploy_validation",
+          "command": "test -f export/build-notes.md",
+          "status": "passed",
+          "skipReason": null,
+          "exitCode": 0,
+          "stdoutSummary": "",
+          "stderrSummary": "",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/game__deploy_validation.log",
+          "generatedArtifacts": []
+        }
+      ],
+      "finalRunnableReadinessStatus": "passed",
+      "failedRequiredCommands": [],
+      "skippedRequiredCommands": []
+    },
+    {
+      "domainId": "dirty_repo_completion",
+      "emittedPath": "/workspaces/Botomatic/release-evidence/generated-apps/dirty_repo_completion",
+      "packageProjectManifest": "repair/completion_contract.json",
+      "installCommand": "node --version",
+      "buildCommand": "test -f repair/repaired_file_manifest.json",
+      "testCommand": "node tests/repaired_workflows.test.js",
+      "lintTypecheckCommand": "test -f audit/repo_audit_report.json",
+      "exportDeployValidationCommand": "test -f launch/launch_instructions.md",
+      "commandsExecuted": [
+        "install",
+        "build",
+        "test",
+        "lint_typecheck",
+        "deploy_validation"
+      ],
+      "commandsSkipped": [],
+      "commandResults": [
+        {
+          "commandId": "install",
+          "kind": "install",
+          "command": "node --version",
+          "status": "passed",
+          "skipReason": null,
+          "exitCode": 0,
+          "stdoutSummary": "v24.14.0",
+          "stderrSummary": "",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/dirty_repo_completion__install.log",
+          "generatedArtifacts": []
+        },
+        {
+          "commandId": "build",
+          "kind": "build",
+          "command": "test -f repair/repaired_file_manifest.json",
+          "status": "passed",
+          "skipReason": null,
+          "exitCode": 0,
+          "stdoutSummary": "",
+          "stderrSummary": "",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/dirty_repo_completion__build.log",
+          "generatedArtifacts": []
+        },
+        {
+          "commandId": "test",
+          "kind": "test",
+          "command": "node tests/repaired_workflows.test.js",
+          "status": "passed",
+          "skipReason": null,
+          "exitCode": 0,
+          "stdoutSummary": "dirty repo completion checks passed",
+          "stderrSummary": "",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/dirty_repo_completion__test.log",
+          "generatedArtifacts": []
+        },
+        {
+          "commandId": "lint_typecheck",
+          "kind": "lint_typecheck",
+          "command": "test -f audit/repo_audit_report.json",
+          "status": "passed",
+          "skipReason": null,
+          "exitCode": 0,
+          "stdoutSummary": "",
+          "stderrSummary": "",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/dirty_repo_completion__lint_typecheck.log",
+          "generatedArtifacts": []
+        },
+        {
+          "commandId": "deploy_validation",
+          "kind": "deploy_validation",
+          "command": "test -f launch/launch_instructions.md",
+          "status": "passed",
+          "skipReason": null,
+          "exitCode": 0,
+          "stdoutSummary": "",
+          "stderrSummary": "",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/dirty_repo_completion__deploy_validation.log",
+          "generatedArtifacts": []
+        }
+      ],
+      "finalRunnableReadinessStatus": "passed",
+      "failedRequiredCommands": [],
+      "skippedRequiredCommands": []
+    }
+  ],
+  "status": "passed"
+}

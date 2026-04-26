@@ -1,0 +1,11 @@
+domain=api_service
+commandId=test
+kind=test
+startedAt=2026-04-26T20:37:01.600Z
+finishedAt=2026-04-26T20:37:02.376Z
+status=passed
+exitCode=0
+--- stdout ---
+api_service routes test passed
+
+--- stderr ---

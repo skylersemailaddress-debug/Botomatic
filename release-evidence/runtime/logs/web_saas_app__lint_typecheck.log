@@ -1,0 +1,9 @@
+domain=web_saas_app
+commandId=lint_typecheck
+kind=lint_typecheck
+startedAt=2026-04-26T20:36:36.484Z
+finishedAt=2026-04-26T20:36:36.777Z
+status=passed
+exitCode=0
+--- stdout ---
+--- stderr ---

@@ -1,0 +1,11 @@
+{
+  "domainId": "marketing_website",
+  "runtimeEntrypoint": "app/page.tsx",
+  "deploymentInstructionsPath": "deploy/static-hosting.md",
+  "environmentManifestPath": ".env.example",
+  "emittedFileCount": 11,
+  "noPlaceholderScanPassed": true,
+  "noPlaceholderIssues": [],
+  "readinessStatus": "passed",
+  "generatedAt": "2026-04-26T20:36:12.634Z"
+}

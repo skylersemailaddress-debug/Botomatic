@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Composer from "./Composer";
 import MessageList from "./MessageList";
 import QuickActionRow from "./QuickActionRow";
+import StatusBadge from "@/components/ui/StatusBadge";
 import { getProjectOverview } from "@/services/overview";
 import { uploadIntakeFile } from "@/services/intake";
 import { sendOperatorMessage } from "@/services/operator";
@@ -14,6 +15,8 @@ export default function ConversationPane({ projectId }: { projectId: string }) {
     { id: "1", role: "system", content: "Botomatic is ready. No active run is in progress.", timestamp: new Date().toISOString() }
   ]);
   const [loading, setLoading] = useState(false);
+  const [mode, setMode] = useState<string>("pending");
+  const [routeStatus, setRouteStatus] = useState<string>("idle");
   const lastStatusRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -23,6 +26,7 @@ export default function ConversationPane({ projectId }: { projectId: string }) {
       try {
         const overview: any = await getProjectOverview(projectId);
         const nextStatus = `${overview.latestRun.status}:${overview.summary.completedPackets}:${overview.summary.failedPackets}:${overview.readiness.status}`;
+        setRouteStatus(overview.latestRun.status || "idle");
 
         if (active && lastStatusRef.current !== nextStatus) {
           lastStatusRef.current = nextStatus;
@@ -37,6 +41,16 @@ export default function ConversationPane({ projectId }: { projectId: string }) {
           } else if (overview.readiness.status === "not_started") {
             content = "Validation has not run. Launch readiness is unknown.";
           }
+
+          setMode(
+            overview.latestRun.status === "executing"
+              ? "executing"
+              : overview.latestRun.status === "blocked"
+              ? "validating"
+              : overview.readiness.status === "ready"
+              ? "validating"
+              : "analyzing"
+          );
 
           setMessages((m) => [...m, {
             id: `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
@@ -71,6 +85,7 @@ export default function ConversationPane({ projectId }: { projectId: string }) {
     setInput("");
 
     setLoading(true);
+    setMode("executing");
 
     try {
       const response = await sendOperatorMessage(projectId, message);
@@ -90,6 +105,7 @@ export default function ConversationPane({ projectId }: { projectId: string }) {
     }
 
     setLoading(false);
+    setMode("validating");
   }
 
   async function handleFileUpload(file: File) {
@@ -103,8 +119,15 @@ export default function ConversationPane({ projectId }: { projectId: string }) {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", padding: 16, gap: 16 }}>
-      <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Project {projectId}</div>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", padding: 18, gap: 12, background: "var(--panel)" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Project Intelligence Command Spine</div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <StatusBadge status={routeStatus} />
+          <StatusBadge status={mode} />
+          <StatusBadge status={loading ? "running" : "pending"} />
+        </div>
+      </div>
       <MessageList messages={messages} />
       <QuickActionRow projectId={projectId} />
       <Composer value={input} onChange={setInput} onSubmit={handleSubmit} onFileUpload={handleFileUpload} disabled={loading} />

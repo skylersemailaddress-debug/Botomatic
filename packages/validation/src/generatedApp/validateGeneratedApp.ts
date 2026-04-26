@@ -13,6 +13,7 @@ import { validateUxStates } from "./validateUxStates";
 import { validateSecurity } from "./validateSecurity";
 import { validateDeployment } from "./validateDeployment";
 import { validateCommercialReadiness } from "./validateCommercialReadiness";
+import { validateEmittedOutput } from "./validateEmittedOutput";
 
 export type GeneratedAppValidationResult = {
   ok: boolean;
@@ -25,6 +26,7 @@ export function validateGeneratedApp(input: {
   spec: any;
   sourceText: string;
   appSignals: any;
+  emittedOutputDir?: string;
 }): GeneratedAppValidationResult {
   const checks = [
     { name: "spec", result: validateSpecCompleteness(input.spec), critical: true },
@@ -42,6 +44,13 @@ export function validateGeneratedApp(input: {
     { name: "security", result: validateSecurity(input.spec), critical: true },
     { name: "deployment", result: validateDeployment(input.spec), critical: true },
     { name: "commercialReadiness", result: validateCommercialReadiness(input.appSignals), critical: true },
+    {
+      name: "emittedOutput",
+      result: input.emittedOutputDir
+        ? validateEmittedOutput(input.emittedOutputDir)
+        : { ok: true, issues: [] },
+      critical: Boolean(input.emittedOutputDir),
+    },
   ];
 
   const passed = checks.filter((c) => c.result.ok).length;

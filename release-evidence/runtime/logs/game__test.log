@@ -1,0 +1,11 @@
+domain=game
+commandId=test
+kind=test
+startedAt=2026-04-26T20:37:14.843Z
+finishedAt=2026-04-26T20:37:15.410Z
+status=passed
+exitCode=0
+--- stdout ---
+game gameplay validation passed
+
+--- stderr ---

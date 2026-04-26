@@ -1,0 +1,203 @@
+{
+  "generatedAt": "2026-04-26T20:36:07.797Z",
+  "proofGrade": "local_runtime",
+  "pathId": "dirty_repo_rescue_completion",
+  "inputUsed": {
+    "appName": "Proof Dirty Repo Rescue",
+    "request": "Existing codebase: build failed, tests failed, placeholder stubs in workflows, weak deployment docs. Need rescue and commercial completion contract."
+  },
+  "routeExercised": [
+    {
+      "method": "POST",
+      "path": "/api/projects/intake",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/projects/proj_1777235767779/repo/completion-contract",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/projects/proj_1777235767779/repo/status",
+      "status": 200,
+      "ok": true
+    }
+  ],
+  "apiFunctionPathExercised": [
+    "apps/orchestrator-api/src/server_app.ts#POST /api/projects/:projectId/repo/completion-contract",
+    "apps/orchestrator-api/src/server_app.ts#GET /api/projects/:projectId/repo/status",
+    "packages/repo-intake/src/repoClassifier.ts#classifyRepo",
+    "packages/repo-audit/src/commercialReadinessAudit.ts#commercialReadinessAudit",
+    "packages/repo-completion/src/completionRunner.ts#runCompletionContract"
+  ],
+  "contract": {
+    "type": "completion_contract",
+    "payload": {
+      "detectedProduct": "web_app",
+      "detectedStack": [
+        "typescript",
+        "node",
+        "npm"
+      ],
+      "currentState": "ingested_existing_repo",
+      "brokenAreas": [
+        "Build failed.",
+        "Tests failed.",
+        "Placeholder token detected: placeholder",
+        "Placeholder token detected: stub",
+        "Fake integration signal: stub"
+      ],
+      "missingAreas": [
+        "Build failed.",
+        "Tests failed.",
+        "Placeholder token detected: placeholder",
+        "Placeholder token detected: stub",
+        "Fake integration signal: stub"
+      ],
+      "placeholderAreas": [
+        "placeholder"
+      ],
+      "securityGaps": [],
+      "dataModelGaps": [],
+      "uxGaps": [],
+      "testGaps": [],
+      "deploymentGaps": [],
+      "commercialLaunchBlockers": [
+        "Build failed.",
+        "Tests failed.",
+        "Placeholder token detected: placeholder",
+        "Placeholder token detected: stub",
+        "Fake integration signal: stub"
+      ],
+      "recommendedCompletionPlan": [
+        "Stabilize build and tests: Fix install/build/test blockers",
+        "Replace placeholders and fake flows: Remove placeholders, Implement real integrations",
+        "Close product/security/deployment gaps: Build failed., Tests failed., Placeholder token detected: placeholder, Placeholder token detected: stub, Fake integration signal: stub"
+      ],
+      "mustAnswerQuestions": [
+        "Which launch workflows are non-negotiable?"
+      ],
+      "safeAssumptions": [
+        "Preserve working user code unless replacement is approved"
+      ],
+      "definitionOfDone": [
+        "Install/build/test path is stable",
+        "No placeholders in production paths",
+        "Security/deployment validators pass",
+        "Proof ledger entry is recorded"
+      ],
+      "frameworkDetectionRan": true,
+      "languageDetectionRan": true,
+      "packageManagerDetectionRan": true,
+      "repoSnapshotExists": true,
+      "auditResultsExist": true
+    }
+  },
+  "generatedPlanOrBuildGraph": {
+    "repoSnapshot": {
+      "source": "intake_and_completion_contract_runtime",
+      "detectedStack": [
+        "typescript",
+        "node",
+        "npm"
+      ],
+      "hasIntake": true
+    },
+    "repairPlan": {
+      "patchQueue": [
+        "patch_1: Build failed.",
+        "patch_2: Tests failed.",
+        "patch_3: Placeholder token detected: placeholder",
+        "patch_4: Placeholder token detected: stub",
+        "patch_5: Fake integration signal: stub"
+      ],
+      "testQueue": [
+        "Add tests for critical workflows",
+        "Add tests for auth",
+        "Add tests for deployment"
+      ],
+      "hardeningQueue": [
+        "Add production deployment path and env manifest",
+        "Run full readiness validators and produce launch packet"
+      ]
+    },
+    "recommendedCompletionPlan": [
+      "Stabilize build and tests: Fix install/build/test blockers",
+      "Replace placeholders and fake flows: Remove placeholders, Implement real integrations",
+      "Close product/security/deployment gaps: Build failed., Tests failed., Placeholder token detected: placeholder, Placeholder token detected: stub, Fake integration signal: stub"
+    ]
+  },
+  "executedSteps": [
+    {
+      "step": "intake_existing_repo_project",
+      "status": "passed",
+      "details": "status=200 projectId=proj_1777235767779"
+    },
+    {
+      "step": "build_completion_contract",
+      "status": "passed",
+      "details": "status=200 blockers=5"
+    },
+    {
+      "step": "fetch_repo_status",
+      "status": "passed",
+      "details": "status=200"
+    }
+  ],
+  "validatorsRun": [
+    {
+      "name": "validateExistingRepoReadiness",
+      "status": "failed",
+      "details": "ok=false issues=0"
+    },
+    {
+      "name": "incremental_repo_validation",
+      "status": "passed",
+      "details": "repo status fetched at runtime status=200"
+    }
+  ],
+  "producedArtifacts": [
+    "repoSnapshot",
+    "repoIntake",
+    "repoAudit",
+    "completionContract",
+    "repairPlan",
+    "launchPacket"
+  ],
+  "proofLedgerReferences": [
+    {
+      "entry": {
+        "scope": "release",
+        "claim": "Dirty-repo rescue path generates completion contract, repair plan, and status view from runtime API flow.",
+        "evidence": [
+          "/api/projects/:projectId/repo/completion-contract",
+          "/api/projects/:projectId/repo/status"
+        ],
+        "validatorSummary": "validateExistingRepoReadiness:failed, incremental_repo_validation:passed",
+        "outcome": "passed",
+        "rollbackPlan": "Revert repo-intake/audit/repair/completion contract changes and rerun rescue proof.",
+        "id": "proof_1777235767797_m8pvo3",
+        "timestamp": "2026-04-26T20:36:07.797Z"
+      },
+      "claimVerification": {
+        "ok": true,
+        "blockers": []
+      }
+    }
+  ],
+  "status": "passed",
+  "remainingBlockers": [
+    "Build failed.",
+    "Tests failed.",
+    "Placeholder token detected: placeholder",
+    "Placeholder token detected: stub",
+    "Fake integration signal: stub"
+  ],
+  "summary": {
+    "passedSteps": 3,
+    "failedSteps": 0
+  }
+}

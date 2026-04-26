@@ -1,0 +1,8 @@
+{
+  "files": [
+    "src/server.ts",
+    "src/auth.ts",
+    "src/workflows.ts"
+  ],
+  "changes": "stabilized build and tests"
+}

@@ -1,0 +1,31 @@
+{
+  "domainId": "bot",
+  "generatedAt": "2026-04-26T20:37:57.097Z",
+  "emittedPath": "/workspaces/Botomatic/release-evidence/generated-apps/bot",
+  "emittedFileCount": 21,
+  "emittedFiles": [
+    ".env.example",
+    "README.md",
+    "deploy/deployment_readiness.json",
+    "deploy/worker.md",
+    "dist/auth/tokenConfig.js",
+    "dist/commands/router.js",
+    "dist/security/permissions.js",
+    "dist/security/rateLimit.js",
+    "dist/worker.js",
+    "domain_readiness.json",
+    "integrations/integration_contract.json",
+    "launch/launch_packet.json",
+    "no_placeholder_scan.json",
+    "package.json",
+    "src/auth/tokenConfig.ts",
+    "src/commands/router.ts",
+    "src/security/permissions.ts",
+    "src/security/rateLimit.ts",
+    "src/worker.ts",
+    "tests/permissions.test.js",
+    "tsconfig.json"
+  ],
+  "note": "Preview manifest lists emitted source files. Actual preview rendering requires deployment to a preview environment.",
+  "previewEnvironmentTarget": "Bot platform sandbox (requires platform account)"
+}

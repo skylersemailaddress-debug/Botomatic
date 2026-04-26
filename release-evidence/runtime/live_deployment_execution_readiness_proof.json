@@ -1,0 +1,2114 @@
+{
+  "pathId": "live_deployment_execution_readiness",
+  "status": "passed",
+  "generatedAt": "2026-04-26T20:37:58.757Z",
+  "liveExecutionPerformed": false,
+  "liveExecutionBlockedByDefault": true,
+  "realProviderApisCalled": false,
+  "realSecretsUsed": false,
+  "domains": [
+    {
+      "domainId": "web_saas_app",
+      "providerId": "vercel_web_deploy",
+      "deploymentTarget": "vercel",
+      "executionPlanStatus": "blocked_pending_approval"
+    },
+    {
+      "domainId": "marketing_website",
+      "providerId": "github_release_handoff",
+      "deploymentTarget": "github_pages_or_static_release_handoff",
+      "executionPlanStatus": "blocked_pending_approval"
+    },
+    {
+      "domainId": "api_service",
+      "providerId": "supabase_backend_deploy",
+      "deploymentTarget": "supabase_plus_runtime_backend",
+      "executionPlanStatus": "blocked_pending_approval"
+    },
+    {
+      "domainId": "mobile_app",
+      "providerId": "mobile_store_handoff",
+      "deploymentTarget": "ios_android_app_stores",
+      "executionPlanStatus": "blocked_pending_approval"
+    },
+    {
+      "domainId": "bot",
+      "providerId": "bot_platform_deploy",
+      "deploymentTarget": "worker_runtime",
+      "executionPlanStatus": "blocked_pending_approval"
+    },
+    {
+      "domainId": "ai_agent",
+      "providerId": "ai_agent_runtime_deploy",
+      "deploymentTarget": "agent_runtime",
+      "executionPlanStatus": "blocked_pending_approval"
+    },
+    {
+      "domainId": "game",
+      "providerId": "game_distribution_handoff",
+      "deploymentTarget": "distribution_platform",
+      "executionPlanStatus": "blocked_pending_approval"
+    },
+    {
+      "domainId": "dirty_repo_completion",
+      "providerId": "dirty_repo_completion_handoff",
+      "deploymentTarget": "repo_hosting_ci_handoff",
+      "executionPlanStatus": "blocked_pending_approval"
+    }
+  ],
+  "providerAdapters": [
+    {
+      "providerId": "vercel_web_deploy",
+      "supportedDomains": [
+        "web_saas_app"
+      ],
+      "requiredCredentialKeys": [
+        "VERCEL_TOKEN",
+        "VERCEL_ORG_ID",
+        "VERCEL_PROJECT_ID",
+        "DATABASE_URL"
+      ],
+      "preflightChecks": [
+        "build_artifact_exists",
+        "deploy_manifest_exists",
+        "env_manifest_exists",
+        "approval_not_granted"
+      ],
+      "buildArtifactRequirements": [
+        ".next",
+        "deploy/vercel.json"
+      ],
+      "deployCommandTemplate": "vercel --prod --token $VERCEL_TOKEN",
+      "smokeTestStrategy": "http_200_plus_auth_route_check",
+      "rollbackStrategy": "vercel_rollback_last_known_good",
+      "liveExecutionRequiresApproval": true,
+      "liveExecutionBlockedByDefault": true,
+      "dryRunSupported": true,
+      "liveSupported": true,
+      "executionMethod": "cli_template"
+    },
+    {
+      "providerId": "supabase_backend_deploy",
+      "supportedDomains": [
+        "api_service"
+      ],
+      "requiredCredentialKeys": [
+        "SUPABASE_ACCESS_TOKEN",
+        "SUPABASE_PROJECT_REF",
+        "SUPABASE_DB_PASSWORD"
+      ],
+      "preflightChecks": [
+        "db_readiness_manifest_exists",
+        "env_manifest_exists",
+        "approval_not_granted"
+      ],
+      "buildArtifactRequirements": [
+        "deploy/deployment_readiness.json",
+        "deploy/Dockerfile"
+      ],
+      "deployCommandTemplate": "supabase db push --project-ref $SUPABASE_PROJECT_REF",
+      "smokeTestStrategy": "api_health_and_db_connectivity_smoke",
+      "rollbackStrategy": "revert_migration_or_restore_snapshot",
+      "liveExecutionRequiresApproval": true,
+      "liveExecutionBlockedByDefault": true,
+      "dryRunSupported": true,
+      "liveSupported": true,
+      "executionMethod": "cli_template"
+    },
+    {
+      "providerId": "github_release_handoff",
+      "supportedDomains": [
+        "marketing_website"
+      ],
+      "requiredCredentialKeys": [
+        "GITHUB_TOKEN"
+      ],
+      "preflightChecks": [
+        "release_notes_present",
+        "workflow_handoff_prepared",
+        "approval_not_granted"
+      ],
+      "buildArtifactRequirements": [
+        "deploy/static-hosting.md",
+        "README.md"
+      ],
+      "deployCommandTemplate": "gh release create <tag> --notes-file RELEASE_NOTES.md",
+      "smokeTestStrategy": "smoke_links_and_form_submission",
+      "rollbackStrategy": "revert_release_and_restore_previous_artifact",
+      "liveExecutionRequiresApproval": true,
+      "liveExecutionBlockedByDefault": true,
+      "dryRunSupported": true,
+      "liveSupported": true,
+      "executionMethod": "api_handoff"
+    },
+    {
+      "providerId": "mobile_store_handoff",
+      "supportedDomains": [
+        "mobile_app"
+      ],
+      "requiredCredentialKeys": [
+        "APP_STORE_CONNECT_API_KEY",
+        "PLAY_STORE_SERVICE_ACCOUNT_JSON",
+        "IOS_SIGNING_CERT",
+        "ANDROID_KEYSTORE"
+      ],
+      "preflightChecks": [
+        "store_manifest_exists",
+        "signing_material_declared",
+        "approval_not_granted"
+      ],
+      "buildArtifactRequirements": [
+        "deploy/app-store.md",
+        "app.config.json"
+      ],
+      "deployCommandTemplate": "store_handoff_via_ci_workflow",
+      "smokeTestStrategy": "post_release_install_and_auth_smoke",
+      "rollbackStrategy": "store_rollout_pause_or_revert_track",
+      "liveExecutionRequiresApproval": true,
+      "liveExecutionBlockedByDefault": true,
+      "dryRunSupported": true,
+      "liveSupported": true,
+      "executionMethod": "manual_handoff"
+    },
+    {
+      "providerId": "bot_platform_deploy",
+      "supportedDomains": [
+        "bot"
+      ],
+      "requiredCredentialKeys": [
+        "BOT_TOKEN",
+        "BOT_WEBHOOK_SECRET",
+        "WORKER_DEPLOY_TOKEN"
+      ],
+      "preflightChecks": [
+        "worker_deploy_manifest_exists",
+        "webhook_policy_declared",
+        "approval_not_granted"
+      ],
+      "buildArtifactRequirements": [
+        "deploy/worker.md"
+      ],
+      "deployCommandTemplate": "wrangler deploy --env production",
+      "smokeTestStrategy": "webhook_ping_and_bot_command_smoke",
+      "rollbackStrategy": "worker_revision_rollback",
+      "liveExecutionRequiresApproval": true,
+      "liveExecutionBlockedByDefault": true,
+      "dryRunSupported": true,
+      "liveSupported": true,
+      "executionMethod": "cli_template"
+    },
+    {
+      "providerId": "ai_agent_runtime_deploy",
+      "supportedDomains": [
+        "ai_agent"
+      ],
+      "requiredCredentialKeys": [
+        "LLM_API_KEY",
+        "LLM_MODEL",
+        "AGENT_RUNTIME_DEPLOY_TOKEN"
+      ],
+      "preflightChecks": [
+        "agent_runtime_manifest_exists",
+        "policy_checks_declared",
+        "approval_not_granted"
+      ],
+      "buildArtifactRequirements": [
+        "deploy/agent-runtime.md"
+      ],
+      "deployCommandTemplate": "agent_runtime_deploy --config deploy/agent-runtime.md",
+      "smokeTestStrategy": "health_plus_tool_invocation_smoke",
+      "rollbackStrategy": "repoint_to_previous_agent_revision",
+      "liveExecutionRequiresApproval": true,
+      "liveExecutionBlockedByDefault": true,
+      "dryRunSupported": true,
+      "liveSupported": true,
+      "executionMethod": "manual_handoff"
+    },
+    {
+      "providerId": "game_distribution_handoff",
+      "supportedDomains": [
+        "game"
+      ],
+      "requiredCredentialKeys": [
+        "DISTRIBUTION_SIGNING_KEY",
+        "PLATFORM_PUBLISHER_ACCOUNT"
+      ],
+      "preflightChecks": [
+        "distribution_notes_exist",
+        "compliance_handoff_declared",
+        "approval_not_granted"
+      ],
+      "buildArtifactRequirements": [
+        "export/build-notes.md"
+      ],
+      "deployCommandTemplate": "distribution_platform_publish_handoff",
+      "smokeTestStrategy": "install_launch_and_core_loop_smoke",
+      "rollbackStrategy": "revert_to_previous_distributed_build",
+      "liveExecutionRequiresApproval": true,
+      "liveExecutionBlockedByDefault": true,
+      "dryRunSupported": true,
+      "liveSupported": true,
+      "executionMethod": "manual_handoff"
+    },
+    {
+      "providerId": "dirty_repo_completion_handoff",
+      "supportedDomains": [
+        "dirty_repo_completion"
+      ],
+      "requiredCredentialKeys": [
+        "GIT_HOSTING_TOKEN",
+        "CI_RUNNER_TOKEN"
+      ],
+      "preflightChecks": [
+        "launch_instructions_exist",
+        "completion_contract_exists",
+        "approval_not_granted"
+      ],
+      "buildArtifactRequirements": [
+        "launch/launch_instructions.md",
+        "repair/completion_contract.json"
+      ],
+      "deployCommandTemplate": "git push origin <branch> && open_pr_for_merge",
+      "smokeTestStrategy": "ci_green_plus_regression_smoke",
+      "rollbackStrategy": "git_revert_and_redeploy_previous_revision",
+      "liveExecutionRequiresApproval": true,
+      "liveExecutionBlockedByDefault": true,
+      "dryRunSupported": true,
+      "liveSupported": true,
+      "executionMethod": "api_handoff"
+    }
+  ],
+  "approvalRequests": [
+    {
+      "approvalRequestId": "approval_req_web_saas_app",
+      "projectId": "project_web_saas_app",
+      "domainId": "web_saas_app",
+      "providerId": "vercel_web_deploy",
+      "requestedAction": "live_deploy_web_saas_app",
+      "riskLevel": "medium",
+      "requiredApprover": "user_owner",
+      "approvalStatus": "not_approved",
+      "approvalRequired": true,
+      "explicitUserApprovalRequired": true,
+      "approvalEvidence": null,
+      "expiresAt": "2026-04-27T20:37:58.756Z",
+      "createdAt": "2026-04-26T20:37:58.756Z"
+    },
+    {
+      "approvalRequestId": "approval_req_marketing_website",
+      "projectId": "project_marketing_website",
+      "domainId": "marketing_website",
+      "providerId": "github_release_handoff",
+      "requestedAction": "live_deploy_marketing_website",
+      "riskLevel": "medium",
+      "requiredApprover": "user_owner",
+      "approvalStatus": "not_approved",
+      "approvalRequired": true,
+      "explicitUserApprovalRequired": true,
+      "approvalEvidence": null,
+      "expiresAt": "2026-04-27T20:37:58.756Z",
+      "createdAt": "2026-04-26T20:37:58.756Z"
+    },
+    {
+      "approvalRequestId": "approval_req_api_service",
+      "projectId": "project_api_service",
+      "domainId": "api_service",
+      "providerId": "supabase_backend_deploy",
+      "requestedAction": "live_deploy_api_service",
+      "riskLevel": "high",
+      "requiredApprover": "user_owner",
+      "approvalStatus": "not_approved",
+      "approvalRequired": true,
+      "explicitUserApprovalRequired": true,
+      "approvalEvidence": null,
+      "expiresAt": "2026-04-27T20:37:58.756Z",
+      "createdAt": "2026-04-26T20:37:58.756Z"
+    },
+    {
+      "approvalRequestId": "approval_req_mobile_app",
+      "projectId": "project_mobile_app",
+      "domainId": "mobile_app",
+      "providerId": "mobile_store_handoff",
+      "requestedAction": "live_deploy_mobile_app",
+      "riskLevel": "high",
+      "requiredApprover": "user_owner",
+      "approvalStatus": "not_approved",
+      "approvalRequired": true,
+      "explicitUserApprovalRequired": true,
+      "approvalEvidence": null,
+      "expiresAt": "2026-04-27T20:37:58.757Z",
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "approvalRequestId": "approval_req_bot",
+      "projectId": "project_bot",
+      "domainId": "bot",
+      "providerId": "bot_platform_deploy",
+      "requestedAction": "live_deploy_bot",
+      "riskLevel": "medium",
+      "requiredApprover": "user_owner",
+      "approvalStatus": "not_approved",
+      "approvalRequired": true,
+      "explicitUserApprovalRequired": true,
+      "approvalEvidence": null,
+      "expiresAt": "2026-04-27T20:37:58.757Z",
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "approvalRequestId": "approval_req_ai_agent",
+      "projectId": "project_ai_agent",
+      "domainId": "ai_agent",
+      "providerId": "ai_agent_runtime_deploy",
+      "requestedAction": "live_deploy_ai_agent",
+      "riskLevel": "medium",
+      "requiredApprover": "user_owner",
+      "approvalStatus": "not_approved",
+      "approvalRequired": true,
+      "explicitUserApprovalRequired": true,
+      "approvalEvidence": null,
+      "expiresAt": "2026-04-27T20:37:58.757Z",
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "approvalRequestId": "approval_req_game",
+      "projectId": "project_game",
+      "domainId": "game",
+      "providerId": "game_distribution_handoff",
+      "requestedAction": "live_deploy_game",
+      "riskLevel": "high",
+      "requiredApprover": "user_owner",
+      "approvalStatus": "not_approved",
+      "approvalRequired": true,
+      "explicitUserApprovalRequired": true,
+      "approvalEvidence": null,
+      "expiresAt": "2026-04-27T20:37:58.757Z",
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "approvalRequestId": "approval_req_dirty_repo_completion",
+      "projectId": "project_dirty_repo_completion",
+      "domainId": "dirty_repo_completion",
+      "providerId": "dirty_repo_completion_handoff",
+      "requestedAction": "live_deploy_dirty_repo_completion",
+      "riskLevel": "medium",
+      "requiredApprover": "user_owner",
+      "approvalStatus": "not_approved",
+      "approvalRequired": true,
+      "explicitUserApprovalRequired": true,
+      "approvalEvidence": null,
+      "expiresAt": "2026-04-27T20:37:58.757Z",
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    }
+  ],
+  "credentialBindings": [
+    {
+      "credentialBindingId": "credential_binding_web_saas_app",
+      "providerId": "vercel_web_deploy",
+      "requiredCredentialKeys": [
+        "VERCEL_TOKEN",
+        "VERCEL_ORG_ID",
+        "VERCEL_PROJECT_ID",
+        "DATABASE_URL"
+      ],
+      "suppliedCredentialKeys": [],
+      "missingCredentialKeys": [
+        "VERCEL_TOKEN",
+        "VERCEL_ORG_ID",
+        "VERCEL_PROJECT_ID",
+        "DATABASE_URL"
+      ],
+      "secretStoragePolicy": "env_or_secret_manager_only",
+      "plaintextSecretAllowed": false,
+      "credentialValidationMode": "metadata_only_non_executing",
+      "credentialValidationPerformed": false,
+      "credentialValidationSkippedReason": "No user-supplied credentials and no approval in this proof pass.",
+      "createdAt": "2026-04-26T20:37:58.756Z"
+    },
+    {
+      "credentialBindingId": "credential_binding_marketing_website",
+      "providerId": "github_release_handoff",
+      "requiredCredentialKeys": [
+        "GITHUB_TOKEN"
+      ],
+      "suppliedCredentialKeys": [],
+      "missingCredentialKeys": [
+        "GITHUB_TOKEN"
+      ],
+      "secretStoragePolicy": "env_or_secret_manager_only",
+      "plaintextSecretAllowed": false,
+      "credentialValidationMode": "metadata_only_non_executing",
+      "credentialValidationPerformed": false,
+      "credentialValidationSkippedReason": "No user-supplied credentials and no approval in this proof pass.",
+      "createdAt": "2026-04-26T20:37:58.756Z"
+    },
+    {
+      "credentialBindingId": "credential_binding_api_service",
+      "providerId": "supabase_backend_deploy",
+      "requiredCredentialKeys": [
+        "SUPABASE_ACCESS_TOKEN",
+        "SUPABASE_PROJECT_REF",
+        "SUPABASE_DB_PASSWORD"
+      ],
+      "suppliedCredentialKeys": [],
+      "missingCredentialKeys": [
+        "SUPABASE_ACCESS_TOKEN",
+        "SUPABASE_PROJECT_REF",
+        "SUPABASE_DB_PASSWORD"
+      ],
+      "secretStoragePolicy": "env_or_secret_manager_only",
+      "plaintextSecretAllowed": false,
+      "credentialValidationMode": "metadata_only_non_executing",
+      "credentialValidationPerformed": false,
+      "credentialValidationSkippedReason": "No user-supplied credentials and no approval in this proof pass.",
+      "createdAt": "2026-04-26T20:37:58.756Z"
+    },
+    {
+      "credentialBindingId": "credential_binding_mobile_app",
+      "providerId": "mobile_store_handoff",
+      "requiredCredentialKeys": [
+        "APP_STORE_CONNECT_API_KEY",
+        "PLAY_STORE_SERVICE_ACCOUNT_JSON",
+        "IOS_SIGNING_CERT",
+        "ANDROID_KEYSTORE"
+      ],
+      "suppliedCredentialKeys": [],
+      "missingCredentialKeys": [
+        "APP_STORE_CONNECT_API_KEY",
+        "PLAY_STORE_SERVICE_ACCOUNT_JSON",
+        "IOS_SIGNING_CERT",
+        "ANDROID_KEYSTORE"
+      ],
+      "secretStoragePolicy": "env_or_secret_manager_only",
+      "plaintextSecretAllowed": false,
+      "credentialValidationMode": "metadata_only_non_executing",
+      "credentialValidationPerformed": false,
+      "credentialValidationSkippedReason": "No user-supplied credentials and no approval in this proof pass.",
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "credentialBindingId": "credential_binding_bot",
+      "providerId": "bot_platform_deploy",
+      "requiredCredentialKeys": [
+        "BOT_TOKEN",
+        "BOT_WEBHOOK_SECRET",
+        "WORKER_DEPLOY_TOKEN"
+      ],
+      "suppliedCredentialKeys": [],
+      "missingCredentialKeys": [
+        "BOT_TOKEN",
+        "BOT_WEBHOOK_SECRET",
+        "WORKER_DEPLOY_TOKEN"
+      ],
+      "secretStoragePolicy": "env_or_secret_manager_only",
+      "plaintextSecretAllowed": false,
+      "credentialValidationMode": "metadata_only_non_executing",
+      "credentialValidationPerformed": false,
+      "credentialValidationSkippedReason": "No user-supplied credentials and no approval in this proof pass.",
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "credentialBindingId": "credential_binding_ai_agent",
+      "providerId": "ai_agent_runtime_deploy",
+      "requiredCredentialKeys": [
+        "LLM_API_KEY",
+        "LLM_MODEL",
+        "AGENT_RUNTIME_DEPLOY_TOKEN"
+      ],
+      "suppliedCredentialKeys": [],
+      "missingCredentialKeys": [
+        "LLM_API_KEY",
+        "LLM_MODEL",
+        "AGENT_RUNTIME_DEPLOY_TOKEN"
+      ],
+      "secretStoragePolicy": "env_or_secret_manager_only",
+      "plaintextSecretAllowed": false,
+      "credentialValidationMode": "metadata_only_non_executing",
+      "credentialValidationPerformed": false,
+      "credentialValidationSkippedReason": "No user-supplied credentials and no approval in this proof pass.",
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "credentialBindingId": "credential_binding_game",
+      "providerId": "game_distribution_handoff",
+      "requiredCredentialKeys": [
+        "DISTRIBUTION_SIGNING_KEY",
+        "PLATFORM_PUBLISHER_ACCOUNT"
+      ],
+      "suppliedCredentialKeys": [],
+      "missingCredentialKeys": [
+        "DISTRIBUTION_SIGNING_KEY",
+        "PLATFORM_PUBLISHER_ACCOUNT"
+      ],
+      "secretStoragePolicy": "env_or_secret_manager_only",
+      "plaintextSecretAllowed": false,
+      "credentialValidationMode": "metadata_only_non_executing",
+      "credentialValidationPerformed": false,
+      "credentialValidationSkippedReason": "No user-supplied credentials and no approval in this proof pass.",
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "credentialBindingId": "credential_binding_dirty_repo_completion",
+      "providerId": "dirty_repo_completion_handoff",
+      "requiredCredentialKeys": [
+        "GIT_HOSTING_TOKEN",
+        "CI_RUNNER_TOKEN"
+      ],
+      "suppliedCredentialKeys": [],
+      "missingCredentialKeys": [
+        "GIT_HOSTING_TOKEN",
+        "CI_RUNNER_TOKEN"
+      ],
+      "secretStoragePolicy": "env_or_secret_manager_only",
+      "plaintextSecretAllowed": false,
+      "credentialValidationMode": "metadata_only_non_executing",
+      "credentialValidationPerformed": false,
+      "credentialValidationSkippedReason": "No user-supplied credentials and no approval in this proof pass.",
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    }
+  ],
+  "preDeployChecklists": [
+    {
+      "preDeployChecklistId": "predeploy_checklist_web_saas_app",
+      "domainId": "web_saas_app",
+      "providerId": "vercel_web_deploy",
+      "buildArtifactExists": true,
+      "envManifestExists": true,
+      "credentialBindingExists": true,
+      "approvalRequestExists": true,
+      "deploymentTargetKnown": true,
+      "rollbackPlanExists": true,
+      "smokeTestPlanExists": true,
+      "noFakeIntegrationSignals": true,
+      "noCommittedSecrets": true,
+      "currentValidationStatusPass": true,
+      "status": "prepared",
+      "createdAt": "2026-04-26T20:37:58.756Z"
+    },
+    {
+      "preDeployChecklistId": "predeploy_checklist_marketing_website",
+      "domainId": "marketing_website",
+      "providerId": "github_release_handoff",
+      "buildArtifactExists": true,
+      "envManifestExists": true,
+      "credentialBindingExists": true,
+      "approvalRequestExists": true,
+      "deploymentTargetKnown": true,
+      "rollbackPlanExists": true,
+      "smokeTestPlanExists": true,
+      "noFakeIntegrationSignals": true,
+      "noCommittedSecrets": true,
+      "currentValidationStatusPass": true,
+      "status": "prepared",
+      "createdAt": "2026-04-26T20:37:58.756Z"
+    },
+    {
+      "preDeployChecklistId": "predeploy_checklist_api_service",
+      "domainId": "api_service",
+      "providerId": "supabase_backend_deploy",
+      "buildArtifactExists": true,
+      "envManifestExists": true,
+      "credentialBindingExists": true,
+      "approvalRequestExists": true,
+      "deploymentTargetKnown": true,
+      "rollbackPlanExists": true,
+      "smokeTestPlanExists": true,
+      "noFakeIntegrationSignals": true,
+      "noCommittedSecrets": true,
+      "currentValidationStatusPass": true,
+      "status": "prepared",
+      "createdAt": "2026-04-26T20:37:58.756Z"
+    },
+    {
+      "preDeployChecklistId": "predeploy_checklist_mobile_app",
+      "domainId": "mobile_app",
+      "providerId": "mobile_store_handoff",
+      "buildArtifactExists": true,
+      "envManifestExists": true,
+      "credentialBindingExists": true,
+      "approvalRequestExists": true,
+      "deploymentTargetKnown": true,
+      "rollbackPlanExists": true,
+      "smokeTestPlanExists": true,
+      "noFakeIntegrationSignals": true,
+      "noCommittedSecrets": true,
+      "currentValidationStatusPass": true,
+      "status": "prepared",
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "preDeployChecklistId": "predeploy_checklist_bot",
+      "domainId": "bot",
+      "providerId": "bot_platform_deploy",
+      "buildArtifactExists": true,
+      "envManifestExists": true,
+      "credentialBindingExists": true,
+      "approvalRequestExists": true,
+      "deploymentTargetKnown": true,
+      "rollbackPlanExists": true,
+      "smokeTestPlanExists": true,
+      "noFakeIntegrationSignals": true,
+      "noCommittedSecrets": true,
+      "currentValidationStatusPass": true,
+      "status": "prepared",
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "preDeployChecklistId": "predeploy_checklist_ai_agent",
+      "domainId": "ai_agent",
+      "providerId": "ai_agent_runtime_deploy",
+      "buildArtifactExists": true,
+      "envManifestExists": true,
+      "credentialBindingExists": true,
+      "approvalRequestExists": true,
+      "deploymentTargetKnown": true,
+      "rollbackPlanExists": true,
+      "smokeTestPlanExists": true,
+      "noFakeIntegrationSignals": true,
+      "noCommittedSecrets": true,
+      "currentValidationStatusPass": true,
+      "status": "prepared",
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "preDeployChecklistId": "predeploy_checklist_game",
+      "domainId": "game",
+      "providerId": "game_distribution_handoff",
+      "buildArtifactExists": true,
+      "envManifestExists": true,
+      "credentialBindingExists": true,
+      "approvalRequestExists": true,
+      "deploymentTargetKnown": true,
+      "rollbackPlanExists": true,
+      "smokeTestPlanExists": true,
+      "noFakeIntegrationSignals": true,
+      "noCommittedSecrets": true,
+      "currentValidationStatusPass": true,
+      "status": "prepared",
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "preDeployChecklistId": "predeploy_checklist_dirty_repo_completion",
+      "domainId": "dirty_repo_completion",
+      "providerId": "dirty_repo_completion_handoff",
+      "buildArtifactExists": true,
+      "envManifestExists": true,
+      "credentialBindingExists": true,
+      "approvalRequestExists": true,
+      "deploymentTargetKnown": true,
+      "rollbackPlanExists": true,
+      "smokeTestPlanExists": true,
+      "noFakeIntegrationSignals": true,
+      "noCommittedSecrets": true,
+      "currentValidationStatusPass": true,
+      "status": "prepared",
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    }
+  ],
+  "executionPlans": [
+    {
+      "executionPlanId": "execution_plan_web_saas_app",
+      "domainId": "web_saas_app",
+      "providerId": "vercel_web_deploy",
+      "orderedSteps": [
+        "confirm_predeploy_checklist",
+        "confirm_approval_request_status",
+        "confirm_credential_binding_completeness",
+        "render_deploy_command_template",
+        "execute_post_deploy_smoke_plan",
+        "prepare_rollback_if_needed"
+      ],
+      "commandTemplates": [
+        "vercel --prod --token $VERCEL_TOKEN"
+      ],
+      "requiredCredentials": [
+        "VERCEL_TOKEN",
+        "VERCEL_ORG_ID",
+        "VERCEL_PROJECT_ID",
+        "DATABASE_URL"
+      ],
+      "requiredArtifacts": [
+        ".next",
+        "deploy/vercel.json"
+      ],
+      "preflightDependencies": [
+        "build_artifact_exists",
+        "deploy_manifest_exists",
+        "env_manifest_exists",
+        "approval_not_granted"
+      ],
+      "approvalDependency": "approval_req_web_saas_app",
+      "smokeTestDependency": "smoke_plan_web_saas_app",
+      "rollbackDependency": "rollback_plan_web_saas_app",
+      "status": "blocked_pending_approval",
+      "liveExecutionPerformed": false,
+      "createdAt": "2026-04-26T20:37:58.756Z"
+    },
+    {
+      "executionPlanId": "execution_plan_marketing_website",
+      "domainId": "marketing_website",
+      "providerId": "github_release_handoff",
+      "orderedSteps": [
+        "confirm_predeploy_checklist",
+        "confirm_approval_request_status",
+        "confirm_credential_binding_completeness",
+        "render_deploy_command_template",
+        "execute_post_deploy_smoke_plan",
+        "prepare_rollback_if_needed"
+      ],
+      "commandTemplates": [
+        "gh release create <tag> --notes-file RELEASE_NOTES.md"
+      ],
+      "requiredCredentials": [
+        "GITHUB_TOKEN"
+      ],
+      "requiredArtifacts": [
+        "deploy/static-hosting.md",
+        "README.md"
+      ],
+      "preflightDependencies": [
+        "release_notes_present",
+        "workflow_handoff_prepared",
+        "approval_not_granted"
+      ],
+      "approvalDependency": "approval_req_marketing_website",
+      "smokeTestDependency": "smoke_plan_marketing_website",
+      "rollbackDependency": "rollback_plan_marketing_website",
+      "status": "blocked_pending_approval",
+      "liveExecutionPerformed": false,
+      "createdAt": "2026-04-26T20:37:58.756Z"
+    },
+    {
+      "executionPlanId": "execution_plan_api_service",
+      "domainId": "api_service",
+      "providerId": "supabase_backend_deploy",
+      "orderedSteps": [
+        "confirm_predeploy_checklist",
+        "confirm_approval_request_status",
+        "confirm_credential_binding_completeness",
+        "render_deploy_command_template",
+        "execute_post_deploy_smoke_plan",
+        "prepare_rollback_if_needed"
+      ],
+      "commandTemplates": [
+        "supabase db push --project-ref $SUPABASE_PROJECT_REF"
+      ],
+      "requiredCredentials": [
+        "SUPABASE_ACCESS_TOKEN",
+        "SUPABASE_PROJECT_REF",
+        "SUPABASE_DB_PASSWORD"
+      ],
+      "requiredArtifacts": [
+        "deploy/deployment_readiness.json",
+        "deploy/Dockerfile"
+      ],
+      "preflightDependencies": [
+        "db_readiness_manifest_exists",
+        "env_manifest_exists",
+        "approval_not_granted"
+      ],
+      "approvalDependency": "approval_req_api_service",
+      "smokeTestDependency": "smoke_plan_api_service",
+      "rollbackDependency": "rollback_plan_api_service",
+      "status": "blocked_pending_approval",
+      "liveExecutionPerformed": false,
+      "createdAt": "2026-04-26T20:37:58.756Z"
+    },
+    {
+      "executionPlanId": "execution_plan_mobile_app",
+      "domainId": "mobile_app",
+      "providerId": "mobile_store_handoff",
+      "orderedSteps": [
+        "confirm_predeploy_checklist",
+        "confirm_approval_request_status",
+        "confirm_credential_binding_completeness",
+        "render_deploy_command_template",
+        "execute_post_deploy_smoke_plan",
+        "prepare_rollback_if_needed"
+      ],
+      "commandTemplates": [
+        "store_handoff_via_ci_workflow"
+      ],
+      "requiredCredentials": [
+        "APP_STORE_CONNECT_API_KEY",
+        "PLAY_STORE_SERVICE_ACCOUNT_JSON",
+        "IOS_SIGNING_CERT",
+        "ANDROID_KEYSTORE"
+      ],
+      "requiredArtifacts": [
+        "deploy/app-store.md",
+        "app.config.json"
+      ],
+      "preflightDependencies": [
+        "store_manifest_exists",
+        "signing_material_declared",
+        "approval_not_granted"
+      ],
+      "approvalDependency": "approval_req_mobile_app",
+      "smokeTestDependency": "smoke_plan_mobile_app",
+      "rollbackDependency": "rollback_plan_mobile_app",
+      "status": "blocked_pending_approval",
+      "liveExecutionPerformed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "executionPlanId": "execution_plan_bot",
+      "domainId": "bot",
+      "providerId": "bot_platform_deploy",
+      "orderedSteps": [
+        "confirm_predeploy_checklist",
+        "confirm_approval_request_status",
+        "confirm_credential_binding_completeness",
+        "render_deploy_command_template",
+        "execute_post_deploy_smoke_plan",
+        "prepare_rollback_if_needed"
+      ],
+      "commandTemplates": [
+        "wrangler deploy --env production"
+      ],
+      "requiredCredentials": [
+        "BOT_TOKEN",
+        "BOT_WEBHOOK_SECRET",
+        "WORKER_DEPLOY_TOKEN"
+      ],
+      "requiredArtifacts": [
+        "deploy/worker.md"
+      ],
+      "preflightDependencies": [
+        "worker_deploy_manifest_exists",
+        "webhook_policy_declared",
+        "approval_not_granted"
+      ],
+      "approvalDependency": "approval_req_bot",
+      "smokeTestDependency": "smoke_plan_bot",
+      "rollbackDependency": "rollback_plan_bot",
+      "status": "blocked_pending_approval",
+      "liveExecutionPerformed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "executionPlanId": "execution_plan_ai_agent",
+      "domainId": "ai_agent",
+      "providerId": "ai_agent_runtime_deploy",
+      "orderedSteps": [
+        "confirm_predeploy_checklist",
+        "confirm_approval_request_status",
+        "confirm_credential_binding_completeness",
+        "render_deploy_command_template",
+        "execute_post_deploy_smoke_plan",
+        "prepare_rollback_if_needed"
+      ],
+      "commandTemplates": [
+        "agent_runtime_deploy --config deploy/agent-runtime.md"
+      ],
+      "requiredCredentials": [
+        "LLM_API_KEY",
+        "LLM_MODEL",
+        "AGENT_RUNTIME_DEPLOY_TOKEN"
+      ],
+      "requiredArtifacts": [
+        "deploy/agent-runtime.md"
+      ],
+      "preflightDependencies": [
+        "agent_runtime_manifest_exists",
+        "policy_checks_declared",
+        "approval_not_granted"
+      ],
+      "approvalDependency": "approval_req_ai_agent",
+      "smokeTestDependency": "smoke_plan_ai_agent",
+      "rollbackDependency": "rollback_plan_ai_agent",
+      "status": "blocked_pending_approval",
+      "liveExecutionPerformed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "executionPlanId": "execution_plan_game",
+      "domainId": "game",
+      "providerId": "game_distribution_handoff",
+      "orderedSteps": [
+        "confirm_predeploy_checklist",
+        "confirm_approval_request_status",
+        "confirm_credential_binding_completeness",
+        "render_deploy_command_template",
+        "execute_post_deploy_smoke_plan",
+        "prepare_rollback_if_needed"
+      ],
+      "commandTemplates": [
+        "distribution_platform_publish_handoff"
+      ],
+      "requiredCredentials": [
+        "DISTRIBUTION_SIGNING_KEY",
+        "PLATFORM_PUBLISHER_ACCOUNT"
+      ],
+      "requiredArtifacts": [
+        "export/build-notes.md"
+      ],
+      "preflightDependencies": [
+        "distribution_notes_exist",
+        "compliance_handoff_declared",
+        "approval_not_granted"
+      ],
+      "approvalDependency": "approval_req_game",
+      "smokeTestDependency": "smoke_plan_game",
+      "rollbackDependency": "rollback_plan_game",
+      "status": "blocked_pending_approval",
+      "liveExecutionPerformed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "executionPlanId": "execution_plan_dirty_repo_completion",
+      "domainId": "dirty_repo_completion",
+      "providerId": "dirty_repo_completion_handoff",
+      "orderedSteps": [
+        "confirm_predeploy_checklist",
+        "confirm_approval_request_status",
+        "confirm_credential_binding_completeness",
+        "render_deploy_command_template",
+        "execute_post_deploy_smoke_plan",
+        "prepare_rollback_if_needed"
+      ],
+      "commandTemplates": [
+        "git push origin <branch> && open_pr_for_merge"
+      ],
+      "requiredCredentials": [
+        "GIT_HOSTING_TOKEN",
+        "CI_RUNNER_TOKEN"
+      ],
+      "requiredArtifacts": [
+        "launch/launch_instructions.md",
+        "repair/completion_contract.json"
+      ],
+      "preflightDependencies": [
+        "launch_instructions_exist",
+        "completion_contract_exists",
+        "approval_not_granted"
+      ],
+      "approvalDependency": "approval_req_dirty_repo_completion",
+      "smokeTestDependency": "smoke_plan_dirty_repo_completion",
+      "rollbackDependency": "rollback_plan_dirty_repo_completion",
+      "status": "blocked_pending_approval",
+      "liveExecutionPerformed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    }
+  ],
+  "smokeTestPlans": [
+    {
+      "postDeploySmokeTestPlanId": "smoke_plan_web_saas_app",
+      "domainId": "web_saas_app",
+      "providerId": "vercel_web_deploy",
+      "healthCheckTarget": "GET /",
+      "routeOrEndpointChecks": [
+        "basic_route_200",
+        "critical_endpoint_response"
+      ],
+      "authProtectedPathCheck": "validate_protected_path_denies_unauthenticated",
+      "workflowSmokeCheck": "execute_primary_user_workflow_once",
+      "integrationBoundaryCheck": "validate_external_boundary_without_data_corruption",
+      "expectedSuccessCriteria": [
+        "status_codes_ok",
+        "no_sev1_errors",
+        "latency_within_budget"
+      ],
+      "rollbackTriggerConditions": [
+        "health_check_failure",
+        "auth_flow_failure",
+        "critical_workflow_failure"
+      ],
+      "status": "planned_not_executed",
+      "createdAt": "2026-04-26T20:37:58.756Z"
+    },
+    {
+      "postDeploySmokeTestPlanId": "smoke_plan_marketing_website",
+      "domainId": "marketing_website",
+      "providerId": "github_release_handoff",
+      "healthCheckTarget": "GET /",
+      "routeOrEndpointChecks": [
+        "basic_route_200",
+        "critical_endpoint_response"
+      ],
+      "authProtectedPathCheck": "not_applicable",
+      "workflowSmokeCheck": "execute_primary_user_workflow_once",
+      "integrationBoundaryCheck": "validate_external_boundary_without_data_corruption",
+      "expectedSuccessCriteria": [
+        "status_codes_ok",
+        "no_sev1_errors",
+        "latency_within_budget"
+      ],
+      "rollbackTriggerConditions": [
+        "health_check_failure",
+        "auth_flow_failure",
+        "critical_workflow_failure"
+      ],
+      "status": "planned_not_executed",
+      "createdAt": "2026-04-26T20:37:58.756Z"
+    },
+    {
+      "postDeploySmokeTestPlanId": "smoke_plan_api_service",
+      "domainId": "api_service",
+      "providerId": "supabase_backend_deploy",
+      "healthCheckTarget": "GET /health",
+      "routeOrEndpointChecks": [
+        "basic_route_200",
+        "critical_endpoint_response"
+      ],
+      "authProtectedPathCheck": "validate_protected_path_denies_unauthenticated",
+      "workflowSmokeCheck": "execute_primary_user_workflow_once",
+      "integrationBoundaryCheck": "validate_external_boundary_without_data_corruption",
+      "expectedSuccessCriteria": [
+        "status_codes_ok",
+        "no_sev1_errors",
+        "latency_within_budget"
+      ],
+      "rollbackTriggerConditions": [
+        "health_check_failure",
+        "auth_flow_failure",
+        "critical_workflow_failure"
+      ],
+      "status": "planned_not_executed",
+      "createdAt": "2026-04-26T20:37:58.756Z"
+    },
+    {
+      "postDeploySmokeTestPlanId": "smoke_plan_mobile_app",
+      "domainId": "mobile_app",
+      "providerId": "mobile_store_handoff",
+      "healthCheckTarget": "GET /",
+      "routeOrEndpointChecks": [
+        "basic_route_200",
+        "critical_endpoint_response"
+      ],
+      "authProtectedPathCheck": "not_applicable",
+      "workflowSmokeCheck": "execute_primary_user_workflow_once",
+      "integrationBoundaryCheck": "validate_external_boundary_without_data_corruption",
+      "expectedSuccessCriteria": [
+        "status_codes_ok",
+        "no_sev1_errors",
+        "latency_within_budget"
+      ],
+      "rollbackTriggerConditions": [
+        "health_check_failure",
+        "auth_flow_failure",
+        "critical_workflow_failure"
+      ],
+      "status": "planned_not_executed",
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "postDeploySmokeTestPlanId": "smoke_plan_bot",
+      "domainId": "bot",
+      "providerId": "bot_platform_deploy",
+      "healthCheckTarget": "GET /",
+      "routeOrEndpointChecks": [
+        "basic_route_200",
+        "critical_endpoint_response"
+      ],
+      "authProtectedPathCheck": "validate_protected_path_denies_unauthenticated",
+      "workflowSmokeCheck": "execute_primary_user_workflow_once",
+      "integrationBoundaryCheck": "validate_external_boundary_without_data_corruption",
+      "expectedSuccessCriteria": [
+        "status_codes_ok",
+        "no_sev1_errors",
+        "latency_within_budget"
+      ],
+      "rollbackTriggerConditions": [
+        "health_check_failure",
+        "auth_flow_failure",
+        "critical_workflow_failure"
+      ],
+      "status": "planned_not_executed",
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "postDeploySmokeTestPlanId": "smoke_plan_ai_agent",
+      "domainId": "ai_agent",
+      "providerId": "ai_agent_runtime_deploy",
+      "healthCheckTarget": "GET /",
+      "routeOrEndpointChecks": [
+        "basic_route_200",
+        "critical_endpoint_response"
+      ],
+      "authProtectedPathCheck": "validate_protected_path_denies_unauthenticated",
+      "workflowSmokeCheck": "execute_primary_user_workflow_once",
+      "integrationBoundaryCheck": "validate_external_boundary_without_data_corruption",
+      "expectedSuccessCriteria": [
+        "status_codes_ok",
+        "no_sev1_errors",
+        "latency_within_budget"
+      ],
+      "rollbackTriggerConditions": [
+        "health_check_failure",
+        "auth_flow_failure",
+        "critical_workflow_failure"
+      ],
+      "status": "planned_not_executed",
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "postDeploySmokeTestPlanId": "smoke_plan_game",
+      "domainId": "game",
+      "providerId": "game_distribution_handoff",
+      "healthCheckTarget": "GET /",
+      "routeOrEndpointChecks": [
+        "basic_route_200",
+        "critical_endpoint_response"
+      ],
+      "authProtectedPathCheck": "not_applicable",
+      "workflowSmokeCheck": "execute_primary_user_workflow_once",
+      "integrationBoundaryCheck": "validate_external_boundary_without_data_corruption",
+      "expectedSuccessCriteria": [
+        "status_codes_ok",
+        "no_sev1_errors",
+        "latency_within_budget"
+      ],
+      "rollbackTriggerConditions": [
+        "health_check_failure",
+        "auth_flow_failure",
+        "critical_workflow_failure"
+      ],
+      "status": "planned_not_executed",
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "postDeploySmokeTestPlanId": "smoke_plan_dirty_repo_completion",
+      "domainId": "dirty_repo_completion",
+      "providerId": "dirty_repo_completion_handoff",
+      "healthCheckTarget": "GET /",
+      "routeOrEndpointChecks": [
+        "basic_route_200",
+        "critical_endpoint_response"
+      ],
+      "authProtectedPathCheck": "not_applicable",
+      "workflowSmokeCheck": "execute_primary_user_workflow_once",
+      "integrationBoundaryCheck": "validate_external_boundary_without_data_corruption",
+      "expectedSuccessCriteria": [
+        "status_codes_ok",
+        "no_sev1_errors",
+        "latency_within_budget"
+      ],
+      "rollbackTriggerConditions": [
+        "health_check_failure",
+        "auth_flow_failure",
+        "critical_workflow_failure"
+      ],
+      "status": "planned_not_executed",
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    }
+  ],
+  "rollbackPlans": [
+    {
+      "rollbackPlanId": "rollback_plan_web_saas_app",
+      "domainId": "web_saas_app",
+      "providerId": "vercel_web_deploy",
+      "rollbackStrategy": "vercel_rollback_last_known_good",
+      "rollbackTrigger": "trigger_on_smoke_failure_or_sev1_alert",
+      "previousArtifactVersionRequirement": "must_have_previous_known_good_revision",
+      "dataRollbackCaveat": "Database rollback may require migration down-step or snapshot restore.",
+      "operatorApprovalRequirement": "operator_or_owner_approval_required_for_production_rollback",
+      "rollbackCommandTemplateOrManualHandoff": "vercel_rollback_last_known_good",
+      "status": "planned_not_executed",
+      "createdAt": "2026-04-26T20:37:58.756Z"
+    },
+    {
+      "rollbackPlanId": "rollback_plan_marketing_website",
+      "domainId": "marketing_website",
+      "providerId": "github_release_handoff",
+      "rollbackStrategy": "revert_release_and_restore_previous_artifact",
+      "rollbackTrigger": "trigger_on_smoke_failure_or_sev1_alert",
+      "previousArtifactVersionRequirement": "must_have_previous_known_good_revision",
+      "dataRollbackCaveat": "No persistent data rollback required in most cases; verify domain specifics.",
+      "operatorApprovalRequirement": "operator_or_owner_approval_required_for_production_rollback",
+      "rollbackCommandTemplateOrManualHandoff": "revert_release_and_restore_previous_artifact",
+      "status": "planned_not_executed",
+      "createdAt": "2026-04-26T20:37:58.756Z"
+    },
+    {
+      "rollbackPlanId": "rollback_plan_api_service",
+      "domainId": "api_service",
+      "providerId": "supabase_backend_deploy",
+      "rollbackStrategy": "revert_migration_or_restore_snapshot",
+      "rollbackTrigger": "trigger_on_smoke_failure_or_sev1_alert",
+      "previousArtifactVersionRequirement": "must_have_previous_known_good_revision",
+      "dataRollbackCaveat": "Database rollback may require migration down-step or snapshot restore.",
+      "operatorApprovalRequirement": "operator_or_owner_approval_required_for_production_rollback",
+      "rollbackCommandTemplateOrManualHandoff": "revert_migration_or_restore_snapshot",
+      "status": "planned_not_executed",
+      "createdAt": "2026-04-26T20:37:58.756Z"
+    },
+    {
+      "rollbackPlanId": "rollback_plan_mobile_app",
+      "domainId": "mobile_app",
+      "providerId": "mobile_store_handoff",
+      "rollbackStrategy": "store_rollout_pause_or_revert_track",
+      "rollbackTrigger": "trigger_on_smoke_failure_or_sev1_alert",
+      "previousArtifactVersionRequirement": "must_have_previous_known_good_revision",
+      "dataRollbackCaveat": "No persistent data rollback required in most cases; verify domain specifics.",
+      "operatorApprovalRequirement": "operator_or_owner_approval_required_for_production_rollback",
+      "rollbackCommandTemplateOrManualHandoff": "store_rollout_pause_or_revert_track",
+      "status": "planned_not_executed",
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "rollbackPlanId": "rollback_plan_bot",
+      "domainId": "bot",
+      "providerId": "bot_platform_deploy",
+      "rollbackStrategy": "worker_revision_rollback",
+      "rollbackTrigger": "trigger_on_smoke_failure_or_sev1_alert",
+      "previousArtifactVersionRequirement": "must_have_previous_known_good_revision",
+      "dataRollbackCaveat": "No persistent data rollback required in most cases; verify domain specifics.",
+      "operatorApprovalRequirement": "operator_or_owner_approval_required_for_production_rollback",
+      "rollbackCommandTemplateOrManualHandoff": "worker_revision_rollback",
+      "status": "planned_not_executed",
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "rollbackPlanId": "rollback_plan_ai_agent",
+      "domainId": "ai_agent",
+      "providerId": "ai_agent_runtime_deploy",
+      "rollbackStrategy": "repoint_to_previous_agent_revision",
+      "rollbackTrigger": "trigger_on_smoke_failure_or_sev1_alert",
+      "previousArtifactVersionRequirement": "must_have_previous_known_good_revision",
+      "dataRollbackCaveat": "No persistent data rollback required in most cases; verify domain specifics.",
+      "operatorApprovalRequirement": "operator_or_owner_approval_required_for_production_rollback",
+      "rollbackCommandTemplateOrManualHandoff": "repoint_to_previous_agent_revision",
+      "status": "planned_not_executed",
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "rollbackPlanId": "rollback_plan_game",
+      "domainId": "game",
+      "providerId": "game_distribution_handoff",
+      "rollbackStrategy": "revert_to_previous_distributed_build",
+      "rollbackTrigger": "trigger_on_smoke_failure_or_sev1_alert",
+      "previousArtifactVersionRequirement": "must_have_previous_known_good_revision",
+      "dataRollbackCaveat": "No persistent data rollback required in most cases; verify domain specifics.",
+      "operatorApprovalRequirement": "operator_or_owner_approval_required_for_production_rollback",
+      "rollbackCommandTemplateOrManualHandoff": "revert_to_previous_distributed_build",
+      "status": "planned_not_executed",
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "rollbackPlanId": "rollback_plan_dirty_repo_completion",
+      "domainId": "dirty_repo_completion",
+      "providerId": "dirty_repo_completion_handoff",
+      "rollbackStrategy": "git_revert_and_redeploy_previous_revision",
+      "rollbackTrigger": "trigger_on_smoke_failure_or_sev1_alert",
+      "previousArtifactVersionRequirement": "must_have_previous_known_good_revision",
+      "dataRollbackCaveat": "No persistent data rollback required in most cases; verify domain specifics.",
+      "operatorApprovalRequirement": "operator_or_owner_approval_required_for_production_rollback",
+      "rollbackCommandTemplateOrManualHandoff": "git_revert_and_redeploy_previous_revision",
+      "status": "planned_not_executed",
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    }
+  ],
+  "auditEvents": [
+    {
+      "auditEventId": "audit_req_web_saas_app",
+      "domainId": "web_saas_app",
+      "providerId": "vercel_web_deploy",
+      "eventType": "live_deployment_requested",
+      "detail": "Live deployment request object created.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.756Z"
+    },
+    {
+      "auditEventId": "audit_approval_web_saas_app",
+      "domainId": "web_saas_app",
+      "providerId": "vercel_web_deploy",
+      "eventType": "approval_required",
+      "detail": "Explicit user approval is required and not granted in this proof.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.756Z"
+    },
+    {
+      "auditEventId": "audit_creds_web_saas_app",
+      "domainId": "web_saas_app",
+      "providerId": "vercel_web_deploy",
+      "eventType": "credentials_required",
+      "detail": "Credential key requirements recorded without secret values.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.756Z"
+    },
+    {
+      "auditEventId": "audit_preflight_web_saas_app",
+      "domainId": "web_saas_app",
+      "providerId": "vercel_web_deploy",
+      "eventType": "preflight_prepared",
+      "detail": "Provider preflight checklist prepared (non-executing).",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.756Z"
+    },
+    {
+      "auditEventId": "audit_plan_web_saas_app",
+      "domainId": "web_saas_app",
+      "providerId": "vercel_web_deploy",
+      "eventType": "execution_plan_prepared",
+      "detail": "Execution plan generated and blocked pending approval.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.756Z"
+    },
+    {
+      "auditEventId": "audit_blocked_web_saas_app",
+      "domainId": "web_saas_app",
+      "providerId": "vercel_web_deploy",
+      "eventType": "live_execution_blocked",
+      "detail": "Live execution remains blocked by default policy.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.756Z"
+    },
+    {
+      "auditEventId": "audit_smoke_web_saas_app",
+      "domainId": "web_saas_app",
+      "providerId": "vercel_web_deploy",
+      "eventType": "smoke_test_planned",
+      "detail": "Post-deploy smoke-test plan prepared and not executed.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.756Z"
+    },
+    {
+      "auditEventId": "audit_rollback_web_saas_app",
+      "domainId": "web_saas_app",
+      "providerId": "vercel_web_deploy",
+      "eventType": "rollback_planned",
+      "detail": "Rollback plan prepared and not executed.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.756Z"
+    },
+    {
+      "auditEventId": "audit_req_marketing_website",
+      "domainId": "marketing_website",
+      "providerId": "github_release_handoff",
+      "eventType": "live_deployment_requested",
+      "detail": "Live deployment request object created.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.756Z"
+    },
+    {
+      "auditEventId": "audit_approval_marketing_website",
+      "domainId": "marketing_website",
+      "providerId": "github_release_handoff",
+      "eventType": "approval_required",
+      "detail": "Explicit user approval is required and not granted in this proof.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.756Z"
+    },
+    {
+      "auditEventId": "audit_creds_marketing_website",
+      "domainId": "marketing_website",
+      "providerId": "github_release_handoff",
+      "eventType": "credentials_required",
+      "detail": "Credential key requirements recorded without secret values.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.756Z"
+    },
+    {
+      "auditEventId": "audit_preflight_marketing_website",
+      "domainId": "marketing_website",
+      "providerId": "github_release_handoff",
+      "eventType": "preflight_prepared",
+      "detail": "Provider preflight checklist prepared (non-executing).",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.756Z"
+    },
+    {
+      "auditEventId": "audit_plan_marketing_website",
+      "domainId": "marketing_website",
+      "providerId": "github_release_handoff",
+      "eventType": "execution_plan_prepared",
+      "detail": "Execution plan generated and blocked pending approval.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.756Z"
+    },
+    {
+      "auditEventId": "audit_blocked_marketing_website",
+      "domainId": "marketing_website",
+      "providerId": "github_release_handoff",
+      "eventType": "live_execution_blocked",
+      "detail": "Live execution remains blocked by default policy.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.756Z"
+    },
+    {
+      "auditEventId": "audit_smoke_marketing_website",
+      "domainId": "marketing_website",
+      "providerId": "github_release_handoff",
+      "eventType": "smoke_test_planned",
+      "detail": "Post-deploy smoke-test plan prepared and not executed.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.756Z"
+    },
+    {
+      "auditEventId": "audit_rollback_marketing_website",
+      "domainId": "marketing_website",
+      "providerId": "github_release_handoff",
+      "eventType": "rollback_planned",
+      "detail": "Rollback plan prepared and not executed.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.756Z"
+    },
+    {
+      "auditEventId": "audit_req_api_service",
+      "domainId": "api_service",
+      "providerId": "supabase_backend_deploy",
+      "eventType": "live_deployment_requested",
+      "detail": "Live deployment request object created.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.756Z"
+    },
+    {
+      "auditEventId": "audit_approval_api_service",
+      "domainId": "api_service",
+      "providerId": "supabase_backend_deploy",
+      "eventType": "approval_required",
+      "detail": "Explicit user approval is required and not granted in this proof.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.756Z"
+    },
+    {
+      "auditEventId": "audit_creds_api_service",
+      "domainId": "api_service",
+      "providerId": "supabase_backend_deploy",
+      "eventType": "credentials_required",
+      "detail": "Credential key requirements recorded without secret values.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.756Z"
+    },
+    {
+      "auditEventId": "audit_preflight_api_service",
+      "domainId": "api_service",
+      "providerId": "supabase_backend_deploy",
+      "eventType": "preflight_prepared",
+      "detail": "Provider preflight checklist prepared (non-executing).",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.756Z"
+    },
+    {
+      "auditEventId": "audit_plan_api_service",
+      "domainId": "api_service",
+      "providerId": "supabase_backend_deploy",
+      "eventType": "execution_plan_prepared",
+      "detail": "Execution plan generated and blocked pending approval.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.756Z"
+    },
+    {
+      "auditEventId": "audit_blocked_api_service",
+      "domainId": "api_service",
+      "providerId": "supabase_backend_deploy",
+      "eventType": "live_execution_blocked",
+      "detail": "Live execution remains blocked by default policy.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "auditEventId": "audit_smoke_api_service",
+      "domainId": "api_service",
+      "providerId": "supabase_backend_deploy",
+      "eventType": "smoke_test_planned",
+      "detail": "Post-deploy smoke-test plan prepared and not executed.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "auditEventId": "audit_rollback_api_service",
+      "domainId": "api_service",
+      "providerId": "supabase_backend_deploy",
+      "eventType": "rollback_planned",
+      "detail": "Rollback plan prepared and not executed.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "auditEventId": "audit_req_mobile_app",
+      "domainId": "mobile_app",
+      "providerId": "mobile_store_handoff",
+      "eventType": "live_deployment_requested",
+      "detail": "Live deployment request object created.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "auditEventId": "audit_approval_mobile_app",
+      "domainId": "mobile_app",
+      "providerId": "mobile_store_handoff",
+      "eventType": "approval_required",
+      "detail": "Explicit user approval is required and not granted in this proof.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "auditEventId": "audit_creds_mobile_app",
+      "domainId": "mobile_app",
+      "providerId": "mobile_store_handoff",
+      "eventType": "credentials_required",
+      "detail": "Credential key requirements recorded without secret values.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "auditEventId": "audit_preflight_mobile_app",
+      "domainId": "mobile_app",
+      "providerId": "mobile_store_handoff",
+      "eventType": "preflight_prepared",
+      "detail": "Provider preflight checklist prepared (non-executing).",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "auditEventId": "audit_plan_mobile_app",
+      "domainId": "mobile_app",
+      "providerId": "mobile_store_handoff",
+      "eventType": "execution_plan_prepared",
+      "detail": "Execution plan generated and blocked pending approval.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "auditEventId": "audit_blocked_mobile_app",
+      "domainId": "mobile_app",
+      "providerId": "mobile_store_handoff",
+      "eventType": "live_execution_blocked",
+      "detail": "Live execution remains blocked by default policy.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "auditEventId": "audit_smoke_mobile_app",
+      "domainId": "mobile_app",
+      "providerId": "mobile_store_handoff",
+      "eventType": "smoke_test_planned",
+      "detail": "Post-deploy smoke-test plan prepared and not executed.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "auditEventId": "audit_rollback_mobile_app",
+      "domainId": "mobile_app",
+      "providerId": "mobile_store_handoff",
+      "eventType": "rollback_planned",
+      "detail": "Rollback plan prepared and not executed.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "auditEventId": "audit_req_bot",
+      "domainId": "bot",
+      "providerId": "bot_platform_deploy",
+      "eventType": "live_deployment_requested",
+      "detail": "Live deployment request object created.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "auditEventId": "audit_approval_bot",
+      "domainId": "bot",
+      "providerId": "bot_platform_deploy",
+      "eventType": "approval_required",
+      "detail": "Explicit user approval is required and not granted in this proof.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "auditEventId": "audit_creds_bot",
+      "domainId": "bot",
+      "providerId": "bot_platform_deploy",
+      "eventType": "credentials_required",
+      "detail": "Credential key requirements recorded without secret values.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "auditEventId": "audit_preflight_bot",
+      "domainId": "bot",
+      "providerId": "bot_platform_deploy",
+      "eventType": "preflight_prepared",
+      "detail": "Provider preflight checklist prepared (non-executing).",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "auditEventId": "audit_plan_bot",
+      "domainId": "bot",
+      "providerId": "bot_platform_deploy",
+      "eventType": "execution_plan_prepared",
+      "detail": "Execution plan generated and blocked pending approval.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "auditEventId": "audit_blocked_bot",
+      "domainId": "bot",
+      "providerId": "bot_platform_deploy",
+      "eventType": "live_execution_blocked",
+      "detail": "Live execution remains blocked by default policy.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "auditEventId": "audit_smoke_bot",
+      "domainId": "bot",
+      "providerId": "bot_platform_deploy",
+      "eventType": "smoke_test_planned",
+      "detail": "Post-deploy smoke-test plan prepared and not executed.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "auditEventId": "audit_rollback_bot",
+      "domainId": "bot",
+      "providerId": "bot_platform_deploy",
+      "eventType": "rollback_planned",
+      "detail": "Rollback plan prepared and not executed.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "auditEventId": "audit_req_ai_agent",
+      "domainId": "ai_agent",
+      "providerId": "ai_agent_runtime_deploy",
+      "eventType": "live_deployment_requested",
+      "detail": "Live deployment request object created.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "auditEventId": "audit_approval_ai_agent",
+      "domainId": "ai_agent",
+      "providerId": "ai_agent_runtime_deploy",
+      "eventType": "approval_required",
+      "detail": "Explicit user approval is required and not granted in this proof.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "auditEventId": "audit_creds_ai_agent",
+      "domainId": "ai_agent",
+      "providerId": "ai_agent_runtime_deploy",
+      "eventType": "credentials_required",
+      "detail": "Credential key requirements recorded without secret values.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "auditEventId": "audit_preflight_ai_agent",
+      "domainId": "ai_agent",
+      "providerId": "ai_agent_runtime_deploy",
+      "eventType": "preflight_prepared",
+      "detail": "Provider preflight checklist prepared (non-executing).",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "auditEventId": "audit_plan_ai_agent",
+      "domainId": "ai_agent",
+      "providerId": "ai_agent_runtime_deploy",
+      "eventType": "execution_plan_prepared",
+      "detail": "Execution plan generated and blocked pending approval.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "auditEventId": "audit_blocked_ai_agent",
+      "domainId": "ai_agent",
+      "providerId": "ai_agent_runtime_deploy",
+      "eventType": "live_execution_blocked",
+      "detail": "Live execution remains blocked by default policy.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "auditEventId": "audit_smoke_ai_agent",
+      "domainId": "ai_agent",
+      "providerId": "ai_agent_runtime_deploy",
+      "eventType": "smoke_test_planned",
+      "detail": "Post-deploy smoke-test plan prepared and not executed.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "auditEventId": "audit_rollback_ai_agent",
+      "domainId": "ai_agent",
+      "providerId": "ai_agent_runtime_deploy",
+      "eventType": "rollback_planned",
+      "detail": "Rollback plan prepared and not executed.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "auditEventId": "audit_req_game",
+      "domainId": "game",
+      "providerId": "game_distribution_handoff",
+      "eventType": "live_deployment_requested",
+      "detail": "Live deployment request object created.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "auditEventId": "audit_approval_game",
+      "domainId": "game",
+      "providerId": "game_distribution_handoff",
+      "eventType": "approval_required",
+      "detail": "Explicit user approval is required and not granted in this proof.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "auditEventId": "audit_creds_game",
+      "domainId": "game",
+      "providerId": "game_distribution_handoff",
+      "eventType": "credentials_required",
+      "detail": "Credential key requirements recorded without secret values.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "auditEventId": "audit_preflight_game",
+      "domainId": "game",
+      "providerId": "game_distribution_handoff",
+      "eventType": "preflight_prepared",
+      "detail": "Provider preflight checklist prepared (non-executing).",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "auditEventId": "audit_plan_game",
+      "domainId": "game",
+      "providerId": "game_distribution_handoff",
+      "eventType": "execution_plan_prepared",
+      "detail": "Execution plan generated and blocked pending approval.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "auditEventId": "audit_blocked_game",
+      "domainId": "game",
+      "providerId": "game_distribution_handoff",
+      "eventType": "live_execution_blocked",
+      "detail": "Live execution remains blocked by default policy.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "auditEventId": "audit_smoke_game",
+      "domainId": "game",
+      "providerId": "game_distribution_handoff",
+      "eventType": "smoke_test_planned",
+      "detail": "Post-deploy smoke-test plan prepared and not executed.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "auditEventId": "audit_rollback_game",
+      "domainId": "game",
+      "providerId": "game_distribution_handoff",
+      "eventType": "rollback_planned",
+      "detail": "Rollback plan prepared and not executed.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "auditEventId": "audit_req_dirty_repo_completion",
+      "domainId": "dirty_repo_completion",
+      "providerId": "dirty_repo_completion_handoff",
+      "eventType": "live_deployment_requested",
+      "detail": "Live deployment request object created.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "auditEventId": "audit_approval_dirty_repo_completion",
+      "domainId": "dirty_repo_completion",
+      "providerId": "dirty_repo_completion_handoff",
+      "eventType": "approval_required",
+      "detail": "Explicit user approval is required and not granted in this proof.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "auditEventId": "audit_creds_dirty_repo_completion",
+      "domainId": "dirty_repo_completion",
+      "providerId": "dirty_repo_completion_handoff",
+      "eventType": "credentials_required",
+      "detail": "Credential key requirements recorded without secret values.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "auditEventId": "audit_preflight_dirty_repo_completion",
+      "domainId": "dirty_repo_completion",
+      "providerId": "dirty_repo_completion_handoff",
+      "eventType": "preflight_prepared",
+      "detail": "Provider preflight checklist prepared (non-executing).",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "auditEventId": "audit_plan_dirty_repo_completion",
+      "domainId": "dirty_repo_completion",
+      "providerId": "dirty_repo_completion_handoff",
+      "eventType": "execution_plan_prepared",
+      "detail": "Execution plan generated and blocked pending approval.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "auditEventId": "audit_blocked_dirty_repo_completion",
+      "domainId": "dirty_repo_completion",
+      "providerId": "dirty_repo_completion_handoff",
+      "eventType": "live_execution_blocked",
+      "detail": "Live execution remains blocked by default policy.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "auditEventId": "audit_smoke_dirty_repo_completion",
+      "domainId": "dirty_repo_completion",
+      "providerId": "dirty_repo_completion_handoff",
+      "eventType": "smoke_test_planned",
+      "detail": "Post-deploy smoke-test plan prepared and not executed.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "auditEventId": "audit_rollback_dirty_repo_completion",
+      "domainId": "dirty_repo_completion",
+      "providerId": "dirty_repo_completion_handoff",
+      "eventType": "rollback_planned",
+      "detail": "Rollback plan prepared and not executed.",
+      "liveExecutionClaimed": false,
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    }
+  ],
+  "liveDeploymentContracts": [
+    {
+      "deploymentId": "deployment_attempt_web_saas_app",
+      "projectId": "project_web_saas_app",
+      "domainId": "web_saas_app",
+      "providerId": "vercel_web_deploy",
+      "deploymentTarget": "vercel",
+      "credentialBindingId": "credential_binding_web_saas_app",
+      "approvalRequestId": "approval_req_web_saas_app",
+      "preDeployChecklistId": "predeploy_checklist_web_saas_app",
+      "executionPlanId": "execution_plan_web_saas_app",
+      "postDeploySmokeTestPlanId": "smoke_plan_web_saas_app",
+      "rollbackPlanId": "rollback_plan_web_saas_app",
+      "auditEventIds": [
+        "audit_req_web_saas_app",
+        "audit_approval_web_saas_app",
+        "audit_creds_web_saas_app",
+        "audit_preflight_web_saas_app",
+        "audit_plan_web_saas_app",
+        "audit_blocked_web_saas_app",
+        "audit_smoke_web_saas_app",
+        "audit_rollback_web_saas_app"
+      ],
+      "status": "blocked_pending_approval",
+      "blockedByDefault": true,
+      "liveExecutionAllowed": false,
+      "liveExecutionPerformed": false,
+      "nonExecutionProof": "No explicit user approval and no user-supplied credentials were provided in this pass.",
+      "createdAt": "2026-04-26T20:37:58.756Z"
+    },
+    {
+      "deploymentId": "deployment_attempt_marketing_website",
+      "projectId": "project_marketing_website",
+      "domainId": "marketing_website",
+      "providerId": "github_release_handoff",
+      "deploymentTarget": "github_pages_or_static_release_handoff",
+      "credentialBindingId": "credential_binding_marketing_website",
+      "approvalRequestId": "approval_req_marketing_website",
+      "preDeployChecklistId": "predeploy_checklist_marketing_website",
+      "executionPlanId": "execution_plan_marketing_website",
+      "postDeploySmokeTestPlanId": "smoke_plan_marketing_website",
+      "rollbackPlanId": "rollback_plan_marketing_website",
+      "auditEventIds": [
+        "audit_req_marketing_website",
+        "audit_approval_marketing_website",
+        "audit_creds_marketing_website",
+        "audit_preflight_marketing_website",
+        "audit_plan_marketing_website",
+        "audit_blocked_marketing_website",
+        "audit_smoke_marketing_website",
+        "audit_rollback_marketing_website"
+      ],
+      "status": "blocked_pending_approval",
+      "blockedByDefault": true,
+      "liveExecutionAllowed": false,
+      "liveExecutionPerformed": false,
+      "nonExecutionProof": "No explicit user approval and no user-supplied credentials were provided in this pass.",
+      "createdAt": "2026-04-26T20:37:58.756Z"
+    },
+    {
+      "deploymentId": "deployment_attempt_api_service",
+      "projectId": "project_api_service",
+      "domainId": "api_service",
+      "providerId": "supabase_backend_deploy",
+      "deploymentTarget": "supabase_plus_runtime_backend",
+      "credentialBindingId": "credential_binding_api_service",
+      "approvalRequestId": "approval_req_api_service",
+      "preDeployChecklistId": "predeploy_checklist_api_service",
+      "executionPlanId": "execution_plan_api_service",
+      "postDeploySmokeTestPlanId": "smoke_plan_api_service",
+      "rollbackPlanId": "rollback_plan_api_service",
+      "auditEventIds": [
+        "audit_req_api_service",
+        "audit_approval_api_service",
+        "audit_creds_api_service",
+        "audit_preflight_api_service",
+        "audit_plan_api_service",
+        "audit_blocked_api_service",
+        "audit_smoke_api_service",
+        "audit_rollback_api_service"
+      ],
+      "status": "blocked_pending_approval",
+      "blockedByDefault": true,
+      "liveExecutionAllowed": false,
+      "liveExecutionPerformed": false,
+      "nonExecutionProof": "No explicit user approval and no user-supplied credentials were provided in this pass.",
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "deploymentId": "deployment_attempt_mobile_app",
+      "projectId": "project_mobile_app",
+      "domainId": "mobile_app",
+      "providerId": "mobile_store_handoff",
+      "deploymentTarget": "ios_android_app_stores",
+      "credentialBindingId": "credential_binding_mobile_app",
+      "approvalRequestId": "approval_req_mobile_app",
+      "preDeployChecklistId": "predeploy_checklist_mobile_app",
+      "executionPlanId": "execution_plan_mobile_app",
+      "postDeploySmokeTestPlanId": "smoke_plan_mobile_app",
+      "rollbackPlanId": "rollback_plan_mobile_app",
+      "auditEventIds": [
+        "audit_req_mobile_app",
+        "audit_approval_mobile_app",
+        "audit_creds_mobile_app",
+        "audit_preflight_mobile_app",
+        "audit_plan_mobile_app",
+        "audit_blocked_mobile_app",
+        "audit_smoke_mobile_app",
+        "audit_rollback_mobile_app"
+      ],
+      "status": "blocked_pending_approval",
+      "blockedByDefault": true,
+      "liveExecutionAllowed": false,
+      "liveExecutionPerformed": false,
+      "nonExecutionProof": "No explicit user approval and no user-supplied credentials were provided in this pass.",
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "deploymentId": "deployment_attempt_bot",
+      "projectId": "project_bot",
+      "domainId": "bot",
+      "providerId": "bot_platform_deploy",
+      "deploymentTarget": "worker_runtime",
+      "credentialBindingId": "credential_binding_bot",
+      "approvalRequestId": "approval_req_bot",
+      "preDeployChecklistId": "predeploy_checklist_bot",
+      "executionPlanId": "execution_plan_bot",
+      "postDeploySmokeTestPlanId": "smoke_plan_bot",
+      "rollbackPlanId": "rollback_plan_bot",
+      "auditEventIds": [
+        "audit_req_bot",
+        "audit_approval_bot",
+        "audit_creds_bot",
+        "audit_preflight_bot",
+        "audit_plan_bot",
+        "audit_blocked_bot",
+        "audit_smoke_bot",
+        "audit_rollback_bot"
+      ],
+      "status": "blocked_pending_approval",
+      "blockedByDefault": true,
+      "liveExecutionAllowed": false,
+      "liveExecutionPerformed": false,
+      "nonExecutionProof": "No explicit user approval and no user-supplied credentials were provided in this pass.",
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "deploymentId": "deployment_attempt_ai_agent",
+      "projectId": "project_ai_agent",
+      "domainId": "ai_agent",
+      "providerId": "ai_agent_runtime_deploy",
+      "deploymentTarget": "agent_runtime",
+      "credentialBindingId": "credential_binding_ai_agent",
+      "approvalRequestId": "approval_req_ai_agent",
+      "preDeployChecklistId": "predeploy_checklist_ai_agent",
+      "executionPlanId": "execution_plan_ai_agent",
+      "postDeploySmokeTestPlanId": "smoke_plan_ai_agent",
+      "rollbackPlanId": "rollback_plan_ai_agent",
+      "auditEventIds": [
+        "audit_req_ai_agent",
+        "audit_approval_ai_agent",
+        "audit_creds_ai_agent",
+        "audit_preflight_ai_agent",
+        "audit_plan_ai_agent",
+        "audit_blocked_ai_agent",
+        "audit_smoke_ai_agent",
+        "audit_rollback_ai_agent"
+      ],
+      "status": "blocked_pending_approval",
+      "blockedByDefault": true,
+      "liveExecutionAllowed": false,
+      "liveExecutionPerformed": false,
+      "nonExecutionProof": "No explicit user approval and no user-supplied credentials were provided in this pass.",
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "deploymentId": "deployment_attempt_game",
+      "projectId": "project_game",
+      "domainId": "game",
+      "providerId": "game_distribution_handoff",
+      "deploymentTarget": "distribution_platform",
+      "credentialBindingId": "credential_binding_game",
+      "approvalRequestId": "approval_req_game",
+      "preDeployChecklistId": "predeploy_checklist_game",
+      "executionPlanId": "execution_plan_game",
+      "postDeploySmokeTestPlanId": "smoke_plan_game",
+      "rollbackPlanId": "rollback_plan_game",
+      "auditEventIds": [
+        "audit_req_game",
+        "audit_approval_game",
+        "audit_creds_game",
+        "audit_preflight_game",
+        "audit_plan_game",
+        "audit_blocked_game",
+        "audit_smoke_game",
+        "audit_rollback_game"
+      ],
+      "status": "blocked_pending_approval",
+      "blockedByDefault": true,
+      "liveExecutionAllowed": false,
+      "liveExecutionPerformed": false,
+      "nonExecutionProof": "No explicit user approval and no user-supplied credentials were provided in this pass.",
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    },
+    {
+      "deploymentId": "deployment_attempt_dirty_repo_completion",
+      "projectId": "project_dirty_repo_completion",
+      "domainId": "dirty_repo_completion",
+      "providerId": "dirty_repo_completion_handoff",
+      "deploymentTarget": "repo_hosting_ci_handoff",
+      "credentialBindingId": "credential_binding_dirty_repo_completion",
+      "approvalRequestId": "approval_req_dirty_repo_completion",
+      "preDeployChecklistId": "predeploy_checklist_dirty_repo_completion",
+      "executionPlanId": "execution_plan_dirty_repo_completion",
+      "postDeploySmokeTestPlanId": "smoke_plan_dirty_repo_completion",
+      "rollbackPlanId": "rollback_plan_dirty_repo_completion",
+      "auditEventIds": [
+        "audit_req_dirty_repo_completion",
+        "audit_approval_dirty_repo_completion",
+        "audit_creds_dirty_repo_completion",
+        "audit_preflight_dirty_repo_completion",
+        "audit_plan_dirty_repo_completion",
+        "audit_blocked_dirty_repo_completion",
+        "audit_smoke_dirty_repo_completion",
+        "audit_rollback_dirty_repo_completion"
+      ],
+      "status": "blocked_pending_approval",
+      "blockedByDefault": true,
+      "liveExecutionAllowed": false,
+      "liveExecutionPerformed": false,
+      "nonExecutionProof": "No explicit user approval and no user-supplied credentials were provided in this pass.",
+      "createdAt": "2026-04-26T20:37:58.757Z"
+    }
+  ],
+  "caveat": "This artifact proves live deployment execution readiness contracts, approval gates, credential binding rules, provider adapter coverage, smoke-test planning, rollback planning, and audit preparation. It does not prove that any live deployment was executed. Live execution remains blocked by default and requires explicit user approval plus user-supplied credentials."
+}

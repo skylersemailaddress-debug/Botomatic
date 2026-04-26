@@ -1,0 +1,11 @@
+domain=mobile_app
+commandId=install
+kind=install
+startedAt=2026-04-26T20:37:03.039Z
+finishedAt=2026-04-26T20:37:03.697Z
+status=passed
+exitCode=0
+--- stdout ---
+11.9.0
+
+--- stderr ---

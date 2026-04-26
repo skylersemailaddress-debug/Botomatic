@@ -101,10 +101,10 @@ export default function Composer({
         display: "flex",
         flexDirection: "column",
         gap: 8,
-        padding: 10,
-        borderRadius: 16,
+         padding: 12,
+         borderRadius: 16,
         background: "var(--panel-soft)",
-        border: dragging ? "2px dashed var(--accent, #6366f1)" : "1px solid var(--border)",
+         border: dragging ? "2px dashed var(--accent)" : "1px solid var(--border)",
         transition: "border 0.15s",
       }}
       aria-busy={disabled || isUploading}
@@ -146,7 +146,7 @@ export default function Composer({
           onClick={() => fileInputRef.current?.click()}
           disabled={disabled || isUploading}
           title="Attach .txt, .md, .json, .csv, .pdf"
-          style={{ padding: "8px 10px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--bg-elevated)", cursor: "pointer", fontSize: 16, color: "var(--text-muted)" }}
+           style={{ padding: "8px 10px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--bg-elevated)", cursor: "pointer", fontSize: 13, color: "var(--text-muted)", fontWeight: 700 }}
         >
           Upload
         </button>
@@ -172,6 +172,7 @@ export default function Composer({
             minHeight: 40,
             fontFamily: "inherit",
             fontSize: "inherit",
+            boxShadow: "inset 0 1px 2px rgba(20, 40, 60, 0.05)",
           }}
         />
         <button
@@ -181,7 +182,7 @@ export default function Composer({
             void submitComposer();
           }}
           disabled={!canSend || isUploading}
-          style={{ padding: "8px 16px", borderRadius: 10, cursor: canSend && !isUploading ? "pointer" : "not-allowed", opacity: canSend && !isUploading ? 1 : 0.5 }}
+           style={{ padding: "8px 16px", borderRadius: 10, cursor: canSend && !isUploading ? "pointer" : "not-allowed", opacity: canSend && !isUploading ? 1 : 0.5, background: canSend ? "var(--accent)" : "var(--panel-2)", color: canSend ? "#fff" : "var(--text-muted)" }}
         >
           {disabled || isUploading ? "Sending..." : "Send"}
         </button>

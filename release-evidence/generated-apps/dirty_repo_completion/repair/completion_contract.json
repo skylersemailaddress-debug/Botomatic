@@ -1,0 +1,8 @@
+{
+  "detectedProduct": "web_app",
+  "completionPlan": [
+    "stabilize build",
+    "restore workflows",
+    "validate launch gates"
+  ]
+}

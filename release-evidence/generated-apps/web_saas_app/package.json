@@ -1,0 +1,8 @@
+{
+  "name": "web-saas-app",
+  "private": true,
+  "scripts": {
+    "build": "next build",
+    "test": "node tests/readiness.test.ts"
+  }
+}

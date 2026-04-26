@@ -1,0 +1,11 @@
+{
+  "domainId": "dirty_repo_completion",
+  "validators": [
+    "build",
+    "tests",
+    "security",
+    "no-gap-policy"
+  ],
+  "launchReadiness": "passed",
+  "generatedAt": "2026-04-26T20:36:12.672Z"
+}

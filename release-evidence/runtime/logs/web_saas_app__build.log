@@ -1,0 +1,47 @@
+domain=web_saas_app
+commandId=build
+kind=build
+startedAt=2026-04-26T20:36:14.434Z
+finishedAt=2026-04-26T20:36:35.585Z
+status=passed
+exitCode=0
+--- stdout ---
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+  ▲ Next.js 14.2.5
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+
+   We detected TypeScript in your project and created a tsconfig.json file for you.
+   Collecting page data ...
+   Generating static pages (0/6) ...
+   Generating static pages (1/6) 
+   Generating static pages (2/6) 
+   Generating static pages (4/6) 
+ ✓ Generating static pages (6/6)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                              Size     First Load JS
+┌ ○ /                                    146 B          87.1 kB
+├ ○ /_not-found                          870 B          87.9 kB
+├ ƒ /api/workflows/execute               0 B                0 B
+└ ○ /dashboard                           146 B          87.1 kB
++ First Load JS shared by all            87 kB
+  ├ chunks/594-f8c2b09a5fb6b0d7.js       31.5 kB
+  ├ chunks/b6261da7-2e663bd2eae7df17.js  53.6 kB
+  └ other shared chunks (total)          1.84 kB
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+
+--- stderr ---
+--- generatedArtifacts ---
+/workspaces/Botomatic/release-evidence/generated-apps/web_saas_app/.next

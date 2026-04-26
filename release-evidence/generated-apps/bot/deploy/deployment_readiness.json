@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "1.0",
+  "domainId": "bot",
+  "deploymentTarget": "worker_runtime",
+  "deploymentInstructionsPath": "deploy/worker.md",
+  "envManifestPath": ".env.example",
+  "envManifestPresent": true,
+  "requiredEnvVarsPresent": true,
+  "requiredEnvVarsMissing": [],
+  "fakeIntegrationScanPassed": true,
+  "fakeIntegrationScanIssues": [],
+  "secretScanPassed": true,
+  "secretScanIssues": [],
+  "dryRunStatus": {
+    "attempted": true,
+    "command": "npm run -s build",
+    "status": "passed",
+    "reason": "Dry-run command succeeded."
+  },
+  "externalServicesNotExecuted": [
+    {
+      "service": "bot_platform",
+      "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+    },
+    {
+      "service": "webhook_gateway",
+      "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+    },
+    {
+      "service": "queue_service",
+      "reason": "Optional external integration not executed in local proof harness."
+    },
+    {
+      "service": "audit_sink",
+      "reason": "Optional external integration not executed in local proof harness."
+    }
+  ],
+  "externalExecutionJustified": true,
+  "deploymentReadinessStatus": "passed",
+  "launchCaveat": "Live bot deployment requires platform bot token issuance and webhook endpoint registration.",
+  "generatedAt": "2026-04-26T20:37:53.152Z"
+}

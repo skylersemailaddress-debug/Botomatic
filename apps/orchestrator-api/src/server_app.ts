@@ -1,6 +1,8 @@
 import express from "express";
 import multer from "multer";
 import { PDFParse } from "pdf-parse";
+import fs from "fs";
+import path from "path";
 import { compileConversationToMasterTruth } from "../../../packages/master-truth/src/compiler";
 import { generatePlan } from "../../../packages/packet-engine/src/generator";
 import {
@@ -1085,6 +1087,75 @@ function buildPacketList(project: StoredProjectRecord) {
 
 function buildArtifactList(project: StoredProjectRecord) {
   return Object.values(project.gitResults || {}).map((r: any) => ({ operationId: r.operationId, status: r.status, branchName: r.branchName, prUrl: r.prUrl || null, error: r.error || null }));
+}
+
+function loadRuntimeEvidenceJson(fileName: string): any | null {
+  try {
+    const artifactPath = path.join(process.cwd(), "release-evidence", "runtime", fileName);
+    if (!fs.existsSync(artifactPath)) return null;
+    return JSON.parse(fs.readFileSync(artifactPath, "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+function buildProofStatusPayload() {
+  const benchmark = loadRuntimeEvidenceJson("builder_quality_benchmark.json");
+  const greenfield = loadRuntimeEvidenceJson("greenfield_runtime_proof.json");
+  const dirtyRepo = loadRuntimeEvidenceJson("dirty_repo_runtime_proof.json");
+  const selfUpgrade = loadRuntimeEvidenceJson("self_upgrade_runtime_proof.json");
+  const universal = loadRuntimeEvidenceJson("universal_pipeline_runtime_proof.json");
+
+  const files = [benchmark, greenfield, dirtyRepo, selfUpgrade, universal].filter(Boolean);
+  const lastProofRun = files
+    .map((item: any) => String(item?.generatedAt || ""))
+    .filter(Boolean)
+    .sort()
+    .slice(-1)[0] || null;
+
+  return {
+    benchmark: {
+      exists: Boolean(benchmark),
+      averageScoreOutOf10: Number(benchmark?.averageScoreOutOf10 || 0),
+      universalScoreOutOf10: Number(benchmark?.universalScoreOutOf10 || 0),
+      criticalFailures: Number(benchmark?.criticalFailures || 0),
+      caseCount: Number(benchmark?.caseCount || 0),
+      launchablePass: benchmark?.launchablePass === true,
+      universalPass: benchmark?.universalPass === true,
+    },
+    runtimeProof: {
+      greenfield: {
+        exists: Boolean(greenfield),
+        status: String(greenfield?.status || "missing"),
+        generatedOutputReality: greenfield?.generatedOutputEvidence?.generationReality || null,
+      },
+      dirtyRepo: {
+        exists: Boolean(dirtyRepo),
+        status: String(dirtyRepo?.status || "missing"),
+        validatorRan: Array.isArray(dirtyRepo?.validatorsRun) && dirtyRepo.validatorsRun.some((v: any) => v?.name === "validateExistingRepoReadiness"),
+      },
+      selfUpgrade: {
+        exists: Boolean(selfUpgrade),
+        status: String(selfUpgrade?.status || "missing"),
+        validatorWeakeningDetected: Boolean(selfUpgrade?.validatorWeakeningDetected),
+      },
+      universalPipeline: {
+        exists: Boolean(universal),
+        status: String(universal?.status || "missing"),
+        domainCount: Number(universal?.generatedPlanOrBuildGraph?.domainDepthMatrix?.totalDomains || 0),
+        failedDomains: Number(universal?.generatedPlanOrBuildGraph?.domainDepthMatrix?.failedDomains || 0),
+      },
+    },
+    generatedAppReadiness: {
+      generatedOutputEvidencePresent: Boolean(greenfield?.generatedOutputEvidence),
+      artifactManifestPresent: greenfield?.generatedOutputEvidence?.artifactManifestPresent === true,
+      noPlaceholderScanPresent: greenfield?.generatedOutputEvidence?.noPlaceholderScanPresent === true,
+      launchPacketPresent: greenfield?.generatedOutputEvidence?.launchPacketPresent === true,
+      generationReality: greenfield?.generatedOutputEvidence?.generationReality || null,
+      caveat: greenfield?.generatedOutputEvidence?.caveat || null,
+    },
+    lastProofRun,
+  };
 }
 
 async function runGitHubLifecycle(config: RuntimeConfig, project: StoredProjectRecord, packet: any, changedFiles: ChangedFile[]) {
@@ -2480,6 +2551,21 @@ export function buildApp(config: RuntimeConfig) {
       return res.json({ ...buildGate(project), role: auth.role, userId: auth.userId, issuer: auth.issuer || null, actorId: actor.actorId, workerId });
     } catch (error) {
       return handleRouteError(res, config, error, "GET /api/projects/:projectId/ui/gate", actor);
+    }
+  });
+
+  app.get("/api/projects/:projectId/ui/proof-status", requireRole("reviewer", config), async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      return res.json({
+        ...buildProofStatusPayload(),
+        actorId: actor.actorId,
+        workerId,
+      });
+    } catch (error) {
+      return handleRouteError(res, config, error, "GET /api/projects/:projectId/ui/proof-status", actor);
     }
   });
 

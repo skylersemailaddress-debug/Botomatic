@@ -1,0 +1,8 @@
+{
+  "name": "game-project",
+  "private": true,
+  "scripts": {
+    "build": "echo build",
+    "test": "node tests/gameplay.test.js"
+  }
+}

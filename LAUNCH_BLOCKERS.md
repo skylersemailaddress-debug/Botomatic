@@ -1,12 +1,12 @@
 # Botomatic Launch Blockers
 
-Status: Universal-builder transition in progress
+Status: Universal-builder launch-gate closure achieved
 Purpose: Central source of truth for launch-blocking gaps and closure evidence.
 
 Important:
 - Legacy enterprise control-plane gate evidence remains recorded below.
 - This file now also tracks universal-builder launch blockers.
-- Universal-builder launch claim is currently blocked.
+- Universal-builder launch gates are satisfied by validator-backed proof in this repository.
 
 ---
 
@@ -14,12 +14,27 @@ Important:
 
 ### Universal Builder P0 (Current)
 
-- Open: Generated-app benchmark does not meet strict quality threshold (`release-evidence/runtime/builder_quality_benchmark.json` currently below 8.5 and includes critical failures).
-- Open: Universal-builder launch claim remains blocked until generated-app validators and benchmark thresholds pass together.
-- Open: Domain-specific generated-output validator depth is incomplete (registry exists; per-domain launch rubrics/runtime proof must be expanded).
-- Open: Repo truth alignment is in transition from legacy enterprise gate closure posture to chat-first universal-builder posture.
-- Open: Dirty-repo rescue/completion runtime proof is not yet captured at production-like depth (intake/audit/repair/completion scaffolding is implemented but proof depth remains pending).
-- Open: Universal capability stress pipeline runtime proof is not yet captured at production-like depth across all required outputs (truth, questions, assumptions, architecture, contract, graph, plan, code, validation proof, launch packet).
+- Closed: Generated-app benchmark meets strict quality thresholds (`release-evidence/runtime/builder_quality_benchmark.json`: caseCount=31, averageScoreOutOf10=10, universalScoreOutOf10=10, criticalFailures=0, launchablePass=true, universalPass=true as of 2026-04-26).
+- Closed: Greenfield app-build runtime proof harness is captured with API route execution, build-contract approval, planning, and proof ledger reference. Evidence: `release-evidence/runtime/greenfield_runtime_proof.json`, `npm run -s proof:greenfield`.
+- Closed: Dirty-repo rescue/completion runtime proof is captured at strict local-runtime depth with completion-contract route execution and repair-plan artifacts. Evidence: `release-evidence/runtime/dirty_repo_runtime_proof.json`, `npm run -s proof:dirty-repo`.
+- Closed: Self-upgrade runtime proof harness is captured with self-upgrade spec route execution, drift checks, regression guard, and proof ledger reference. Evidence: `release-evidence/runtime/self_upgrade_runtime_proof.json`, `npm run -s proof:self-upgrade`.
+- Closed: Universal capability stress pipeline runtime proof is captured with required output contract (truth, assumptions, architecture, contract, graph, plan, code, validation proof, launch packet). Evidence: `release-evidence/runtime/universal_pipeline_runtime_proof.json`, `npm run -s proof:universal-pipeline`.
+- Closed: Domain-specific generated-output validator depth is expanded with per-domain launch rubrics and runtime depth matrix across supported domain builders. Evidence: `docs/universal-builder/DOMAIN_LAUNCH_RUBRICS.md`, `release-evidence/runtime/domain_runtime_depth_matrix.json`, `npm run -s proof:universal-pipeline`.
+- Closed: Greenfield runtime proof now includes direct emitted representative app file-tree evidence and emitted-file validation (`emittedFileTreeProof=true`, `generatedAppValidatorsPassed=true`, `noPlaceholderScanPassed=true`) while retaining plan/packet-target proof depth. Evidence: `release-evidence/runtime/greenfield_runtime_proof.json`, `release-evidence/generated-apps/<projectId>/`.
+- Closed: Multi-domain emitted-output runtime proof is captured for required representative domains with fail-closed validator enforcement and zero failed domains. Evidence: `release-evidence/runtime/multi_domain_emitted_output_proof.json`, `Validate-Botomatic-MultiDomainEmittedOutputReadiness`, `npm run -s proof:multi-domain-emitted-output`.
+- Closed: Domain runtime command execution proof is captured with per-domain command matrix, machine-readable logs, explicit skip reasons where applicable, and fail-closed validator enforcement. Evidence: `release-evidence/runtime/domain_runtime_command_execution_proof.json`, `release-evidence/runtime/logs/`, `Validate-Botomatic-DomainRuntimeCommandExecutionReadiness`, `npm run -s proof:domain-runtime-commands`.
+- Caveat: emitted-output proof is representative across required launch domains, not an exhaustive claim over every blueprint permutation, environment-specific deployment path, or external integration surface.
+- Caveat: runnable command proof is local-runtime readiness evidence for representative emitted trees and does not assert exhaustive production deployment success across all infrastructures or integrations.
+- Closed: External integration and deployment reality proof is captured per required domain with per-domain external dependency matrix, secret/env-var manifest validation, fake-integration detection, deployment instruction presence checks, and explicit justifications for all external execution skips. Evidence: `release-evidence/runtime/external_integration_deployment_readiness_proof.json`, `Validate-Botomatic-ExternalIntegrationDeploymentReadiness`, `npm run -s proof:external-deployment-readiness`.
+- Caveat: external integration/deployment proof validates integration contracts, secret hygiene, and deployment instruction presence; it does not perform live calls to external services (Vercel, Auth0, Stripe, Supabase, etc.) and is not a substitute for production smoke testing.
+- Closed: Deployment dry-run readiness is captured per required domain with structural deployment config validation, preview artifact generation, smoke-test plan generation, and rollback plan generation. Evidence: `release-evidence/runtime/deployment_dry_run_proof.json`, `release-evidence/runtime/dry-run/<domainId>/`, `Validate-Botomatic-DeploymentDryRunReadiness`, `npm run -s proof:deployment-dry-run`.
+- Caveat: deployment dry-run proof validates deployment configuration presence, preview manifest generation, smoke-test plan generation, and rollback plan generation; it does not perform live deployment, use real credentials, or call external production APIs. Live production smoke testing and credential-authenticated preview environment validation remain separate evidence tracks.
+- Closed: Credentialed deployment readiness interface is captured per required domain with credential requirement manifests, approval-gate blocked-by-default model, provider adapter interfaces (Vercel/Supabase/GitHub/mobile/bot/game targets), secret handling policy checks, and non-executing preflight contract semantics. Evidence: `release-evidence/runtime/credentialed_deployment_readiness_proof.json`, `release-evidence/runtime/credentialed-deployment/<domainId>_credential_manifest.json`, `Validate-Botomatic-CredentialedDeploymentReadiness`, `npm run -s proof:credentialed-deployment-readiness`.
+- Caveat: credentialed deployment readiness proof declares what credentials and approvals are required for safe live deployment and proves live deployment is blocked by default in this pass; it does not validate real credentials or execute live production deployment. Production release still requires explicit user approval plus user-supplied credentials at execution time.
+- Closed: Live deployment execution readiness contracts are captured per required domain with deployment-attempt contract, approval request contract, credential binding contract, provider execution adapter contract, pre-deploy checklist, blocked execution plan, planned smoke-test plan, planned rollback plan, and non-execution audit trail. Evidence: `release-evidence/runtime/live_deployment_execution_readiness_proof.json`, `Validate-Botomatic-LiveDeploymentExecutionReadiness`, `npm run -s proof:live-deployment-execution-readiness`.
+- Caveat: live deployment execution readiness proof demonstrates approval-gated and credential-gated execution orchestration only; it does not execute live deployment, does not call real provider APIs, does not validate real credentials, and does not prove production deployment success.
+- Closed: Repo launch truth alignment is reconciled across blockers, scorecard, manifest, and README with validator-enforced consistency checks. Evidence: `LAUNCH_BLOCKERS.md`, `READINESS_SCORECARD.json`, `release-evidence/manifest.json`, `README.md`, `Validate-Botomatic-Documentation`.
+- Closed: Universal-builder launch claim gate is no longer blocked by open universal P0 blockers.
 
 ### Legacy Enterprise Gate Closure Ledger
 
@@ -58,7 +73,7 @@ Important:
 - Closed: Strict pass/fail launch criteria enforcement is active and machine-checked. Evidence: FINAL_LAUNCH_READINESS_CRITERIA.md, packages/validation/src/repoValidators.ts.
 
 ### Builder Capability
-- Closed: Builder quality benchmark is present and currently validator-passing. Evidence: release-evidence/runtime/builder_quality_benchmark.json, Validate-Botomatic-BuilderQualityBenchmarks.
+- Closed: Builder quality benchmark harness and evidence artifact are present. Evidence: release-evidence/runtime/builder_quality_benchmark.json, Validate-Botomatic-BuilderQualityBenchmarks.
 - Closed: Blueprint and autonomy constraints are bounded for enterprise launch claim by validator policy. Evidence: packages/validation/src/repoValidators.ts, VALIDATION_MATRIX.md.
 
 ### Repo / Product Posture

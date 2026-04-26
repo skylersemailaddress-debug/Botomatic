@@ -1,0 +1,8 @@
+{
+  "name": "marketing-website",
+  "private": true,
+  "scripts": {
+    "build": "next build",
+    "test": "node tests/seo.test.ts"
+  }
+}

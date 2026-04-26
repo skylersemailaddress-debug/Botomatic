@@ -3,21 +3,24 @@ import OpsPanel from "@/components/ops/OpsPanel";
 export default function MainSplitLayout({ left, right }: any) {
   return (
     <div
+      className="split-layout"
       style={{
-        display: "flex",
         gap: 16,
         padding: 20,
-        height: "calc(100vh - 56px)",
+        minHeight: "calc(100vh - 160px)",
       }}
     >
       <div
         style={{
-          flex: 1,
           borderRadius: 18,
           background: "var(--panel)",
           border: "1px solid var(--border)",
           overflow: "hidden",
           display: "flex",
+          minHeight: "70vh",
+          boxShadow: "var(--shadow)",
+          position: "sticky",
+          top: 16,
         }}
       >
         {left}
@@ -25,12 +28,12 @@ export default function MainSplitLayout({ left, right }: any) {
 
       <div
         style={{
-          width: 420,
           display: "flex",
           flexDirection: "column",
           gap: 12,
           overflowY: "auto",
           paddingRight: 4,
+          maxHeight: "calc(100vh - 190px)",
         }}
       >
         {right}

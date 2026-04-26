@@ -1,0 +1,9 @@
+domain=ai_agent
+commandId=deploy_validation
+kind=deploy_validation
+startedAt=2026-04-26T20:37:13.337Z
+finishedAt=2026-04-26T20:37:13.640Z
+status=passed
+exitCode=0
+--- stdout ---
+--- stderr ---

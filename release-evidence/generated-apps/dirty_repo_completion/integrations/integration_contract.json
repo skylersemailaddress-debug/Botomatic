@@ -1,0 +1,62 @@
+{
+  "schemaVersion": "1.0",
+  "domainId": "dirty_repo_completion",
+  "integrationContractId": "integration_contract_dirty_repo_completion",
+  "deploymentTarget": "existing_repo_hosting",
+  "requiredServices": [
+    "git_hosting",
+    "ci_runner"
+  ],
+  "optionalServices": [
+    "artifact_registry",
+    "deployment_platform"
+  ],
+  "requiredEnvVars": [],
+  "optionalEnvVars": [
+    "CI_TOKEN",
+    "DEPLOYMENT_TOKEN"
+  ],
+  "requiredSecrets": [
+    "git_hosting_token"
+  ],
+  "optionalSecrets": [
+    "ci_runner_token",
+    "artifact_registry_token"
+  ],
+  "services": [
+    {
+      "service": "git_hosting",
+      "required": true,
+      "executed": false,
+      "executionMode": "dry_run",
+      "result": "skipped",
+      "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+    },
+    {
+      "service": "ci_runner",
+      "required": true,
+      "executed": false,
+      "executionMode": "dry_run",
+      "result": "skipped",
+      "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+    },
+    {
+      "service": "artifact_registry",
+      "required": false,
+      "executed": false,
+      "executionMode": "not_executed",
+      "result": "skipped",
+      "reason": "Optional external integration not executed in local proof harness."
+    },
+    {
+      "service": "deployment_platform",
+      "required": false,
+      "executed": false,
+      "executionMode": "not_executed",
+      "result": "skipped",
+      "reason": "Optional external integration not executed in local proof harness."
+    }
+  ],
+  "launchCaveat": "Live completion rollout requires repository hosting credentials and CI/deployment pipeline permissions.",
+  "generatedAt": "2026-04-26T20:37:56.291Z"
+}

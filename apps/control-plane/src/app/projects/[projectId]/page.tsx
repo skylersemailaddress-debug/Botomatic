@@ -14,6 +14,10 @@ import RecommendationPanel from "@/components/overview/RecommendationPanel";
 import BuildContractPanel from "@/components/overview/BuildContractPanel";
 import GeneratedAppReadinessPanel from "@/components/overview/GeneratedAppReadinessPanel";
 import LaunchBlockersPanel from "@/components/overview/LaunchBlockersPanel";
+import ProofValidationPanel from "@/components/overview/ProofValidationPanel";
+import RepoRescuePanel from "@/components/overview/RepoRescuePanel";
+import SelfUpgradePanel from "@/components/overview/SelfUpgradePanel";
+import LaunchReadinessPanel from "@/components/overview/LaunchReadinessPanel";
 
 export default async function ProjectPage({ params }: { params: { projectId: string } }) {
   const projectId = params.projectId;
@@ -37,6 +41,10 @@ export default async function ProjectPage({ params }: { params: { projectId: str
             <BuildContractPanel projectId={projectId} />
             <GeneratedAppReadinessPanel projectId={projectId} />
             <LaunchBlockersPanel projectId={projectId} />
+            <ProofValidationPanel projectId={projectId} />
+            <RepoRescuePanel projectId={projectId} />
+            <SelfUpgradePanel projectId={projectId} />
+            <LaunchReadinessPanel projectId={projectId} />
           </>
         )}
       />

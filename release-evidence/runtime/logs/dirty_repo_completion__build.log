@@ -1,0 +1,9 @@
+domain=dirty_repo_completion
+commandId=build
+kind=build
+startedAt=2026-04-26T20:37:16.285Z
+finishedAt=2026-04-26T20:37:16.587Z
+status=passed
+exitCode=0
+--- stdout ---
+--- stderr ---

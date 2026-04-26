@@ -66,8 +66,15 @@ Botomatic is governed by a locked enterprise launch contract in this repository:
 ## Current launch status
 
 - Enterprise control-plane gate program: previously closed by proof in this repo's historical gate model.
-- Universal-builder launch claim: NOT READY.
-- The universal-builder benchmark currently fails strict thresholds, so Botomatic does not claim commercially launch-ready universal output yet.
+- Universal-builder launch gates satisfied: benchmark, runtime proof harnesses, and validator checks pass with strict thresholds and proof-content enforcement.
+- Strict benchmark claim basis: 31 cases, averageScoreOutOf10=10, universalScoreOutOf10=10, criticalFailures=0, launchablePass=true, universalPass=true.
+- Generated-output evidence posture: greenfield plus required multi-domain runtime harnesses prove direct emitted representative app file trees, emitted-file validation, and no-placeholder scans across `web_saas_app`, `marketing_website`, `api_service`, `mobile_app`, `bot`, `ai_agent`, `game`, and `dirty_repo_completion`.
+- Runnable-output evidence posture: required domain command matrix now executes or truthfully classifies install/build/test/lint-typecheck/deploy-validation commands with machine-readable logs and per-domain runnable readiness status. Evidence: `release-evidence/runtime/domain_runtime_command_execution_proof.json`, `release-evidence/runtime/logs/`, `Validate-Botomatic-DomainRuntimeCommandExecutionReadiness`.
+- Caveat: this is representative multi-domain emitted-file proof and should not be generalized as exhaustive universal full-production emission for every blueprint permutation, integration path, or deployment environment without additional emitted runtime evidence.
+- Caveat: runnable-output proof demonstrates local command execution readiness for representative emitted domain trees; it is not an exhaustive claim of production deployment success across all infrastructure, integrations, or environment-specific release paths.
+- Live deployment execution readiness posture: execution-layer deployment contracts, approval requests, credential bindings, provider adapters, pre-deploy checklists, blocked execution plans, smoke-test plans, rollback plans, and audit event contracts are proof-backed across required domains.
+- Caveat: live deployment remains blocked by default in this repository proof pass; no live provider deployment was executed, no real provider APIs were called, and no real secrets were used. Actual live deployment requires explicit user approval and user-supplied credentials at execution time.
+- Universal-builder launch posture remains evidence-bound: claims are valid only while `npm run -s validate:all` and proof commands remain passing on current repository truth.
 
 ## Principles
 

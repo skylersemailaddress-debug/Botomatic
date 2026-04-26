@@ -1,6 +1,6 @@
 # Botomatic Validation Matrix
 
-Status: Universal-builder transition in progress
+Status: Universal-builder launch-gate closure achieved
 Purpose: Map each launch category to required validators.
 
 ---
@@ -21,7 +21,7 @@ Purpose: Map each launch category to required validators.
 | Documentation | Validate-Botomatic-Documentation | IMPLEMENTED (PASS) |
 | Gate 4 Auth/Governance | Validate-Botomatic-AuthGovernanceGate4 | IMPLEMENTED (PASS) |
 | UI Control-Plane Integration | Validate-Botomatic-UIControlPlaneIntegration | IMPLEMENTED (PASS) |
-| Builder Quality Benchmarks | Validate-Botomatic-BuilderQualityBenchmarks | IMPLEMENTED (PASS) |
+| Builder Quality Benchmarks | Validate-Botomatic-BuilderQualityBenchmarks | IMPLEMENTED (PASS: caseCount=31, average=10/10, universal=10/10, criticalFailures=0 as of 2026-04-26) |
 | Behavioral Runtime Coverage | Validate-Botomatic-BehavioralRuntimeCoverage | IMPLEMENTED (PASS) |
 | Observability Runtime Evidence | Validate-Botomatic-ObservabilityRuntimeEvidence | IMPLEMENTED (PASS) |
 | Production Proof Profile | Validate-Botomatic-ProductionProofProfile | IMPLEMENTED (PASS) |
@@ -29,12 +29,46 @@ Purpose: Map each launch category to required validators.
 | File Ingestion | Validate-Botomatic-FileIngestion | IMPLEMENTED (PASS) |
 | Chat-First Operator Routing | Validate-Botomatic-ChatFirstOperatorRouting | IMPLEMENTED (PASS) |
 | Universal Builder Readiness | Validate-Botomatic-UniversalBuilderReadiness | IMPLEMENTED (PASS) |
+| Multi-Domain Emitted Output Readiness | Validate-Botomatic-MultiDomainEmittedOutputReadiness | IMPLEMENTED (PASS) |
+| Domain Runtime Command Execution Readiness | Validate-Botomatic-DomainRuntimeCommandExecutionReadiness | IMPLEMENTED (PASS) |
+| External Integration and Deployment Readiness | Validate-Botomatic-ExternalIntegrationDeploymentReadiness | IMPLEMENTED (PASS) |
+| Deployment Dry-Run Readiness | Validate-Botomatic-DeploymentDryRunReadiness | IMPLEMENTED (PASS) |
+| Credentialed Deployment Readiness | Validate-Botomatic-CredentialedDeploymentReadiness | IMPLEMENTED (PASS) |
+| Live Deployment Execution Readiness | Validate-Botomatic-LiveDeploymentExecutionReadiness | IMPLEMENTED (PASS) |
 | Self-Upgrading Factory Readiness | Validate-Botomatic-SelfUpgradingFactoryReadiness | IMPLEMENTED (PASS) |
 | Dirty Repo Rescue Readiness | Validate-Botomatic-DirtyRepoRescueReadiness | IMPLEMENTED (PASS) |
 | Universal Capability Stress Readiness | Validate-Botomatic-UniversalCapabilityStressReadiness | IMPLEMENTED (PASS) |
 
 Current constraint:
-- `Validate-Botomatic-BuilderQualityBenchmarks` is expected to fail until benchmark quality reaches strict thresholds (>= 8.5 launchable, >= 9.2 universal, zero critical failures).
+- `Validate-Botomatic-BuilderQualityBenchmarks` must remain passing at strict thresholds (caseCount>=31, >= 8.5 launchable, >= 9.2 universal when universal pass claimed, zero critical failures, zero per-case strictness violations).
+
+Runtime-proof harness requirements (content-inspected validators):
+- `Validate-Botomatic-UniversalBuilderReadiness` requires `release-evidence/runtime/greenfield_runtime_proof.json` and checks route execution + validator results.
+- `Validate-Botomatic-DirtyRepoRescueReadiness` requires `release-evidence/runtime/dirty_repo_runtime_proof.json` and checks detection evidence, completion-contract depth, repair-plan shape, and validator-run presence.
+- `Validate-Botomatic-SelfUpgradingFactoryReadiness` requires `release-evidence/runtime/self_upgrade_runtime_proof.json` and checks drift/regression proof content, non-weakening signal, and branch-safe/non-mutating proof output.
+- `Validate-Botomatic-UniversalCapabilityStressReadiness` requires `release-evidence/runtime/universal_pipeline_runtime_proof.json` and checks extracted truth/missing-questions/assumptions/architecture/build artifacts plus domain-matrix depth fields.
+- `Validate-Botomatic-UniversalBuilderReadiness` and `Validate-Botomatic-UniversalCapabilityStressReadiness` require per-domain runtime depth evidence in `release-evidence/runtime/domain_runtime_depth_matrix.json` with zero failed domains.
+- `Validate-Botomatic-MultiDomainEmittedOutputReadiness` requires `release-evidence/runtime/multi_domain_emitted_output_proof.json` and enforces fail-closed emitted-tree readiness across required representative launch domains with zero failed domains.
+- `Validate-Botomatic-DomainRuntimeCommandExecutionReadiness` requires `release-evidence/runtime/domain_runtime_command_execution_proof.json` plus non-empty command logs under `release-evidence/runtime/logs/` and fails closed on missing declarations, malformed records, failed required commands, or undocumented skips.
+- `Validate-Botomatic-ExternalIntegrationDeploymentReadiness` requires `release-evidence/runtime/external_integration_deployment_readiness_proof.json` and fails closed on missing domain rows, invalid integration contract schema, undocumented external service skips, failed secret scans, or missing deployment readiness status.
+- `Validate-Botomatic-DeploymentDryRunReadiness` requires `release-evidence/runtime/deployment_dry_run_proof.json` and fails closed on missing domain rows, missing or empty dryRunMethod, missing smoke-test plan, missing rollback plan, missing live-deployment-skip reason, or any domain with dryRunStatus=failed.
+- `Validate-Botomatic-CredentialedDeploymentReadiness` requires `release-evidence/runtime/credentialed_deployment_readiness_proof.json` and fails closed on missing required domain credential rows, absent approval-gate block-by-default assertions, missing provider adapter preflight contract, missing dry-run/live separation model, missing secret-policy pass signals, or any domain not marked ready_for_approved_credentialed_deployment.
+- `Validate-Botomatic-LiveDeploymentExecutionReadiness` requires `release-evidence/runtime/live_deployment_execution_readiness_proof.json` and fails closed on any live-execution claim, missing required domain/provider coverage, missing approval/credential/checklist/execution/smoke/rollback/audit contracts, pre-approved approvals in proof mode, secret-like credential binding content, or missing caveat.
+- `Validate-Botomatic-Documentation` enforces launch-truth alignment across `LAUNCH_BLOCKERS.md`, `READINESS_SCORECARD.json`, `release-evidence/manifest.json`, and `README.md`.
+- `Validate-Botomatic-UIReadiness` and `Validate-Botomatic-UIControlPlaneIntegration` now enforce enterprise surface wiring, no-placeholder UI signals, loading/error/empty states, and real API service bindings.
+
+Proof harness commands:
+- `npm run -s proof:greenfield`
+- `npm run -s proof:dirty-repo`
+- `npm run -s proof:self-upgrade`
+- `npm run -s proof:universal-pipeline`
+- `npm run -s proof:multi-domain-emitted-output`
+- `npm run -s proof:domain-runtime-commands`
+- `npm run -s proof:external-deployment-readiness`
+- `npm run -s proof:deployment-dry-run`
+- `npm run -s proof:credentialed-deployment-readiness`
+- `npm run -s proof:live-deployment-execution-readiness`
+- `npm run -s proof:all`
 
 ## Runtime Proof Matrix
 

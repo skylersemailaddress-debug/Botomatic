@@ -1,0 +1,11 @@
+{
+  "domainId": "ai_agent",
+  "runtimeEntrypoint": "src/agent.ts",
+  "deploymentInstructionsPath": "deploy/agent-runtime.md",
+  "environmentManifestPath": ".env.example",
+  "emittedFileCount": 13,
+  "noPlaceholderScanPassed": true,
+  "noPlaceholderIssues": [],
+  "readinessStatus": "passed",
+  "generatedAt": "2026-04-26T20:36:12.662Z"
+}

@@ -1,0 +1,11 @@
+domain=game
+commandId=install
+kind=install
+startedAt=2026-04-26T20:37:13.641Z
+finishedAt=2026-04-26T20:37:14.287Z
+status=passed
+exitCode=0
+--- stdout ---
+11.9.0
+
+--- stderr ---

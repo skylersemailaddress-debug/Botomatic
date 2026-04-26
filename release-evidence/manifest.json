@@ -1,6 +1,6 @@
 {
-  "version": "1.2.0",
-  "generatedAt": "2026-04-25T00:05:00Z",
+  "version": "1.3.0",
+  "generatedAt": "2026-04-26T00:10:00Z",
   "gates": {
     "gate2": {
       "status": "closed_by_proof",
@@ -28,8 +28,43 @@
     }
   },
   "proofProfilePath": "release-evidence/proof_profile.json",
+  "universalBuilderEvidence": {
+    "builderQualityBenchmarkPath": "release-evidence/runtime/builder_quality_benchmark.json",
+    "greenfieldProofPath": "release-evidence/runtime/greenfield_runtime_proof.json",
+    "dirtyRepoProofPath": "release-evidence/runtime/dirty_repo_runtime_proof.json",
+    "selfUpgradeProofPath": "release-evidence/runtime/self_upgrade_runtime_proof.json",
+    "universalPipelineProofPath": "release-evidence/runtime/universal_pipeline_runtime_proof.json",
+    "multiDomainEmittedOutputProofPath": "release-evidence/runtime/multi_domain_emitted_output_proof.json",
+    "domainRuntimeCommandExecutionProofPath": "release-evidence/runtime/domain_runtime_command_execution_proof.json",
+    "domainRuntimeCommandLogsPath": "release-evidence/runtime/logs",
+    "domainDepthMatrixPath": "release-evidence/runtime/domain_runtime_depth_matrix.json",
+    "generatedOutputTruth": "multi_domain_representative_emitted_trees_proven",
+    "runnableOutputTruth": "representative_multi_domain_runtime_commands_proven",
+    "directEmittedAppFilesProven": true,
+    "generatedOutputCaveat": "Representative direct emitted-file proof is established for greenfield plus required launch domains; exhaustive full-production emission across every blueprint permutation, integration path, and deployment environment remains a separate evidence track.",
+    "runnableOutputCaveat": "Representative domain runtime command proof demonstrates local execution readiness of emitted trees; it is not exhaustive production deployment proof for every infrastructure and integration path.",
+    "externalIntegrationDeploymentProofPath": "release-evidence/runtime/external_integration_deployment_readiness_proof.json",
+    "externalIntegrationDeploymentTruth": "representative_multi_domain_external_integration_and_deployment_readiness_proven",
+    "externalIntegrationDeploymentCaveat": "External integration/deployment proof validates integration contracts, secret hygiene, per-domain external dependency matrix, and deployment instruction presence without performing live calls to external services; production smoke testing remains a separate evidence track.",
+    "deploymentDryRunProofPath": "release-evidence/runtime/deployment_dry_run_proof.json",
+    "deploymentDryRunArtifactsPath": "release-evidence/runtime/dry-run",
+    "deploymentDryRunTruth": "representative_multi_domain_deployment_dry_run_readiness_proven",
+    "deploymentDryRunCaveat": "Deployment dry-run proof validates deployment configuration presence, preview artifact generation, smoke-test plan generation, and rollback plan generation; it does not perform live deployment, use real credentials, or call external production APIs. Live production smoke testing remains a separate evidence track.",
+    "credentialedDeploymentReadinessProofPath": "release-evidence/runtime/credentialed_deployment_readiness_proof.json",
+    "credentialedDeploymentManifestsPath": "release-evidence/runtime/credentialed-deployment",
+    "credentialedDeploymentReadinessTruth": "representative_multi_domain_approved_credentialed_deployment_readiness_proven",
+    "credentialedDeploymentApprovalGate": "blocked_default",
+    "credentialedDeploymentCaveat": "Credentialed deployment readiness proof declares credential requirements, approval-gate blocked-by-default semantics, provider adapter interfaces, secret handling policies, and non-executing preflight contract behavior; it does not validate real credentials or execute live production deployment.",
+    "liveDeploymentExecutionReadinessProofPath": "release-evidence/runtime/live_deployment_execution_readiness_proof.json",
+    "liveDeploymentExecutionReadinessTruth": "representative_multi_domain_live_deployment_execution_contracts_proven",
+    "liveDeploymentExecutionBlockedByDefault": true,
+    "liveDeploymentExecutionPerformed": false,
+    "liveDeploymentExecutionCaveat": "Live deployment execution readiness proof captures execution-layer contracts, approval and credential guards, provider adapter orchestration, smoke-test planning, rollback planning, and audit preparation without executing live provider deployment or using real secrets."
+  },
   "launchClaim": {
     "enterpriseReady": true,
-    "blockedBy": []
+    "blockedBy": [],
+    "universalBuilderReady": true,
+    "universalBuilderBlockedBy": []
   }
 }

@@ -1,0 +1,11 @@
+domain=api_service
+commandId=install
+kind=install
+startedAt=2026-04-26T20:36:58.784Z
+finishedAt=2026-04-26T20:36:59.254Z
+status=passed
+exitCode=0
+--- stdout ---
+11.9.0
+
+--- stderr ---

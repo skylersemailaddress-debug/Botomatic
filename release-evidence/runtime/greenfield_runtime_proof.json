@@ -1,0 +1,355 @@
+{
+  "generatedAt": "2026-04-26T20:36:06.525Z",
+  "proofGrade": "local_runtime",
+  "pathId": "greenfield_app_build",
+  "inputUsed": {
+    "appName": "Proof Greenfield SaaS",
+    "request": "Build a multi-role SaaS workspace with auth, rbac, dashboard, workflows, integrations, responsive ui, and launch-readiness packaging. Compliance: SOC2 and GDPR."
+  },
+  "routeExercised": [
+    {
+      "method": "POST",
+      "path": "/api/projects/intake",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/projects/proj_1777235766470/spec/analyze",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/projects/proj_1777235766470/spec/status",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/projects/proj_1777235766470/spec/assumptions/accept",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/projects/proj_1777235766470/spec/build-contract",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/projects/proj_1777235766470/spec/approve",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/projects/proj_1777235766470/compile",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/projects/proj_1777235766470/plan",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/projects/proj_1777235766470/status",
+      "status": 200,
+      "ok": true
+    }
+  ],
+  "apiFunctionPathExercised": [
+    "apps/orchestrator-api/src/server_app.ts#POST /api/projects/intake",
+    "apps/orchestrator-api/src/server_app.ts#POST /api/projects/:projectId/spec/build-contract",
+    "apps/orchestrator-api/src/server_app.ts#POST /api/projects/:projectId/spec/approve",
+    "apps/orchestrator-api/src/server_app.ts#POST /api/projects/:projectId/compile",
+    "apps/orchestrator-api/src/server_app.ts#POST /api/projects/:projectId/plan",
+    "packages/spec-engine/src/buildContract.ts#generateBuildContract",
+    "packages/packet-engine/src/generator.ts#generatePlan"
+  ],
+  "contract": {
+    "type": "build_contract",
+    "payload": {
+      "id": "contract_proj_1777235766470_1777235766493",
+      "projectId": "proj_1777235766470",
+      "appSummary": "Proof Greenfield SaaS: Deliver a production-grade application with validated workflows.",
+      "targetUsers": [
+        "admin",
+        "operator",
+        "end_user"
+      ],
+      "businessModel": "subscription",
+      "pages": [
+        "Home",
+        "Dashboard",
+        "Settings",
+        "Admin"
+      ],
+      "roles": [
+        "admin",
+        "reviewer",
+        "operator",
+        "member"
+      ],
+      "permissions": [
+        "read",
+        "write",
+        "approve",
+        "deploy"
+      ],
+      "dataModel": {
+        "entities": [
+          "users",
+          "organizations",
+          "records"
+        ],
+        "relationships": [
+          "organizations has_many users",
+          "users has_many records"
+        ]
+      },
+      "workflows": [
+        "onboarding",
+        "core_task_execution",
+        "approval_and_audit"
+      ],
+      "integrations": [
+        "OIDC",
+        "Email",
+        "Storage",
+        "Analytics"
+      ],
+      "payments": [],
+      "notifications": [
+        "email"
+      ],
+      "adminTools": [
+        "audit_log",
+        "role_admin"
+      ],
+      "authRbac": "oidc; roles=admin, reviewer, operator, member",
+      "deploymentTarget": "vercel",
+      "complianceSecurity": [
+        "rbac_enforced",
+        "audit_events",
+        "token_validation",
+        "compliance_review_required"
+      ],
+      "brandUiDirection": "Trustworthy and execution-focused; Clean control-plane with dense operational clarity",
+      "acceptanceCriteria": [
+        "Core journeys implemented end-to-end",
+        "Role guards enforced",
+        "No placeholder production flows"
+      ],
+      "launchCriteria": [
+        "Build and validation pass",
+        "Security and compliance checks pass",
+        "No critical blockers remain"
+      ],
+      "assumptions": [
+        {
+          "id": "assumption_1777235766482_xqyc2e",
+          "field": "notification provider",
+          "decision": "Email is enabled by default",
+          "reason": "Low-risk baseline for transactional workflows",
+          "importance": 4,
+          "risk": "low",
+          "madeBy": "api_token:botoma",
+          "requiresApproval": false,
+          "approved": true,
+          "canChangeLater": true,
+          "createdAt": "2026-04-26T20:36:06.482Z"
+        },
+        {
+          "id": "assumption_1777235766482_7077y6",
+          "field": "auth/security",
+          "decision": "OIDC with role guards",
+          "reason": "Enterprise-safe default",
+          "importance": 9,
+          "risk": "high",
+          "madeBy": "api_token:botoma",
+          "requiresApproval": true,
+          "approved": true,
+          "canChangeLater": true,
+          "createdAt": "2026-04-26T20:36:06.482Z"
+        }
+      ],
+      "excludedItems": [
+        "prototype-only shortcuts"
+      ],
+      "risks": [],
+      "unresolvedQuestions": [],
+      "readinessScore": 97,
+      "readyToBuild": true,
+      "blockers": [],
+      "createdAt": "2026-04-26T20:36:06.492Z",
+      "updatedAt": "2026-04-26T20:36:06.492Z"
+    }
+  },
+  "generatedPlanOrBuildGraph": {
+    "planPacketCount": 34,
+    "samplePacketGoals": [
+      "Scaffold + Repo Setup",
+      "Auth + App Shell",
+      "Core Data Model",
+      "Core Workflow Pages",
+      "Validation + Preview",
+      "Define product truth and build contract",
+      "Set architecture baseline and workspace setup",
+      "Implement authentication and RBAC enforcement"
+    ],
+    "generatedArtifactManifest": {
+      "generationReality": "direct_emitted_app_tree",
+      "appFileManifest": [
+        "package.json",
+        "app/page.tsx",
+        "app/dashboard/page.tsx",
+        "app/settings/page.tsx",
+        "components/AppShell.tsx",
+        "components/StatusCard.tsx",
+        "app/api/health/route.ts",
+        "app/api/workflows/execute/route.ts",
+        "db/schema.sql",
+        "db/migrations/001_init.sql",
+        "auth/rbacPolicy.ts",
+        "lib/formValidation.ts",
+        "workflows/onboarding.ts",
+        "workflows/approvalFlow.ts",
+        "tests/workflow.test.ts",
+        "deploy/vercel.json",
+        ".env.example",
+        "README.md",
+        "RUNBOOK.md",
+        "launch/launch_packet.json"
+      ],
+      "emittedFileCount": 20,
+      "packetTargetCount": 34,
+      "emittedOutputDir": "/workspaces/Botomatic/release-evidence/generated-apps/proj_1777235766470",
+      "caveat": "Runtime path now emits a representative generated app tree and validates both emitted files and packet-target planning."
+    }
+  },
+  "generatedOutputEvidence": {
+    "artifactManifestPresent": true,
+    "routesPagesPresent": true,
+    "componentsPresent": true,
+    "apiHandlersPresent": true,
+    "schemaMigrationsPresent": true,
+    "authRbacPresent": true,
+    "formsPresent": true,
+    "workflowTargetsPresent": true,
+    "testsPresent": true,
+    "deploymentConfigPresent": true,
+    "environmentManifestPresent": true,
+    "readmeRunbookPresent": true,
+    "launchPacketPresent": true,
+    "noPlaceholderScanPresent": true,
+    "emittedFileTreeProof": true,
+    "planPacketTargetProof": true,
+    "noPlaceholderScanPassed": true,
+    "generatedAppValidatorsPassed": true,
+    "generationReality": "direct_emitted_app_tree",
+    "emittedOutputDir": "/workspaces/Botomatic/release-evidence/generated-apps/proj_1777235766470",
+    "caveat": "Runtime path now emits a representative generated app tree and validates both emitted files and packet-target planning."
+  },
+  "executedSteps": [
+    {
+      "step": "intake_project",
+      "status": "passed",
+      "details": "status=200 projectId=proj_1777235766470"
+    },
+    {
+      "step": "analyze_spec",
+      "status": "passed",
+      "details": "status=200"
+    },
+    {
+      "step": "approve_high_risk_assumptions",
+      "status": "passed",
+      "details": "status=200 approved=1"
+    },
+    {
+      "step": "generate_build_contract",
+      "status": "passed",
+      "details": "status=200 readyToBuild=true"
+    },
+    {
+      "step": "approve_build_contract",
+      "status": "passed",
+      "details": "status=200"
+    },
+    {
+      "step": "compile_master_truth",
+      "status": "passed",
+      "details": "status=200"
+    },
+    {
+      "step": "generate_plan",
+      "status": "passed",
+      "details": "status=200"
+    },
+    {
+      "step": "fetch_project_status",
+      "status": "passed",
+      "details": "status=200 packets=34"
+    }
+  ],
+  "validatorsRun": [
+    {
+      "name": "greenfield_contract_and_plan_integrity",
+      "status": "passed",
+      "details": "readyToBuild=true packetCount=34"
+    },
+    {
+      "name": "generated_app_validator",
+      "status": "passed",
+      "details": "score=10 criticalFailed=false failed="
+    },
+    {
+      "name": "no_placeholder_validator",
+      "status": "passed",
+      "details": "generated app no-placeholder policy evaluated"
+    }
+  ],
+  "producedArtifacts": [
+    "masterTruth",
+    "buildContract",
+    "implementationPlan",
+    "generatedArtifactManifest",
+    "generatedAppFileTree",
+    "launchPacket"
+  ],
+  "proofLedgerReferences": [
+    {
+      "entry": {
+        "scope": "release",
+        "claim": "Greenfield app build route produces approved build contract and executable plan.",
+        "evidence": [
+          "/api/projects/intake",
+          "/api/projects/:projectId/spec/build-contract",
+          "/api/projects/:projectId/spec/approve",
+          "/api/projects/:projectId/compile",
+          "/api/projects/:projectId/plan"
+        ],
+        "validatorSummary": "greenfield_contract_and_plan_integrity:passed, generated_app_validator:passed, no_placeholder_validator:passed",
+        "outcome": "passed",
+        "rollbackPlan": "Revert greenfield planner and contract changes; rerun benchmark and validators.",
+        "id": "proof_1777235766525_a5uakl",
+        "timestamp": "2026-04-26T20:36:06.525Z"
+      },
+      "claimVerification": {
+        "ok": true,
+        "blockers": []
+      }
+    }
+  ],
+  "status": "passed",
+  "remainingBlockers": [],
+  "summary": {
+    "passedSteps": 8,
+    "failedSteps": 0
+  }
+}

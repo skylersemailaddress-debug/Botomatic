@@ -8,6 +8,9 @@ Transition note:
 - This rubric governs the legacy enterprise control-plane launch program.
 - Botomatic is now also pursuing a chat-first universal-builder target with stricter generated-app quality gates.
 - Passing this rubric alone does not authorize universal-builder commercial launch claims.
+- Universal-builder launch-gate truth and closure evidence are governed by `LAUNCH_BLOCKERS.md`, `VALIDATION_MATRIX.md`, `READINESS_SCORECARD.json`, and runtime proof artifacts in `release-evidence/runtime/`.
+- Universal benchmark strictness for launch claim: minimum 31 cases, averageScoreOutOf10>=8.5, universalScoreOutOf10>=9.2 (when universal pass is claimed), criticalFailures=0, and per-case fail-closed checks.
+- Generated-output truth guard: launch docs must distinguish plan/packet-target proof from direct emitted-file proof when runtime harnesses do not yet emit full production app trees.
 
 ---
 

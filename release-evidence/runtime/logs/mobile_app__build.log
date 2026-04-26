@@ -1,0 +1,11 @@
+domain=mobile_app
+commandId=build
+kind=build
+startedAt=2026-04-26T20:37:03.698Z
+finishedAt=2026-04-26T20:37:04.319Z
+status=passed
+exitCode=0
+--- stdout ---
+build
+
+--- stderr ---

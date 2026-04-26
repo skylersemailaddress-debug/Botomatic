@@ -1,0 +1,8 @@
+{
+  "name": "ai-agent",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p .",
+    "test": "node tests/safety.test.js"
+  }
+}

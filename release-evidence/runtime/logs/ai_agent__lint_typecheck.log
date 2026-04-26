@@ -1,0 +1,9 @@
+domain=ai_agent
+commandId=lint_typecheck
+kind=lint_typecheck
+startedAt=2026-04-26T20:37:12.672Z
+finishedAt=2026-04-26T20:37:13.336Z
+status=passed
+exitCode=0
+--- stdout ---
+--- stderr ---

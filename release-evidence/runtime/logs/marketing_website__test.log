@@ -1,0 +1,11 @@
+domain=marketing_website
+commandId=test
+kind=test
+startedAt=2026-04-26T20:36:57.856Z
+finishedAt=2026-04-26T20:36:58.225Z
+status=passed
+exitCode=0
+--- stdout ---
+marketing_website seo test passed
+
+--- stderr ---

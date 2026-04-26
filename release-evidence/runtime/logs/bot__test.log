@@ -1,0 +1,11 @@
+domain=bot
+commandId=test
+kind=test
+startedAt=2026-04-26T20:37:08.478Z
+finishedAt=2026-04-26T20:37:08.975Z
+status=passed
+exitCode=0
+--- stdout ---
+bot permission checks passed
+
+--- stderr ---

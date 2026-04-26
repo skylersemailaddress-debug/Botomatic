@@ -1,0 +1,110 @@
+{
+  "generatedAt": "2026-04-26T20:36:12.673Z",
+  "proofGrade": "local_runtime",
+  "pathId": "multi_domain_emitted_output",
+  "requiredDomains": [
+    "web_saas_app",
+    "marketing_website",
+    "api_service",
+    "mobile_app",
+    "bot",
+    "ai_agent",
+    "game",
+    "dirty_repo_completion"
+  ],
+  "domainsPassed": true,
+  "requiredDomainPresence": true,
+  "domainCount": 8,
+  "failedDomainCount": 0,
+  "domainResults": [
+    {
+      "domainId": "web_saas_app",
+      "outputRoot": "/workspaces/Botomatic/release-evidence/generated-apps/web_saas_app",
+      "emittedFileCount": 13,
+      "nonEmptyFiles": true,
+      "noPlaceholderScanPassed": true,
+      "readinessStatus": "passed",
+      "runtimeEntrypoint": "app/api/workflows/execute/route.ts",
+      "deployInstructionsPath": "deploy/vercel.json",
+      "environmentManifestPath": ".env.example"
+    },
+    {
+      "domainId": "marketing_website",
+      "outputRoot": "/workspaces/Botomatic/release-evidence/generated-apps/marketing_website",
+      "emittedFileCount": 11,
+      "nonEmptyFiles": true,
+      "noPlaceholderScanPassed": true,
+      "readinessStatus": "passed",
+      "runtimeEntrypoint": "app/page.tsx",
+      "deployInstructionsPath": "deploy/static-hosting.md",
+      "environmentManifestPath": ".env.example"
+    },
+    {
+      "domainId": "api_service",
+      "outputRoot": "/workspaces/Botomatic/release-evidence/generated-apps/api_service",
+      "emittedFileCount": 12,
+      "nonEmptyFiles": true,
+      "noPlaceholderScanPassed": true,
+      "readinessStatus": "passed",
+      "runtimeEntrypoint": "src/server.ts",
+      "deployInstructionsPath": "deploy/container.md",
+      "environmentManifestPath": ".env.example"
+    },
+    {
+      "domainId": "mobile_app",
+      "outputRoot": "/workspaces/Botomatic/release-evidence/generated-apps/mobile_app",
+      "emittedFileCount": 10,
+      "nonEmptyFiles": true,
+      "noPlaceholderScanPassed": true,
+      "readinessStatus": "passed",
+      "runtimeEntrypoint": "src/App.tsx",
+      "deployInstructionsPath": "deploy/app-store.md",
+      "environmentManifestPath": "app.config.json"
+    },
+    {
+      "domainId": "bot",
+      "outputRoot": "/workspaces/Botomatic/release-evidence/generated-apps/bot",
+      "emittedFileCount": 11,
+      "nonEmptyFiles": true,
+      "noPlaceholderScanPassed": true,
+      "readinessStatus": "passed",
+      "runtimeEntrypoint": "src/worker.ts",
+      "deployInstructionsPath": "deploy/worker.md",
+      "environmentManifestPath": ".env.example"
+    },
+    {
+      "domainId": "ai_agent",
+      "outputRoot": "/workspaces/Botomatic/release-evidence/generated-apps/ai_agent",
+      "emittedFileCount": 13,
+      "nonEmptyFiles": true,
+      "noPlaceholderScanPassed": true,
+      "readinessStatus": "passed",
+      "runtimeEntrypoint": "src/agent.ts",
+      "deployInstructionsPath": "deploy/agent-runtime.md",
+      "environmentManifestPath": ".env.example"
+    },
+    {
+      "domainId": "game",
+      "outputRoot": "/workspaces/Botomatic/release-evidence/generated-apps/game",
+      "emittedFileCount": 9,
+      "nonEmptyFiles": true,
+      "noPlaceholderScanPassed": true,
+      "readinessStatus": "passed",
+      "runtimeEntrypoint": "src/gameLoop.ts",
+      "deployInstructionsPath": "export/build-notes.md",
+      "environmentManifestPath": null
+    },
+    {
+      "domainId": "dirty_repo_completion",
+      "outputRoot": "/workspaces/Botomatic/release-evidence/generated-apps/dirty_repo_completion",
+      "emittedFileCount": 8,
+      "nonEmptyFiles": true,
+      "noPlaceholderScanPassed": true,
+      "readinessStatus": "passed",
+      "runtimeEntrypoint": "repair/completion_contract.json",
+      "deployInstructionsPath": "launch/launch_instructions.md",
+      "environmentManifestPath": null
+    }
+  ],
+  "status": "passed"
+}

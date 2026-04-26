@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "1.0",
+  "domainId": "mobile_app",
+  "deploymentTarget": "ios_android_app_stores",
+  "deploymentInstructionsPath": "deploy/app-store.md",
+  "envManifestPath": "app.config.json",
+  "envManifestPresent": true,
+  "requiredEnvVarsPresent": true,
+  "requiredEnvVarsMissing": [],
+  "fakeIntegrationScanPassed": true,
+  "fakeIntegrationScanIssues": [],
+  "secretScanPassed": true,
+  "secretScanIssues": [],
+  "dryRunStatus": {
+    "attempted": false,
+    "command": null,
+    "status": "skipped",
+    "reason": "No safe local dry-run command is defined for this domain target."
+  },
+  "externalServicesNotExecuted": [
+    {
+      "service": "app_store_connect",
+      "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+    },
+    {
+      "service": "play_console",
+      "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+    },
+    {
+      "service": "mobile_api_backend",
+      "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+    },
+    {
+      "service": "crash_reporting",
+      "reason": "Optional external integration not executed in local proof harness."
+    },
+    {
+      "service": "push_notifications",
+      "reason": "Optional external integration not executed in local proof harness."
+    }
+  ],
+  "externalExecutionJustified": true,
+  "deploymentReadinessStatus": "passed",
+  "launchCaveat": "Live store deployment requires developer account login, code signing material, and release approvals.",
+  "generatedAt": "2026-04-26T20:37:51.253Z"
+}

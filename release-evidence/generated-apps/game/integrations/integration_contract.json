@@ -1,0 +1,62 @@
+{
+  "schemaVersion": "1.0",
+  "domainId": "game",
+  "integrationContractId": "integration_contract_game",
+  "deploymentTarget": "game_distribution_platform",
+  "requiredServices": [
+    "distribution_platform"
+  ],
+  "optionalServices": [
+    "steam",
+    "roblox",
+    "console_stores"
+  ],
+  "requiredEnvVars": [],
+  "optionalEnvVars": [
+    "STEAM_APP_ID",
+    "ROBLOX_PLACE_ID"
+  ],
+  "requiredSecrets": [
+    "distribution_signing_key"
+  ],
+  "optionalSecrets": [
+    "STEAM_PUBLISH_TOKEN",
+    "ROBLOX_API_KEY"
+  ],
+  "services": [
+    {
+      "service": "distribution_platform",
+      "required": true,
+      "executed": false,
+      "executionMode": "dry_run",
+      "result": "skipped",
+      "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+    },
+    {
+      "service": "steam",
+      "required": false,
+      "executed": false,
+      "executionMode": "not_executed",
+      "result": "skipped",
+      "reason": "Optional external integration not executed in local proof harness."
+    },
+    {
+      "service": "roblox",
+      "required": false,
+      "executed": false,
+      "executionMode": "not_executed",
+      "result": "skipped",
+      "reason": "Optional external integration not executed in local proof harness."
+    },
+    {
+      "service": "console_stores",
+      "required": false,
+      "executed": false,
+      "executionMode": "not_executed",
+      "result": "skipped",
+      "reason": "Optional external integration not executed in local proof harness."
+    }
+  ],
+  "launchCaveat": "Live game deployment requires platform-specific publisher accounts, signing credentials, and compliance submission.",
+  "generatedAt": "2026-04-26T20:37:55.722Z"
+}
