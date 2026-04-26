@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Panel from "@/components/ui/Panel";
 import StatusBadge from "@/components/ui/StatusBadge";
+import ErrorCallout from "@/components/ui/ErrorCallout";
 import { createSelfUpgradeSpec, getSelfUpgradeStatus } from "@/services/selfUpgrade";
 
 export default function SelfUpgradePanel({ projectId }: { projectId: string }) {
@@ -30,8 +31,8 @@ export default function SelfUpgradePanel({ projectId }: { projectId: string }) {
   const driftDetected = Boolean(status?.drift?.driftDetected);
 
   return (
-    <Panel title="Self-Upgrade Surface">
-      {error ? <div className="state-callout warning">{error}</div> : null}
+    <Panel title="Self-Upgrade Surface" subtitle="Governed system evolution with non-regression checks">
+      {error ? <ErrorCallout title="Self-upgrade" detail={error} /> : null}
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
         <StatusBadge status={driftDetected ? "blocked" : "verified"} />
         <StatusBadge status={status?.regression?.ok ? "ready" : "needs attention"} />
@@ -66,6 +67,10 @@ export default function SelfUpgradePanel({ projectId }: { projectId: string }) {
         >
           {busy ? "Running..." : "Generate Self-Upgrade Spec"}
         </button>
+      </div>
+
+      <div className="state-callout warning" style={{ marginTop: 10 }}>
+        Self-upgrade proposals remain validator-gated and must preserve launch proof strictness.
       </div>
     </Panel>
   );

@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Panel from "@/components/ui/Panel";
 import StatusBadge from "@/components/ui/StatusBadge";
+import EmptyState from "@/components/ui/EmptyState";
+import ErrorCallout from "@/components/ui/ErrorCallout";
 import { getRepoRescueStatus, runRepoCompletionContract } from "@/services/repoRescue";
 
 export default function RepoRescuePanel({ projectId }: { projectId: string }) {
@@ -28,8 +30,8 @@ export default function RepoRescuePanel({ projectId }: { projectId: string }) {
   }, [projectId]);
 
   return (
-    <Panel title="Repo Rescue Surface">
-      {error ? <div className="state-callout warning">{error}</div> : null}
+    <Panel title="Repo Rescue Surface" subtitle="Existing repository hardening and completion path">
+      {error ? <ErrorCallout title="Repo rescue" detail={error} /> : null}
 
       {status ? (
         <>
@@ -50,7 +52,7 @@ export default function RepoRescuePanel({ projectId }: { projectId: string }) {
           ) : null}
         </>
       ) : (
-        <div className="empty-state">No repo rescue status yet.</div>
+        <EmptyState title="No repo rescue status" detail="Run rescue contract generation to evaluate missing launch-critical surfaces." />
       )}
 
       <div style={{ marginTop: 10 }}>
@@ -75,6 +77,10 @@ export default function RepoRescuePanel({ projectId }: { projectId: string }) {
         >
           {busy ? "Running..." : "Re-run Rescue Contract"}
         </button>
+      </div>
+
+      <div className="state-callout warning" style={{ marginTop: 10 }}>
+        Representative proof surface. Live deployment blocked by default until credentialed approval is explicit.
       </div>
     </Panel>
   );

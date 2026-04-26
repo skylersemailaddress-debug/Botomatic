@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import StatusBadge from "@/components/ui/StatusBadge";
+import MetricCard from "@/components/ui/MetricCard";
+import LaunchGateBanner from "@/components/ui/LaunchGateBanner";
 import { getProjectOverview } from "@/services/overview";
 import { getProjectGate } from "@/services/gate";
 import { getProofStatus } from "@/services/proof";
@@ -50,15 +52,17 @@ export default function ProjectIntelligenceHeader({ projectId, environment }: He
   const currentPhase = overview?.latestRun?.currentStage || overview?.latestRun?.status || "idle";
   const validatorStatus = proof?.benchmark?.launchablePass ? "verified" : "needs attention";
   const proofRun = proof?.lastProofRun ? new Date(proof.lastProofRun).toLocaleString() : "Not captured";
+  const launchReady = gate?.launchStatus === "ready" && proof?.benchmark?.launchablePass && proof?.benchmark?.universalPass;
+  const noLiveExecution = proof?.generatedAppReadiness?.caveat ? "No live deployment executed" : "No live deployment executed";
 
   return (
-    <div style={{ padding: 18, borderBottom: "1px solid var(--border)", background: "var(--panel-strong)" }}>
+    <header style={{ padding: 20, borderBottom: "1px solid var(--border)", background: "var(--surface)" }}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "flex-start", flexWrap: "wrap" }}>
         <div>
           <div style={{ fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
             Botomatic Control Plane
           </div>
-          <div style={{ fontSize: 24, fontWeight: 800, marginTop: 3 }}>{projectId}</div>
+          <h1 style={{ fontSize: "var(--font-size-title)", fontWeight: "var(--font-weight-heavy)", margin: "4px 0 0" }}>{projectId}</h1>
           <div style={{ marginTop: 6, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
             <StatusBadge status={currentPhase} />
             <StatusBadge status={gate?.launchStatus || "pending"} />
@@ -75,31 +79,20 @@ export default function ProjectIntelligenceHeader({ projectId, environment }: He
       </div>
 
       <div className="metric-grid" style={{ marginTop: 14 }}>
-        <div className="metric-card">
-          <div className="metric-label">Current Phase</div>
-          <div className="metric-value">{currentPhase}</div>
-        </div>
-        <div className="metric-card">
-          <div className="metric-label">Readiness Score</div>
-          <div className="metric-value">{readinessScore}</div>
-        </div>
-        <div className="metric-card">
-          <div className="metric-label">Validator Status</div>
-          <div className="metric-value">{validatorStatus}</div>
-        </div>
-        <div className="metric-card">
-          <div className="metric-label">Launch Gate</div>
-          <div className="metric-value">{gate?.launchStatus || "pending"}</div>
-        </div>
-        <div className="metric-card">
-          <div className="metric-label">Benchmark</div>
-          <div className="metric-value">{proof?.benchmark?.averageScoreOutOf10 ?? "n/a"}</div>
-        </div>
-        <div className="metric-card">
-          <div className="metric-label">Universal Score</div>
-          <div className="metric-value">{proof?.benchmark?.universalScoreOutOf10 ?? "n/a"}</div>
-        </div>
+        <MetricCard label="Current Phase" value={currentPhase} />
+        <MetricCard label="Readiness Score" value={readinessScore} tone={launchReady ? "success" : "warning"} />
+        <MetricCard label="Validator Status" value={validatorStatus} tone={proof?.benchmark?.launchablePass ? "success" : "warning"} />
+        <MetricCard label="Launch Gate" value={gate?.launchStatus || "pending"} tone={launchReady ? "success" : "warning"} />
+        <MetricCard label="Benchmark" value={`${proof?.benchmark?.averageScoreOutOf10 ?? "n/a"}/10`} />
+        <MetricCard label="Universal Score" value={`${proof?.benchmark?.universalScoreOutOf10 ?? "n/a"}/10`} />
       </div>
-    </div>
+
+      <div style={{ marginTop: 14 }}>
+        <LaunchGateBanner
+          launchReady={Boolean(launchReady)}
+          caveat={`${noLiveExecution}. No real provider APIs called. No real secrets used. Representative, not exhaustive.`}
+        />
+      </div>
+    </header>
   );
 }

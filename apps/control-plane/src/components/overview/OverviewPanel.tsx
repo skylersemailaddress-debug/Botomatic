@@ -4,6 +4,10 @@ import { useEffect, useState } from "react";
 import { getProjectOverview } from "@/services/overview";
 import Panel from "@/components/ui/Panel";
 import StatusBadge from "@/components/ui/StatusBadge";
+import MetricCard from "@/components/ui/MetricCard";
+import LoadingSkeleton from "@/components/ui/LoadingSkeleton";
+import ErrorCallout from "@/components/ui/ErrorCallout";
+import ReadinessTimeline from "@/components/ui/ReadinessTimeline";
 
 export default function OverviewPanel({ projectId }: { projectId: string }) {
   const [data, setData] = useState<any>(null);
@@ -40,7 +44,7 @@ export default function OverviewPanel({ projectId }: { projectId: string }) {
   if (error) {
     return (
       <Panel title="Project Overview">
-        <div className="state-callout error"><strong>Overview error:</strong> {error}</div>
+        <ErrorCallout title="Overview error" detail={error} />
       </Panel>
     );
   }
@@ -48,38 +52,37 @@ export default function OverviewPanel({ projectId }: { projectId: string }) {
   if (!data) {
     return (
       <Panel title="Project Overview" subtitle="Loading">
-        <div className="skeleton" />
+        <LoadingSkeleton rows={3} />
       </Panel>
     );
   }
 
   return (
-    <Panel title="Project Overview" subtitle="Intelligence snapshot">
+    <Panel title="Project Overview" subtitle="Intelligence summary">
       <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
         <StatusBadge status={data.latestRun.status} />
         <StatusBadge status={data.readiness.status} />
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8 }}>
-        <div className="metric-card">
-          <div className="metric-label">Packets</div>
-          <div className="metric-value">{data.summary.packetCount}</div>
-        </div>
-        <div className="metric-card">
-          <div className="metric-label">Completed</div>
-          <div className="metric-value">{data.summary.completedPackets}</div>
-        </div>
-        <div className="metric-card">
-          <div className="metric-label">Failed</div>
-          <div className="metric-value">{data.summary.failedPackets}</div>
-        </div>
-        <div className="metric-card">
-          <div className="metric-label">Artifact Changes</div>
-          <div className="metric-value">{data.latestArtifact.changedFiles}</div>
-        </div>
+
+      <div className="surface-grid-2">
+        <MetricCard label="Packet count" value={data.summary.packetCount} />
+        <MetricCard label="Completed packets" value={data.summary.completedPackets} tone="success" />
+        <MetricCard label="Failed packets" value={data.summary.failedPackets} tone={data.summary.failedPackets > 0 ? "danger" : "default"} />
+        <MetricCard label="Artifact changes" value={data.latestArtifact.changedFiles} />
       </div>
 
       <div style={{ marginTop: 10, fontSize: 12, color: "var(--text-muted)" }}>
         {data.activity?.[0]?.label || "No recent activity yet."}
+      </div>
+
+      <div style={{ marginTop: 10 }}>
+        <ReadinessTimeline
+          steps={[
+            { label: "Spec and contract readiness", status: data.readiness?.status === "ready" ? "passed" : "pending" },
+            { label: "Execution and packet health", status: data.summary?.failedPackets > 0 ? "blocked" : "passed" },
+            { label: "Validator-backed evidence", status: data.readiness?.status === "ready" ? "passed" : "pending" },
+          ]}
+        />
       </div>
 
       {data.blockers?.length > 0 ? (
@@ -88,7 +91,7 @@ export default function OverviewPanel({ projectId }: { projectId: string }) {
         </div>
       ) : (
         <div className="state-callout success" style={{ marginTop: 10 }}>
-          No blocking issue reported in overview.
+          Launch gates satisfied under current validator-backed evidence.
         </div>
       )}
     </Panel>

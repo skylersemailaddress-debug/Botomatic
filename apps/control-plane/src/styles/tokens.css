@@ -1,38 +1,57 @@
 :root {
-  --bg: #eef3f7;
-  --bg-elevated: #ffffff;
-  --bg-muted: #e7edf4;
-  --panel: #ffffff;
-  --panel-strong: #f9fcff;
-  --panel-soft: #f3f7fb;
-  --panel-2: #f1f6fc;
-  --border: #d5e1ee;
-  --border-strong: #b8cde0;
-  --text: #0f1b2d;
-  --text-muted: #42566f;
-  --text-subtle: #62778f;
-  --accent: #0066cc;
-  --accent-soft: rgba(0, 102, 204, 0.1);
-  --verified: #17854b;
-  --needs-attention: #a26a00;
-  --blocked: #bb2d2d;
-  --active: #005bb5;
-  --pending: #7f5af0;
-  --success: #17854b;
-  --warning: #a26a00;
-  --danger: #bb2d2d;
+  --bg: #f4f7fb;
+  --surface: #ffffff;
+  --surface-muted: #f8fbff;
+  --surface-elevated: #ffffff;
+  --surface-strong: #eef4fb;
+
+  --border: #d8e2ee;
+  --border-strong: #c4d3e4;
+  --muted: #6d7f94;
+
+  --text: #0f2238;
+  --text-muted: #4d627b;
+  --text-subtle: #6d7f94;
+  --text-inverse: #ffffff;
+
+  --accent: #0b67c2;
+  --accent-soft: #e8f2ff;
+  --info: #1f6fb9;
+  --active: #0e5ca8;
+  --pending: #8d6700;
+  --blocked: #b73737;
+  --success: #147a4b;
+  --warning: #9c6a00;
+  --danger: #b73737;
+
+  --radius-xs: 8px;
   --radius-sm: 12px;
-  --radius-md: 18px;
-  --radius-lg: 24px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
   --space-4: 16px;
   --space-5: 20px;
   --space-6: 24px;
+  --space-7: 28px;
   --space-8: 32px;
   --space-10: 40px;
-  --shadow-sm: 0 8px 18px rgba(21, 42, 66, 0.08);
-  --shadow: 0 16px 32px rgba(21, 42, 66, 0.12);
-  --shadow-glow: 0 0 0 1px rgba(0, 102, 204, 0.08), 0 16px 32px rgba(21, 42, 66, 0.12);
+
+  --font-size-caption: 12px;
+  --font-size-body: 14px;
+  --font-size-section: 17px;
+  --font-size-title: 28px;
+  --font-size-metric: 24px;
+
+  --font-weight-regular: 450;
+  --font-weight-medium: 560;
+  --font-weight-strong: 680;
+  --font-weight-heavy: 760;
+
+  --shadow-sm: 0 8px 20px rgba(18, 42, 66, 0.08);
+  --shadow-md: 0 16px 34px rgba(18, 42, 66, 0.11);
+  --shadow-lg: 0 24px 48px rgba(18, 42, 66, 0.14);
+  --focus-ring: 0 0 0 3px rgba(11, 103, 194, 0.2);
 }

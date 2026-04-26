@@ -1,19 +1,23 @@
 import { compileProject, planProject, executeNext } from "@/services/actions";
+import { useState } from "react";
 
 export default function QuickActionRow({ projectId }: { projectId: string }) {
+  const [error, setError] = useState<string | null>(null);
+
   async function run(fn: () => Promise<unknown>) {
     try {
+      setError(null);
       await fn();
       location.reload();
     } catch {
-      alert("Action failed.");
+      setError("Advanced action failed. Review audit timeline for details.");
     }
   }
 
   return (
-    <details style={{ border: "1px solid var(--border)", borderRadius: 10, padding: "6px 10px", background: "var(--panel-soft)" }}>
+    <details className="quick-actions">
       <summary style={{ cursor: "pointer", fontSize: 12, color: "var(--text-muted)" }}>Advanced</summary>
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
+      <div className="quick-actions-buttons">
         {[
           { label: "Compile", action: () => compileProject(projectId) },
           { label: "Plan", action: () => planProject(projectId) },
@@ -34,6 +38,7 @@ export default function QuickActionRow({ projectId }: { projectId: string }) {
           </button>
         ))}
       </div>
+      {error ? <div className="state-callout warning" style={{ marginTop: 8 }}>{error}</div> : null}
     </details>
   );
 }

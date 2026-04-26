@@ -2,6 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { getProjectArtifacts } from "@/services/packets";
+import Panel from "@/components/ui/Panel";
+import StatusBadge from "@/components/ui/StatusBadge";
+import EvidenceLink from "@/components/ui/EvidenceLink";
+import EmptyState from "@/components/ui/EmptyState";
 
 export default function ArtifactPanel({ projectId }: { projectId: string }) {
   const [artifacts, setArtifacts] = useState<any[]>([]);
@@ -17,16 +21,18 @@ export default function ArtifactPanel({ projectId }: { projectId: string }) {
   }, [projectId]);
 
   return (
-    <div style={{ padding: 16 }}>
-      <strong>Artifacts</strong>
+    <Panel title="Artifact Evidence" subtitle="Build and execution evidence links">
+      {artifacts.length === 0 ? <EmptyState title="No artifacts available" detail="Artifact evidence appears after packet execution completes." /> : null}
       {artifacts.map((a) => (
-        <div key={a.operationId} style={{ border: "1px solid var(--border)", padding: 8, marginTop: 8 }}>
-          <div>{a.operationId}</div>
-          <div>Status: {a.status}</div>
-          {a.prUrl && <a href={a.prUrl} target="_blank">PR</a>}
-          {a.error && <div style={{ color: "red" }}>{a.error}</div>}
+        <div key={a.operationId} className="proof-status-card" style={{ marginTop: 8 }}>
+          <div className="proof-status-header">
+            <div className="proof-status-title">{a.operationId}</div>
+            <StatusBadge status={a.status || "pending"} />
+          </div>
+          {a.prUrl ? <EvidenceLink href={a.prUrl} label="Pull request evidence" /> : null}
+          {a.error ? <div className="state-callout error" style={{ marginTop: 8 }}>{a.error}</div> : null}
         </div>
       ))}
-    </div>
+    </Panel>
   );
 }

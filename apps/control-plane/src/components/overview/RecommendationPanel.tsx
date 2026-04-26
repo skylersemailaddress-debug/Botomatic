@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Panel from "@/components/ui/Panel";
 import { getSpecStatus } from "@/services/spec";
+import EmptyState from "@/components/ui/EmptyState";
+import StatusBadge from "@/components/ui/StatusBadge";
 
 export default function RecommendationPanel({ projectId }: { projectId: string }) {
   const [recs, setRecs] = useState<any[]>([]);
@@ -22,11 +24,15 @@ export default function RecommendationPanel({ projectId }: { projectId: string }
   }, [projectId]);
 
   return (
-    <Panel title="Recommendations">
-      {recs.length === 0 ? <div style={{ fontSize: 12 }}>No recommendations yet.</div> : null}
+    <Panel title="Recommendations" subtitle="Product and execution guidance">
+      {recs.length === 0 ? <EmptyState title="No recommendations" detail="No recommendation entries are currently published." /> : null}
       {recs.slice(0, 6).map((r, i) => (
-        <div key={i} style={{ fontSize: 12, marginBottom: 4 }}>
-          {r.area}: {r.recommendation} ({r.status})
+        <div key={i} className="proof-status-card" style={{ marginBottom: 6 }}>
+          <div className="proof-status-header">
+            <div className="proof-status-title">{r.area || "General"}</div>
+            <StatusBadge status={r.status || "pending"} />
+          </div>
+          <div className="proof-status-detail">{r.recommendation || "No recommendation text provided"}</div>
         </div>
       ))}
     </Panel>

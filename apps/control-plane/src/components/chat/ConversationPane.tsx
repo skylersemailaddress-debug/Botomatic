@@ -119,9 +119,9 @@ export default function ConversationPane({ projectId }: { projectId: string }) {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", padding: 18, gap: 12, background: "var(--panel)" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-        <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Project Intelligence Command Spine</div>
+    <section className="chat-surface">
+      <div className="chat-meta">
+        <div className="chat-meta-title">Enterprise Operator Command Spine</div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <StatusBadge status={routeStatus} />
           <StatusBadge status={mode} />
@@ -131,6 +131,6 @@ export default function ConversationPane({ projectId }: { projectId: string }) {
       <MessageList messages={messages} />
       <QuickActionRow projectId={projectId} />
       <Composer value={input} onChange={setInput} onSubmit={handleSubmit} onFileUpload={handleFileUpload} disabled={loading} />
-    </div>
+    </section>
   );
 }

@@ -97,24 +97,15 @@ export default function Composer({
       onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
       onDragLeave={() => setDragging(false)}
       onDrop={handleDrop}
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 8,
-         padding: 12,
-         borderRadius: 16,
-        background: "var(--panel-soft)",
-         border: dragging ? "2px dashed var(--accent)" : "1px solid var(--border)",
-        transition: "border 0.15s",
-      }}
+      className={`composer ${dragging ? "is-dragging" : ""}`}
       aria-busy={disabled || isUploading}
     >
       {pendingFile && (
-        <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, padding: "4px 8px", borderRadius: 8, background: "var(--bg-elevated)", border: "1px solid var(--border)" }}>
+        <div className="composer-file-chip">
           <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             File: {pendingFile.file.name} ({(pendingFile.file.size / 1024).toFixed(0)} KB | {pendingFile.file.type || "unknown"})
           </span>
-          <span style={{ color: pendingFile.status === "error" ? "var(--error, #ef4444)" : pendingFile.status === "done" ? "var(--success, #22c55e)" : "var(--text-muted)" }}>
+          <span style={{ color: pendingFile.status === "error" ? "var(--danger)" : pendingFile.status === "done" ? "var(--success)" : "var(--text-muted)" }}>
             {pendingFile.status === "uploading" ? "Uploading..." : pendingFile.status === "done" ? "Uploaded" : pendingFile.status === "error" ? `Error: ${pendingFile.errorMsg}` : "Ready"}
           </span>
           {pendingFile.status !== "uploading" && (
@@ -129,9 +120,9 @@ export default function Composer({
         </div>
       )}
       {fileError && (
-        <div style={{ fontSize: 12, color: "var(--error, #ef4444)", padding: "2px 8px" }}>{fileError}</div>
+        <div style={{ fontSize: 12, color: "var(--danger)", padding: "2px 8px" }}>{fileError}</div>
       )}
-      <div style={{ display: "flex", gap: 8 }}>
+      <div className="composer-row">
         <input
           ref={fileInputRef}
           type="file"
@@ -146,7 +137,7 @@ export default function Composer({
           onClick={() => fileInputRef.current?.click()}
           disabled={disabled || isUploading}
           title="Attach .txt, .md, .json, .csv, .pdf"
-           style={{ padding: "8px 10px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--bg-elevated)", cursor: "pointer", fontSize: 13, color: "var(--text-muted)", fontWeight: 700 }}
+           style={{ padding: "8px 10px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontSize: 13, color: "var(--text-muted)", fontWeight: 700 }}
         >
           Upload
         </button>
@@ -160,20 +151,7 @@ export default function Composer({
           disabled={disabled || isUploading}
           aria-label="Compose message"
           rows={1}
-          style={{
-            flex: 1,
-            padding: "10px 12px",
-            borderRadius: 10,
-            border: "1px solid var(--border)",
-            background: "var(--bg-elevated)",
-            color: "var(--text)",
-            outline: "none",
-            resize: "vertical",
-            minHeight: 40,
-            fontFamily: "inherit",
-            fontSize: "inherit",
-            boxShadow: "inset 0 1px 2px rgba(20, 40, 60, 0.05)",
-          }}
+          className="composer-textarea"
         />
         <button
           type="button"
@@ -182,10 +160,13 @@ export default function Composer({
             void submitComposer();
           }}
           disabled={!canSend || isUploading}
-           style={{ padding: "8px 16px", borderRadius: 10, cursor: canSend && !isUploading ? "pointer" : "not-allowed", opacity: canSend && !isUploading ? 1 : 0.5, background: canSend ? "var(--accent)" : "var(--panel-2)", color: canSend ? "#fff" : "var(--text-muted)" }}
+           style={{ padding: "8px 16px", borderRadius: 10, cursor: canSend && !isUploading ? "pointer" : "not-allowed", opacity: canSend && !isUploading ? 1 : 0.5, background: canSend ? "var(--accent)" : "var(--surface-strong)", color: canSend ? "#fff" : "var(--text-muted)", borderColor: canSend ? "var(--accent)" : "var(--border)" }}
         >
           {disabled || isUploading ? "Sending..." : "Send"}
         </button>
+      </div>
+      <div className="composer-help">
+        Live deployment blocked by default. Credentialed deployment requires explicit approval.
       </div>
       {dragging && (
         <div style={{ textAlign: "center", fontSize: 12, color: "var(--text-muted)", padding: "4px 0" }}>

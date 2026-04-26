@@ -3,7 +3,7 @@ import ProjectIntelligenceHeader from "./ProjectIntelligenceHeader";
 export default function AppShell({ projectName, environment, runStatus, children }: any) {
   return (
     <div className="app-shell">
-      <div style={{ maxWidth: 1520, margin: "0 auto" }}>
+      <div className="app-shell-inner">
         <ProjectIntelligenceHeader projectId={projectName} environment={environment} />
         <div style={{ fontSize: 0, height: 0 }} aria-hidden>{runStatus}</div>
         {children}
