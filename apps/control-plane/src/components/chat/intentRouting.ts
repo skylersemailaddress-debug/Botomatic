@@ -3,81 +3,60 @@ import {
   hasWord,
   type CanonicalIntentKind,
   type IntentRouterContext,
+  SELF_UPGRADE_FORBIDDEN_OVERRIDE_PHRASES,
+  SELF_UPGRADE_NEGATION_PATTERNS,
   SELF_UPGRADE_EXPLICIT_PHRASES,
+  hasAnyPattern,
 } from "./commandGrammar";
+import { assertSelfUpgradeAllowed } from "./selfUpgradeGuard";
 
 export type CommandIntent = CanonicalIntentKind;
-
-const SELF_UPGRADE_NEGATION_PATTERNS = [
-  /do\s+not\s+(enter|create|generate|start|use|route\s+to)\s+(a\s+)?self[-\s]?upgrade/,
-  /not\s+(a\s+)?(botomatic\s+)?self[-\s]?upgrade/,
-  /do\s+not\s+(modify|patch|upgrade)\s+botomatic/,
-  /without\s+(a\s+)?self[-\s]?upgrade/,
-];
-
-const GENERATED_APP_OVERRIDE_PHRASES = [
-  "uploaded nexus",
-  "nexus v11",
-  "canonical build contract",
-  "generated_app_build",
-  "generated app",
-  "output app",
-  "build contract",
-  "compile project",
-  "mastertruth",
-  "master truth",
-  "milestone graph",
-  "execution plan",
-  "build nexus",
-  "classification must be generated_app_build",
-];
-
-function hasNegatedSelfUpgrade(text: string): boolean {
-  return SELF_UPGRADE_NEGATION_PATTERNS.some((pattern) => pattern.test(text));
-}
-
-function hasGeneratedAppOverride(text: string): boolean {
-  return hasAnyPhrase(text, GENERATED_APP_OVERRIDE_PHRASES);
-}
 
 export function classifyIntent(message: string, context: IntentRouterContext = {}): CommandIntent {
   const text = message.toLowerCase();
 
-  const selfUpgradeNegated = hasNegatedSelfUpgrade(text);
-  const generatedAppOverride = hasGeneratedAppOverride(text);
-  const hasExplicitSelfUpgrade = hasAnyPhrase(text, SELF_UPGRADE_EXPLICIT_PHRASES) && !selfUpgradeNegated && !generatedAppOverride;
+  const selfUpgradeAllowed = assertSelfUpgradeAllowed(text);
+  const hasExplicitSelfUpgrade = hasAnyPhrase(text, SELF_UPGRADE_EXPLICIT_PHRASES);
+  const hasSelfUpgradeForbiddenOverride = hasAnyPhrase(text, SELF_UPGRADE_FORBIDDEN_OVERRIDE_PHRASES);
+  const hasSelfUpgradeNegation = hasAnyPattern(text, SELF_UPGRADE_NEGATION_PATTERNS);
   const hasRepoRescueTerms = /(repair repo|rescue repo|dirty repo|complete repo|repository gaps|repo rescue)/.test(text);
   const hasDeploymentTerms = /(deployment readiness|dry run deploy|preflight deployment|credentialed readiness|prepare deployment|deploy)/.test(text);
   const hasSecretsTerms = /(secret|key|credential|vault|rotate|missing keys|secrets preflight)/.test(text);
   const hasValidationTerms = /(validate|validation|proof|show proof|launch readiness|run validate all)/.test(text);
   const hasBlockerTerms = /(explain blocker|resolve blocker|use safe default|what is blocking|blocked|fix failed milestone)/.test(text);
   const hasGeneratedAppTerms = /(build|continue|resume|go|next|fix|run|make|create|update ui|build nexus|build app|generated app|output app)/.test(text);
+  const hasContractBindingTerms = /(canonical build contract|build contract|compile project|mastertruth|master truth|milestone graph|execution plan)/.test(text);
   const hasIntakeTerms = /(upload|ingest|add source|add github|add cloud link|paste spec|register manifest|manifest|github|cloud link)/.test(text);
-  const hasPlanningTerms = /(generate plan|build contract|approve architecture|approve build contract|milestone graph|execution plan|master ?truth|compile project|plan)/.test(text);
+  const hasPlanningTerms = /(generate plan|build contract|approve architecture|approve build contract|milestone graph|plan)/.test(text);
   const hasStatusTerms = /(status|where are we|summary|what now|next)/.test(text);
 
-  if (hasExplicitSelfUpgrade) return "self_upgrade";
+  if (hasExplicitSelfUpgrade && selfUpgradeAllowed.allowed) return "self_upgrade";
+
+  if (hasSelfUpgradeForbiddenOverride || hasSelfUpgradeNegation || (hasExplicitSelfUpgrade && !selfUpgradeAllowed.allowed)) {
+    if (hasPlanningTerms || hasContractBindingTerms) {
+      return "planning";
+    }
+    return "generated_app_build";
+  }
+
   if (hasRepoRescueTerms) return "repo_rescue";
   if (hasDeploymentTerms) return "deployment_readiness";
   if (hasSecretsTerms) return "secrets_vault";
   if (hasValidationTerms) return "validation_proof";
   if (hasBlockerTerms) return "blocker_resolution";
-
-  if (generatedAppOverride) {
-    return hasPlanningTerms ? "planning" : "generated_app_build";
-  }
+  if (hasContractBindingTerms) return "planning";
+  if (hasGeneratedAppTerms) return "generated_app_build";
 
   if (context.activeGeneratedAppRun && hasWord(text, ["continue", "resume", "next", "go", "run", "fix"])) {
     return "generated_app_build";
   }
 
-  if (context.uploadedSpecExists && hasWord(text, ["build", "plan", "go", "start", "create", "make", "update", "compile", "approve"])) {
-    return hasPlanningTerms ? "planning" : "generated_app_build";
+  if (context.uploadedSpecExists && hasWord(text, ["build", "plan", "go", "start", "create", "make", "update"])) {
+    return "generated_app_build";
   }
 
   if (hasIntakeTerms) return "intake";
   if (hasPlanningTerms) return "planning";
-  if (hasGeneratedAppTerms) return "generated_app_build";
   if (hasStatusTerms) return "status_query";
   return "general_chat";
 }
@@ -97,7 +76,6 @@ export type ParsedCommand =
   | "prepare-deployment"
   | "launch-capsule"
   | "generate-plan"
-  | "bind-build-contract"
   | "pause-run"
   | null;
 
@@ -108,7 +86,7 @@ export function parseCommand(message: string): ParsedCommand {
   if (/(^validate$|validate it|run validation|validate now)/.test(normalized)) return "validate";
   if (/(explain blocker|show blocker)/.test(normalized)) return "explain-blocker";
   if (/(explain state|system state|status summary)/.test(normalized)) return "explain-state";
-  if (/(approve plan|approve contract|approve build contract|approve architecture)/.test(normalized)) return "approve-plan";
+  if (/(approve plan|approve contract)/.test(normalized)) return "approve-plan";
   if (/(show proof|show evidence|show validator)/.test(normalized)) return "show-proof";
   if (/(fix failure|repair failure|fix failed milestone)/.test(normalized)) return "fix-failure";
   if (/(inspect failure|inspect error|inspect failed milestone)/.test(normalized)) return "inspect-failure";
@@ -117,8 +95,7 @@ export function parseCommand(message: string): ParsedCommand {
   if (/(configure keys|missing secrets|show missing secrets|configure missing keys)/.test(normalized)) return "configure-keys";
   if (/(prepare deployment|deployment readiness|preflight deployment)/.test(normalized)) return "prepare-deployment";
   if (/(launch capsule|generate launch capsule|review launch package)/.test(normalized)) return "launch-capsule";
-  if (/(force bind|bind uploaded|canonical build contract|master ?truth|compile project from uploaded|set compiled output)/.test(normalized)) return "bind-build-contract";
-  if (/(generate plan|^plan$|create plan|milestone graph|execution plan)/.test(normalized)) return "generate-plan";
+  if (/(generate plan|^plan$|create plan)/.test(normalized)) return "generate-plan";
   if (/(pause run|stop run|halt run)/.test(normalized)) return "pause-run";
 
   return null;

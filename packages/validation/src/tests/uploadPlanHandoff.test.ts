@@ -252,6 +252,17 @@ function testUploadRouteCreatesSourceRecordPerFile() {
   assert(server.includes("sourceId: source.sourceId"), "Upload artifacts/response should carry sourceId");
 }
 
+function testCompileFromUploadedV11BindsMasterTruthAndContract() {
+  const root = process.cwd();
+  const server = fs.readFileSync(path.join(root, "apps/orchestrator-api/src/server_app.ts"), "utf8");
+
+  assert(server.includes("function compileProjectWithIntake"), "compileProjectWithIntake must exist");
+  assert(server.includes("masterTruth: truth"), "compile path must persist project.masterTruth");
+  assert(server.includes("[buildContractRunKey]: approvedContract"), "compile path must persist a build contract");
+  assert(server.includes("approveBuildContract"), "compile path should approve build contract for uploaded-source compile");
+  assert(server.includes("if (hasUploadedIntake && contract?.approvedAt)"), "build blocker check should allow planning after uploaded-source compile");
+}
+
 async function testBatchUploadsAllFilesBeforeCompile() {
   const files = ["spec-a.zip", "design.md", "api.json"];
   const result = await simulateBatchUploadFlow({
@@ -360,6 +371,7 @@ async function testBatchFile413ClassifiedResourceLimitFailure() {
 const tests: Array<{ name: string; fn: () => Promise<void> | void }> = [
   { name: "MF1: multiple files can be selected in composer", fn: testMultiFileSelectionEnabledInComposer },
   { name: "MF1b: each uploaded file creates intake source record", fn: testUploadRouteCreatesSourceRecordPerFile },
+  { name: "MF1c: uploaded-source compile binds masterTruth and build contract", fn: testCompileFromUploadedV11BindsMasterTruthAndContract },
   { name: "MF2: all files upload before compile", fn: testBatchUploadsAllFilesBeforeCompile },
   { name: "MF3: compile runs once after batch complete", fn: testCompileRunsOnceAfterBatchComplete },
   { name: "MF4: plan runs only after compile", fn: testPlanRunsOnlyAfterCompile },

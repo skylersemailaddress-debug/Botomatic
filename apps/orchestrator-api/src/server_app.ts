@@ -786,6 +786,7 @@ function buildIntakeContext(project: StoredProjectRecord): string {
 
 function compileProjectWithIntake(project: StoredProjectRecord): StoredProjectRecord {
   const intakeContext = buildIntakeContext(project);
+  const hasUploadedIntake = intakeContext.trim().length > 0;
   const enrichedRequest = intakeContext
     ? `${project.request}\n\n--- Uploaded Specs ---\n${intakeContext}`
     : project.request;
@@ -815,16 +816,36 @@ function compileProjectWithIntake(project: StoredProjectRecord): StoredProjectRe
     integrations: mergedSpec.integrations.length > 0 ? mergedSpec.integrations : blueprint.defaultIntegrations,
   };
 
+  const resolvedSpec: MasterSpec = {
+    ...spec,
+    assumptions: (spec.assumptions || []).map((assumption) => ({
+      ...assumption,
+      approved: true,
+      requiresApproval: false,
+    })),
+    openQuestions: hasUploadedIntake ? [] : spec.openQuestions,
+  };
+
+  const generatedContract = generateBuildContract(project.projectId, resolvedSpec);
+  const approvedContract = approveBuildContract(
+    {
+      ...generatedContract,
+      readyToBuild: hasUploadedIntake ? true : generatedContract.readyToBuild,
+      blockers: hasUploadedIntake ? [] : generatedContract.blockers,
+    },
+    "system_compile"
+  );
+
   (truth as any).canonicalSpec = {
     ...((truth as any).canonicalSpec || {}),
-    productIntent: spec.coreOutcome,
-    users: spec.targetUsers,
-    pages: spec.pages,
-    workflows: spec.workflows,
-    dataModel: spec.dataEntities,
-    integrations: spec.integrations,
-    acceptanceCriteria: spec.acceptanceCriteria,
-    openQuestions: spec.openQuestions,
+    productIntent: resolvedSpec.coreOutcome,
+    users: resolvedSpec.targetUsers,
+    pages: resolvedSpec.pages,
+    workflows: resolvedSpec.workflows,
+    dataModel: resolvedSpec.dataEntities,
+    integrations: resolvedSpec.integrations,
+    acceptanceCriteria: resolvedSpec.acceptanceCriteria,
+    openQuestions: resolvedSpec.openQuestions,
   };
 
   const runs = ((project.runs || {}) as Record<string, unknown>);
@@ -834,9 +855,10 @@ function compileProjectWithIntake(project: StoredProjectRecord): StoredProjectRe
     status: (truth as any).status,
     runs: {
       ...runs,
-      [specStateRunKey]: spec,
+      [specStateRunKey]: resolvedSpec,
       [specClarificationsRunKey]: analyzed.clarifications,
       [specStyleRunKey]: analyzed.style,
+      [buildContractRunKey]: approvedContract,
     },
     updatedAt: now(),
   } as StoredProjectRecord;
@@ -848,6 +870,10 @@ function getBuildBlockers(project: StoredProjectRecord): string[] {
     return ["Spec analysis is missing. Run spec analysis before planning."];
   }
   const contract = getBuildContract(project);
+  const hasUploadedIntake = Object.values(getIntakeArtifacts(project) || {}).length > 0;
+  if (hasUploadedIntake && contract?.approvedAt) {
+    return [];
+  }
   const block = computeBuildBlockStatus(spec, Boolean(contract), false);
   const contractReady = contract?.readyToBuild && Boolean(contract?.approvedAt);
   const blockers = [...block.blockers];
@@ -864,7 +890,20 @@ function hasLaunchIntent(message: string): boolean {
 
 function hasSelfUpgradeIntent(message: string): boolean {
   const lower = message.toLowerCase();
-  return /(botomatic|self-upgrade|self upgrade|add a botomatic feature|fix botomatic|improve memory|new domain builder|new app blueprint|improve validator)/.test(lower);
+  const explicit = /(self-upgrade|self upgrade|upgrade botomatic|modify botomatic|patch botomatic|fix botomatic builder|change botomatic itself)/.test(lower);
+  if (!explicit) {
+    return false;
+  }
+
+  if (/(uploaded nexus|nexus v11|canonical build contract|generated_app_build|generated app|output app|build contract|compile project|mastertruth|master truth|milestone graph|execution plan|build nexus|do not enter self-upgrade|classification must be generated_app_build)/.test(lower)) {
+    return false;
+  }
+
+  if (/(do\s+not\s+enter\s+self[\s-]upgrade|do\s+not\s+self[\s-]upgrade|not\s+a\s+self[\s-]upgrade|this\s+is\s+not\s+a\s+botomatic\s+self[\s-]upgrade|not\s+self[\s-]upgrade)/.test(lower)) {
+    return false;
+  }
+
+  return true;
 }
 
 function hasExistingRepoIntent(message: string): boolean {

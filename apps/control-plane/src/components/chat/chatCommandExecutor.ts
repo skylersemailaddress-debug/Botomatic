@@ -16,7 +16,7 @@ import {
 } from "@/services/intakeSources";
 import { classifyIntent, extractFirstUrl, isCloudLink, isGithubUrl, maybeLocalManifest, parseCommand, shouldIngestAsPastedSpec } from "./intentRouting";
 import { normalizeIntakeContext, type IntakeContext, type IntakeSourceType } from "./intakePipeline";
-import { evaluateSelfUpgradeGuard } from "./selfUpgradeGuard";
+import { assertSelfUpgradeAllowed, evaluateSelfUpgradeGuard } from "./selfUpgradeGuard";
 import { buildNextBestAction } from "./nextBestAction";
 import { type CommandIntent } from "./intentRouting";
 import { resolveCanonicalCommandInput } from "./canonicalCommands";
@@ -296,13 +296,14 @@ export async function executeCanonicalCommand(params: {
   runtimeContext: RuntimeContext;
 }): Promise<CommandExecutionResult> {
   const { projectId, input, runtimeContext } = params;
+  const canonical = resolveCanonicalCommandInput(input);
   const parsed = parseCommand(input);
-  const intent = classifyIntent(input, {
+  const intent = classifyIntent(canonical.command, {
     activeGeneratedAppRun: runtimeContext.activeGeneratedAppRun,
     uploadedSpecExists: runtimeContext.uploadedSpecExists,
   });
 
-  const commandRun = resolveCanonicalCommandInput(input).command;
+  const commandRun = canonical.command;
 
   if (parsed === "bind-build-contract") {
     await compileProject(projectId);
@@ -327,6 +328,16 @@ export async function executeCanonicalCommand(params: {
   }
 
   if (intent === "self_upgrade") {
+    const allowed = assertSelfUpgradeAllowed(input);
+    if (!allowed.allowed) {
+      return {
+        intent: "generated_app_build",
+        commandRun: "continue current generated app build",
+        route: "execution",
+        details: allowed.reason || "Self-upgrade was not explicitly allowed and has been rerouted.",
+      };
+    }
+
     const guard = evaluateSelfUpgradeGuard(input);
     if (!guard.allowed) {
       return {

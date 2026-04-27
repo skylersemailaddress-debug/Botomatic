@@ -110,9 +110,41 @@ export const SELF_UPGRADE_EXPLICIT_PHRASES = [
   "change botomatic itself",
 ] as const;
 
+export const SELF_UPGRADE_FORBIDDEN_OVERRIDE_PHRASES = [
+  "uploaded nexus",
+  "nexus v11",
+  "canonical build contract",
+  "generated_app_build",
+  "generated app",
+  "output app",
+  "build contract",
+  "compile project",
+  "mastertruth",
+  "master truth",
+  "milestone graph",
+  "execution plan",
+  "build nexus",
+  "do not enter self-upgrade",
+  "classification must be generated_app_build",
+] as const;
+
+export const SELF_UPGRADE_NEGATION_PATTERNS = [
+  /do\s+not\s+enter\s+self[\s-]upgrade/,
+  /do\s+not\s+self[\s-]upgrade/,
+  /not\s+a\s+self[\s-]upgrade/,
+  /not\s+a\s+botomatic\s+self[\s-]upgrade/,
+  /this\s+is\s+not\s+a\s+botomatic\s+self[\s-]upgrade/,
+  /\bnot\s+self[\s-]upgrade\b/,
+] as const;
+
 export function hasAnyPhrase(input: string, phrases: readonly string[]): boolean {
   const text = input.toLowerCase();
   return phrases.some((phrase) => text.includes(phrase));
+}
+
+export function hasAnyPattern(input: string, patterns: readonly RegExp[]): boolean {
+  const text = input.toLowerCase();
+  return patterns.some((pattern) => pattern.test(text));
 }
 
 export function hasWord(input: string, words: string[]): boolean {

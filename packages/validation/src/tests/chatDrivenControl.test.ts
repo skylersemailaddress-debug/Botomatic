@@ -93,6 +93,37 @@ function testSelfUpgradeRoutingCases() {
   assert.notStrictEqual(classifyIntent("continue build", { activeGeneratedAppRun: true }), "self_upgrade");
 }
 
+function testSelfUpgradeNegativeOverrides() {
+  const a = "Force bind uploaded Nexus v11 zip as the canonical build contract. Do not enter self-upgrade. Classification must be generated_app_build.";
+  const aIntent = classifyIntent(a, { uploadedSpecExists: true });
+  assert.notStrictEqual(aIntent, "self_upgrade");
+  assert(aIntent === "generated_app_build" || aIntent === "planning", `A expected generated_app_build/planning, got ${aIntent}`);
+
+  const b = "this is not a Botomatic self-upgrade, build Nexus from uploaded v11";
+  const bIntent = classifyIntent(b, { uploadedSpecExists: true });
+  assert.strictEqual(bIntent, "generated_app_build", `B expected generated_app_build, got ${bIntent}`);
+
+  const c = classifyIntent("upgrade Botomatic validator logic");
+  assert.strictEqual(c, "self_upgrade", `C expected self_upgrade, got ${c}`);
+
+  const d = classifyIntent("modify Botomatic itself");
+  assert.strictEqual(d, "self_upgrade", `D expected self_upgrade, got ${d}`);
+
+  const e = classifyIntent("compile project from uploaded sources and set masterTruth", { uploadedSpecExists: true });
+  assert.notStrictEqual(e, "self_upgrade");
+  assert(e === "planning" || e === "generated_app_build", `E expected planning/generated_app_build, got ${e}`);
+}
+
+function testSelfUpgradeGuardNegation() {
+  const negated = evaluateSelfUpgradeGuard("do not enter self-upgrade; build Nexus from uploaded v11");
+  assert.strictEqual(negated.allowed, false);
+  assert.strictEqual(negated.requiresConfirmation, false);
+
+  const notSelfUpgrade = evaluateSelfUpgradeGuard("this is not a Botomatic self-upgrade, build Nexus from uploaded v11");
+  assert.strictEqual(notSelfUpgrade.allowed, false);
+  assert.strictEqual(notSelfUpgrade.requiresConfirmation, false);
+}
+
 function run() {
   testIntentRoutingSuite();
   testSelfUpgradeGuard();
@@ -102,6 +133,8 @@ function run() {
   testNextBestActionEngine();
   testUnifiedIntakeNormalization();
   testSelfUpgradeRoutingCases();
+  testSelfUpgradeNegativeOverrides();
+  testSelfUpgradeGuardNegation();
   console.log("chatDrivenControl.test.ts passed");
 }
 

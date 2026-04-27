@@ -74,13 +74,26 @@ export function evaluateChatBehaviorExecutionSimulation(
   const classificationCases: Array<{
     input: string;
     context?: { activeGeneratedAppRun?: boolean; uploadedSpecExists?: boolean };
-    expected: Array<"generated_app_build" | "blocker_resolution" | "validation_proof" | "status_query" | "self_upgrade">;
+    expected: Array<"generated_app_build" | "planning" | "blocker_resolution" | "validation_proof" | "status_query" | "self_upgrade">;
     deterministic: boolean;
   }> = [
     { input: "build Nexus from uploaded v11", context: { uploadedSpecExists: true }, expected: ["generated_app_build"], deterministic: true },
+    {
+      input: "Force bind uploaded Nexus v11 zip as the canonical build contract. Do not enter self-upgrade. Classification must be generated_app_build.",
+      context: { uploadedSpecExists: true },
+      expected: ["generated_app_build", "planning"],
+      deterministic: true,
+    },
+    {
+      input: "this is not a Botomatic self-upgrade, build Nexus from uploaded v11",
+      context: { uploadedSpecExists: true },
+      expected: ["generated_app_build"],
+      deterministic: true,
+    },
     { input: "continue", context: { activeGeneratedAppRun: true }, expected: ["generated_app_build"], deterministic: true },
     { input: "fix failed milestone", expected: ["blocker_resolution", "generated_app_build"], deterministic: true },
     { input: "update the UI", context: { uploadedSpecExists: true }, expected: ["generated_app_build"], deterministic: true },
+    { input: "compile project from uploaded sources and set masterTruth", context: { uploadedSpecExists: true }, expected: ["planning", "generated_app_build"], deterministic: true },
     { input: "validate it", expected: ["validation_proof"], deterministic: true },
     { input: "what now", expected: ["status_query", "blocker_resolution"], deterministic: true },
     { input: "upgrade Botomatic validator logic", expected: ["self_upgrade"], deterministic: true },
@@ -111,6 +124,9 @@ export function evaluateChatBehaviorExecutionSimulation(
   // Self-upgrade inference protection.
   const nonSelfUpgradeInputs = [
     "build Nexus from uploaded v11",
+    "Force bind uploaded Nexus v11 zip as the canonical build contract. Do not enter self-upgrade. Classification must be generated_app_build.",
+    "this is not a Botomatic self-upgrade, build Nexus from uploaded v11",
+    "compile project from uploaded sources and set masterTruth",
     "update the UI",
     "continue build",
     "fix generated app",

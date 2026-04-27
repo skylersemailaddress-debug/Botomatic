@@ -9,6 +9,8 @@ function makeDeps(overrides: Partial<ChatBehaviorSimulationDeps>): ChatBehaviorS
   const base = {
     classifyIntentFn: ((input: string, context: { activeGeneratedAppRun?: boolean; uploadedSpecExists?: boolean } = {}) => {
       const text = input.toLowerCase();
+      if (text.includes("do not enter self-upgrade") || text.includes("not a botomatic self-upgrade")) return "generated_app_build" as const;
+      if (text.includes("compile project") || text.includes("mastertruth") || text.includes("master truth") || text.includes("build contract")) return "planning" as const;
       if (text.includes("upgrade botomatic") || text.includes("modify botomatic")) return "self_upgrade" as const;
       if (text.includes("validate")) return "validation_proof" as const;
       if (text.includes("what now")) return "status_query" as const;
@@ -27,6 +29,13 @@ function makeDeps(overrides: Partial<ChatBehaviorSimulationDeps>): ChatBehaviorS
     }) as ChatBehaviorSimulationDeps["resolveCanonicalCommandInputFn"],
     evaluateSelfUpgradeGuardFn: ((input: string) => {
       const text = input.toLowerCase();
+      if (text.includes("do not enter self-upgrade") || text.includes("not a botomatic self-upgrade")) {
+        return {
+          allowed: false,
+          requiresConfirmation: false,
+          reason: "Self-upgrade blocked because the request explicitly negates self-upgrade and has been routed to generated_app_build/planning.",
+        };
+      }
       if (text.includes("upgrade botomatic") || text.includes("modify botomatic")) {
         if (text.includes("confirm self-upgrade")) {
           return { allowed: true, requiresConfirmation: false };
