@@ -70,5 +70,5 @@
     }
   ],
   "launchCaveat": "Live deployment requires container registry credentials and runtime cluster access.",
-  "generatedAt": "2026-04-27T00:09:51.538Z"
+  "generatedAt": "2026-04-27T02:25:30.301Z"
 }

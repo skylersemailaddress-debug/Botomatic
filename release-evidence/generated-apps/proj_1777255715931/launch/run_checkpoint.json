@@ -1,0 +1,20 @@
+{
+  "runId": "proj_1777255715931_launch_run",
+  "currentStep": "local_launch_ready",
+  "completedSteps": [
+    "launch_docs_written",
+    "secrets_declared",
+    "deployment_targets_declared"
+  ],
+  "failedStep": null,
+  "retryCommand": "npm run build && npm run start",
+  "artifactPaths": [
+    "README.md",
+    "RUNBOOK.md",
+    "launch/launch_packet.json"
+  ],
+  "logs": [
+    "Greenfield proof generated representative launch package."
+  ],
+  "resumeInstruction": "Resume by rerunning: npm run build && npm run start"
+}

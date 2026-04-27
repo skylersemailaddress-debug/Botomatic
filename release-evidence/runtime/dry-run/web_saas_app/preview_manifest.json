@@ -1,6 +1,6 @@
 {
   "domainId": "web_saas_app",
-  "generatedAt": "2026-04-27T00:09:57.267Z",
+  "generatedAt": "2026-04-27T02:25:35.303Z",
   "emittedPath": "/workspaces/Botomatic/release-evidence/generated-apps/web_saas_app",
   "emittedFileCount": 111,
   "emittedFiles": [
@@ -75,8 +75,8 @@
     ".next/server/server-reference-manifest.js",
     ".next/server/server-reference-manifest.json",
     ".next/server/webpack-runtime.js",
-    ".next/static/TjLvjrNyknGfwIuDqwF-M/_buildManifest.js",
-    ".next/static/TjLvjrNyknGfwIuDqwF-M/_ssgManifest.js",
+    ".next/static/LxcwAnVwXUNmiE8ZFAey7/_buildManifest.js",
+    ".next/static/LxcwAnVwXUNmiE8ZFAey7/_ssgManifest.js",
     ".next/static/chunks/594-f8c2b09a5fb6b0d7.js",
     ".next/static/chunks/app/_not-found/page-83fa322cfc54ce2b.js",
     ".next/static/chunks/app/dashboard/page-7bbd6ecc1b270b30.js",

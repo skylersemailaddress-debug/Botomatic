@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-27T00:08:16.711Z",
+  "generatedAt": "2026-04-27T02:23:55.289Z",
   "proofGrade": "local_runtime",
   "pathId": "self_upgrade",
   "inputUsed": {
@@ -15,13 +15,13 @@
     },
     {
       "method": "POST",
-      "path": "/api/projects/proj_1777248496063/self-upgrade/spec",
+      "path": "/api/projects/proj_1777256634666/self-upgrade/spec",
       "status": 200,
       "ok": true
     },
     {
       "method": "GET",
-      "path": "/api/projects/proj_1777248496063/self-upgrade/status",
+      "path": "/api/projects/proj_1777256634666/self-upgrade/status",
       "status": 200,
       "ok": true
     }
@@ -36,7 +36,7 @@
   "contract": {
     "type": "self_upgrade_spec",
     "payload": {
-      "id": "su_1777248496096_cpad8k",
+      "id": "su_1777256634682_oc5nqn",
       "request": "Improve validator depth for universal runtime proof and strengthen generated-output quality controls.",
       "objective": "Safely upgrade Botomatic behavior while preserving governance and non-regression guarantees.",
       "affectedModules": [
@@ -53,7 +53,7 @@
         "Re-run regression validators"
       ],
       "requiresHumanApproval": true,
-      "createdAt": "2026-04-27T00:08:16.096Z"
+      "createdAt": "2026-04-27T02:23:54.682Z"
     }
   },
   "generatedPlanOrBuildGraph": {
@@ -78,7 +78,7 @@
     {
       "step": "intake_self_upgrade_project",
       "status": "passed",
-      "details": "status=200 projectId=proj_1777248496063"
+      "details": "status=200 projectId=proj_1777256634666"
     },
     {
       "step": "create_self_upgrade_spec",
@@ -127,8 +127,8 @@
         "validatorSummary": "test:self-upgrade:passed, runRegressionGuard:passed, validator_non_weakening_guard:passed",
         "outcome": "passed",
         "rollbackPlan": "Revert self-upgrade related changes and rerun targeted plus regression validators.",
-        "id": "proof_1777248496711_1e8slw",
-        "timestamp": "2026-04-27T00:08:16.711Z"
+        "id": "proof_1777256635289_ptlk77",
+        "timestamp": "2026-04-27T02:23:55.289Z"
       },
       "claimVerification": {
         "ok": true,

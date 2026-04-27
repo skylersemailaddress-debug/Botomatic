@@ -1,0 +1,16 @@
+{
+  "status": "passed",
+  "generatedAt": "2026-04-27T02:25:38.930Z",
+  "routesPresent": true,
+  "sourceModelPresent": true,
+  "routerCoveragePresent": true,
+  "githubAdapterPresent": true,
+  "cloudAdapterPresent": true,
+  "localManifestValidationPresent": true,
+  "perSourceManifestWritingPresent": true,
+  "intakeHubUiPresent": true,
+  "intakeApiServiceCoveragePresent": true,
+  "eventsPresent": true,
+  "noCodeExecutionDuringIntakeDeclared": true,
+  "caveat": "Remote source registration and safety scans are readiness proof only; live connector fetch with real credentials remains approval and environment dependent."
+}

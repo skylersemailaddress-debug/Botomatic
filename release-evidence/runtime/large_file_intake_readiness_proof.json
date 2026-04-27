@@ -1,0 +1,13 @@
+{
+  "status": "passed",
+  "generatedAt": "2026-04-27T02:25:38.355Z",
+  "configuredMaxUploadMb": 250,
+  "configuredMaxExtractedMb": 2000,
+  "configuredMaxZipFiles": 20000,
+  "testUploadSizeMb": 16.2,
+  "zipTraversalProtection": true,
+  "zipBombProtection": true,
+  "streamingOrDiskBackedUpload": true,
+  "progressEventsReady": true,
+  "uiLimitNotHardcoded": true
+}
