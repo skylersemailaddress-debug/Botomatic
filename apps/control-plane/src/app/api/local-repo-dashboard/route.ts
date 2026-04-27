@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import path from "path";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 type CommandResult = {
   name: string;
@@ -107,18 +108,14 @@ function summarizeCommandOutput(output: string, script: string, passed: boolean)
     const executed = text.match(/Executed:\s*(\d+)/)?.[1];
     const passedCount = text.match(/Passed:\s*(\d+)/)?.[1];
     const failedCount = text.match(/Failed:\s*(\d+)/)?.[1];
-    if (executed || passedCount || failedCount) {
-      return `${passedCount || "0"}/${executed || "?"} validators passed, ${failedCount || "0"} failed`;
-    }
+    if (executed || passedCount || failedCount) return `${passedCount || "0"}/${executed || "?"} validators passed, ${failedCount || "0"} failed`;
     return passed ? "Validator suite passed" : "Validator suite failed";
   }
   if (script === "test:universal") {
     const passedLines = (text.match(/\.test\.ts passed/g) || []).length;
     return passedLines ? `${passedLines} universal test files passed` : passed ? "Universal tests passed" : "Universal tests failed";
   }
-  if (script === "build") {
-    return passed ? "Production UI build passed" : "Production UI build failed";
-  }
+  if (script === "build") return passed ? "Production UI build passed" : "Production UI build failed";
   return passed ? "Command passed" : "Command failed";
 }
 
@@ -130,14 +127,10 @@ function parseLatestCommit(): CommitSummary {
 
 function parseCommitHistory(): CommitSummary[] {
   const raw = runGit(["log", "-5", "--pretty=format:%H%x1f%s%x1f%an%x1f%cI%x1e"]);
-  return raw
-    .split("\x1e")
-    .map((row) => row.trim())
-    .filter(Boolean)
-    .map((row) => {
-      const [sha = "unknown", message = "No commit", author = "unknown", date = ""] = row.split("\x1f");
-      return { sha, message, author, date };
-    });
+  return raw.split("\x1e").map((row) => row.trim()).filter(Boolean).map((row) => {
+    const [sha = "unknown", message = "No commit", author = "unknown", date = ""] = row.split("\x1f");
+    return { sha, message, author, date };
+  });
 }
 
 function parseFileChanges(): FileChange[] {
@@ -158,38 +151,22 @@ function parseFileChanges(): FileChange[] {
 
   if (!status) {
     const latest = runGit(["show", "--numstat", "--format=", "HEAD"]);
-    return latest
-      .split("\n")
-      .map((line) => line.trim())
-      .filter(Boolean)
-      .map((line) => {
-        const parts = line.split(/\s+/);
-        const additions = Number(parts[0]) || 0;
-        const deletions = Number(parts[1]) || 0;
-        const file = parts.slice(2).join(" ");
-        return { path: file, additions, deletions, status: "unknown" as const };
-      })
-      .slice(0, 60);
+    return latest.split("\n").map((line) => line.trim()).filter(Boolean).map((line) => {
+      const parts = line.split(/\s+/);
+      const additions = Number(parts[0]) || 0;
+      const deletions = Number(parts[1]) || 0;
+      const file = parts.slice(2).join(" ");
+      return { path: file, additions, deletions, status: "unknown" as const };
+    }).filter((item) => item.path && item.path !== "runtime/").slice(0, 60);
   }
 
-  return status
-    .split("\n")
-    .map((line) => {
-      const code = line.slice(0, 2);
-      const file = line.slice(3).trim();
-      const stat = stats.get(file) || { additions: 0, deletions: 0 };
-      const itemStatus: FileChange["status"] = code.includes("A") || code.includes("?")
-        ? "added"
-        : code.includes("D")
-        ? "deleted"
-        : code.includes("R")
-        ? "renamed"
-        : code.trim()
-        ? "modified"
-        : "unknown";
-      return { path: file, additions: stat.additions, deletions: stat.deletions, status: itemStatus };
-    })
-    .filter((item) => Boolean(item.path));
+  return status.split("\n").map((line) => {
+    const code = line.slice(0, 2);
+    const file = line.slice(3).trim();
+    const stat = stats.get(file) || { additions: 0, deletions: 0 };
+    const itemStatus: FileChange["status"] = code.includes("A") || code.includes("?") ? "added" : code.includes("D") ? "deleted" : code.includes("R") ? "renamed" : code.trim() ? "modified" : "unknown";
+    return { path: file, additions: stat.additions, deletions: stat.deletions, status: itemStatus };
+  }).filter((item) => Boolean(item.path) && item.path !== "runtime/");
 }
 
 function parseRemoteStatus() {
@@ -199,14 +176,7 @@ function parseRemoteStatus() {
   const remote = runGit(["rev-parse", `origin/${branch}`], "unknown");
   const aheadBehind = runGit(["rev-list", "--left-right", "--count", `${branch}...origin/${branch}`], "0\t0");
   const [ahead = "0", behind = "0"] = aheadBehind.split(/\s+/);
-  return {
-    branch,
-    localSha: local,
-    remoteSha: remote,
-    ahead: Number(ahead) || 0,
-    behind: Number(behind) || 0,
-    upToDate: local === remote,
-  };
+  return { branch, localSha: local, remoteSha: remote, ahead: Number(ahead) || 0, behind: Number(behind) || 0, upToDate: local === remote };
 }
 
 function readCache(): DashboardCache | null {
@@ -228,28 +198,12 @@ function writeCache(gates: CommandResult[], sha: string, lastTrigger: DashboardC
 async function fetchPullRequests() {
   try {
     const response = await fetch("https://api.github.com/repos/skylersemailaddress-debug/Botomatic/pulls?state=open&per_page=8", {
-      headers: {
-        Accept: "application/vnd.github+json",
-        "User-Agent": "Botomatic-local-dashboard",
-      },
+      headers: { Accept: "application/vnd.github+json", "User-Agent": "Botomatic-local-dashboard" },
       cache: "no-store",
     });
     if (!response.ok) return { status: "unavailable", items: [] };
     const prs = await response.json();
-    return {
-      status: "ok",
-      items: Array.isArray(prs)
-        ? prs.map((pr: any) => ({
-            number: pr.number,
-            title: pr.title,
-            state: pr.state,
-            url: pr.html_url,
-            author: pr.user?.login || "unknown",
-            branch: pr.head?.ref || "unknown",
-            updatedAt: pr.updated_at,
-          }))
-        : [],
-    };
+    return { status: "ok", items: Array.isArray(prs) ? prs.map((pr: any) => ({ number: pr.number, title: pr.title, state: pr.state, url: pr.html_url, author: pr.user?.login || "unknown", branch: pr.head?.ref || "unknown", updatedAt: pr.updated_at })) : [] };
   } catch {
     return { status: "unavailable", items: [] };
   }
@@ -259,42 +213,21 @@ async function buildResponse(cache: DashboardCache | null) {
   const remote = parseRemoteStatus();
   const commit = parseLatestCommit();
   const filesChanged = parseFileChanges();
-  const totals = filesChanged.reduce(
-    (acc, file) => ({ additions: acc.additions + file.additions, deletions: acc.deletions + file.deletions }),
-    { additions: 0, deletions: 0 },
-  );
+  const totals = filesChanged.reduce((acc, file) => ({ additions: acc.additions + file.additions, deletions: acc.deletions + file.deletions }), { additions: 0, deletions: 0 });
   const gates = cache?.gates || [];
   const failedGateCount = gates.filter((gate) => gate.status === "failed").length;
   const passedGateCount = gates.filter((gate) => gate.status === "passed").length;
 
   return {
     generatedAt: new Date().toISOString(),
-    repository: {
-      name: "skylersemailaddress-debug/Botomatic",
-      url: "https://github.com/skylersemailaddress-debug/Botomatic",
-      branch: remote.branch,
-      localSha: remote.localSha,
-      remoteSha: remote.remoteSha,
-      upToDate: remote.upToDate,
-      ahead: remote.ahead,
-      behind: remote.behind,
-    },
+    repository: { name: "skylersemailaddress-debug/Botomatic", url: "https://github.com/skylersemailaddress-debug/Botomatic", branch: remote.branch, localSha: remote.localSha, remoteSha: remote.remoteSha, upToDate: remote.upToDate, ahead: remote.ahead, behind: remote.behind },
     latestCommit: commit,
     commitHistory: parseCommitHistory(),
     pullRequests: await fetchPullRequests(),
     filesChanged,
     totals,
     gates,
-    gateSummary: {
-      passed: passedGateCount,
-      failed: failedGateCount,
-      total: gates.length,
-      allPassed: gates.length > 0 && failedGateCount === 0,
-      updatedAt: cache?.updatedAt || null,
-      sha: cache?.sha || null,
-      lastTrigger: cache?.lastTrigger || null,
-      stale: cache?.sha !== remote.localSha,
-    },
+    gateSummary: { passed: passedGateCount, failed: failedGateCount, total: gates.length, allPassed: gates.length > 0 && failedGateCount === 0, updatedAt: cache?.updatedAt || null, sha: cache?.sha || null, lastTrigger: cache?.lastTrigger || null, stale: cache?.sha !== remote.localSha },
   };
 }
 
@@ -303,7 +236,6 @@ export async function GET(request: NextRequest) {
   const autoRunOnChange = request.nextUrl.searchParams.get("autoRunOnChange") === "1";
   const remote = parseRemoteStatus();
   let cache = readCache();
-
   const shouldBootstrap = !cache || cache.gates.length === 0;
   const changedSinceLastGateRun = cache?.sha !== remote.localSha;
 
