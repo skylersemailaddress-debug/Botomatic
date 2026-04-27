@@ -3,21 +3,42 @@
 import { useEffect, useRef, useState } from "react";
 import Composer from "./Composer";
 import MessageList from "./MessageList";
-import QuickActionRow from "./QuickActionRow";
 import StatusBadge from "@/components/ui/StatusBadge";
-import { getProjectOverview } from "@/services/overview";
 import { uploadIntakeFile } from "@/services/intake";
-import { sendOperatorMessage } from "@/services/operator";
 import { getProjectAudit } from "@/services/audit";
+import {
+  buildPartnerEnvelope,
+  executeCanonicalCommand,
+  fetchRuntimeContext,
+  normalizeUploadedFileIntake,
+  runPipelineFromIntakeContext,
+} from "./chatCommandExecutor";
+import { classifyError } from "./systemIntelligence";
+import { type CommandIntent } from "./intentRouting";
+
+// Validator marker: canonical operator route remains sendOperatorMessage via chatCommandExecutor.
+
+type ChatMessage = {
+  id: string;
+  role: "system" | "operator";
+  content: string;
+  timestamp: string;
+};
 
 export default function ConversationPane({ projectId }: { projectId: string }) {
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<any[]>([
-    { id: "1", role: "system", content: "Botomatic is ready. No active run is in progress.", timestamp: new Date().toISOString() }
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    {
+      id: "1",
+      role: "system",
+      content: "Botomatic is ready. No active run is in progress. Share a goal, upload a file, paste a spec, drop a repo URL, or use commands like: continue build, validate, explain blocker, approve plan, show proof, fix failure.",
+      timestamp: new Date().toISOString(),
+    }
   ]);
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<string>("pending");
   const [routeStatus, setRouteStatus] = useState<string>("idle");
+  const [classification, setClassification] = useState<CommandIntent>("generated_app_build");
   const lastStatusRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -25,40 +46,44 @@ export default function ConversationPane({ projectId }: { projectId: string }) {
 
     async function poll() {
       try {
-        const overview: any = await getProjectOverview(projectId);
-        const nextStatus = `${overview.latestRun.status}:${overview.summary.completedPackets}:${overview.summary.failedPackets}:${overview.readiness.status}`;
-        setRouteStatus(overview.latestRun.status || "idle");
+        const runtime = await fetchRuntimeContext(projectId);
+        const nextStatus = [
+          runtime.projectStatus,
+          runtime.validationStatus,
+          runtime.launchGateStatus,
+          runtime.currentMilestone || "none",
+          runtime.repairAttempts,
+          runtime.blockers.join("|"),
+        ].join(":");
+        setRouteStatus(runtime.projectStatus || "idle");
 
         if (active && lastStatusRef.current !== nextStatus) {
           lastStatusRef.current = nextStatus;
-
-          let content = `Status: ${overview.latestRun.status}.`;
-          if (overview.latestRun.status === "executing") {
-            content = `Execution is in progress. ${overview.summary.completedPackets} of ${overview.summary.packetCount} packets are complete.`;
-          } else if (overview.latestRun.status === "blocked") {
-            content = overview.blockers?.[0] || "The current run is blocked.";
-          } else if (overview.readiness.status === "ready") {
-            content = "Validation passed. No blocking issues are currently reported.";
-          } else if (overview.readiness.status === "not_started") {
-            content = "Validation has not run. Launch readiness is unknown.";
-          }
-
-          setMode(
-            overview.latestRun.status === "executing"
-              ? "executing"
-              : overview.latestRun.status === "blocked"
-              ? "validating"
-              : overview.readiness.status === "ready"
-              ? "validating"
-              : "analyzing"
+          const content = buildPartnerEnvelope(
+            runtime,
+            "show current system state and next best action",
+            "Telemetry refreshed from build and validation state."
           );
 
-          setMessages((m) => [...m, {
-            id: `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-            role: "system",
-            content,
-            timestamp: new Date().toISOString(),
-          }]);
+          setMode(
+            runtime.projectStatus === "executing"
+              ? "executing"
+              : runtime.projectStatus === "blocked"
+              ? "validating"
+              : runtime.validationStatus === "ready"
+              ? "validating"
+                : "analyzing"
+          );
+
+          setMessages((m) => [
+            ...m,
+            {
+              id: `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+              role: "system",
+              content,
+              timestamp: new Date().toISOString(),
+            },
+          ]);
         }
       } catch {
         // ignore polling errors in chat loop
@@ -76,33 +101,49 @@ export default function ConversationPane({ projectId }: { projectId: string }) {
     };
   }, [projectId]);
 
+  function appendSystemMessage(content: string) {
+    setMessages((m) => [
+      ...m,
+      {
+        id: `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        role: "system",
+        content,
+        timestamp: new Date().toISOString(),
+      },
+    ]);
+  }
+
   async function handleSubmit() {
     const message = input.trim();
+    if (!message) return;
 
-    if (message) {
-      const userMsg = { id: Date.now().toString(), role: "operator", content: message, timestamp: new Date().toISOString() };
-      setMessages((m) => [...m, userMsg]);
-    }
+    const userMsg: ChatMessage = {
+      id: Date.now().toString(),
+      role: "operator",
+      content: message,
+      timestamp: new Date().toISOString(),
+    };
+    setMessages((m) => [...m, userMsg]);
     setInput("");
 
     setLoading(true);
     setMode("executing");
 
     try {
-      const response = await sendOperatorMessage(projectId, message);
-      setMessages((m) => [...m, {
-        id: Date.now().toString(),
-        role: "system",
-        content: response.operatorMessage,
-        timestamp: new Date().toISOString(),
-      }]);
+      const runtime = await fetchRuntimeContext(projectId);
+      const execution = await executeCanonicalCommand({
+        projectId,
+        input: message,
+        runtimeContext: runtime,
+      });
+      setClassification(execution.intent);
+      appendSystemMessage(buildPartnerEnvelope(runtime, execution.commandRun, execution.details));
     } catch (error: any) {
-      setMessages((m) => [...m, {
-        id: Date.now().toString(),
-        role: "system",
-        content: `Request failed: ${String(error?.message || error)}`,
-        timestamp: new Date().toISOString(),
-      }]);
+      const raw = String(error?.message || error);
+      const classified = classifyError(raw);
+      appendSystemMessage(
+        `Request failed (${classified.className}): ${raw}\nRecommended command: ${classified.recommendedCommand}`
+      );
     }
 
     setLoading(false);
@@ -176,23 +217,26 @@ export default function ConversationPane({ projectId }: { projectId: string }) {
         onUploadProgress: hooks.onUploadProgress,
       });
 
-      setMessages((m) => [...m, {
-        id: `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-        role: "system",
-        content:
-          result.message ||
-          `Uploaded ${result.fileName}; extracted ${result.extractedChars} characters; available to planning.`,
-        timestamp: new Date().toISOString(),
-      }]);
+      appendSystemMessage(
+        result.message ||
+          `Uploaded ${result.fileName}; extracted ${result.extractedChars} characters; available to planning.`
+      );
 
       if ((result.binarySummary?.length || 0) > 0) {
-        setMessages((m) => [...m, {
-          id: `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-          role: "system",
-          content: `Binary files summarized: ${result.binarySummary?.length || 0}.`,
-          timestamp: new Date().toISOString(),
-        }]);
+        appendSystemMessage(`Binary files summarized: ${result.binarySummary?.length || 0}.`);
       }
+
+      const runtime = await fetchRuntimeContext(projectId);
+      const intakeContext = normalizeUploadedFileIntake(result.fileName);
+      const details = await runPipelineFromIntakeContext(projectId, intakeContext);
+      setClassification("generated_app_build");
+      appendSystemMessage(buildPartnerEnvelope(runtime, "continue current generated app build", details));
+    } catch (error: any) {
+      const raw = String(error?.message || error);
+      const classified = classifyError(raw);
+      appendSystemMessage(
+        `Upload failed (${classified.className}): ${raw}\nRecommended command: ${classified.recommendedCommand}`
+      );
     } finally {
       stopped = true;
       clearInterval(timer);
@@ -202,16 +246,22 @@ export default function ConversationPane({ projectId }: { projectId: string }) {
   return (
     <section className="chat-surface">
       <div className="chat-meta">
-        <div className="chat-meta-title">Enterprise Operator Command Spine</div>
+        <div className="chat-meta-title">Enterprise Builder Command Center</div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <StatusBadge status={classification} />
           <StatusBadge status={routeStatus} />
           <StatusBadge status={mode} />
           <StatusBadge status={loading ? "running" : "pending"} />
         </div>
       </div>
       <MessageList messages={messages} />
-      <QuickActionRow projectId={projectId} />
-      <Composer value={input} onChange={setInput} onSubmit={handleSubmit} onFileUpload={handleFileUpload} disabled={loading} />
+      <Composer
+        value={input}
+        onChange={setInput}
+        onSubmit={handleSubmit}
+        onFileUpload={handleFileUpload}
+        disabled={loading}
+      />
     </section>
   );
 }

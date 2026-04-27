@@ -48,7 +48,8 @@
     "test:no-placeholder": "tsx packages/validation/src/generatedApp/tests/noPlaceholder.test.ts",
     "test:large-file-intake": "tsx packages/validation/src/tests/largeFileIntake.test.ts",
     "test:multi-source-intake": "tsx packages/validation/src/tests/multiSourceIntake.test.ts",
-    "test:universal": "npm run -s test:spec-engine && npm run -s test:build-contract && npm run -s test:blueprints && npm run -s test:domain-builders && npm run -s test:proof-engine && npm run -s test:self-upgrade && npm run -s test:no-placeholder && npm run -s test:large-file-intake && npm run -s test:multi-source-intake"
+    "test:chat-driven-control": "tsx packages/validation/src/tests/chatDrivenControl.test.ts",
+    "test:universal": "npm run -s test:spec-engine && npm run -s test:build-contract && npm run -s test:blueprints && npm run -s test:domain-builders && npm run -s test:proof-engine && npm run -s test:self-upgrade && npm run -s test:no-placeholder && npm run -s test:large-file-intake && npm run -s test:multi-source-intake && npm run -s test:chat-driven-control"
   },
   "dependencies": {
     "@trigger.dev/sdk": "^4.4.4"

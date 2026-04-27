@@ -1,12 +1,30 @@
-import ProjectIntelligenceHeader from "./ProjectIntelligenceHeader";
+import ProjectTopBar from "./ProjectTopBar";
 
-export default function AppShell({ projectName, environment, runStatus, children }: any) {
+type AppShellMode = "dashboard" | "page";
+
+type AppShellProps = {
+  projectName: string;
+  environment: string;
+  runStatus?: string;
+  mode?: AppShellMode;
+  children: React.ReactNode;
+};
+
+export default function AppShell({
+  projectName,
+  environment,
+  runStatus,
+  mode = "page",
+  children,
+}: AppShellProps) {
   return (
-    <div className="app-shell">
+    <div className={`app-shell app-shell--${mode}`}>
       <div className="app-shell-inner">
-        <ProjectIntelligenceHeader projectId={projectName} environment={environment} />
-        <div style={{ fontSize: 0, height: 0 }} aria-hidden>{runStatus}</div>
-        {children}
+        <ProjectTopBar projectId={projectName} environment={environment} />
+        <main className={`app-main app-main--${mode}`}>
+          <div style={{ fontSize: 0, height: 0 }} aria-hidden>{runStatus || "idle"}</div>
+          {children}
+        </main>
       </div>
     </div>
   );

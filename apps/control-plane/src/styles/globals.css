@@ -12,6 +12,12 @@ html, body {
   font-family: "IBM Plex Sans", "Avenir Next", "Segoe UI Variable", "Segoe UI", sans-serif;
   font-size: var(--font-size-body);
   line-height: 1.5;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  min-height: 100dvh;
 }
 
 button {
@@ -58,7 +64,7 @@ a:hover {
 }
 
 .app-shell {
-  min-height: 100vh;
+  min-height: 100dvh;
   background:
     radial-gradient(circle at 88% 8%, rgba(11, 103, 194, 0.09), transparent 36%),
     radial-gradient(circle at 12% 2%, rgba(20, 122, 75, 0.08), transparent 34%),
@@ -66,9 +72,256 @@ a:hover {
 }
 
 .app-shell-inner {
-  max-width: 1500px;
+  max-width: 1560px;
   margin: 0 auto;
-  padding-bottom: var(--space-6);
+  height: 100dvh;
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.app-main {
+  min-height: 0;
+}
+
+.app-main--dashboard {
+  flex: 1;
+  overflow: hidden;
+}
+
+.app-main--page {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: var(--space-1);
+}
+
+.topbar-shell {
+  border: 1px solid var(--border);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.92) 0%, rgba(248, 252, 255, 0.92) 100%);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 14px 16px;
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto minmax(180px, 0.5fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.topbar-eyebrow {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  font-weight: var(--font-weight-strong);
+}
+
+.topbar-project-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.topbar-project-name {
+  margin: 2px 0 0;
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.topbar-nav {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.topbar-link {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 999px;
+  padding: 6px 12px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: var(--font-weight-strong);
+}
+
+.topbar-link:hover {
+  text-decoration: none;
+  border-color: var(--accent);
+}
+
+.topbar-link.is-active {
+  color: var(--accent);
+  border-color: rgba(11, 103, 194, 0.4);
+  background: var(--accent-soft);
+}
+
+.topbar-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  justify-self: end;
+  text-align: right;
+}
+
+.topbar-link-plain {
+  display: inline-block;
+  margin-top: 2px;
+}
+
+.cockpit-grid {
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: var(--space-4);
+}
+
+.cockpit-chat-shell {
+  min-height: 0;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+
+.status-rail {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.rail-section {
+  border: 1px solid var(--border);
+  background: var(--surface-muted);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+}
+
+.rail-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  font-weight: var(--font-weight-strong);
+}
+
+.rail-badges {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.rail-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.rail-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  background: var(--surface);
+  padding: 8px;
+}
+
+.rail-card-actions {
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.rail-card-actions button,
+.rail-inline-actions button {
+  font-size: 11px;
+  padding: 6px 7px;
+}
+
+.rail-label {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.rail-value {
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: var(--font-weight-strong);
+}
+
+.rail-value--small {
+  font-size: 12px;
+}
+
+.rail-muted {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--text-subtle);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rail-controls {
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.rail-controls button {
+  font-size: 12px;
+  padding: 8px 10px;
+}
+
+.rail-list {
+  margin: 8px 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+  max-height: 86px;
+  overflow-y: auto;
+}
+
+.rail-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.rail-inline-actions {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.rail-link {
+  display: inline-flex;
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: var(--font-weight-strong);
+}
+
+.rail-links {
+  display: grid;
+  gap: 4px;
+}
+
+.detail-page-grid {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding-bottom: var(--space-5);
 }
 
 .surface-card {
@@ -263,6 +516,7 @@ a:hover {
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 0;
   padding: var(--space-5);
   gap: var(--space-3);
   background: var(--surface);
@@ -286,6 +540,7 @@ a:hover {
 
 .message-list {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding-right: var(--space-1);
   display: flex;
@@ -319,6 +574,7 @@ a:hover {
 .message-content {
   font-size: var(--font-size-body);
   line-height: 1.45;
+  white-space: pre-wrap;
 }
 
 .composer {
@@ -329,6 +585,8 @@ a:hover {
   border-radius: var(--radius-md);
   background: var(--surface-muted);
   border: 1px solid var(--border);
+  position: sticky;
+  bottom: 0;
 }
 
 .composer.is-dragging {
@@ -348,7 +606,8 @@ a:hover {
   background: var(--surface);
   color: var(--text);
   resize: vertical;
-  min-height: 40px;
+  min-height: 44px;
+  max-height: 140px;
   font: inherit;
 }
 
@@ -599,6 +858,28 @@ a:hover {
   .metric-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+
+  .topbar-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .topbar-nav {
+    justify-content: flex-start;
+  }
+
+  .topbar-meta {
+    justify-self: start;
+    text-align: left;
+  }
+
+  .cockpit-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .status-rail {
+    max-height: 42vh;
+    overflow-y: auto;
+  }
 }
 
 @media (max-width: 920px) {
@@ -627,11 +908,17 @@ a:hover {
   .domain-grid {
     grid-template-columns: minmax(0, 1fr);
   }
+
+  .detail-page-grid,
+  .rail-card-grid,
+  .rail-controls {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 @media (max-width: 640px) {
   .app-shell-inner {
-    padding-bottom: var(--space-4);
+    padding: var(--space-2);
   }
 
   .surface-grid-2,

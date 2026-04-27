@@ -179,7 +179,7 @@ export default function Composer({
            title={`Attach ${ACCEPTED_UPLOAD_EXTENSIONS.join(", ")}`}
            style={{ padding: "8px 10px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontSize: 13, color: "var(--text-muted)", fontWeight: 700 }}
         >
-          Upload
+          Attach
         </button>
         <textarea
           value={value}
@@ -187,7 +187,7 @@ export default function Composer({
           onKeyDown={handleKeyDown}
           onCompositionStart={() => { composingRef.current = true; }}
           onCompositionEnd={() => { composingRef.current = false; }}
-          placeholder="Describe what you want Botomatic to build or fix (Enter to send, Shift+Enter for newline)"
+          placeholder="Ask, command, paste spec text, or drop a URL (Enter to send, Shift+Enter for newline)"
           disabled={disabled || isUploading}
           aria-label="Compose message"
           rows={1}
@@ -206,7 +206,7 @@ export default function Composer({
         </button>
       </div>
       <div className="composer-help">
-        Max upload: {formatMaxUploadLabel()}. Accepted: {ACCEPTED_UPLOAD_EXTENSIONS.join(", ")}. Live deployment remains approval-gated.
+        Universal intake: files, repo URLs, cloud links, pasted specs, and local manifest JSON. Max upload: {formatMaxUploadLabel()}. Accepted: {ACCEPTED_UPLOAD_EXTENSIONS.join(", ")}. Live deployment remains approval-gated.
       </div>
       {dragging && (
         <div style={{ textAlign: "center", fontSize: 12, color: "var(--text-muted)", padding: "4px 0" }}>
