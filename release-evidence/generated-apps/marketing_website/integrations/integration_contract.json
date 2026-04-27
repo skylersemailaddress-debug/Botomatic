@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "1.0",
+  "domainId": "marketing_website",
+  "integrationContractId": "integration_contract_marketing_website",
+  "deploymentTarget": "static_hosting",
+  "requiredServices": [
+    "static_hosting",
+    "lead_webhook"
+  ],
+  "optionalServices": [
+    "analytics_provider",
+    "email_platform"
+  ],
+  "requiredEnvVars": [
+    "LEAD_WEBHOOK_URL"
+  ],
+  "optionalEnvVars": [
+    "ANALYTICS_WRITE_KEY",
+    "EMAIL_API_KEY"
+  ],
+  "requiredSecrets": [
+    "LEAD_WEBHOOK_URL"
+  ],
+  "optionalSecrets": [
+    "ANALYTICS_WRITE_KEY",
+    "EMAIL_API_KEY"
+  ],
+  "services": [
+    {
+      "service": "static_hosting",
+      "required": true,
+      "executed": false,
+      "executionMode": "dry_run",
+      "result": "skipped",
+      "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+    },
+    {
+      "service": "lead_webhook",
+      "required": true,
+      "executed": false,
+      "executionMode": "dry_run",
+      "result": "skipped",
+      "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+    },
+    {
+      "service": "analytics_provider",
+      "required": false,
+      "executed": false,
+      "executionMode": "not_executed",
+      "result": "skipped",
+      "reason": "Optional external integration not executed in local proof harness."
+    },
+    {
+      "service": "email_platform",
+      "required": false,
+      "executed": false,
+      "executionMode": "not_executed",
+      "result": "skipped",
+      "reason": "Optional external integration not executed in local proof harness."
+    }
+  ],
+  "launchCaveat": "Live deployment requires hosting account credentials and lead webhook endpoint credentials.",
+  "generatedAt": "2026-04-27T00:09:49.297Z"
+}

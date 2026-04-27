@@ -1,0 +1,11 @@
+domain=web_saas_app
+commandId=test
+kind=test
+startedAt=2026-04-27T00:08:39.236Z
+finishedAt=2026-04-27T00:08:39.675Z
+status=passed
+exitCode=0
+--- stdout ---
+web_saas_app readiness passed
+
+--- stderr ---

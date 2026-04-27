@@ -1,0 +1,11 @@
+{
+  "domainId": "dirty_repo_completion",
+  "runtimeEntrypoint": "repair/completion_contract.json",
+  "deploymentInstructionsPath": "launch/launch_instructions.md",
+  "environmentManifestPath": null,
+  "emittedFileCount": 8,
+  "noPlaceholderScanPassed": true,
+  "noPlaceholderIssues": [],
+  "readinessStatus": "passed",
+  "generatedAt": "2026-04-27T00:08:19.677Z"
+}

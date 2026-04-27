@@ -1,5 +1,24 @@
 import fs from "fs";
 import path from "path";
+import { validateUniversalBuilderReadiness } from "./repoValidators/universalBuilderReadiness";
+import { validateSelfUpgradingFactoryReadiness } from "./repoValidators/selfUpgradingFactoryReadiness";
+import { validateDirtyRepoRescueReadiness } from "./repoValidators/dirtyRepoRescueReadiness";
+import { validateUniversalCapabilityStressReadiness } from "./repoValidators/universalCapabilityStressReadiness";
+import { validateMultiDomainEmittedOutputReadiness } from "./repoValidators/multiDomainEmittedOutputReadiness";
+import { validateDomainRuntimeCommandExecutionReadiness } from "./repoValidators/domainRuntimeCommandExecutionReadiness";
+import { validateExternalIntegrationDeploymentReadiness } from "./repoValidators/externalIntegrationDeploymentReadiness";
+import { validateDeploymentDryRunReadiness } from "./repoValidators/deploymentDryRunReadiness";
+import { validateCredentialedDeploymentReadiness } from "./repoValidators/credentialedDeploymentReadiness";
+import { validateLiveDeploymentExecutionReadiness } from "./repoValidators/liveDeploymentExecutionReadiness";
+import { validateFinalCommercialReleaseEvidence } from "./repoValidators/finalCommercialReleaseEvidence";
+import { validateSecretsCredentialManagementReadiness } from "./repoValidators/secretsCredentialManagementReadiness";
+import { validateAutonomousComplexBuildReadiness } from "./repoValidators/autonomousComplexBuildReadiness";
+import { validateDomainQualityScorecardsReadiness } from "./repoValidators/domainQualityScorecardsReadiness";
+import { validateEvalSuiteReadiness } from "./repoValidators/evalSuiteReadiness";
+import { validateSecurityCenterReadiness } from "./repoValidators/securityCenterReadiness";
+import { validateFirstRunExperienceReadiness } from "./repoValidators/firstRunExperienceReadiness";
+import { validateValidationCacheReadiness } from "./repoValidators/validationCacheReadiness";
+import { validateInstallerRuntimeReadiness } from "./repoValidators/installerRuntimeReadiness";
 
 export type RepoValidatorResult = {
   name: string;
@@ -20,14 +39,45 @@ function result(name: string, ok: boolean, summary: string, checks: string[]): R
   return { name, status: ok ? "passed" : "failed", summary, checks };
 }
 
+function listFilesRecursive(dir: string): string[] {
+  if (!fs.existsSync(dir)) return [];
+  const out: string[] = [];
+  for (const entry of fs.readdirSync(dir)) {
+    const full = path.join(dir, entry);
+    const stat = fs.statSync(full);
+    if (stat.isDirectory()) {
+      out.push(...listFilesRecursive(full));
+    } else {
+      out.push(full);
+    }
+  }
+  return out;
+}
+
 export function validateArchitecture(root: string): RepoValidatorResult {
   const checks = [
     "apps/orchestrator-api/src/bootstrap.ts",
     "apps/orchestrator-api/src/server_app.ts",
     "apps/orchestrator-api/src/config.ts",
   ];
-  const ok = checks.every((p) => has(root, p));
-  return result("Validate-Botomatic-Architecture", ok, ok ? "API entrypoint, app builder, and runtime config exist." : "Missing one or more core backend entrypoint files.", checks);
+  const fileOk = checks.every((p) => has(root, p));
+  const server = fileOk ? read(root, "apps/orchestrator-api/src/server_app.ts") : "";
+  const runtimeRoutesOk =
+    server.includes("/api/projects/intake") &&
+    server.includes("/spec/build-contract") &&
+    server.includes("/compile") &&
+    server.includes("/plan") &&
+    server.includes("/dispatch/execute-next") &&
+    server.includes("/repair/replay") &&
+    server.includes("/ui/overview") &&
+    server.includes("/ui/gate");
+  const ok = fileOk && runtimeRoutesOk;
+  return result(
+    "Validate-Botomatic-Architecture",
+    ok,
+    ok ? "API entrypoint, core runtime routes, and app wiring are present." : "Missing one or more core backend entrypoint files or runtime routes.",
+    checks
+  );
 }
 
 export function validateBuilderCapability(root: string): RepoValidatorResult {
@@ -37,8 +87,22 @@ export function validateBuilderCapability(root: string): RepoValidatorResult {
     "packages/execution/src/runner.ts",
     "packages/executor-adapters/src/mockExecutor.ts",
   ];
-  const ok = checks.every((p) => has(root, p));
-  return result("Validate-Botomatic-BuilderCapability", ok, ok ? "Compile, plan, execution, and adapter files exist." : "Builder pipeline files are incomplete.", checks);
+  const fileOk = checks.every((p) => has(root, p));
+  const generator = fileOk ? read(root, "packages/packet-engine/src/generator.ts") : "";
+  const blueprints = has(root, "packages/blueprints/src/registry.ts") ? read(root, "packages/blueprints/src/registry.ts") : "";
+  const coverageOk =
+    generator.includes("Define product truth and build contract") &&
+    generator.includes("Create deployment configuration and environment manifest") &&
+    generator.includes("Produce launch packet and readiness summary") &&
+    blueprints.includes("blueprintRegistry") &&
+    (blueprints.match(/\bimport\s+\{\s*\w+\s*\}\s+from\s+"\.\/blueprints\//g) || []).length >= 20;
+  const ok = fileOk && coverageOk;
+  return result(
+    "Validate-Botomatic-BuilderCapability",
+    ok,
+    ok ? "Compile, plan, execution, adapter, and broad blueprint coverage are present." : "Builder pipeline capability is incomplete or shallow.",
+    checks
+  );
 }
 
 export function validateUIReadiness(root: string): RepoValidatorResult {
@@ -49,9 +113,57 @@ export function validateUIReadiness(root: string): RepoValidatorResult {
     "apps/control-plane/src/components/overview/DeploymentPanel.tsx",
     "apps/control-plane/src/components/overview/PacketPanel.tsx",
     "apps/control-plane/src/components/overview/ArtifactPanel.tsx",
+    "apps/control-plane/src/components/overview/ProofValidationPanel.tsx",
+    "apps/control-plane/src/components/overview/RepoRescuePanel.tsx",
+    "apps/control-plane/src/components/overview/SelfUpgradePanel.tsx",
+    "apps/control-plane/src/components/overview/LaunchReadinessPanel.tsx",
+    "apps/control-plane/src/styles/tokens.css",
+    "apps/control-plane/src/styles/globals.css",
   ];
-  const ok = checks.every((p) => has(root, p));
-  return result("Validate-Botomatic-UIReadiness", ok, ok ? "Core operator control-plane surfaces exist." : "One or more required control-plane UI surfaces are missing.", checks);
+
+  const fileOk = checks.every((p) => has(root, p));
+  if (!fileOk) {
+    return result("Validate-Botomatic-UIReadiness", false, "One or more required control-plane UI surfaces are missing.", checks);
+  }
+
+  const projectPage = read(root, "apps/control-plane/src/app/projects/[projectId]/page.tsx");
+  const globals = read(root, "apps/control-plane/src/styles/globals.css");
+  const tokenCss = read(root, "apps/control-plane/src/styles/tokens.css");
+  const uiFiles = listFilesRecursive(path.join(root, "apps/control-plane/src"))
+    .filter((p) => /\.(ts|tsx|css)$/.test(p));
+  const uiText = uiFiles.map((filePath) => read(root, path.relative(root, filePath))).join("\n").toLowerCase();
+
+  const hasDesignSystemSignals =
+    tokenCss.includes("--space-") &&
+    tokenCss.includes("--radius-") &&
+    tokenCss.includes("--shadow") &&
+    globals.toLowerCase().includes("font-family") &&
+    globals.toLowerCase().includes("@media");
+
+  const hasStateSignals =
+    uiText.includes("loading") &&
+    uiText.includes("error") &&
+    uiText.includes("empty");
+
+  const noPlaceholderUi =
+    !uiText.includes("coming soon") &&
+    !uiText.includes("todo") &&
+    !uiText.includes("fixme") &&
+    !uiText.includes("fake demo data");
+
+  const pageMountsRequiredPanels =
+    projectPage.includes("<ProofValidationPanel") &&
+    projectPage.includes("<RepoRescuePanel") &&
+    projectPage.includes("<SelfUpgradePanel") &&
+    projectPage.includes("<LaunchReadinessPanel");
+
+  const ok = hasDesignSystemSignals && hasStateSignals && noPlaceholderUi && pageMountsRequiredPanels;
+  return result(
+    "Validate-Botomatic-UIReadiness",
+    ok,
+    ok ? "Enterprise control-plane UI surfaces and quality signals are present." : "UI readiness is incomplete (design system, state handling, panel wiring, or placeholder guard failed).",
+    checks
+  );
 }
 
 export function validateSecurity(root: string): RepoValidatorResult {
@@ -63,8 +175,24 @@ export function validateSecurity(root: string): RepoValidatorResult {
   ];
   const fileOk = checks.every((p) => has(root, p));
   const server = fileOk ? read(root, "apps/orchestrator-api/src/server_app.ts") : "";
-  const ok = fileOk && server.includes("requireRole(\"admin\"") && server.includes("verifyOidcBearerToken") && server.includes("requireApiAuth(config)");
-  return result("Validate-Botomatic-Security", ok, ok ? "OIDC verification and role-enforced routes are wired." : "OIDC or route-level auth enforcement is incomplete.", checks);
+  const oidcProofPath = "release-evidence/runtime/oidc_rbac_governance_production_like.json";
+  const oidcProof = has(root, oidcProofPath) ? JSON.parse(read(root, oidcProofPath)) : null;
+  const oidcChecks = Array.isArray(oidcProof?.checks) ? oidcProof.checks.map((c: any) => c?.name) : [];
+  const oidcRuntimeOk =
+    Number(oidcProof?.summary?.failed || 0) === 0 &&
+    ["invalid_issuer_denied", "invalid_audience_denied", "expired_token_denied", "reviewer_denied_admin_route"].every((name) => oidcChecks.includes(name));
+  const ok =
+    fileOk &&
+    server.includes("requireRole(\"admin\"") &&
+    server.includes("verifyOidcBearerToken") &&
+    server.includes("requireApiAuth(config)") &&
+    oidcRuntimeOk;
+  return result(
+    "Validate-Botomatic-Security",
+    ok,
+    ok ? "OIDC verification, role-enforced routes, and runtime negative-path auth proof are present." : "OIDC or route-level auth enforcement/runtime proof is incomplete.",
+    checks
+  );
 }
 
 export function validateGovernance(root: string): RepoValidatorResult {
@@ -75,8 +203,24 @@ export function validateGovernance(root: string): RepoValidatorResult {
   ];
   const fileOk = checks.every((p) => has(root, p));
   const server = fileOk ? read(root, "apps/orchestrator-api/src/server_app.ts") : "";
-  const ok = fileOk && server.includes("/ui/gate") && server.includes("/deploy/promote") && server.includes("Cannot promote: gate not ready");
-  return result("Validate-Botomatic-Governance", ok, ok ? "Gate-aware promotion and governance routes are present." : "Governance/gate wiring is incomplete.", checks);
+  const behavioralPath = "release-evidence/runtime/gate_negative_paths.json";
+  const behavioral = has(root, behavioralPath) ? JSON.parse(read(root, behavioralPath)) : null;
+  const behavioralChecks = Array.isArray(behavioral?.suite?.checks) ? behavioral.suite.checks.map((c: any) => c?.name) : [];
+  const governanceRuntimeOk =
+    Number(behavioral?.summary?.failed || 0) === 0 &&
+    ["blocked_governance_promote", "audit_contains_governance_event"].every((name) => behavioralChecks.includes(name));
+  const ok =
+    fileOk &&
+    server.includes("/ui/gate") &&
+    server.includes("/deploy/promote") &&
+    server.includes("Cannot promote: gate not ready") &&
+    governanceRuntimeOk;
+  return result(
+    "Validate-Botomatic-Governance",
+    ok,
+    ok ? "Gate-aware promotion and governance runtime proof are present." : "Governance/gate wiring or runtime proof is incomplete.",
+    checks
+  );
 }
 
 export function validateReliability(root: string): RepoValidatorResult {
@@ -86,8 +230,21 @@ export function validateReliability(root: string): RepoValidatorResult {
   ];
   const fileOk = checks.every((p) => has(root, p));
   const server = fileOk ? read(root, "apps/orchestrator-api/src/server_app.ts") : "";
-  const ok = fileOk && server.includes("claimJob") && server.includes("finalizeJob") && server.includes("repair/replay") && server.includes("workerTick");
-  return result("Validate-Botomatic-Reliability", ok, ok ? "Queue worker, finalize path, and replay controls exist." : "Queue/replay reliability wiring is incomplete.", checks);
+  const gate5Path = "release-evidence/runtime/production-external/DURABLE_DEPLOY_ROLLBACK_RESTART_PROOF_2026-04-24.md";
+  const reliabilityRuntimeOk = has(root, gate5Path);
+  const ok =
+    fileOk &&
+    server.includes("claimJob") &&
+    server.includes("finalizeJob") &&
+    server.includes("repair/replay") &&
+    server.includes("workerTick") &&
+    reliabilityRuntimeOk;
+  return result(
+    "Validate-Botomatic-Reliability",
+    ok,
+    ok ? "Queue worker, finalize path, replay controls, and durability proof evidence exist." : "Queue/replay reliability wiring or durability evidence is incomplete.",
+    checks
+  );
 }
 
 export function validateObservability(root: string): RepoValidatorResult {
@@ -100,6 +257,10 @@ export function validateObservability(root: string): RepoValidatorResult {
   const fileOk = checks.every((p) => has(root, p));
   const server = fileOk ? read(root, "apps/orchestrator-api/src/server_app.ts") : "";
   const config = fileOk ? read(root, "apps/orchestrator-api/src/config.ts") : "";
+  const observabilityProofPath = "release-evidence/runtime/ops_observability.json";
+  const observabilityProof = has(root, observabilityProofPath) ? JSON.parse(read(root, observabilityProofPath)) : null;
+  const observabilitySummary = observabilityProof?.summary || {};
+  const observabilityRuntimeOk = Number(observabilitySummary?.failed || 0) === 0;
   const ok =
     fileOk &&
     server.includes("/ui/audit") &&
@@ -114,11 +275,12 @@ export function validateObservability(root: string): RepoValidatorResult {
     server.includes("/api/ops/metrics") &&
     server.includes("/api/ops/errors") &&
     server.includes("/api/ops/queue") &&
-    server.includes("x-request-id");
+    server.includes("x-request-id") &&
+    observabilityRuntimeOk;
   return result(
     "Validate-Botomatic-Observability",
     ok,
-    ok ? "Audit API, ops endpoints, request correlation, and alert sink wiring exist." : "Observability wiring is incomplete (audit/ops/correlation/alerts).",
+    ok ? "Audit API, ops endpoints, request correlation, alert sink wiring, and runtime observability proof exist." : "Observability wiring or runtime evidence is incomplete (audit/ops/correlation/alerts).",
     checks
   );
 }
@@ -245,9 +407,47 @@ export function validateLaunchReadiness(root: string): RepoValidatorResult {
     "apps/orchestrator-api/src/server_app.ts",
   ];
   const fileOk = checks.every((p) => has(root, p));
-  const server = fileOk ? read(root, "apps/orchestrator-api/src/server_app.ts") : "";
-  const ok = fileOk && server.includes("buildGate(") && server.includes("launchStatus") && server.includes("Cannot promote: gate not ready");
-  return result("Validate-Botomatic-LaunchReadiness", ok, ok ? "Gate logic and launch-blocking promotion checks are present." : "Launch-readiness gate wiring is incomplete.", checks);
+  if (!fileOk) {
+    return result("Validate-Botomatic-LaunchReadiness", false, "Launch-readiness gate wiring is incomplete.", checks);
+  }
+  const server = read(root, "apps/orchestrator-api/src/server_app.ts");
+  const manifest = has(root, "release-evidence/manifest.json")
+    ? JSON.parse(read(root, "release-evidence/manifest.json"))
+    : null;
+  const benchmark = has(root, "release-evidence/runtime/builder_quality_benchmark.json")
+    ? JSON.parse(read(root, "release-evidence/runtime/builder_quality_benchmark.json"))
+    : null;
+  const runtimeProofsPresent = [
+    "release-evidence/runtime/greenfield_runtime_proof.json",
+    "release-evidence/runtime/dirty_repo_runtime_proof.json",
+    "release-evidence/runtime/self_upgrade_runtime_proof.json",
+    "release-evidence/runtime/universal_pipeline_runtime_proof.json",
+  ].every((rel) => has(root, rel));
+
+  const runtimeRoutesOk =
+    server.includes("buildGate(") &&
+    server.includes("launchStatus") &&
+    server.includes("Cannot promote: gate not ready");
+
+  const benchmarkOk =
+    Number(benchmark?.averageScoreOutOf10 || 0) >= 8.5 &&
+    Number(benchmark?.universalScoreOutOf10 || 0) >= 9.2 &&
+    Number(benchmark?.criticalFailures || 0) === 0 &&
+    benchmark?.launchablePass === true &&
+    benchmark?.universalPass === true;
+
+  const manifestLaunchTruth =
+    manifest?.launchClaim?.universalBuilderReady === true &&
+    Array.isArray(manifest?.launchClaim?.universalBuilderBlockedBy) &&
+    manifest.launchClaim.universalBuilderBlockedBy.length === 0;
+
+  const ok = runtimeRoutesOk && runtimeProofsPresent && benchmarkOk && manifestLaunchTruth;
+  return result(
+    "Validate-Botomatic-LaunchReadiness",
+    ok,
+    ok ? "Gate logic, strict benchmark, runtime proof set, and launch truth alignment are present." : "Launch-readiness gate evidence is incomplete or inconsistent.",
+    checks
+  );
 }
 
 export function validateDeploymentRollbackGate5(root: string): RepoValidatorResult {
@@ -282,9 +482,57 @@ export function validateDocumentation(root: string): RepoValidatorResult {
     "LAUNCH_BLOCKERS.md",
     "VALIDATION_MATRIX.md",
     "READINESS_SCORECARD.json",
+    "README.md",
+    "release-evidence/manifest.json",
   ];
-  const ok = checks.every((p) => has(root, p));
-  return result("Validate-Botomatic-Documentation", ok, ok ? "Core scope, blockers, validation matrix, and scorecard docs exist." : "Required launch documentation files are missing.", checks);
+  const fileOk = checks.every((p) => has(root, p));
+  if (!fileOk) {
+    return result("Validate-Botomatic-Documentation", false, "Required launch documentation files are missing.", checks);
+  }
+
+  let blockers = "";
+  let scorecard: any;
+  let manifest: any;
+  let readme = "";
+
+  try {
+    blockers = read(root, "LAUNCH_BLOCKERS.md");
+    scorecard = JSON.parse(read(root, "READINESS_SCORECARD.json"));
+    manifest = JSON.parse(read(root, "release-evidence/manifest.json"));
+    readme = read(root, "README.md").toLowerCase();
+  } catch {
+    return result("Validate-Botomatic-Documentation", false, "Launch documentation metadata could not be parsed.", checks);
+  }
+
+  const universalSection = blockers.includes("### Universal Builder P0 (Current)")
+    ? (blockers.split("### Universal Builder P0 (Current)")[1] || "").split("### Legacy Enterprise Gate Closure Ledger")[0] || ""
+    : "";
+  const openUniversalP0 = universalSection
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith("- Open:"));
+  const hasOpenUniversalP0 = openUniversalP0.length > 0;
+
+  const scorecardLaunchAllowed = scorecard?.universal_builder_track?.launch_claim_allowed === true;
+  const manifestLaunchAllowed = manifest?.launchClaim?.universalBuilderReady === true;
+  const manifestBlockedBy = Array.isArray(manifest?.launchClaim?.universalBuilderBlockedBy)
+    ? manifest.launchClaim.universalBuilderBlockedBy
+    : [];
+  const readmeNotReady = readme.includes("universal-builder launch claim: not ready");
+  const readmeReady = readme.includes("universal-builder launch gates satisfied");
+
+  const alignmentOk = hasOpenUniversalP0
+    ? !scorecardLaunchAllowed && !manifestLaunchAllowed && manifestBlockedBy.length >= 1 && readmeNotReady
+    : scorecardLaunchAllowed && manifestLaunchAllowed && manifestBlockedBy.length === 0 && readmeReady && !readmeNotReady;
+
+  return result(
+    "Validate-Botomatic-Documentation",
+    alignmentOk,
+    alignmentOk
+      ? "Core scope, blockers, validation matrix, scorecard, and launch-truth alignment docs are consistent."
+      : "Launch-truth documentation is inconsistent across blockers/scorecard/manifest/README.",
+    checks
+  );
 }
 
 export function validateAuthGovernanceGate4(root: string): RepoValidatorResult {
@@ -400,12 +648,15 @@ export function validateFinalLaunchReadiness(root: string): RepoValidatorResult 
     Array.isArray(profile?.productionGaps) && profile.productionGaps.length === 0;
 
   const p0Section = blockers.split("## P1")[0] || blockers;
+  const legacyP0Section = p0Section.includes("### Legacy Enterprise Gate Closure Ledger")
+    ? p0Section.split("### Legacy Enterprise Gate Closure Ledger")[1]
+    : p0Section;
   const p0PolicyPresent = blockers.includes(
     "No audit may claim enterprise readiness while any P0 blocker remains open."
   );
 
-  const noOpenP0Rows = !/\|\s*Gate\s+\d+\s*\|\s*Open\b/i.test(p0Section);
-  const noOpenP0Bullets = p0Section
+  const noOpenP0Rows = !/\|\s*Gate\s+\d+\s*\|\s*Open\b/i.test(legacyP0Section);
+  const noOpenP0Bullets = legacyP0Section
     .split("\n")
     .map((line) => line.trim())
     .filter((line) => line.startsWith("- "))
@@ -517,9 +768,24 @@ export function validateUIControlPlaneIntegration(root: string): RepoValidatorRe
     "apps/control-plane/src/app/projects/[projectId]/page.tsx",
     "apps/control-plane/src/components/overview/AuditPanel.tsx",
     "apps/control-plane/src/services/audit.ts",
+    "apps/control-plane/src/services/spec.ts",
+    "apps/control-plane/src/services/overview.ts",
+    "apps/control-plane/src/services/packets.ts",
+    "apps/control-plane/src/services/deployments.ts",
   ];
   const fileOk = checks.every((p) => has(root, p));
   const page = fileOk ? read(root, "apps/control-plane/src/app/projects/[projectId]/page.tsx") : "";
+  const specSvc = fileOk ? read(root, "apps/control-plane/src/services/spec.ts") : "";
+  const overviewSvc = fileOk ? read(root, "apps/control-plane/src/services/overview.ts") : "";
+  const packetSvc = fileOk ? read(root, "apps/control-plane/src/services/packets.ts") : "";
+  const deploySvc = fileOk ? read(root, "apps/control-plane/src/services/deployments.ts") : "";
+  const servicesUseRealApi =
+    specSvc.includes("/spec/status") &&
+    overviewSvc.includes("/ui/overview") &&
+    packetSvc.includes("/ui/packets") &&
+    packetSvc.includes("/ui/artifacts") &&
+    deploySvc.includes("/ui/deployments") &&
+    deploySvc.includes("/deploy/promote");
   const ok =
     fileOk &&
     page.includes("<OverviewPanel") &&
@@ -527,13 +793,18 @@ export function validateUIControlPlaneIntegration(root: string): RepoValidatorRe
     page.includes("<PacketPanel") &&
     page.includes("<ArtifactPanel") &&
     page.includes("<DeploymentPanel") &&
-    page.includes("<AuditPanel");
+    page.includes("<AuditPanel") &&
+    page.includes("<ProofValidationPanel") &&
+    page.includes("<RepoRescuePanel") &&
+    page.includes("<SelfUpgradePanel") &&
+    page.includes("<LaunchReadinessPanel") &&
+    servicesUseRealApi;
   return result(
     "Validate-Botomatic-UIControlPlaneIntegration",
     ok,
     ok
-      ? "Core control-plane panels are mounted in the project page."
-      : "One or more core control-plane panels are not mounted in the project page.",
+      ? "Core enterprise control-plane panels are mounted and backed by real API services."
+      : "One or more core enterprise control-plane panels or service API mappings are missing.",
     checks
   );
 }
@@ -567,16 +838,179 @@ export function validateBuilderQualityBenchmarks(root: string): RepoValidatorRes
   }
 
   const avg = Number(payload?.averageScoreOutOf10 || 0);
-  const hasCases = Array.isArray(payload?.cases) && payload.cases.length >= 3;
-  const ok = hasCases && avg >= 6.0;
+  const universalScore = Number(payload?.universalScoreOutOf10 || 0);
+  const hasCases = Array.isArray(payload?.cases) && payload.cases.length >= 31;
+  const launchThreshold = Number(payload?.thresholdTarget || 0);
+  const universalThreshold = Number(payload?.thresholdUniversalTarget || 0);
+  const criticalFailures = Number(payload?.criticalFailures || 0);
+  const placeholderFailures = Number(payload?.placeholderFailures || 0);
+  const caseFailures = Number(payload?.caseFailures || 0);
+
+  const requiredCaseFields = [
+    "id",
+    "appName",
+    "buildContract",
+    "blueprintMatch",
+    "generatedPlan",
+    "generatedPackets",
+    "validationSignals",
+    "scoreOutOf10",
+    "criticalFailures",
+    "launchablePass",
+    "noPlaceholderPass",
+    "commercialReadinessPass",
+  ];
+
+  const cases = Array.isArray(payload?.cases) ? payload.cases : [];
+  const caseSchemaOk = cases.every((item: any) => {
+    const hasDomainDescriptor =
+      Object.prototype.hasOwnProperty.call(item || {}, "appType") ||
+      Object.prototype.hasOwnProperty.call(item || {}, "domain");
+    return hasDomainDescriptor && requiredCaseFields.every((field) => Object.prototype.hasOwnProperty.call(item || {}, field));
+  });
+
+  const perCaseStrictnessOk = cases.every((item: any) => {
+    const validationSignals = item?.validationSignals || {};
+    const fakeSignalsPresent =
+      Boolean(validationSignals.fakeAuthSignal ?? validationSignals.fakeAuthSignals) ||
+      Boolean(validationSignals.fakePaymentSignal ?? validationSignals.fakePaymentSignals) ||
+      Boolean(validationSignals.fakeIntegrationSignal ?? validationSignals.fakeIntegrationSignals);
+
+    const missingRequiredCoverage =
+      validationSignals.requiredTestsPresent === false ||
+      validationSignals.requiredDeployPresent === false ||
+      validationSignals.requiredSecurityPresent === false ||
+      validationSignals.requiredDocsPresent === false;
+
+    const placeholderSignal =
+      validationSignals.productionPlaceholderSignal === true ||
+      validationSignals.hasPlaceholderPaths === true;
+
+    const criticalList = Array.isArray(item?.criticalFailures) ? item.criticalFailures : [];
+    const caseClaimsPass = item?.launchablePass === true;
+
+    if (caseClaimsPass && (fakeSignalsPresent || missingRequiredCoverage || placeholderSignal || criticalList.length > 0)) {
+      return false;
+    }
+
+    return true;
+  });
+
+  const universalClaimConsistency = payload?.universalPass === true ? universalScore >= 9.2 : true;
+
+  const ok =
+    hasCases &&
+    launchThreshold >= 8.5 &&
+    universalThreshold >= 9.2 &&
+    avg >= 8.5 &&
+    universalScore >= 9.2 &&
+    criticalFailures === 0 &&
+    placeholderFailures === 0 &&
+    caseFailures === 0 &&
+    payload?.launchablePass === true &&
+    payload?.universalPass === true &&
+    caseSchemaOk &&
+    perCaseStrictnessOk &&
+    universalClaimConsistency;
   const proofGrade = payload?.proofGrade === "production_like" ? "production-like" : "local";
 
   return result(
     "Validate-Botomatic-BuilderQualityBenchmarks",
     ok,
     ok
-      ? `Builder quality benchmark is present with average ${avg}/10 (${proofGrade} proof).`
-      : `Builder benchmark average is below threshold or incomplete (${avg}/10, ${proofGrade} proof).`,
+      ? `Builder quality benchmark passed strict thresholds (${avg}/10 launchable, ${universalScore}/10 universal, ${proofGrade} proof).`
+      : `Builder benchmark is below strict threshold or has case-level critical failures (${avg}/10 launchable, ${universalScore}/10 universal, ${proofGrade} proof).`,
+    checks
+  );
+}
+
+export function validateFileIngestion(root: string): RepoValidatorResult {
+  const checks = [
+    "apps/orchestrator-api/src/server_app.ts",
+    "apps/control-plane/src/components/chat/Composer.tsx",
+    "apps/control-plane/src/services/api.ts",
+    "apps/control-plane/src/services/intake.ts",
+  ];
+  const fileOk = checks.every((p) => has(root, p));
+  if (!fileOk) {
+    return result(
+      "Validate-Botomatic-FileIngestion",
+      false,
+      "File ingestion infrastructure files are missing.",
+      checks
+    );
+  }
+  const server = read(root, "apps/orchestrator-api/src/server_app.ts");
+  const composer = read(root, "apps/control-plane/src/components/chat/Composer.tsx");
+  const api = read(root, "apps/control-plane/src/services/api.ts");
+  const intakeSvc = read(root, "apps/control-plane/src/services/intake.ts");
+
+  const ok =
+    server.includes("/intake/file") &&
+    server.includes("multer") &&
+    server.includes("pdf-parse") &&
+    server.includes("intakeArtifacts") &&
+    server.includes("Uploaded Specs") &&
+    composer.includes("onFileUpload") &&
+    composer.includes("onKeyDown") &&
+    composer.includes("Shift+Enter") &&
+    api.includes("postMultipart") &&
+    intakeSvc.includes("uploadIntakeFile") &&
+    intakeSvc.includes("postMultipart");
+
+  return result(
+    "Validate-Botomatic-FileIngestion",
+    ok,
+    ok
+      ? "File upload route, multipart API helper, keyboard shortcuts, and intake service wiring exist."
+      : "File ingestion wiring is incomplete (route/multipart/composer/shortcuts).",
+    checks
+  );
+}
+
+export function validateChatFirstOperatorRouting(root: string): RepoValidatorResult {
+  const checks = [
+    "apps/orchestrator-api/src/server_app.ts",
+    "apps/control-plane/src/components/chat/ConversationPane.tsx",
+    "apps/control-plane/src/components/chat/QuickActionRow.tsx",
+    "apps/control-plane/src/services/operator.ts",
+    "packages/master-truth/src/compiler.ts",
+  ];
+
+  const fileOk = checks.every((p) => has(root, p));
+  if (!fileOk) {
+    return result(
+      "Validate-Botomatic-ChatFirstOperatorRouting",
+      false,
+      "Chat-first operator routing files are missing.",
+      checks
+    );
+  }
+
+  const server = read(root, "apps/orchestrator-api/src/server_app.ts");
+  const conversation = read(root, "apps/control-plane/src/components/chat/ConversationPane.tsx");
+  const quickActions = read(root, "apps/control-plane/src/components/chat/QuickActionRow.tsx");
+  const operatorSvc = read(root, "apps/control-plane/src/services/operator.ts");
+  const compiler = read(root, "packages/master-truth/src/compiler.ts");
+
+  const ok =
+    server.includes("/operator/send") &&
+    server.includes("formatOperatorVoice") &&
+    server.includes("hasUncompiledIntake") &&
+    server.includes("hasLaunchIntent") &&
+    conversation.includes("sendOperatorMessage") &&
+    quickActions.includes("Advanced") &&
+    operatorSvc.includes("/operator/send") &&
+    compiler.includes("canonicalSpec") &&
+    compiler.includes("productIntent") &&
+    compiler.includes("openQuestions");
+
+  return result(
+    "Validate-Botomatic-ChatFirstOperatorRouting",
+    ok,
+    ok
+      ? "Chat-first operator route, advanced-only manual controls, and canonical spec v2 compilation are wired."
+      : "Chat-first operator routing or canonical spec v2 wiring is incomplete.",
     checks
   );
 }
@@ -600,5 +1034,26 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateObservabilityRuntimeEvidence(root),
     validateProductionProofProfile(root),
     validateFinalLaunchReadiness(root),
+    validateFileIngestion(root),
+    validateChatFirstOperatorRouting(root),
+    validateUniversalBuilderReadiness(root),
+    validateSelfUpgradingFactoryReadiness(root),
+    validateDirtyRepoRescueReadiness(root),
+    validateUniversalCapabilityStressReadiness(root),
+    validateMultiDomainEmittedOutputReadiness(root),
+    validateDomainRuntimeCommandExecutionReadiness(root),
+    validateExternalIntegrationDeploymentReadiness(root),
+    validateDeploymentDryRunReadiness(root),
+    validateCredentialedDeploymentReadiness(root),
+    validateLiveDeploymentExecutionReadiness(root),
+    validateFinalCommercialReleaseEvidence(root),
+    validateSecretsCredentialManagementReadiness(root),
+    validateAutonomousComplexBuildReadiness(root),
+    validateDomainQualityScorecardsReadiness(root),
+    validateEvalSuiteReadiness(root),
+    validateSecurityCenterReadiness(root),
+    validateFirstRunExperienceReadiness(root),
+    validateValidationCacheReadiness(root),
+    validateInstallerRuntimeReadiness(root),
   ];
 }

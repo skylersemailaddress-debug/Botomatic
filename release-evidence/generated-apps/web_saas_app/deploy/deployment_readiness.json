@@ -1,0 +1,54 @@
+{
+  "schemaVersion": "1.0",
+  "domainId": "web_saas_app",
+  "deploymentTarget": "vercel",
+  "deploymentInstructionsPath": "deploy/vercel.json",
+  "envManifestPath": ".env.example",
+  "envManifestPresent": true,
+  "requiredEnvVarsPresent": true,
+  "requiredEnvVarsMissing": [],
+  "fakeIntegrationScanPassed": true,
+  "fakeIntegrationScanIssues": [],
+  "secretScanPassed": true,
+  "secretScanIssues": [],
+  "dryRunStatus": {
+    "attempted": true,
+    "command": "npm run -s build",
+    "status": "passed",
+    "reason": "Dry-run command succeeded."
+  },
+  "externalServicesNotExecuted": [
+    {
+      "service": "vercel",
+      "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+    },
+    {
+      "service": "postgres",
+      "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+    },
+    {
+      "service": "oidc_provider",
+      "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+    },
+    {
+      "service": "stripe",
+      "reason": "Optional external integration not executed in local proof harness."
+    },
+    {
+      "service": "sendgrid",
+      "reason": "Optional external integration not executed in local proof harness."
+    },
+    {
+      "service": "twilio",
+      "reason": "Optional external integration not executed in local proof harness."
+    },
+    {
+      "service": "github_actions",
+      "reason": "Optional external integration not executed in local proof harness."
+    }
+  ],
+  "externalExecutionJustified": true,
+  "deploymentReadinessStatus": "passed",
+  "launchCaveat": "Live deployment requires Vercel account access, OIDC credentials, and production database connectivity.",
+  "generatedAt": "2026-04-27T00:09:33.566Z"
+}

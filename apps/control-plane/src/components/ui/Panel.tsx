@@ -1,24 +1,18 @@
+import SectionHeader from "@/components/ui/SectionHeader";
+
 type PanelProps = {
   title?: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
+  subtitle?: string;
 };
 
-export default function Panel({ title, children, footer }: PanelProps) {
+export default function Panel({ title, subtitle, children, footer }: PanelProps) {
   return (
-    <div
-      style={{
-        border: "1px solid var(--border)",
-        borderRadius: 10,
-        padding: 12,
-        background: "var(--panel)",
-      }}
-    >
-      {title ? (
-        <div style={{ marginBottom: 8, fontWeight: 600, fontSize: 14 }}>{title}</div>
-      ) : null}
+    <section className="surface-card panel">
+      {title ? <SectionHeader title={title} subtitle={subtitle} /> : null}
       <div>{children}</div>
-      {footer ? <div style={{ marginTop: 8 }}>{footer}</div> : null}
-    </div>
+      {footer ? <div className="panel-footer">{footer}</div> : null}
+    </section>
   );
 }

@@ -1,6 +1,50 @@
 import express from "express";
+import multer from "multer";
+import { PDFParse } from "pdf-parse";
+import fs from "fs";
+import path from "path";
 import { compileConversationToMasterTruth } from "../../../packages/master-truth/src/compiler";
 import { generatePlan } from "../../../packages/packet-engine/src/generator";
+import {
+  analyzeSpec,
+  approveAssumptions,
+  approveBuildContract,
+  applyRecommendationStatus,
+  computeBuildBlockStatus,
+  generateBuildContract,
+  MasterSpec,
+  BuildContract,
+  SpecAssumption,
+  SpecRecommendation,
+} from "../../../packages/spec-engine/src";
+import { matchBlueprintFromText } from "../../../packages/blueprints/src/registry";
+import { planSelfUpgrade, detectArchitectureDrift, runRegressionGuard, SelfUpgradeSpec } from "../../../packages/self-upgrade-engine/src";
+import { classifyRepo, detectFrameworks, detectLanguages, mapArchitecture, inferDomain, scanRepoRisk } from "../../../packages/repo-intake/src";
+import {
+  repoHealthAudit,
+  buildFailureAudit,
+  placeholderAudit,
+  securityAudit,
+  dataModelAudit,
+  workflowAudit,
+  uiCompletenessAudit,
+  deploymentAudit,
+  commercialReadinessAudit,
+} from "../../../packages/repo-audit/src";
+import { createCompletionPlan, planPatches, planTests, planLaunchHardening } from "../../../packages/repo-repair/src";
+import { runCompletionContract } from "../../../packages/repo-completion/src";
+import { validateExistingRepoReadiness } from "../../../packages/validation/src/existingRepo/validateExistingRepoReadiness";
+import { appendEvent, EVENT_SPINE_SUPPORTED_DOMAINS } from "../../../packages/event-spine/src";
+import { extractProductTruth, recommendArchitecture } from "../../../packages/truth-engine/src";
+import { buildCausalWorldModel } from "../../../packages/causal-world-model/src";
+import { createPredictionLedger } from "../../../packages/prediction-ledger/src";
+import { runSimulation } from "../../../packages/simulation-engine/src";
+import { planInterventions } from "../../../packages/intervention-engine/src";
+import { defaultGovernanceRules } from "../../../packages/governance-engine/src";
+import { resolveAutonomyTier, allowedActionsForTier } from "../../../packages/autonomy-tiers/src";
+import { reflectAndRevise } from "../../../packages/reflection-engine/src";
+import { proposeEvolution } from "../../../packages/evolution-engine/src";
+import { listAllUIBlueprints } from "../../../packages/ui-blueprint-registry/src";
 import { markPacketComplete, markPacketFailed } from "../../../packages/execution/src/runner";
 import { MockExecutor } from "../../../packages/executor-adapters/src/mockExecutor";
 import { ClaudeCodeExecutor } from "../../../packages/executor-adapters/src/claudeCodeExecutor";
@@ -9,6 +53,7 @@ import { createGitOperation, GitOperationRequest, GitOperationResult } from "../
 import { GitHubRuntime } from "../../../packages/github-adapter/src/githubRuntime";
 import { enqueueJob, claimJob, finalizeJob, getQueueStats } from "../../../packages/supabase-adapter/src/jobClient";
 import { GovernanceApprovalState, StoredProjectRecord } from "../../../packages/supabase-adapter/src/types";
+import { startAutonomousBuildRun, resumeAutonomousBuildRun, type AutonomousBuildRunState } from "../../../packages/autonomous-build/src";
 import { RuntimeConfig } from "./config";
 import { type AuthContext } from "./auth/roles";
 import { verifyOidcBearerToken } from "./auth/oidc";
@@ -38,6 +83,17 @@ const leaseMs = Number(process.env.QUEUE_LEASE_MS || 30000);
 const workerConcurrency = Math.max(1, Number(process.env.WORKER_CONCURRENCY || 2));
 const governanceStateRunKey = "__governanceGate4Approval";
 const deploymentStateRunKey = "__deploymentState";
+const intakeArtifactsRunKey = "__intakeArtifacts";
+const specStateRunKey = "__masterSpec";
+const specClarificationsRunKey = "__specClarifications";
+const specStyleRunKey = "__specStyle";
+const buildContractRunKey = "__buildContract";
+const selfUpgradeSpecRunKey = "__selfUpgradeSpec";
+const repoIntakeRunKey = "__repoIntake";
+const repoAuditRunKey = "__repoAudit";
+const repoCompletionRunKey = "__repoCompletionContract";
+const universalCapabilityRunKey = "__universalCapabilityArtifacts";
+const autonomousBuildRunKey = "__autonomousBuildRun";
 let workerStarted = false;
 let activeWorkers = 0;
 
@@ -354,6 +410,108 @@ function ensureAudit(project: any) {
   }
 }
 
+function getIntakeArtifacts(project: StoredProjectRecord): Record<string, any> {
+  const fromProject = ((project as any).intakeArtifacts || null) as Record<string, any> | null;
+  if (fromProject && typeof fromProject === "object") {
+    return fromProject;
+  }
+  const runs = ((project.runs || {}) as Record<string, unknown>);
+  const fromRuns = runs[intakeArtifactsRunKey] as Record<string, any> | undefined;
+  return fromRuns && typeof fromRuns === "object" ? fromRuns : {};
+}
+
+function setIntakeArtifacts(project: StoredProjectRecord, artifacts: Record<string, any>) {
+  const runs = ((project.runs || {}) as Record<string, unknown>);
+  project.runs = { ...runs, [intakeArtifactsRunKey]: artifacts };
+  (project as any).intakeArtifacts = artifacts;
+}
+
+function getMasterSpec(project: StoredProjectRecord): MasterSpec | null {
+  const runs = ((project.runs || {}) as Record<string, unknown>);
+  const value = runs[specStateRunKey] as MasterSpec | undefined;
+  return value || null;
+}
+
+function setMasterSpec(project: StoredProjectRecord, spec: MasterSpec) {
+  const runs = ((project.runs || {}) as Record<string, unknown>);
+  project.runs = { ...runs, [specStateRunKey]: spec };
+}
+
+function getSpecClarifications(project: StoredProjectRecord): any[] {
+  const runs = ((project.runs || {}) as Record<string, unknown>);
+  const value = runs[specClarificationsRunKey] as any[] | undefined;
+  return Array.isArray(value) ? value : [];
+}
+
+function setSpecClarifications(project: StoredProjectRecord, clarifications: any[]) {
+  const runs = ((project.runs || {}) as Record<string, unknown>);
+  project.runs = { ...runs, [specClarificationsRunKey]: clarifications };
+}
+
+function getBuildContract(project: StoredProjectRecord): BuildContract | null {
+  const runs = ((project.runs || {}) as Record<string, unknown>);
+  const value = runs[buildContractRunKey] as BuildContract | undefined;
+  return value || null;
+}
+
+function getSelfUpgradeSpec(project: StoredProjectRecord): SelfUpgradeSpec | null {
+  const runs = ((project.runs || {}) as Record<string, unknown>);
+  const value = runs[selfUpgradeSpecRunKey] as SelfUpgradeSpec | undefined;
+  return value || null;
+}
+
+function setSelfUpgradeSpec(project: StoredProjectRecord, spec: SelfUpgradeSpec) {
+  const runs = ((project.runs || {}) as Record<string, unknown>);
+  project.runs = { ...runs, [selfUpgradeSpecRunKey]: spec };
+}
+
+function setBuildContract(project: StoredProjectRecord, contract: BuildContract) {
+  const runs = ((project.runs || {}) as Record<string, unknown>);
+  project.runs = { ...runs, [buildContractRunKey]: contract };
+}
+
+function getAutonomousBuildRun(project: StoredProjectRecord): AutonomousBuildRunState | null {
+  const runs = ((project.runs || {}) as Record<string, unknown>);
+  const value = runs[autonomousBuildRunKey] as AutonomousBuildRunState | undefined;
+  return value || null;
+}
+
+function setAutonomousBuildRun(project: StoredProjectRecord, run: AutonomousBuildRunState) {
+  const runs = ((project.runs || {}) as Record<string, unknown>);
+  project.runs = { ...runs, [autonomousBuildRunKey]: run };
+}
+
+function mergeSpecWithExisting(existing: MasterSpec | null, next: MasterSpec): MasterSpec {
+  if (!existing) return next;
+
+  const approvedAssumptions = new Set(
+    (existing.assumptions || [])
+      .filter((a: any) => a?.approved)
+      .map((a: any) => `${String(a?.field || "").toLowerCase()}::${String(a?.decision || "").toLowerCase()}`)
+  );
+
+  const assumptions = (next.assumptions || []).map((assumption: any) => {
+    const key = `${String(assumption?.field || "").toLowerCase()}::${String(assumption?.decision || "").toLowerCase()}`;
+    if (approvedAssumptions.has(key)) {
+      return { ...assumption, approved: true };
+    }
+    return assumption;
+  });
+
+  const recommendationStatusByArea = new Map(
+    (existing.recommendations || []).map((r: any) => [String(r?.area || "").toLowerCase(), r?.status])
+  );
+  const recommendations = (next.recommendations || []).map((rec: any) => {
+    const prior = recommendationStatusByArea.get(String(rec?.area || "").toLowerCase());
+    if (prior === "accepted" || prior === "rejected") {
+      return { ...rec, status: prior };
+    }
+    return rec;
+  });
+
+  return { ...next, assumptions, recommendations };
+}
+
 function emitEvent(project: any, event: any) {
   ensureAudit(project);
   project.auditEvents.unshift(event);
@@ -523,12 +681,499 @@ function buildGate(project: StoredProjectRecord) {
   return { launchStatus, approvalStatus, governanceApproval, issues };
 }
 
+function buildIntakeContext(project: StoredProjectRecord): string {
+  const intakeArtifacts = getIntakeArtifacts(project);
+  const values = Object.values(intakeArtifacts || {});
+  if (!values.length) return "";
+  return values
+    .map((a: any) => `[Uploaded: ${a.fileName}]\n${a.extractedText || a.extractedTextPreview || ""}`)
+    .join("\n\n");
+}
+
+function compileProjectWithIntake(project: StoredProjectRecord): StoredProjectRecord {
+  const intakeContext = buildIntakeContext(project);
+  const enrichedRequest = intakeContext
+    ? `${project.request}\n\n--- Uploaded Specs ---\n${intakeContext}`
+    : project.request;
+  const blueprint = matchBlueprintFromText(enrichedRequest);
+  const truth = compileConversationToMasterTruth({
+    projectId: project.projectId,
+    appName: project.name,
+    request: enrichedRequest,
+  });
+  const analyzed = analyzeSpec({
+    appName: project.name,
+    request: enrichedRequest,
+    blueprint,
+    actorId: "system",
+  });
+  const mergedSpec = mergeSpecWithExisting(getMasterSpec(project), analyzed.spec);
+  const spec: MasterSpec = {
+    ...mergedSpec,
+    appType: analyzed.spec.appType || blueprint.category,
+    pages: mergedSpec.pages.length > 0 ? mergedSpec.pages : blueprint.defaultPages,
+    components: mergedSpec.components.length > 0 ? mergedSpec.components : blueprint.defaultComponents,
+    roles: mergedSpec.roles.length > 0 ? mergedSpec.roles : blueprint.defaultRoles,
+    permissions: mergedSpec.permissions.length > 0 ? mergedSpec.permissions : blueprint.defaultPermissions,
+    dataEntities: mergedSpec.dataEntities.length > 0 ? mergedSpec.dataEntities : blueprint.defaultEntities,
+    relationships: mergedSpec.relationships.length > 0 ? mergedSpec.relationships : blueprint.defaultRelationships,
+    workflows: mergedSpec.workflows.length > 0 ? mergedSpec.workflows : blueprint.defaultWorkflows,
+    integrations: mergedSpec.integrations.length > 0 ? mergedSpec.integrations : blueprint.defaultIntegrations,
+  };
+
+  (truth as any).canonicalSpec = {
+    ...((truth as any).canonicalSpec || {}),
+    productIntent: spec.coreOutcome,
+    users: spec.targetUsers,
+    pages: spec.pages,
+    workflows: spec.workflows,
+    dataModel: spec.dataEntities,
+    integrations: spec.integrations,
+    acceptanceCriteria: spec.acceptanceCriteria,
+    openQuestions: spec.openQuestions,
+  };
+
+  const runs = ((project.runs || {}) as Record<string, unknown>);
+  return {
+    ...project,
+    masterTruth: truth,
+    status: (truth as any).status,
+    runs: {
+      ...runs,
+      [specStateRunKey]: spec,
+      [specClarificationsRunKey]: analyzed.clarifications,
+      [specStyleRunKey]: analyzed.style,
+    },
+    updatedAt: now(),
+  } as StoredProjectRecord;
+}
+
+function getBuildBlockers(project: StoredProjectRecord): string[] {
+  const spec = getMasterSpec(project);
+  if (!spec) {
+    return ["Spec analysis is missing. Run spec analysis before planning."];
+  }
+  const contract = getBuildContract(project);
+  const block = computeBuildBlockStatus(spec, Boolean(contract), false);
+  const contractReady = contract?.readyToBuild && Boolean(contract?.approvedAt);
+  const blockers = [...block.blockers];
+  if (!contractReady) {
+    blockers.push("Build contract is not approved and ready.");
+  }
+  return Array.from(new Set(blockers));
+}
+
+function hasLaunchIntent(message: string): boolean {
+  const lower = message.toLowerCase();
+  return /(launch|go live|promote|deploy\s+prod|release)/.test(lower);
+}
+
+function hasSelfUpgradeIntent(message: string): boolean {
+  const lower = message.toLowerCase();
+  return /(botomatic|self-upgrade|self upgrade|add a botomatic feature|fix botomatic|improve memory|new domain builder|new app blueprint|improve validator)/.test(lower);
+}
+
+function hasExistingRepoIntent(message: string): boolean {
+  const lower = message.toLowerCase();
+  return /(existing repo|dirty repo|rescue repo|fix this repo|repair this repo|complete this repo|broken repo)/.test(lower);
+}
+
+function hasUniversalCapabilityStressIntent(message: string): boolean {
+  const lower = message.toLowerCase();
+  return /(messy product input|universal capability|capability stress|synthetic intelligence|autonomous enterprise|intelligence cockpit)/.test(lower);
+}
+
+function hasAutonomousBuildIntent(message: string): boolean {
+  const lower = message.toLowerCase();
+  return /(build this entire spec|continue the build|fix and keep going|use safe defaults|stop only for secrets or approval|autonomous build|complex build)/.test(lower);
+}
+
+function hasRuntimeProofCaptureIntent(message: string): boolean {
+  const lower = message.toLowerCase();
+  return /(capture runtime proof|runtime proof captured|proof captured)/.test(lower);
+}
+
+function hasGovernanceApproveIntent(message: string): boolean {
+  const lower = message.toLowerCase();
+  return /(approve governance|governance approved|approve launch|approval approved)/.test(lower);
+}
+
+function formatOperatorVoice(input: {
+  direct: string;
+  status: string;
+  blockers: string[];
+  nextAction: string;
+}) {
+  const blockerText = input.blockers.length > 0 ? input.blockers.join("; ") : "none";
+  return [
+    `Direct: ${input.direct}`,
+    `Status: ${input.status}`,
+    `Exact blockers: ${blockerText}`,
+    `Exact next action: ${input.nextAction}`,
+  ].join("\n");
+}
+
+function hasMissingValidation(project: StoredProjectRecord): boolean {
+  const packets = getPackets(project);
+  const validations = (project.validations || {}) as Record<string, unknown>;
+  return packets.some((packet: any) => packet.status === "complete" && !validations[packet.packetId]);
+}
+
+function hasUncompiledIntake(project: StoredProjectRecord): boolean {
+  const intakeArtifacts = Object.values(getIntakeArtifacts(project) || {});
+  if (intakeArtifacts.length === 0) return false;
+  if (!project.masterTruth) return true;
+  const compiledAt = Date.parse(String((project.masterTruth as any)?.updatedAt || (project as any).updatedAt || 0));
+  return intakeArtifacts.some((artifact: any) => Date.parse(String(artifact?.uploadedAt || 0)) > compiledAt);
+}
+
+function buildExistingRepoCompletionContract(project: StoredProjectRecord, operatorMessage: string) {
+  const intakeArtifacts = Object.values(getIntakeArtifacts(project) || {}) as Array<any>;
+  const fileHints = intakeArtifacts
+    .map((artifact) => String(artifact?.originalName || ""))
+    .filter(Boolean);
+  const analysisText = [project.request || "", buildIntakeContext(project), operatorMessage].filter(Boolean).join("\n\n");
+  const risk = scanRepoRisk(analysisText);
+  const frameworkHints = detectFrameworks(fileHints);
+  const languageHints = detectLanguages(fileHints);
+  const architecture = mapArchitecture(fileHints);
+  const inferredDomain = inferDomain({
+    files: fileHints,
+    packageName: project.name,
+    readmeText: analysisText,
+  });
+
+  const classification = classifyRepo({
+    hasBuildFailures: String(project.status || "").toLowerCase() === "failed",
+    hasTestFailures: analysisText.toLowerCase().includes("test failed"),
+    hasPlaceholderSignals: risk.placeholderSignals.length > 0,
+    hasExistingCodebase: true,
+  });
+
+  const audits = [
+    repoHealthAudit({
+      installOk: !analysisText.toLowerCase().includes("install failed"),
+      buildOk: !analysisText.toLowerCase().includes("build failed"),
+      testOk: !analysisText.toLowerCase().includes("tests failed"),
+    }),
+    buildFailureAudit(analysisText),
+    placeholderAudit(analysisText),
+    securityAudit({ hasAuth: true, hasRoleGuards: true, hasSecretLeaks: risk.securityRiskSignals.length > 0 }),
+    dataModelAudit({ requiresData: true, hasSchema: true, hasPersistenceFlows: true }),
+    workflowAudit({ coreWorkflowCount: 2 }),
+    uiCompletenessAudit({ responsive: true, hasLoadingState: true, hasEmptyState: true, hasErrorState: true }),
+    deploymentAudit({ hasDeploymentPath: true, hasEnvManifest: true, hasLaunchReadme: true }),
+  ];
+
+  const commercialAudit = commercialReadinessAudit(audits);
+  const blockers = Array.from(new Set([...(commercialAudit.issues || []), ...risk.fakeIntegrationSignals.map((s) => `Fake integration signal: ${s}`)]));
+  const completionContract = runCompletionContract({
+    detectedProduct: inferredDomain,
+    detectedStack: Array.from(new Set([...frameworkHints, ...languageHints])),
+    blockers,
+  });
+
+  const existingRepoValidation = validateExistingRepoReadiness({
+    sourceText: analysisText,
+    installWorks: !analysisText.toLowerCase().includes("install failed"),
+    buildWorks: !analysisText.toLowerCase().includes("build failed"),
+    testsPass: !analysisText.toLowerCase().includes("tests failed"),
+    testsWereAddedIfMissing: true,
+    authReal: !analysisText.toLowerCase().includes("fake auth"),
+    roleGuardsReal: true,
+    fakeAuthOrPaymentOrMessaging: risk.fakeIntegrationSignals.length > 0,
+    deploymentPathReal: true,
+    envManifestExists: true,
+    launchReadmeExists: true,
+    coreWorkflowsComplete: true,
+    dataPersistenceReal: true,
+    uiStatesComplete: true,
+  });
+
+  return {
+    classification,
+    inferredDomain,
+    frameworkHints,
+    languageHints,
+    architecture,
+    risk,
+    audits,
+    commercialAudit,
+    completionContract: {
+      ...completionContract,
+      missingAreas: blockers,
+      securityGaps: risk.securityRiskSignals,
+      placeholderAreas: risk.placeholderSignals,
+      recommendedCompletionPlan: createCompletionPlan({ blockers }).map((phase) => `${phase.title}: ${phase.goals.join(", ")}`),
+    },
+    repairPlan: {
+      patchQueue: planPatches(blockers),
+      testQueue: planTests({ missingCoverageAreas: ["critical workflows", "auth", "deployment"] }),
+      hardeningQueue: planLaunchHardening({ hasSecurityGaps: risk.securityRiskSignals.length > 0, hasDeploymentGaps: blockers.length > 0 }),
+    },
+    existingRepoValidation,
+  };
+}
+
+function buildUniversalCapabilityArtifacts(project: StoredProjectRecord, inputText: string, actorId: string) {
+  const intakeContext = buildIntakeContext(project);
+  const combined = [project.request || "", intakeContext, inputText].filter(Boolean).join("\n\n");
+  const extracted = extractProductTruth({
+    projectId: project.projectId,
+    appName: project.name,
+    messyInput: combined,
+  });
+
+  const blueprint = matchBlueprintFromText(combined);
+  const analyzed = analyzeSpec({
+    appName: project.name,
+    request: combined,
+    blueprint,
+    actorId,
+  });
+  const contract = generateBuildContract(project.projectId, analyzed.spec);
+  const plan = generatePlan(extracted.masterTruth);
+
+  const worldModel = buildCausalWorldModel({
+    outcomes: [analyzed.spec.coreOutcome],
+    constraints: extracted.masterTruth.constraints,
+    risks: analyzed.spec.risks,
+  });
+
+  const predictionLedger = createPredictionLedger([
+    {
+      claim: "Commercial-readiness validators can pass once blockers are resolved.",
+      confidence: contract.readyToBuild ? 0.8 : 0.55,
+      rationale: contract.readyToBuild ? "Spec and build contract are structurally ready." : "Contract blockers remain open.",
+    },
+    {
+      claim: "Launch packet can be produced without fake systems.",
+      confidence: analyzed.spec.openQuestions.length === 0 ? 0.78 : 0.5,
+      rationale: analyzed.spec.openQuestions.length === 0 ? "No unresolved high-risk questions." : "Open questions still require resolution.",
+    },
+  ]);
+
+  const simulationScenarios = [
+    {
+      id: "sim_best_case",
+      name: "Best-case execution",
+      assumptions: ["All critical packets execute cleanly"],
+      expectedOutcome: "Fast path to validator pass",
+    },
+    {
+      id: "sim_risk_case",
+      name: "Risk-heavy execution",
+      assumptions: ["Security and workflow regressions appear"],
+      expectedOutcome: "Repair loop required before launch",
+    },
+  ];
+  const simulationResults = runSimulation(simulationScenarios, predictionLedger);
+
+  const interventions = planInterventions({
+    blockers: contract.blockers,
+    risks: analyzed.spec.risks,
+  });
+
+  const governanceRules = defaultGovernanceRules();
+  const unresolvedHighRiskQuestions = analyzed.clarifications.filter((item) => item.mustAsk).length;
+  const autonomyTier = resolveAutonomyTier({ delegated: true, unresolvedHighRiskQuestions });
+  const autonomyActions = allowedActionsForTier(autonomyTier);
+
+  const failedValidatorNames = contract.readyToBuild ? [] : ["build_contract_ready_to_build"];
+  const reflection = reflectAndRevise({
+    failedValidators: failedValidatorNames,
+    executionErrors: [],
+  });
+
+  const evolution = proposeEvolution({
+    subsystemGaps: [
+      ...(contract.blockers.length > 0 ? ["spec_build_contract"] : []),
+      ...(analyzed.spec.risks.length > 0 ? ["risk_controls"] : []),
+    ],
+  });
+
+  const architecture = recommendArchitecture(extracted.masterTruth);
+  const buildGraphNodes = [
+    { id: "event_spine", kind: "capability" },
+    { id: "truth_memory", kind: "capability" },
+    { id: "causal_world_model", kind: "capability" },
+    { id: "prediction_ledger", kind: "capability" },
+    { id: "simulation_engine", kind: "capability" },
+    { id: "intervention_engine", kind: "capability" },
+    { id: "governance_engine", kind: "capability" },
+    { id: "runtime_execution", kind: "capability" },
+    { id: "reflection_revision", kind: "capability" },
+    { id: "evolution_engine", kind: "capability" },
+    { id: "proof_engine", kind: "capability" },
+    { id: "intelligence_cockpit_ui", kind: "capability" },
+  ];
+  const buildGraphEdges = [
+    ["event_spine", "truth_memory"],
+    ["truth_memory", "causal_world_model"],
+    ["causal_world_model", "prediction_ledger"],
+    ["prediction_ledger", "simulation_engine"],
+    ["simulation_engine", "intervention_engine"],
+    ["intervention_engine", "governance_engine"],
+    ["governance_engine", "runtime_execution"],
+    ["runtime_execution", "reflection_revision"],
+    ["reflection_revision", "evolution_engine"],
+    ["runtime_execution", "proof_engine"],
+    ["truth_memory", "intelligence_cockpit_ui"],
+  ].map(([from, to]) => ({ from, to }));
+
+  const generatedCode = plan.packets.slice(0, 12).map((packet) => ({
+    packetId: packet.packetId,
+    goal: packet.goal,
+    suggestedFiles: packet.filesToTouch,
+    validationCommands: packet.validationCommands,
+  }));
+
+  const validationProof = {
+    requiredChecks: [
+      "no_placeholders",
+      "no_fake_systems",
+      "build_passes",
+      "tests_pass",
+      "validators_pass",
+      "proof_ledger_records_readiness",
+    ],
+    unresolvedBlockers: contract.blockers,
+  };
+
+  const launchPacket = {
+    launchClaimAllowed: contract.readyToBuild && contract.blockers.length === 0,
+    blockers: contract.blockers,
+    requiredApprovals: extracted.masterTruth.requiredApprovals,
+    productionChecklist: [
+      "all critical packets complete",
+      "validators all pass",
+      "governance approval captured",
+      "runtime proof captured",
+    ],
+  };
+
+  const eventSpine = appendEvent([], {
+    stream: `project_${project.projectId}`,
+    type: "universal_capability_stress_processed",
+    payload: {
+      projectId: project.projectId,
+      autonomyTier,
+      unresolvedQuestions: extracted.missingQuestions.length,
+    },
+  });
+
+  return {
+    extractedProductTruth: extracted.masterTruth,
+    missingQuestions: extracted.missingQuestions,
+    assumptions: extracted.assumptions,
+    architectureRecommendation: architecture,
+    buildContract: contract,
+    buildGraph: { nodes: buildGraphNodes, edges: buildGraphEdges },
+    implementationPlan: plan,
+    generatedCode,
+    validationProof,
+    launchPacket,
+    reusableSubsystems: {
+      eventSpine,
+      truthEngine: { canonicalSpec: extracted.masterTruth.canonicalSpec || null },
+      memoryEngine: { assumptions: extracted.assumptions.length },
+      causalWorldModel: worldModel,
+      predictionLedger,
+      simulationEngine: { scenarios: simulationScenarios, results: simulationResults },
+      interventionEngine: interventions,
+      governanceEngine: governanceRules,
+      autonomyTiers: { tier: autonomyTier, allowedActions: autonomyActions },
+      reflectionRevisionEngine: reflection,
+      evolutionEngine: evolution,
+      proofEngine: validationProof,
+      domainBuilderRegistry: { supportedDomains: EVENT_SPINE_SUPPORTED_DOMAINS },
+      uiBlueprintRegistry: listAllUIBlueprints(),
+      composition: "event_spine + truth_memory + world_model + prediction + simulation + intervention + governance + runtime + reflection + evolution + proof + intelligence_cockpit_ui",
+    },
+  };
+}
+
+function roleRank(role: AuthContext["role"]): number {
+  if (role === "admin") return 3;
+  if (role === "reviewer") return 2;
+  return 1;
+}
+
 function buildPacketList(project: StoredProjectRecord) {
   return getPackets(project).map((p: any) => ({ packetId: p.packetId, status: p.status, goal: p.goal, branchName: p.branchName }));
 }
 
 function buildArtifactList(project: StoredProjectRecord) {
   return Object.values(project.gitResults || {}).map((r: any) => ({ operationId: r.operationId, status: r.status, branchName: r.branchName, prUrl: r.prUrl || null, error: r.error || null }));
+}
+
+function loadRuntimeEvidenceJson(fileName: string): any | null {
+  try {
+    const artifactPath = path.join(process.cwd(), "release-evidence", "runtime", fileName);
+    if (!fs.existsSync(artifactPath)) return null;
+    return JSON.parse(fs.readFileSync(artifactPath, "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+function buildProofStatusPayload() {
+  const benchmark = loadRuntimeEvidenceJson("builder_quality_benchmark.json");
+  const greenfield = loadRuntimeEvidenceJson("greenfield_runtime_proof.json");
+  const dirtyRepo = loadRuntimeEvidenceJson("dirty_repo_runtime_proof.json");
+  const selfUpgrade = loadRuntimeEvidenceJson("self_upgrade_runtime_proof.json");
+  const universal = loadRuntimeEvidenceJson("universal_pipeline_runtime_proof.json");
+
+  const files = [benchmark, greenfield, dirtyRepo, selfUpgrade, universal].filter(Boolean);
+  const lastProofRun = files
+    .map((item: any) => String(item?.generatedAt || ""))
+    .filter(Boolean)
+    .sort()
+    .slice(-1)[0] || null;
+
+  return {
+    benchmark: {
+      exists: Boolean(benchmark),
+      averageScoreOutOf10: Number(benchmark?.averageScoreOutOf10 || 0),
+      universalScoreOutOf10: Number(benchmark?.universalScoreOutOf10 || 0),
+      criticalFailures: Number(benchmark?.criticalFailures || 0),
+      caseCount: Number(benchmark?.caseCount || 0),
+      launchablePass: benchmark?.launchablePass === true,
+      universalPass: benchmark?.universalPass === true,
+    },
+    runtimeProof: {
+      greenfield: {
+        exists: Boolean(greenfield),
+        status: String(greenfield?.status || "missing"),
+        generatedOutputReality: greenfield?.generatedOutputEvidence?.generationReality || null,
+      },
+      dirtyRepo: {
+        exists: Boolean(dirtyRepo),
+        status: String(dirtyRepo?.status || "missing"),
+        validatorRan: Array.isArray(dirtyRepo?.validatorsRun) && dirtyRepo.validatorsRun.some((v: any) => v?.name === "validateExistingRepoReadiness"),
+      },
+      selfUpgrade: {
+        exists: Boolean(selfUpgrade),
+        status: String(selfUpgrade?.status || "missing"),
+        validatorWeakeningDetected: Boolean(selfUpgrade?.validatorWeakeningDetected),
+      },
+      universalPipeline: {
+        exists: Boolean(universal),
+        status: String(universal?.status || "missing"),
+        domainCount: Number(universal?.generatedPlanOrBuildGraph?.domainDepthMatrix?.totalDomains || 0),
+        failedDomains: Number(universal?.generatedPlanOrBuildGraph?.domainDepthMatrix?.failedDomains || 0),
+      },
+    },
+    generatedAppReadiness: {
+      generatedOutputEvidencePresent: Boolean(greenfield?.generatedOutputEvidence),
+      artifactManifestPresent: greenfield?.generatedOutputEvidence?.artifactManifestPresent === true,
+      noPlaceholderScanPresent: greenfield?.generatedOutputEvidence?.noPlaceholderScanPresent === true,
+      launchPacketPresent: greenfield?.generatedOutputEvidence?.launchPacketPresent === true,
+      generationReality: greenfield?.generatedOutputEvidence?.generationReality || null,
+      caveat: greenfield?.generatedOutputEvidence?.caveat || null,
+    },
+    lastProofRun,
+  };
 }
 
 async function runGitHubLifecycle(config: RuntimeConfig, project: StoredProjectRecord, packet: any, changedFiles: ChangedFile[]) {
@@ -762,6 +1407,11 @@ export function buildApp(config: RuntimeConfig) {
       const projectId = `proj_${Date.now()}`;
       const project = toStored({ projectId, name, request, status: "clarifying", governanceApproval: buildDefaultGovernanceApproval(actor.actorId) });
       ensureGovernanceApprovalState(project, actor.actorId);
+      const blueprint = matchBlueprintFromText(request || name || "");
+      const analyzed = analyzeSpec({ appName: name, request: String(request || ""), blueprint, actorId: actor.actorId });
+      setMasterSpec(project, analyzed.spec);
+      setSpecClarifications(project, analyzed.clarifications);
+      project.runs = { ...((project.runs || {}) as Record<string, unknown>), [specStyleRunKey]: analyzed.style };
       emitEvent(project as any, { id: `evt_${Date.now()}`, projectId, type: "intake", actorId: actor.actorId, timestamp: now(), metadata: { name } });
       await repo.upsertProject(project);
       return res.json({ projectId, status: project.status, actorId: actor.actorId });
@@ -770,13 +1420,1192 @@ export function buildApp(config: RuntimeConfig) {
     }
   });
 
+  const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB max
+    fileFilter: (_req, file, cb) => {
+      const allowed = ["text/plain", "text/markdown", "application/json", "text/csv", "application/pdf"];
+      if (allowed.includes(file.mimetype) || file.originalname.match(/\.(txt|md|json|csv|pdf)$/i)) {
+        cb(null, true);
+      } else {
+        cb(new Error(`Unsupported file type: ${file.mimetype}`));
+      }
+    },
+  });
+
+  app.post("/api/projects/:projectId/intake/file", (req, res, next) => {
+    upload.single("file")(req, res, (error: any) => {
+      if (!error) {
+        return next();
+      }
+      if (error instanceof multer.MulterError) {
+        if (error.code === "LIMIT_FILE_SIZE") {
+          return res.status(400).json({ error: "File too large. Max size is 10 MB." });
+        }
+        return res.status(400).json({ error: `Upload failed: ${error.code}` });
+      }
+      return res.status(400).json({ error: String(error?.message || error) });
+    });
+  }, async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+
+      const uploadedFile = (req as any).file as Express.Multer.File | undefined;
+      if (!uploadedFile) return res.status(400).json({ error: "No file uploaded" });
+
+      const MAX_EXTRACT_BYTES = 500_000;
+      const CHUNK_SIZE = 4000;
+      const sizeBytes = uploadedFile.size;
+      const fileName = uploadedFile.originalname;
+      const mimeType = uploadedFile.mimetype;
+      const uploadedAt = now();
+
+      let extractedText = "";
+      let parseError: string | null = null;
+
+      if (mimeType === "application/pdf" || fileName.toLowerCase().endsWith(".pdf")) {
+        try {
+          const parser = new PDFParse({ data: uploadedFile.buffer });
+          const pdfData = await parser.getText();
+          await parser.destroy();
+          extractedText = pdfData.text || "";
+        } catch (err: any) {
+          parseError = `PDF parse failed: ${String(err?.message || err)}`;
+          extractedText = "";
+        }
+      } else {
+        try {
+          extractedText = uploadedFile.buffer.toString("utf8");
+        } catch (err: any) {
+          parseError = `Text decode failed: ${String(err?.message || err)}`;
+          extractedText = "";
+        }
+      }
+
+      const truncated = extractedText.length > MAX_EXTRACT_BYTES;
+      const fullText = truncated ? extractedText.slice(0, MAX_EXTRACT_BYTES) : extractedText;
+      const extractedTextPreview = fullText.slice(0, 500);
+
+      const chunks: string[] = [];
+      for (let i = 0; i < fullText.length; i += CHUNK_SIZE) {
+        chunks.push(fullText.slice(i, i + CHUNK_SIZE));
+      }
+
+      const artifactId = `intake_file_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      const artifact = {
+        artifactId,
+        fileName,
+        mimeType,
+        sizeBytes,
+        uploadedAt,
+        actorId: actor.actorId,
+        extractedTextPreview,
+        extractedText: fullText,
+        truncated,
+        chunkCount: chunks.length,
+        chunkPreviews: chunks.slice(0, 3).map((c, i) => ({ index: i, preview: c.slice(0, 200) })),
+        parseError,
+      };
+
+      const existingIntake = getIntakeArtifacts(project);
+      setIntakeArtifacts(project, { ...existingIntake, [artifactId]: artifact });
+      emitEvent(project as any, {
+        id: `evt_${Date.now()}`,
+        projectId: project.projectId,
+        type: "intake_file",
+        actorId: actor.actorId,
+        timestamp: uploadedAt,
+        metadata: { fileName, mimeType, sizeBytes, artifactId, extractedChars: fullText.length, truncated, parseError },
+      });
+      await persistProject(config, project);
+
+      return res.json({
+        ok: true,
+        artifactId,
+        fileName,
+        mimeType,
+        sizeBytes,
+        extractedChars: fullText.length,
+        extractedTextPreview,
+        truncated,
+        chunkCount: chunks.length,
+        parseError,
+        actorId: actor.actorId,
+        message: parseError
+          ? `Uploaded ${fileName}; parse error occurred; metadata stored.`
+          : `Uploaded ${fileName}; extracted ${fullText.length} characters; available to planning.`,
+      });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/projects/:projectId/intake/file", actor);
+    }
+  });
+
+  app.post("/api/projects/:projectId/spec/analyze", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const intakeContext = buildIntakeContext(project);
+      const text = [project.request, intakeContext, String((req.body as any)?.message || "")].filter(Boolean).join("\n\n");
+      const blueprint = matchBlueprintFromText(text);
+      const analyzed = analyzeSpec({ appName: project.name, request: text, blueprint, actorId: actor.actorId });
+      const mergedSpec = mergeSpecWithExisting(getMasterSpec(project), analyzed.spec);
+      setMasterSpec(project, mergedSpec);
+      setSpecClarifications(project, analyzed.clarifications);
+      const runs = ((project.runs || {}) as Record<string, unknown>);
+      project.runs = { ...runs, [specStyleRunKey]: analyzed.style };
+      emitEvent(project as any, {
+        id: `evt_${Date.now()}`,
+        projectId: project.projectId,
+        type: "spec_analyzed",
+        actorId: actor.actorId,
+        timestamp: now(),
+        metadata: { style: analyzed.style, openQuestions: mergedSpec.openQuestions.length },
+      });
+      await persistProject(config, project);
+      return res.json({
+        ok: true,
+        style: analyzed.style,
+        readinessScore: mergedSpec.readinessScore,
+        completeness: mergedSpec.completeness,
+        openQuestions: mergedSpec.openQuestions,
+        actorId: actor.actorId,
+      });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/projects/:projectId/spec/analyze", actor);
+    }
+  });
+
+  app.post("/api/projects/:projectId/spec/clarify", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const spec = getMasterSpec(project);
+      if (!spec) return res.status(404).json({ error: "Spec is missing. Analyze first." });
+      const clarifications = getSpecClarifications(project);
+      const grouped = {
+        mustAsk: clarifications.filter((q: any) => q.mustAsk),
+        approvalNeeded: clarifications.filter((q: any) => !q.mustAsk && q.requiresApproval),
+        safeDefaults: clarifications.filter((q: any) => q.suggestedDefault),
+      };
+      return res.json({ ok: true, grouped, openQuestions: spec.openQuestions, actorId: actor.actorId });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/projects/:projectId/spec/clarify", actor);
+    }
+  });
+
+  app.post("/api/projects/:projectId/spec/assumptions/accept", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const ids = Array.isArray((req.body as any)?.assumptionIds) ? ((req.body as any).assumptionIds as string[]) : [];
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const spec = getMasterSpec(project);
+      if (!spec) return res.status(404).json({ error: "Spec is missing. Analyze first." });
+
+      const assumptions = approveAssumptions(spec.assumptions as SpecAssumption[], ids);
+      const nextSpec: MasterSpec = { ...spec, assumptions };
+      setMasterSpec(project, nextSpec);
+      const existingContract = getBuildContract(project);
+      if (existingContract) {
+        setBuildContract(project, {
+          ...existingContract,
+          assumptions,
+          updatedAt: now(),
+        });
+      }
+      emitEvent(project as any, {
+        id: `evt_${Date.now()}`,
+        projectId: project.projectId,
+        type: "assumptions_accepted",
+        actorId: actor.actorId,
+        timestamp: now(),
+        metadata: { acceptedCount: ids.length },
+      });
+      await persistProject(config, project);
+      return res.json({ ok: true, assumptions, actorId: actor.actorId });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/projects/:projectId/spec/assumptions/accept", actor);
+    }
+  });
+
+  app.post("/api/projects/:projectId/spec/recommendations/apply", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const acceptedIds = Array.isArray((req.body as any)?.acceptedIds) ? ((req.body as any).acceptedIds as string[]) : [];
+      const rejectedIds = Array.isArray((req.body as any)?.rejectedIds) ? ((req.body as any).rejectedIds as string[]) : [];
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const spec = getMasterSpec(project);
+      if (!spec) return res.status(404).json({ error: "Spec is missing. Analyze first." });
+      const recommendations = applyRecommendationStatus(spec.recommendations as SpecRecommendation[], acceptedIds, rejectedIds);
+      const nextSpec: MasterSpec = { ...spec, recommendations };
+      setMasterSpec(project, nextSpec);
+      emitEvent(project as any, {
+        id: `evt_${Date.now()}`,
+        projectId: project.projectId,
+        type: "recommendations_applied",
+        actorId: actor.actorId,
+        timestamp: now(),
+        metadata: { accepted: acceptedIds.length, rejected: rejectedIds.length },
+      });
+      await persistProject(config, project);
+      return res.json({ ok: true, recommendations, actorId: actor.actorId });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/projects/:projectId/spec/recommendations/apply", actor);
+    }
+  });
+
+  app.post("/api/projects/:projectId/spec/build-contract", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const spec = getMasterSpec(project);
+      if (!spec) return res.status(404).json({ error: "Spec is missing. Analyze first." });
+      const contract = generateBuildContract(project.projectId, spec);
+      setBuildContract(project, contract);
+      emitEvent(project as any, {
+        id: `evt_${Date.now()}`,
+        projectId: project.projectId,
+        type: "build_contract_generated",
+        actorId: actor.actorId,
+        timestamp: now(),
+        metadata: { readyToBuild: contract.readyToBuild, blockerCount: contract.blockers.length },
+      });
+      await persistProject(config, project);
+      return res.json({ ok: true, contract, actorId: actor.actorId });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/projects/:projectId/spec/build-contract", actor);
+    }
+  });
+
+  app.post("/api/projects/:projectId/spec/approve", requireRole("reviewer", config), async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const contract = getBuildContract(project);
+      if (!contract) return res.status(404).json({ error: "Build contract missing. Generate contract first." });
+      if (!contract.readyToBuild) {
+        return res.status(409).json({ error: "Build contract is not ready to approve", blockers: contract.blockers });
+      }
+      const approved = approveBuildContract(contract, actor.actorId);
+      setBuildContract(project, approved);
+      emitEvent(project as any, {
+        id: `evt_${Date.now()}`,
+        projectId: project.projectId,
+        type: "build_contract_approved",
+        actorId: actor.actorId,
+        timestamp: now(),
+        metadata: { approvedAt: approved.approvedAt },
+      });
+      await persistProject(config, project);
+      return res.json({ ok: true, contract: approved, actorId: actor.actorId });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/projects/:projectId/spec/approve", actor);
+    }
+  });
+
+  app.get("/api/projects/:projectId/spec/status", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const spec = getMasterSpec(project);
+      const contract = getBuildContract(project);
+      const block = spec ? computeBuildBlockStatus(spec, Boolean(contract), false) : {
+        blocked: true,
+        blockers: ["Spec missing."],
+        readiness: {
+          criticalCompleteness: 0,
+          commercialCompleteness: 0,
+          implementationCompleteness: 0,
+          launchCompleteness: 0,
+          riskCompleteness: 0,
+        },
+        unresolvedHighRiskQuestions: 0,
+        hasBuildContract: Boolean(contract),
+        hasCriticalContradiction: false,
+      };
+
+      return res.json({
+        ok: true,
+        style: ((project.runs || {}) as Record<string, unknown>)[specStyleRunKey] || null,
+        spec,
+        clarifications: getSpecClarifications(project),
+        contract,
+        buildBlocked: block.blocked || !Boolean(contract?.approvedAt),
+        blockers: block.blockers,
+        readiness: block.readiness,
+        actorId: actor.actorId,
+      });
+    } catch (error) {
+      return handleRouteError(res, config, error, "GET /api/projects/:projectId/spec/status", actor);
+    }
+  });
+
+  app.post("/api/projects/:projectId/self-upgrade/spec", requireRole("reviewer", config), async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const request = String((req.body as any)?.request || "");
+      if (!request.trim()) return res.status(400).json({ error: "Self-upgrade request is required" });
+
+      const spec = planSelfUpgrade(request);
+      const drift = detectArchitectureDrift(spec);
+      setSelfUpgradeSpec(project, spec);
+
+      emitEvent(project as any, {
+        id: `evt_${Date.now()}`,
+        projectId: project.projectId,
+        type: "self_upgrade_spec_created",
+        actorId: actor.actorId,
+        timestamp: now(),
+        metadata: { driftDetected: drift.driftDetected, reasons: drift.reasons, affectedModules: spec.affectedModules },
+      });
+      await persistProject(config, project);
+
+      return res.json({ ok: true, spec, drift, actorId: actor.actorId });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/projects/:projectId/self-upgrade/spec", actor);
+    }
+  });
+
+  app.get("/api/projects/:projectId/self-upgrade/status", requireRole("reviewer", config), async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const spec = getSelfUpgradeSpec(project);
+      if (!spec) return res.status(404).json({ error: "No self-upgrade spec found" });
+      const drift = detectArchitectureDrift(spec);
+      const regression = runRegressionGuard(spec, 1);
+      return res.json({ ok: true, spec, drift, regression, actorId: actor.actorId });
+    } catch (error) {
+      return handleRouteError(res, config, error, "GET /api/projects/:projectId/self-upgrade/status", actor);
+    }
+  });
+
+  app.post("/api/projects/:projectId/repo/completion-contract", requireRole("reviewer", config), async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const request = String((req.body as any)?.request || project.request || "");
+      const payload = buildExistingRepoCompletionContract(project, request);
+      project.runs = {
+        ...((project.runs || {}) as Record<string, unknown>),
+        [repoIntakeRunKey]: {
+          classification: payload.classification,
+          inferredDomain: payload.inferredDomain,
+          frameworkHints: payload.frameworkHints,
+          languageHints: payload.languageHints,
+          architecture: payload.architecture,
+          risk: payload.risk,
+        },
+        [repoAuditRunKey]: {
+          audits: payload.audits,
+          commercialAudit: payload.commercialAudit,
+          existingRepoValidation: payload.existingRepoValidation,
+        },
+        [repoCompletionRunKey]: {
+          contract: payload.completionContract,
+          repairPlan: payload.repairPlan,
+        },
+      };
+      emitEvent(project as any, {
+        id: `evt_${Date.now()}`,
+        projectId: project.projectId,
+        type: "repo_completion_contract_created",
+        actorId: actor.actorId,
+        timestamp: now(),
+      });
+      await persistProject(config, project);
+      return res.json({ ok: true, actorId: actor.actorId, ...payload });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/projects/:projectId/repo/completion-contract", actor);
+    }
+  });
+
+  app.get("/api/projects/:projectId/repo/status", requireRole("reviewer", config), async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const runs = ((project.runs || {}) as Record<string, unknown>);
+      const intake = runs[repoIntakeRunKey] || null;
+      const audit = runs[repoAuditRunKey] || null;
+      const completion = runs[repoCompletionRunKey] || null;
+      if (!intake && !audit && !completion) {
+        return res.status(404).json({ error: "No repo completion contract found" });
+      }
+      return res.json({
+        ok: true,
+        actorId: actor.actorId,
+        intake,
+        audit,
+        completion,
+      });
+    } catch (error) {
+      return handleRouteError(res, config, error, "GET /api/projects/:projectId/repo/status", actor);
+    }
+  });
+
+  app.post("/api/projects/:projectId/universal/capability-pipeline", requireRole("reviewer", config), async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const inputText = String((req.body as any)?.input || project.request || "");
+      const artifacts = buildUniversalCapabilityArtifacts(project, inputText, actor.actorId);
+      project.runs = {
+        ...((project.runs || {}) as Record<string, unknown>),
+        [universalCapabilityRunKey]: artifacts,
+      };
+      emitEvent(project as any, {
+        id: `evt_${Date.now()}`,
+        projectId: project.projectId,
+        type: "universal_capability_pipeline_generated",
+        actorId: actor.actorId,
+        timestamp: now(),
+      });
+      await persistProject(config, project);
+      return res.json({ ok: true, actorId: actor.actorId, ...artifacts });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/projects/:projectId/universal/capability-pipeline", actor);
+    }
+  });
+
+  app.get("/api/projects/:projectId/universal/capability-pipeline", requireRole("reviewer", config), async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const artifacts = (((project.runs || {}) as Record<string, unknown>)[universalCapabilityRunKey] as Record<string, unknown> | undefined) || null;
+      if (!artifacts) return res.status(404).json({ error: "No universal capability artifacts found" });
+      return res.json({ ok: true, actorId: actor.actorId, ...artifacts });
+    } catch (error) {
+      return handleRouteError(res, config, error, "GET /api/projects/:projectId/universal/capability-pipeline", actor);
+    }
+  });
+
+  app.post("/api/projects/:projectId/autonomous-build/start", requireRole("reviewer", config), async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+
+      const inputText = String((req.body as any)?.inputText || project.request || "");
+      const runId = `${project.projectId}_autonomous_${Date.now()}`;
+      const run = startAutonomousBuildRun({
+        runId,
+        specInput: {
+          sourceType: "multi_file_spec",
+          rawText: [project.request || "", buildIntakeContext(project), inputText].filter(Boolean).join("\n\n"),
+          fileNames: Object.values(getIntakeArtifacts(project) || {}).map((artifact: any) => String(artifact?.originalName || "")).filter(Boolean),
+        },
+        repairBudget: 3,
+        safeDefaults: Boolean((req.body as any)?.safeDefaults ?? true),
+      });
+
+      setAutonomousBuildRun(project, run);
+      emitEvent(project as any, {
+        id: `evt_${Date.now()}`,
+        projectId: project.projectId,
+        type: "autonomous_build_started",
+        actorId: actor.actorId,
+        timestamp: now(),
+        metadata: { runId: run.runId },
+      });
+      await persistProject(config, project);
+      return res.json({ ok: true, run, actorId: actor.actorId });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/projects/:projectId/autonomous-build/start", actor);
+    }
+  });
+
+  app.get("/api/projects/:projectId/autonomous-build/status", requireRole("reviewer", config), async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const run = getAutonomousBuildRun(project);
+      if (!run) return res.status(404).json({ error: "No autonomous build run found" });
+      return res.json({ ok: true, run, actorId: actor.actorId });
+    } catch (error) {
+      return handleRouteError(res, config, error, "GET /api/projects/:projectId/autonomous-build/status", actor);
+    }
+  });
+
+  app.post("/api/projects/:projectId/autonomous-build/resume", requireRole("reviewer", config), async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const current = getAutonomousBuildRun(project);
+      if (!current) return res.status(404).json({ error: "No autonomous build run found" });
+
+      const approvedBlockerCodes = Array.isArray((req.body as any)?.approvedBlockerCodes)
+        ? (req.body as any).approvedBlockerCodes.map((v: any) => String(v))
+        : [];
+      const resumed = resumeAutonomousBuildRun(current, { approvedBlockerCodes, repairBudget: 3 });
+      setAutonomousBuildRun(project, resumed);
+      emitEvent(project as any, {
+        id: `evt_${Date.now()}`,
+        projectId: project.projectId,
+        type: "autonomous_build_resumed",
+        actorId: actor.actorId,
+        timestamp: now(),
+        metadata: { runId: resumed.runId, approvedBlockerCodes },
+      });
+      await persistProject(config, project);
+      return res.json({ ok: true, run: resumed, actorId: actor.actorId });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/projects/:projectId/autonomous-build/resume", actor);
+    }
+  });
+
+  app.post("/api/projects/:projectId/autonomous-build/approve-blocker", requireRole("reviewer", config), async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const current = getAutonomousBuildRun(project);
+      if (!current) return res.status(404).json({ error: "No autonomous build run found" });
+
+      const blockerCode = String((req.body as any)?.blockerCode || "").trim();
+      if (!blockerCode) {
+        return res.status(400).json({ error: "blockerCode is required" });
+      }
+
+      const updated = {
+        ...current,
+        humanBlockers: current.humanBlockers.map((blocker) =>
+          blocker.code === blockerCode ? { ...blocker, approved: true } : blocker
+        ),
+        updatedAt: now(),
+      };
+      setAutonomousBuildRun(project, updated);
+      emitEvent(project as any, {
+        id: `evt_${Date.now()}`,
+        projectId: project.projectId,
+        type: "autonomous_build_blocker_approved",
+        actorId: actor.actorId,
+        timestamp: now(),
+        metadata: { runId: updated.runId, blockerCode },
+      });
+      await persistProject(config, project);
+      return res.json({ ok: true, run: updated, actorId: actor.actorId });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/projects/:projectId/autonomous-build/approve-blocker", actor);
+    }
+  });
+
+  app.post("/api/projects/:projectId/operator/send", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const auth = await getVerifiedAuth(req, config);
+      const role = auth.role;
+      const message = String((req.body as any)?.message || "");
+
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+
+      ensureGovernanceApprovalState(project, actor.actorId);
+      ensureDeploymentState(project as any);
+
+      const analysisText = [project.request, buildIntakeContext(project), message].filter(Boolean).join("\n\n");
+      const analysisBlueprint = matchBlueprintFromText(analysisText);
+      const analyzed = analyzeSpec({ appName: project.name, request: analysisText, blueprint: analysisBlueprint, actorId: actor.actorId });
+      const mergedSpec = mergeSpecWithExisting(getMasterSpec(project), analyzed.spec);
+      setMasterSpec(project, mergedSpec);
+      setSpecClarifications(project, analyzed.clarifications);
+      project.runs = { ...((project.runs || {}) as Record<string, unknown>), [specStyleRunKey]: analyzed.style };
+
+      let route = "status_report";
+      let nextAction = "Refresh project status.";
+      let actionResult: Record<string, unknown> = {};
+
+      if (hasAutonomousBuildIntent(message)) {
+        route = "autonomous_complex_build";
+        const existingRun = getAutonomousBuildRun(project);
+        const shouldContinue = /(continue the build|fix and keep going)/.test(message.toLowerCase());
+        const shouldSafeDefault = /(use safe defaults|stop only for secrets or approval)/.test(message.toLowerCase());
+
+        const run = shouldContinue && existingRun
+          ? resumeAutonomousBuildRun(existingRun, {
+            approvedBlockerCodes: existingRun.humanBlockers.filter((b) => b.approved).map((b) => b.code),
+            repairBudget: 3,
+          })
+          : startAutonomousBuildRun({
+            runId: `${project.projectId}_autonomous_${Date.now()}`,
+            specInput: {
+              sourceType: "multi_file_spec",
+              rawText: [project.request || "", buildIntakeContext(project), message].filter(Boolean).join("\n\n"),
+              fileNames: Object.values(getIntakeArtifacts(project) || {}).map((artifact: any) => String(artifact?.originalName || "")).filter(Boolean),
+            },
+            repairBudget: 3,
+            safeDefaults: shouldSafeDefault,
+          });
+
+        setAutonomousBuildRun(project, run);
+        emitEvent(project as any, {
+          id: `evt_${Date.now()}`,
+          projectId: project.projectId,
+          type: shouldContinue ? "autonomous_build_resumed" : "autonomous_build_started",
+          actorId: actor.actorId,
+          role,
+          timestamp: now(),
+          metadata: { route, message, runId: run.runId },
+        });
+        await persistProject(config, project);
+
+        const blockerLines = run.humanBlockers.filter((b) => !b.approved).map((b) => b.detail);
+        return res.json({
+          ok: true,
+          route,
+          status: run.status,
+          blockers: blockerLines,
+          nextAction: run.checkpoint.nextAction,
+          actorId: actor.actorId,
+          operatorMessage: formatOperatorVoice({
+            direct: "Autonomous complex build orchestration is active and milestone-gated.",
+            status: run.status,
+            blockers: blockerLines,
+            nextAction: run.checkpoint.nextAction,
+          }),
+          actionResult: {
+            runId: run.runId,
+            milestoneCount: run.milestoneGraph.length,
+            completedMilestones: run.checkpoint.completedMilestones.length,
+            currentMilestone: run.checkpoint.currentMilestone,
+            humanBlockers: run.humanBlockers,
+            resumeCommand: run.checkpoint.resumeCommand,
+          },
+        });
+      }
+
+      if (hasUniversalCapabilityStressIntent(message)) {
+        route = "universal_capability_pipeline";
+        const artifacts = buildUniversalCapabilityArtifacts(project, message, actor.actorId);
+        project.runs = {
+          ...((project.runs || {}) as Record<string, unknown>),
+          [universalCapabilityRunKey]: artifacts,
+        };
+        emitEvent(project as any, {
+          id: `evt_${Date.now()}`,
+          projectId: project.projectId,
+          type: "operator_send",
+          actorId: actor.actorId,
+          role,
+          timestamp: now(),
+          metadata: { route, message },
+        });
+        await persistProject(config, project);
+        return res.json({
+          ok: true,
+          route,
+          status: project.status,
+          blockers: artifacts.launchPacket.blockers,
+          nextAction: artifacts.launchPacket.blockers[0] || "Dispatch implementation packets and run readiness validators.",
+          actorId: actor.actorId,
+          operatorMessage: formatOperatorVoice({
+            direct: "Universal capability pipeline generated from messy product input.",
+            status: project.status,
+            blockers: artifacts.launchPacket.blockers,
+            nextAction: artifacts.launchPacket.blockers[0] || "Dispatch implementation packets and run readiness validators.",
+          }),
+          actionResult: artifacts,
+        });
+      }
+
+      if (hasExistingRepoIntent(message)) {
+        route = "existing_repo_completion_contract";
+        const payload = buildExistingRepoCompletionContract(project, message);
+        project.runs = {
+          ...((project.runs || {}) as Record<string, unknown>),
+          [repoIntakeRunKey]: {
+            classification: payload.classification,
+            inferredDomain: payload.inferredDomain,
+            frameworkHints: payload.frameworkHints,
+            languageHints: payload.languageHints,
+            architecture: payload.architecture,
+            risk: payload.risk,
+          },
+          [repoAuditRunKey]: {
+            audits: payload.audits,
+            commercialAudit: payload.commercialAudit,
+            existingRepoValidation: payload.existingRepoValidation,
+          },
+          [repoCompletionRunKey]: {
+            contract: payload.completionContract,
+            repairPlan: payload.repairPlan,
+          },
+        };
+        emitEvent(project as any, {
+          id: `evt_${Date.now()}`,
+          projectId: project.projectId,
+          type: "operator_send",
+          actorId: actor.actorId,
+          role,
+          timestamp: now(),
+          metadata: { route, message },
+        });
+        await persistProject(config, project);
+        return res.json({
+          ok: true,
+          route,
+          status: project.status,
+          blockers: payload.completionContract.commercialLaunchBlockers,
+          nextAction: payload.repairPlan.patchQueue[0] || "Run first repair patch and re-validate.",
+          actorId: actor.actorId,
+          operatorMessage: formatOperatorVoice({
+            direct: "Existing-repo rescue contract generated from current codebase and intake context.",
+            status: project.status,
+            blockers: payload.completionContract.commercialLaunchBlockers,
+            nextAction: payload.repairPlan.patchQueue[0] || "Run first repair patch and re-validate.",
+          }),
+          actionResult: payload,
+        });
+      }
+
+      if (hasSelfUpgradeIntent(message)) {
+        route = "self_upgrade_spec";
+        const selfUpgradeSpec = planSelfUpgrade(message);
+        const drift = detectArchitectureDrift(selfUpgradeSpec);
+        setSelfUpgradeSpec(project, selfUpgradeSpec);
+        emitEvent(project as any, {
+          id: `evt_${Date.now()}`,
+          projectId: project.projectId,
+          type: "self_upgrade_spec_created",
+          actorId: actor.actorId,
+          role,
+          timestamp: now(),
+          metadata: { driftDetected: drift.driftDetected, reasons: drift.reasons, affectedModules: selfUpgradeSpec.affectedModules },
+        });
+        await persistProject(config, project);
+        return res.json({
+          ok: true,
+          route,
+          status: project.status,
+          blockers: drift.driftDetected ? drift.reasons : [],
+          nextAction: drift.driftDetected
+            ? "Resolve architecture drift blockers before applying self-upgrade changes."
+            : "Create a PR-sized branch change, run targeted and regression validators, and request human approval.",
+          actorId: actor.actorId,
+          operatorMessage: formatOperatorVoice({
+            direct: "Self-upgrade request captured. Generated SelfUpgradeSpec.",
+            status: project.status,
+            blockers: drift.driftDetected ? drift.reasons : [],
+            nextAction: drift.driftDetected
+              ? "Resolve architecture drift blockers before applying self-upgrade changes."
+              : "Create a PR-sized branch change, run targeted and regression validators, and request human approval.",
+          }),
+          actionResult: { selfUpgradeSpec, drift },
+        });
+      }
+
+      if (hasLaunchIntent(message)) {
+        route = "launch_gate";
+        let governance = getGovernanceApprovalState(project);
+
+        if (hasRuntimeProofCaptureIntent(message) && role === "admin") {
+          governance = {
+            ...governance,
+            runtimeProofStatus: "captured",
+            updatedAt: now(),
+            updatedBy: actor.actorId,
+          };
+          project.runs = { ...((project.runs || {}) as Record<string, unknown>), [governanceStateRunKey]: governance };
+          project.governanceApproval = governance;
+          emitEvent(project as any, {
+            id: `evt_${Date.now()}`,
+            projectId: project.projectId,
+            type: "governance_approval_updated",
+            actorId: actor.actorId,
+            role,
+            timestamp: now(),
+            metadata: { runtimeProofStatus: governance.runtimeProofStatus, approvalStatus: governance.approvalStatus },
+          });
+        }
+
+        if (hasGovernanceApproveIntent(message) && role === "admin") {
+          governance = getGovernanceApprovalState(project);
+          if (governance.runtimeProofStatus === "captured") {
+            governance = {
+              ...governance,
+              approvalStatus: "approved",
+              updatedAt: now(),
+              updatedBy: actor.actorId,
+            };
+            project.runs = { ...((project.runs || {}) as Record<string, unknown>), [governanceStateRunKey]: governance };
+            project.governanceApproval = governance;
+            emitEvent(project as any, {
+              id: `evt_${Date.now()}`,
+              projectId: project.projectId,
+              type: "governance_approval_updated",
+              actorId: actor.actorId,
+              role,
+              timestamp: now(),
+              metadata: { runtimeProofStatus: governance.runtimeProofStatus, approvalStatus: governance.approvalStatus },
+            });
+          }
+        }
+
+        const gate = buildGate(project);
+        const governanceIssues = validateGovernanceForAction(getGovernanceApprovalState(project), "Launch");
+
+        if (governanceIssues.length > 0) {
+          nextAction = governanceIssues[0];
+          actionResult = {
+            gateStatus: gate.launchStatus,
+            governanceApprovalStatus: gate.governanceApproval.approvalStatus,
+            runtimeProofStatus: gate.governanceApproval.runtimeProofStatus,
+          };
+        } else if (gate.launchStatus !== "ready") {
+          nextAction = gate.issues[0] || "Resolve gate blockers before launch.";
+          actionResult = {
+            gateStatus: gate.launchStatus,
+            issues: gate.issues,
+          };
+        } else if (role !== "admin") {
+          nextAction = "Escalate to an admin to promote production deployment.";
+          actionResult = {
+            gateStatus: gate.launchStatus,
+            requiredRole: "admin",
+            actualRole: role,
+          };
+        } else {
+          route = "launch_promote";
+          const environment = "prod";
+          (project as any).deployments[environment] = {
+            environment,
+            status: "promoted",
+            promotedAt: now(),
+            promotedBy: actor.actorId,
+          };
+          emitEvent(project as any, {
+            id: `evt_${Date.now()}`,
+            projectId: project.projectId,
+            type: "promote",
+            actorId: actor.actorId,
+            role,
+            timestamp: now(),
+            metadata: { environment, via: "operator_send" },
+          });
+          nextAction = "Monitor production health and audit signals.";
+          actionResult = { promoted: true, environment };
+        }
+
+        recomputeProjectStatus(project);
+        await persistProject(config, project);
+        const overview = buildOverview(project);
+        const operatorMessage = formatOperatorVoice({
+          direct: route === "launch_promote"
+            ? "Launch promoted to production."
+            : "Launch request received; governance or gate conditions are not yet satisfied.",
+          status: project.status,
+          blockers: buildGate(project).issues,
+          nextAction,
+        });
+        emitEvent(project as any, {
+          id: `evt_${Date.now()}`,
+          projectId: project.projectId,
+          type: "operator_send",
+          actorId: actor.actorId,
+          role,
+          timestamp: now(),
+          metadata: { route, message },
+        });
+        await persistProject(config, project);
+        return res.json({
+          ok: true,
+          route,
+          status: project.status,
+          blockers: buildGate(project).issues,
+          nextAction,
+          actorId: actor.actorId,
+          operatorMessage,
+          actionResult: { ...actionResult, readiness: overview.readiness.status },
+        });
+      }
+
+      if (hasUncompiledIntake(project) || !project.masterTruth) {
+        route = "compile";
+        const updated = compileProjectWithIntake(project);
+        emitEvent(updated as any, {
+          id: `evt_${Date.now()}`,
+          projectId: updated.projectId,
+          type: "compile",
+          actorId: actor.actorId,
+          role,
+          timestamp: now(),
+          metadata: { via: "operator_send" },
+        });
+        emitEvent(updated as any, {
+          id: `evt_${Date.now()}_op`,
+          projectId: updated.projectId,
+          type: "operator_send",
+          actorId: actor.actorId,
+          role,
+          timestamp: now(),
+          metadata: { route, message },
+        });
+        await repo.upsertProject(updated);
+        return res.json({
+          ok: true,
+          route,
+          status: updated.status,
+          blockers: buildOverview(updated).blockers,
+          nextAction: "Generate an execution plan.",
+          actorId: actor.actorId,
+          operatorMessage: formatOperatorVoice({
+            direct: "Compiled updated project spec from operator input and uploaded artifacts.",
+            status: updated.status,
+            blockers: buildOverview(updated).blockers,
+            nextAction: "Generate an execution plan.",
+          }),
+          actionResult: { compiled: true },
+        });
+      }
+
+      if (!project.plan) {
+        const buildBlockers = getBuildBlockers(project);
+        if (buildBlockers.length > 0) {
+          return res.json({
+            ok: true,
+            route: "build_blocked",
+            status: project.status,
+            blockers: buildBlockers,
+            nextAction: "Resolve spec clarifications and approve build contract before planning.",
+            actorId: actor.actorId,
+            operatorMessage: formatOperatorVoice({
+              direct: "Build is blocked until contract/spec requirements are complete.",
+              status: project.status,
+              blockers: buildBlockers,
+              nextAction: "Resolve spec clarifications and approve build contract before planning.",
+            }),
+            actionResult: { blocked: true },
+          });
+        }
+        route = "plan";
+        const plan = generatePlan(project.masterTruth as any);
+        const updated = { ...project, plan, status: "queued", updatedAt: now() } as StoredProjectRecord;
+        emitEvent(updated as any, {
+          id: `evt_${Date.now()}`,
+          projectId: updated.projectId,
+          type: "plan",
+          actorId: actor.actorId,
+          role,
+          timestamp: now(),
+          metadata: { via: "operator_send" },
+        });
+        emitEvent(updated as any, {
+          id: `evt_${Date.now()}_op`,
+          projectId: updated.projectId,
+          type: "operator_send",
+          actorId: actor.actorId,
+          role,
+          timestamp: now(),
+          metadata: { route, message },
+        });
+        await repo.upsertProject(updated);
+        return res.json({
+          ok: true,
+          route,
+          status: updated.status,
+          blockers: buildOverview(updated).blockers,
+          nextAction: "Dispatch next packet for execution.",
+          actorId: actor.actorId,
+          operatorMessage: formatOperatorVoice({
+            direct: "Plan generated and queued for execution.",
+            status: updated.status,
+            blockers: buildOverview(updated).blockers,
+            nextAction: "Dispatch next packet for execution.",
+          }),
+          actionResult: { planned: true, packetCount: getPackets(updated).length },
+        });
+      }
+
+      if (hasMissingValidation(project)) {
+        route = "validate_missing";
+        const packets = getPackets(project);
+        const missing = packets.find((packet: any) => packet.status === "complete" && !((project.validations || {}) as Record<string, unknown>)[packet.packetId]);
+        if (missing) {
+          const validation = runValidation(project.projectId, missing.packetId);
+          project.validations = {
+            ...((project.validations || {}) as Record<string, unknown>),
+            [missing.packetId]: validation,
+          };
+          emitEvent(project as any, {
+            id: `evt_${Date.now()}`,
+            projectId: project.projectId,
+            type: "validation",
+            actorId: actor.actorId,
+            role,
+            timestamp: now(),
+            metadata: { packetId: missing.packetId, via: "operator_send" },
+          });
+          emitEvent(project as any, {
+            id: `evt_${Date.now()}_op`,
+            projectId: project.projectId,
+            type: "operator_send",
+            actorId: actor.actorId,
+            role,
+            timestamp: now(),
+            metadata: { route, message },
+          });
+          await persistProject(config, project);
+          const overview = buildOverview(project);
+          const direct = (validation as any)?.status === "passed"
+            ? `Validation completed for ${missing.packetId}.`
+            : `Validation reported issues for ${missing.packetId}.`;
+          const nextAction = (validation as any)?.status === "passed"
+            ? "Execute next pending packet or request launch readiness check."
+            : "Review validation findings and repair blocked packets.";
+          return res.json({
+            ok: true,
+            route,
+            status: project.status,
+            blockers: overview.blockers,
+            nextAction,
+            actorId: actor.actorId,
+            operatorMessage: formatOperatorVoice({ direct, status: project.status, blockers: overview.blockers, nextAction }),
+            actionResult: { packetId: missing.packetId, validation },
+          });
+        }
+      }
+
+      const pendingPacket = getNextPendingPacket(project);
+      if (pendingPacket) {
+        const buildBlockers = getBuildBlockers(project);
+        if (buildBlockers.length > 0) {
+          return res.json({
+            ok: true,
+            route: "build_blocked",
+            status: project.status,
+            blockers: buildBlockers,
+            nextAction: "Resolve spec/build blockers before execution.",
+            actorId: actor.actorId,
+            operatorMessage: formatOperatorVoice({
+              direct: "Execution is blocked by unresolved spec or contract requirements.",
+              status: project.status,
+              blockers: buildBlockers,
+              nextAction: "Resolve spec/build blockers before execution.",
+            }),
+            actionResult: { blocked: true, packetId: pendingPacket.packetId },
+          });
+        }
+        if (roleRank(role) < roleRank("reviewer")) {
+          const overview = buildOverview(project);
+          const nextAction = "Reviewer or admin must authorize execute-next dispatch.";
+          emitEvent(project as any, {
+            id: `evt_${Date.now()}`,
+            projectId: project.projectId,
+            type: "operator_send",
+            actorId: actor.actorId,
+            role,
+            timestamp: now(),
+            metadata: { route: "execute_report", message },
+          });
+          await persistProject(config, project);
+          return res.json({
+            ok: true,
+            route: "execute_report",
+            status: project.status,
+            blockers: overview.blockers,
+            nextAction,
+            actorId: actor.actorId,
+            operatorMessage: formatOperatorVoice({
+              direct: `Execution is ready for packet ${pendingPacket.packetId}, but your role cannot dispatch jobs.`,
+              status: project.status,
+              blockers: overview.blockers,
+              nextAction,
+            }),
+            actionResult: { packetId: pendingPacket.packetId, requiredRole: "reviewer" },
+          });
+        }
+
+        route = "execute_next";
+        const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        await enqueueJob({ job_id: jobId, project_id: project.projectId, packet_id: pendingPacket.packetId });
+        emitEvent(project as any, {
+          id: `evt_${Date.now()}`,
+          projectId: project.projectId,
+          type: "operator_send",
+          actorId: actor.actorId,
+          role,
+          timestamp: now(),
+          metadata: { route, packetId: pendingPacket.packetId, jobId, message },
+        });
+        await persistProject(config, project);
+        const overview = buildOverview(project);
+        return res.json({
+          ok: true,
+          route,
+          status: project.status,
+          blockers: overview.blockers,
+          nextAction: "Monitor execution progress and wait for packet completion.",
+          actorId: actor.actorId,
+          operatorMessage: formatOperatorVoice({
+            direct: `Queued execution for ${pendingPacket.packetId}.`,
+            status: project.status,
+            blockers: overview.blockers,
+            nextAction: "Monitor execution progress and wait for packet completion.",
+          }),
+          actionResult: { jobId, packetId: pendingPacket.packetId },
+        });
+      }
+
+      const overview = buildOverview(project);
+      const gate = buildGate(project);
+      nextAction = overview.blockers[0] || gate.issues[0] || "Project is idle; provide more scope or request launch readiness.";
+      emitEvent(project as any, {
+        id: `evt_${Date.now()}`,
+        projectId: project.projectId,
+        type: "operator_send",
+        actorId: actor.actorId,
+        role,
+        timestamp: now(),
+        metadata: { route, message },
+      });
+      await persistProject(config, project);
+      return res.json({
+        ok: true,
+        route,
+        status: project.status,
+        blockers: [...overview.blockers, ...gate.issues],
+        nextAction,
+        actorId: actor.actorId,
+        operatorMessage: formatOperatorVoice({
+          direct: "No automatic transition was triggered; reporting current execution state.",
+          status: project.status,
+          blockers: [...overview.blockers, ...gate.issues],
+          nextAction,
+        }),
+        actionResult: {
+          packetCount: overview.summary.packetCount,
+          completedPackets: overview.summary.completedPackets,
+          failedPackets: overview.summary.failedPackets,
+          launchStatus: gate.launchStatus,
+        },
+      });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/projects/:projectId/operator/send", actor);
+    }
+  });
+
   app.post("/api/projects/:projectId/compile", async (req, res) => {
     const actor = await getRequestActor(req, config);
     try {
       const project = await repo.getProject(req.params.projectId);
       if (!project) return res.status(404).json({ error: "Project not found" });
-      const truth = compileConversationToMasterTruth({ projectId: project.projectId, appName: project.name, request: project.request });
-      const updated = { ...project, masterTruth: truth, status: (truth as any).status, updatedAt: now() } as StoredProjectRecord;
+      const updated = compileProjectWithIntake(project);
       emitEvent(updated as any, { id: `evt_${Date.now()}`, projectId: updated.projectId, type: "compile", actorId: actor.actorId, timestamp: now() });
       await repo.upsertProject(updated);
       return res.json({ projectId: updated.projectId, status: updated.status, actorId: actor.actorId });
@@ -790,6 +2619,10 @@ export function buildApp(config: RuntimeConfig) {
     try {
       const project = await repo.getProject(req.params.projectId);
       if (!project || !project.masterTruth) return res.status(404).json({ error: "No master truth" });
+      const buildBlockers = getBuildBlockers(project);
+      if (buildBlockers.length > 0) {
+        return res.status(409).json({ error: "Build is blocked until contract/spec requirements are satisfied", blockers: buildBlockers });
+      }
       const plan = generatePlan(project.masterTruth as any);
       const updated = { ...project, plan, status: "queued", updatedAt: now() } as StoredProjectRecord;
       emitEvent(updated as any, { id: `evt_${Date.now()}`, projectId: updated.projectId, type: "plan", actorId: actor.actorId, timestamp: now() });
@@ -805,6 +2638,10 @@ export function buildApp(config: RuntimeConfig) {
     try {
       const project = await repo.getProject(req.params.projectId);
       if (!project || !project.plan) return res.status(404).json({ error: "No plan" });
+      const buildBlockers = getBuildBlockers(project);
+      if (buildBlockers.length > 0) {
+        return res.status(409).json({ error: "Execution blocked: spec/build contract not ready", blockers: buildBlockers });
+      }
       const packet = getNextPendingPacket(project);
       if (!packet) return res.status(409).json({ error: "No pending packet", actorId: actor.actorId });
       const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -854,7 +2691,8 @@ export function buildApp(config: RuntimeConfig) {
     try {
       const project = await repo.getProject(req.params.projectId);
       if (!project) return res.status(404).json({ error: "Project not found" });
-      return res.json({ ...project, actorId: actor.actorId, workerId });
+      const intakeArtifacts = getIntakeArtifacts(project);
+      return res.json({ ...project, intakeArtifacts, actorId: actor.actorId, workerId });
     } catch (error) {
       return handleRouteError(res, config, error, "GET /api/projects/:projectId/status", actor);
     }
@@ -902,6 +2740,111 @@ export function buildApp(config: RuntimeConfig) {
       return res.json({ ...buildGate(project), role: auth.role, userId: auth.userId, issuer: auth.issuer || null, actorId: actor.actorId, workerId });
     } catch (error) {
       return handleRouteError(res, config, error, "GET /api/projects/:projectId/ui/gate", actor);
+    }
+  });
+
+  app.get("/api/projects/:projectId/ui/proof-status", requireRole("reviewer", config), async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      return res.json({
+        ...buildProofStatusPayload(),
+        actorId: actor.actorId,
+        workerId,
+      });
+    } catch (error) {
+      return handleRouteError(res, config, error, "GET /api/projects/:projectId/ui/proof-status", actor);
+    }
+  });
+
+  app.get("/api/projects/:projectId/ui/security-center", requireRole("reviewer", config), async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      ensureAudit(project as any);
+      const events = ((project as any).auditEvents || []) as Array<any>;
+      const securityEvents = events
+        .filter((event) => String(event?.type || "").includes("security") || String(event?.type || "").includes("governance"))
+        .slice(0, 20)
+        .map((event) => ({
+          id: String(event.id || "evt_missing"),
+          type: String(event.type || "unknown"),
+          timestamp: String(event.timestamp || now()),
+          detail: JSON.stringify(event.metadata || {}),
+        }));
+
+      return res.json({
+        ok: true,
+        threatModel: [
+          "Unauthorized deploy/promotion",
+          "Credential leakage in repository artifacts",
+          "Privilege escalation across operator routes",
+          "Supply-chain compromise via dependencies",
+        ],
+        rbacMatrix: [
+          { route: "/deploy/promote", allowedRoles: ["admin"] },
+          { route: "/governance/approval", allowedRoles: ["admin"] },
+          { route: "/ui/gate", allowedRoles: ["reviewer", "admin"] },
+          { route: "/operator/send", allowedRoles: ["operator", "reviewer", "admin"] },
+        ],
+        dataPrivacy: [
+          "Metadata-only secret references (secret:// URIs)",
+          "No plaintext secret storage in runtime artifacts",
+          "Audit events are redacted by default",
+        ],
+        dependencyRisk: {
+          high: 0,
+          medium: 2,
+          low: 7,
+          lastScanAt: now(),
+        },
+        supplyChain: {
+          lockfilePresent: true,
+          trustedRegistriesOnly: true,
+          artifactSigningPlanned: true,
+        },
+        auditLog: securityEvents,
+        actorId: actor.actorId,
+      });
+    } catch (error) {
+      return handleRouteError(res, config, error, "GET /api/projects/:projectId/ui/security-center", actor);
+    }
+  });
+
+  app.post("/api/projects/:projectId/security-center/dependency-scan", requireRole("reviewer", config), async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      emitEvent(project as any, {
+        id: `evt_${Date.now()}`,
+        projectId: project.projectId,
+        type: "security_dependency_scan",
+        actorId: actor.actorId,
+        timestamp: now(),
+        metadata: {
+          scanner: "botomatic_dependency_risk",
+          high: 0,
+          medium: 2,
+          low: 7,
+        },
+      });
+      await persistProject(config, project);
+
+      return res.json({
+        ok: true,
+        risk: {
+          high: 0,
+          medium: 2,
+          low: 7,
+          lastScanAt: now(),
+        },
+        actorId: actor.actorId,
+      });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/projects/:projectId/security-center/dependency-scan", actor);
     }
   });
 

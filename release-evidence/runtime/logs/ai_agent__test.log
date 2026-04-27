@@ -1,0 +1,11 @@
+domain=ai_agent
+commandId=test
+kind=test
+startedAt=2026-04-27T00:09:12.332Z
+finishedAt=2026-04-27T00:09:12.833Z
+status=passed
+exitCode=0
+--- stdout ---
+ai_agent safety checks passed
+
+--- stderr ---

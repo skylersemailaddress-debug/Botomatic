@@ -1,0 +1,97 @@
+{
+  "schemaVersion": "1.0",
+  "domainId": "web_saas_app",
+  "integrationContractId": "integration_contract_web_saas_app",
+  "deploymentTarget": "vercel",
+  "requiredServices": [
+    "vercel",
+    "postgres",
+    "oidc_provider"
+  ],
+  "optionalServices": [
+    "stripe",
+    "sendgrid",
+    "twilio",
+    "github_actions"
+  ],
+  "requiredEnvVars": [
+    "NEXT_PUBLIC_API_BASE_URL",
+    "DATABASE_URL"
+  ],
+  "optionalEnvVars": [
+    "OIDC_ISSUER",
+    "OIDC_AUDIENCE",
+    "STRIPE_SECRET_KEY",
+    "SENDGRID_API_KEY",
+    "TWILIO_AUTH_TOKEN"
+  ],
+  "requiredSecrets": [
+    "DATABASE_URL"
+  ],
+  "optionalSecrets": [
+    "OIDC_CLIENT_SECRET",
+    "STRIPE_SECRET_KEY",
+    "SENDGRID_API_KEY",
+    "TWILIO_AUTH_TOKEN"
+  ],
+  "services": [
+    {
+      "service": "vercel",
+      "required": true,
+      "executed": false,
+      "executionMode": "dry_run",
+      "result": "skipped",
+      "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+    },
+    {
+      "service": "postgres",
+      "required": true,
+      "executed": false,
+      "executionMode": "dry_run",
+      "result": "skipped",
+      "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+    },
+    {
+      "service": "oidc_provider",
+      "required": true,
+      "executed": false,
+      "executionMode": "dry_run",
+      "result": "skipped",
+      "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+    },
+    {
+      "service": "stripe",
+      "required": false,
+      "executed": false,
+      "executionMode": "not_executed",
+      "result": "skipped",
+      "reason": "Optional external integration not executed in local proof harness."
+    },
+    {
+      "service": "sendgrid",
+      "required": false,
+      "executed": false,
+      "executionMode": "not_executed",
+      "result": "skipped",
+      "reason": "Optional external integration not executed in local proof harness."
+    },
+    {
+      "service": "twilio",
+      "required": false,
+      "executed": false,
+      "executionMode": "not_executed",
+      "result": "skipped",
+      "reason": "Optional external integration not executed in local proof harness."
+    },
+    {
+      "service": "github_actions",
+      "required": false,
+      "executed": false,
+      "executionMode": "not_executed",
+      "result": "skipped",
+      "reason": "Optional external integration not executed in local proof harness."
+    }
+  ],
+  "launchCaveat": "Live deployment requires Vercel account access, OIDC credentials, and production database connectivity.",
+  "generatedAt": "2026-04-27T00:09:33.566Z"
+}

@@ -1,0 +1,9 @@
+domain=marketing_website
+commandId=lint_typecheck
+kind=lint_typecheck
+startedAt=2026-04-27T00:08:59.374Z
+finishedAt=2026-04-27T00:08:59.617Z
+status=passed
+exitCode=0
+--- stdout ---
+--- stderr ---

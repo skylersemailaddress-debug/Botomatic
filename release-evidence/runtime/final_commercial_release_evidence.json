@@ -1,0 +1,138 @@
+{
+  "generatedAt": "2026-04-26T20:48:00.000Z",
+  "branch": "feat/control-plane-file-ingestion",
+  "repo": "skylersemailaddress-debug/Botomatic",
+  "finalStatus": "ready_for_commercial_release",
+  "validatorCount": 38,
+  "failedValidatorCount": 0,
+  "benchmarkSummary": {
+    "proofArtifact": "builder_quality_benchmark.json",
+    "caseCoverage": 31,
+    "averageScoreOutOf10": 10,
+    "universalScoreOutOf10": 10,
+    "criticalFailures": 0,
+    "launchablePass": true,
+    "universalPass": true
+  },
+  "coreRuntimeProofSummary": {
+    "greenfieldRuntimeProof": {
+      "path": "greenfield_runtime_proof.json",
+      "status": "passed",
+      "claim": "Greenfield app-build route produces approved build contract and executable plan with emitted app tree",
+      "routesExercised": ["/api/projects/intake", "/api/projects/:projectId/spec/build-contract", "/api/projects/:projectId/spec/approve", "/api/projects/:projectId/compile", "/api/projects/:projectId/plan"],
+      "validateGeneratedAppPassed": true
+    },
+    "dirtyRepoRuntimeProof": {
+      "path": "dirty_repo_runtime_proof.json",
+      "status": "passed",
+      "claim": "Dirty-repo intake/audit/repair flow with completion contract and launch packet"
+    },
+    "selfUpgradeRuntimeProof": {
+      "path": "self_upgrade_runtime_proof.json",
+      "status": "passed",
+      "claim": "Self-upgrade spec, drift detection, regression guard with validator enforcement"
+    },
+    "universalPipelineRuntimeProof": {
+      "path": "universal_pipeline_runtime_proof.json",
+      "status": "passed",
+      "claim": "Universal capability pipeline with full multi-artifact contract (truth, specs, plans, code, validation, launch packet)"
+    }
+  },
+  "emittedOutputProofSummary": {
+    "multiDomainEmittedOutputProof": {
+      "path": "multi_domain_emitted_output_proof.json",
+      "status": "passed",
+      "requiredDomains": 8,
+      "passedDomains": 8,
+      "failedDomains": 0,
+      "noPlaceholderScanPassed": true,
+      "representativeMeasure": "provided across required launch domains (web_saas_app, marketing_website, api_service, mobile_app, bot, ai_agent, game, dirty_repo_completion)"
+    }
+  },
+  "multiDomainProofSummary": {
+    "domainRuntimeCommandExecutionProof": {
+      "path": "domain_runtime_command_execution_proof.json",
+      "status": "passed",
+      "claim": "Per-domain command matrix, machine-readable logs, explicit execution skips, fail-closed validator"
+    },
+    "domainRuntimeDepthMatrix": {
+      "path": "domain_runtime_depth_matrix.json",
+      "status": "passed",
+      "claim": "Launch rubrics and runtime depth across supported domain builders"
+    }
+  },
+  "runtimeCommandProofSummary": {
+    "proof": "domain_runtime_command_execution_proof.json",
+    "status": "passed",
+    "claim": "Runnable commands are local-runtime readiness evidence for representative emitted trees, not exhaustive production deployment assertion"
+  },
+  "externalDeploymentReadinessSummary": {
+    "proofArtifact": "external_integration_deployment_readiness_proof.json",
+    "status": "passed",
+    "claim": "External integration contracts, secret hygiene, deployment instruction presence validated per domain",
+    "caveat": "Does not perform live calls to external services (Vercel, Auth0, Stripe, Supabase, etc.); not a substitute for production smoke testing"
+  },
+  "deploymentDryRunSummary": {
+    "proofArtifact": "deployment_dry_run_proof.json",
+    "runtimeDryRunPath": "release-evidence/runtime/dry-run/",
+    "status": "passed",
+    "claim": "Deployment config validation, preview artifact generation, smoke-test plans, rollback plans per domain",
+    "caveat": "Does not perform live deployment, use real credentials, or call external production APIs"
+  },
+  "credentialedDeploymentReadinessSummary": {
+    "proofArtifact": "credentialed_deployment_readiness_proof.json",
+    "runtimeManifestPath": "release-evidence/runtime/credentialed-deployment/",
+    "status": "passed",
+    "claim": "Credential requirement manifests, approval-gate blocked-by-default, provider adapters, secret policy checks",
+    "caveat": "Declares what credentials and approvals are required; does not validate real credentials or execute live deployment"
+  },
+  "liveDeploymentExecutionReadinessSummary": {
+    "proofArtifact": "live_deployment_execution_readiness_proof.json",
+    "status": "passed",
+    "claim": "Deployment-attempt contract, approval request, credential binding, provider execution adapter, pre-deploy checklist, blocked execution plan, planned smoke/rollback, audit trail",
+    "caveat": "Demonstrates approval-gated and credential-gated execution orchestration only; does not execute live deployment, does not call real provider APIs, does not validate real credentials, does not prove production deployment success"
+  },
+  "secretsCredentialManagementReadinessSummary": {
+    "proofArtifact": "secrets_credential_management_readiness_proof.json",
+    "status": "passed",
+    "claim": "Metadata-only secret references, provider credential profiles, redacted audit events, and deployment preflight secret gating are enforced",
+    "caveat": "Secret values are never persisted in repository evidence; only secret references and fingerprints are recorded, and live deployment remains blocked when required secrets are missing"
+  },
+  "explicitCaveats": [
+    "Emitted-output proof is representative across required launch domains, not exhaustive over every blueprint permutation, environment-specific deployment path, or external integration surface.",
+    "Runnable command proof is local-runtime readiness evidence for representative emitted trees; does not assert exhaustive production deployment success across all infrastructures or integrations.",
+    "External integration/deployment proof validates integration contracts, secret hygiene, and deployment instruction presence; does not perform live calls to external services.",
+    "Deployment dry-run proof validates deployment configuration, preview generation, and plan generation; does not perform live deployment or use real credentials.",
+    "Credentialed deployment readiness proof declares what credentials and approvals are required; does not validate real credentials or execute live deployment.",
+    "Live deployment execution readiness proof demonstrates approval-gated and credential-gated execution orchestration only; does not execute live deployment or validate real credentials.",
+    "Secrets and credentials are represented by metadata-only references and fingerprints; plaintext secret values are never committed to repository evidence.",
+    "Static representative domain sample folders under release-evidence/generated-apps/<domain>/ satisfy the same launch-package contract as canonical emitted output in this pass.",
+    "No exhaustive proof is provided over every possible blueprint/domain/provider/integration permutation. Proof is representative of core launch-critical surfaces."
+  ],
+  "noLiveDeploymentClaim": true,
+  "noRealSecretsUsed": true,
+  "noRealProviderApisCalled": true,
+  "liveDeploymentBlockedByDefault": true,
+  "representativeNotExhaustive": true,
+  "launchReadinessStatus": "gates_satisfied_under_repo_contract",
+  "requiredProofArtifacts": [
+    "builder_quality_benchmark.json",
+    "greenfield_runtime_proof.json",
+    "dirty_repo_runtime_proof.json",
+    "self_upgrade_runtime_proof.json",
+    "universal_pipeline_runtime_proof.json",
+    "multi_domain_emitted_output_proof.json",
+    "domain_runtime_command_execution_proof.json",
+    "external_integration_deployment_readiness_proof.json",
+    "deployment_dry_run_proof.json",
+    "credentialed_deployment_readiness_proof.json",
+    "live_deployment_execution_readiness_proof.json",
+    "secrets_credential_management_readiness_proof.json"
+  ],
+  "validatorConsistency": {
+    "expectedValidatorCountAfterThisPass": 38,
+    "passingValidators": 38,
+    "failingValidators": 0,
+    "newValidatorInThisPass": "Validate-Botomatic-InstallerRuntimeReadiness"
+  }
+}

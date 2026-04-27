@@ -1,0 +1,551 @@
+{
+  "generatedAt": "2026-04-27T00:09:56.493Z",
+  "proofGrade": "local_runtime",
+  "pathId": "external_integration_deployment_readiness",
+  "requiredDomains": [
+    "web_saas_app",
+    "marketing_website",
+    "api_service",
+    "mobile_app",
+    "bot",
+    "ai_agent",
+    "game",
+    "dirty_repo_completion"
+  ],
+  "requiredDomainPresence": true,
+  "domainCount": 8,
+  "failedDomainCount": 0,
+  "domainResults": [
+    {
+      "domainId": "web_saas_app",
+      "emittedPath": "/workspaces/Botomatic/release-evidence/generated-apps/web_saas_app",
+      "externalServicesRequired": [
+        "vercel",
+        "postgres",
+        "oidc_provider"
+      ],
+      "optionalServices": [
+        "stripe",
+        "sendgrid",
+        "twilio",
+        "github_actions"
+      ],
+      "environmentVariablesRequired": [
+        "NEXT_PUBLIC_API_BASE_URL",
+        "DATABASE_URL"
+      ],
+      "environmentVariablesOptional": [
+        "OIDC_ISSUER",
+        "OIDC_AUDIENCE",
+        "STRIPE_SECRET_KEY",
+        "SENDGRID_API_KEY",
+        "TWILIO_AUTH_TOKEN"
+      ],
+      "deploymentTarget": "vercel",
+      "deploymentInstructionsPath": "deploy/vercel.json",
+      "integrationContractPath": "integrations/integration_contract.json",
+      "deploymentReadinessPath": "deploy/deployment_readiness.json",
+      "fakeIntegrationScanResult": {
+        "passed": true,
+        "issues": []
+      },
+      "secretScanResult": {
+        "passed": true,
+        "issues": []
+      },
+      "requiredEnvVarsMissing": [],
+      "deploymentInstructionsPresent": true,
+      "integrationContractSchemaValid": true,
+      "integrationContractSchemaIssues": [],
+      "deploymentReadinessSchemaValid": true,
+      "deploymentReadinessSchemaIssues": [],
+      "dryRunStatus": {
+        "attempted": true,
+        "command": "npm run -s build",
+        "status": "passed",
+        "reason": "Dry-run command succeeded."
+      },
+      "externalServicesNotExecuted": [
+        {
+          "service": "vercel",
+          "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+        },
+        {
+          "service": "postgres",
+          "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+        },
+        {
+          "service": "oidc_provider",
+          "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+        },
+        {
+          "service": "stripe",
+          "reason": "Optional external integration not executed in local proof harness."
+        },
+        {
+          "service": "sendgrid",
+          "reason": "Optional external integration not executed in local proof harness."
+        },
+        {
+          "service": "twilio",
+          "reason": "Optional external integration not executed in local proof harness."
+        },
+        {
+          "service": "github_actions",
+          "reason": "Optional external integration not executed in local proof harness."
+        }
+      ],
+      "launchCaveat": "Live deployment requires Vercel account access, OIDC credentials, and production database connectivity.",
+      "deploymentReadinessStatus": "passed"
+    },
+    {
+      "domainId": "marketing_website",
+      "emittedPath": "/workspaces/Botomatic/release-evidence/generated-apps/marketing_website",
+      "externalServicesRequired": [
+        "static_hosting",
+        "lead_webhook"
+      ],
+      "optionalServices": [
+        "analytics_provider",
+        "email_platform"
+      ],
+      "environmentVariablesRequired": [
+        "LEAD_WEBHOOK_URL"
+      ],
+      "environmentVariablesOptional": [
+        "ANALYTICS_WRITE_KEY",
+        "EMAIL_API_KEY"
+      ],
+      "deploymentTarget": "static_hosting",
+      "deploymentInstructionsPath": "deploy/static-hosting.md",
+      "integrationContractPath": "integrations/integration_contract.json",
+      "deploymentReadinessPath": "deploy/deployment_readiness.json",
+      "fakeIntegrationScanResult": {
+        "passed": true,
+        "issues": []
+      },
+      "secretScanResult": {
+        "passed": true,
+        "issues": []
+      },
+      "requiredEnvVarsMissing": [],
+      "deploymentInstructionsPresent": true,
+      "integrationContractSchemaValid": true,
+      "integrationContractSchemaIssues": [],
+      "deploymentReadinessSchemaValid": true,
+      "deploymentReadinessSchemaIssues": [],
+      "dryRunStatus": {
+        "attempted": true,
+        "command": "npm run -s build",
+        "status": "passed",
+        "reason": "Dry-run command succeeded."
+      },
+      "externalServicesNotExecuted": [
+        {
+          "service": "static_hosting",
+          "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+        },
+        {
+          "service": "lead_webhook",
+          "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+        },
+        {
+          "service": "analytics_provider",
+          "reason": "Optional external integration not executed in local proof harness."
+        },
+        {
+          "service": "email_platform",
+          "reason": "Optional external integration not executed in local proof harness."
+        }
+      ],
+      "launchCaveat": "Live deployment requires hosting account credentials and lead webhook endpoint credentials.",
+      "deploymentReadinessStatus": "passed"
+    },
+    {
+      "domainId": "api_service",
+      "emittedPath": "/workspaces/Botomatic/release-evidence/generated-apps/api_service",
+      "externalServicesRequired": [
+        "container_registry",
+        "container_runtime",
+        "postgres"
+      ],
+      "optionalServices": [
+        "api_gateway",
+        "observability_stack"
+      ],
+      "environmentVariablesRequired": [
+        "PORT",
+        "DATABASE_URL"
+      ],
+      "environmentVariablesOptional": [
+        "API_GATEWAY_URL",
+        "OTEL_EXPORTER_OTLP_ENDPOINT"
+      ],
+      "deploymentTarget": "container_runtime",
+      "deploymentInstructionsPath": "deploy/container.md",
+      "integrationContractPath": "integrations/integration_contract.json",
+      "deploymentReadinessPath": "deploy/deployment_readiness.json",
+      "fakeIntegrationScanResult": {
+        "passed": true,
+        "issues": []
+      },
+      "secretScanResult": {
+        "passed": true,
+        "issues": []
+      },
+      "requiredEnvVarsMissing": [],
+      "deploymentInstructionsPresent": true,
+      "integrationContractSchemaValid": true,
+      "integrationContractSchemaIssues": [],
+      "deploymentReadinessSchemaValid": true,
+      "deploymentReadinessSchemaIssues": [],
+      "dryRunStatus": {
+        "attempted": true,
+        "command": "npm run -s build",
+        "status": "passed",
+        "reason": "Dry-run command succeeded."
+      },
+      "externalServicesNotExecuted": [
+        {
+          "service": "container_registry",
+          "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+        },
+        {
+          "service": "container_runtime",
+          "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+        },
+        {
+          "service": "postgres",
+          "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+        },
+        {
+          "service": "api_gateway",
+          "reason": "Optional external integration not executed in local proof harness."
+        },
+        {
+          "service": "observability_stack",
+          "reason": "Optional external integration not executed in local proof harness."
+        }
+      ],
+      "launchCaveat": "Live deployment requires container registry credentials and runtime cluster access.",
+      "deploymentReadinessStatus": "passed"
+    },
+    {
+      "domainId": "mobile_app",
+      "emittedPath": "/workspaces/Botomatic/release-evidence/generated-apps/mobile_app",
+      "externalServicesRequired": [
+        "app_store_connect",
+        "play_console",
+        "mobile_api_backend"
+      ],
+      "optionalServices": [
+        "crash_reporting",
+        "push_notifications"
+      ],
+      "environmentVariablesRequired": [],
+      "environmentVariablesOptional": [
+        "SENTRY_DSN",
+        "PUSH_PROVIDER_KEY"
+      ],
+      "deploymentTarget": "ios_android_app_stores",
+      "deploymentInstructionsPath": "deploy/app-store.md",
+      "integrationContractPath": "integrations/integration_contract.json",
+      "deploymentReadinessPath": "deploy/deployment_readiness.json",
+      "fakeIntegrationScanResult": {
+        "passed": true,
+        "issues": []
+      },
+      "secretScanResult": {
+        "passed": true,
+        "issues": []
+      },
+      "requiredEnvVarsMissing": [],
+      "deploymentInstructionsPresent": true,
+      "integrationContractSchemaValid": true,
+      "integrationContractSchemaIssues": [],
+      "deploymentReadinessSchemaValid": true,
+      "deploymentReadinessSchemaIssues": [],
+      "dryRunStatus": {
+        "attempted": false,
+        "command": null,
+        "status": "skipped",
+        "reason": "No safe local dry-run command is defined for this domain target."
+      },
+      "externalServicesNotExecuted": [
+        {
+          "service": "app_store_connect",
+          "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+        },
+        {
+          "service": "play_console",
+          "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+        },
+        {
+          "service": "mobile_api_backend",
+          "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+        },
+        {
+          "service": "crash_reporting",
+          "reason": "Optional external integration not executed in local proof harness."
+        },
+        {
+          "service": "push_notifications",
+          "reason": "Optional external integration not executed in local proof harness."
+        }
+      ],
+      "launchCaveat": "Live store deployment requires developer account login, code signing material, and release approvals.",
+      "deploymentReadinessStatus": "passed"
+    },
+    {
+      "domainId": "bot",
+      "emittedPath": "/workspaces/Botomatic/release-evidence/generated-apps/bot",
+      "externalServicesRequired": [
+        "bot_platform",
+        "webhook_gateway"
+      ],
+      "optionalServices": [
+        "queue_service",
+        "audit_sink"
+      ],
+      "environmentVariablesRequired": [
+        "BOT_TOKEN",
+        "BOT_WEBHOOK_SECRET"
+      ],
+      "environmentVariablesOptional": [
+        "QUEUE_URL",
+        "AUDIT_WEBHOOK_URL"
+      ],
+      "deploymentTarget": "worker_runtime",
+      "deploymentInstructionsPath": "deploy/worker.md",
+      "integrationContractPath": "integrations/integration_contract.json",
+      "deploymentReadinessPath": "deploy/deployment_readiness.json",
+      "fakeIntegrationScanResult": {
+        "passed": true,
+        "issues": []
+      },
+      "secretScanResult": {
+        "passed": true,
+        "issues": []
+      },
+      "requiredEnvVarsMissing": [],
+      "deploymentInstructionsPresent": true,
+      "integrationContractSchemaValid": true,
+      "integrationContractSchemaIssues": [],
+      "deploymentReadinessSchemaValid": true,
+      "deploymentReadinessSchemaIssues": [],
+      "dryRunStatus": {
+        "attempted": true,
+        "command": "npm run -s build",
+        "status": "passed",
+        "reason": "Dry-run command succeeded."
+      },
+      "externalServicesNotExecuted": [
+        {
+          "service": "bot_platform",
+          "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+        },
+        {
+          "service": "webhook_gateway",
+          "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+        },
+        {
+          "service": "queue_service",
+          "reason": "Optional external integration not executed in local proof harness."
+        },
+        {
+          "service": "audit_sink",
+          "reason": "Optional external integration not executed in local proof harness."
+        }
+      ],
+      "launchCaveat": "Live bot deployment requires platform bot token issuance and webhook endpoint registration.",
+      "deploymentReadinessStatus": "passed"
+    },
+    {
+      "domainId": "ai_agent",
+      "emittedPath": "/workspaces/Botomatic/release-evidence/generated-apps/ai_agent",
+      "externalServicesRequired": [
+        "llm_provider",
+        "agent_runtime"
+      ],
+      "optionalServices": [
+        "vector_store",
+        "eval_pipeline"
+      ],
+      "environmentVariablesRequired": [
+        "LLM_API_KEY",
+        "LLM_MODEL"
+      ],
+      "environmentVariablesOptional": [
+        "VECTOR_STORE_URL",
+        "EVAL_RUNNER_URL"
+      ],
+      "deploymentTarget": "agent_runtime",
+      "deploymentInstructionsPath": "deploy/agent-runtime.md",
+      "integrationContractPath": "integrations/integration_contract.json",
+      "deploymentReadinessPath": "deploy/deployment_readiness.json",
+      "fakeIntegrationScanResult": {
+        "passed": true,
+        "issues": []
+      },
+      "secretScanResult": {
+        "passed": true,
+        "issues": []
+      },
+      "requiredEnvVarsMissing": [],
+      "deploymentInstructionsPresent": true,
+      "integrationContractSchemaValid": true,
+      "integrationContractSchemaIssues": [],
+      "deploymentReadinessSchemaValid": true,
+      "deploymentReadinessSchemaIssues": [],
+      "dryRunStatus": {
+        "attempted": true,
+        "command": "npm run -s build",
+        "status": "passed",
+        "reason": "Dry-run command succeeded."
+      },
+      "externalServicesNotExecuted": [
+        {
+          "service": "llm_provider",
+          "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+        },
+        {
+          "service": "agent_runtime",
+          "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+        },
+        {
+          "service": "vector_store",
+          "reason": "Optional external integration not executed in local proof harness."
+        },
+        {
+          "service": "eval_pipeline",
+          "reason": "Optional external integration not executed in local proof harness."
+        }
+      ],
+      "launchCaveat": "Live deployment requires LLM provider credentials, model access policy, and runtime governance approvals.",
+      "deploymentReadinessStatus": "passed"
+    },
+    {
+      "domainId": "game",
+      "emittedPath": "/workspaces/Botomatic/release-evidence/generated-apps/game",
+      "externalServicesRequired": [
+        "distribution_platform"
+      ],
+      "optionalServices": [
+        "steam",
+        "roblox",
+        "console_stores"
+      ],
+      "environmentVariablesRequired": [],
+      "environmentVariablesOptional": [
+        "STEAM_APP_ID",
+        "ROBLOX_PLACE_ID"
+      ],
+      "deploymentTarget": "game_distribution_platform",
+      "deploymentInstructionsPath": "export/build-notes.md",
+      "integrationContractPath": "integrations/integration_contract.json",
+      "deploymentReadinessPath": "deploy/deployment_readiness.json",
+      "fakeIntegrationScanResult": {
+        "passed": true,
+        "issues": []
+      },
+      "secretScanResult": {
+        "passed": true,
+        "issues": []
+      },
+      "requiredEnvVarsMissing": [],
+      "deploymentInstructionsPresent": true,
+      "integrationContractSchemaValid": true,
+      "integrationContractSchemaIssues": [],
+      "deploymentReadinessSchemaValid": true,
+      "deploymentReadinessSchemaIssues": [],
+      "dryRunStatus": {
+        "attempted": true,
+        "command": "npm run -s build",
+        "status": "passed",
+        "reason": "Dry-run command succeeded."
+      },
+      "externalServicesNotExecuted": [
+        {
+          "service": "distribution_platform",
+          "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+        },
+        {
+          "service": "steam",
+          "reason": "Optional external integration not executed in local proof harness."
+        },
+        {
+          "service": "roblox",
+          "reason": "Optional external integration not executed in local proof harness."
+        },
+        {
+          "service": "console_stores",
+          "reason": "Optional external integration not executed in local proof harness."
+        }
+      ],
+      "launchCaveat": "Live game deployment requires platform-specific publisher accounts, signing credentials, and compliance submission.",
+      "deploymentReadinessStatus": "passed"
+    },
+    {
+      "domainId": "dirty_repo_completion",
+      "emittedPath": "/workspaces/Botomatic/release-evidence/generated-apps/dirty_repo_completion",
+      "externalServicesRequired": [
+        "git_hosting",
+        "ci_runner"
+      ],
+      "optionalServices": [
+        "artifact_registry",
+        "deployment_platform"
+      ],
+      "environmentVariablesRequired": [],
+      "environmentVariablesOptional": [
+        "CI_TOKEN",
+        "DEPLOYMENT_TOKEN"
+      ],
+      "deploymentTarget": "existing_repo_hosting",
+      "deploymentInstructionsPath": "launch/launch_instructions.md",
+      "integrationContractPath": "integrations/integration_contract.json",
+      "deploymentReadinessPath": "launch/deployment_readiness.json",
+      "fakeIntegrationScanResult": {
+        "passed": true,
+        "issues": []
+      },
+      "secretScanResult": {
+        "passed": true,
+        "issues": []
+      },
+      "requiredEnvVarsMissing": [],
+      "deploymentInstructionsPresent": true,
+      "integrationContractSchemaValid": true,
+      "integrationContractSchemaIssues": [],
+      "deploymentReadinessSchemaValid": true,
+      "deploymentReadinessSchemaIssues": [],
+      "dryRunStatus": {
+        "attempted": true,
+        "command": "node tests/repaired_workflows.test.js",
+        "status": "passed",
+        "reason": "Dry-run command succeeded."
+      },
+      "externalServicesNotExecuted": [
+        {
+          "service": "git_hosting",
+          "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+        },
+        {
+          "service": "ci_runner",
+          "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+        },
+        {
+          "service": "artifact_registry",
+          "reason": "Optional external integration not executed in local proof harness."
+        },
+        {
+          "service": "deployment_platform",
+          "reason": "Optional external integration not executed in local proof harness."
+        }
+      ],
+      "launchCaveat": "Live completion rollout requires repository hosting credentials and CI/deployment pipeline permissions.",
+      "deploymentReadinessStatus": "passed"
+    }
+  ],
+  "status": "passed"
+}

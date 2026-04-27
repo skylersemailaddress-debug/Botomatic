@@ -1,0 +1,9 @@
+domain=web_saas_app
+commandId=deploy_validation
+kind=deploy_validation
+startedAt=2026-04-27T00:08:39.937Z
+finishedAt=2026-04-27T00:08:40.204Z
+status=passed
+exitCode=0
+--- stdout ---
+--- stderr ---

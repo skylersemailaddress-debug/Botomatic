@@ -1,58 +1,57 @@
 # Botomatic Product Scope
 
-Status: Phase 1 definition
+Status: Universal-builder transition in progress
 
 ---
 
 ## Product definition
 
-Botomatic is an enterprise autobuilder control plane that:
+Botomatic is a chat-first universal app and website builder backed by an enterprise-grade autobuilder control plane.
 
-- accepts messy human input
-- converts it into structured understanding
-- generates a build plan
-- executes packetized work via a queue/worker system
-- produces repository-level artifacts
-- validates output quality and readiness
-- enables governed promotion and release
+It must:
+- accept messy user input and file dumps
+- produce a structured commercial product spec
+- ask clarifying questions only where risk/ambiguity requires
+- make low-risk defaults explicit in an assumption ledger
+- block planning/execution until build-contract gates are satisfied
+- validate generated app readiness and fail closed on placeholder/fake production paths
 
 ---
 
 ## Supported capabilities (current)
 
-- intake and compile
-- plan generation
-- packet/job execution
-- queue/worker system
-- GitHub integration for branch/commit/PR
-- basic replay for certain failure cases
-- basic validation hook
+- chat-first operator routing via `/operator/send`
+- intake + file ingestion + compile with spec analysis
+- spec completeness scoring, clarification planning, recommendation engine, assumption ledger, build contract generation
+- plan generation and packet/job execution with queue/worker
+- governance, audit, deployment state, and replay controls
+- generated-app validator set and benchmark runtime tooling
 
 ---
 
-## Not yet complete (blocks 10/10)
+## Not yet complete (blocks universal launch claim)
 
-- full operator UI system
-- enterprise auth and RBAC
-- governance/approval system
-- full observability layer
-- deep launch-readiness gating
-- expanded builder capability and blueprint depth
+- universal-builder benchmark score/critical-fail posture does not yet meet launch threshold
+- generated-app output quality needs stronger proof beyond static benchmark simulation
+- readiness/launch docs still include legacy enterprise-closure posture and are being reconciled
+- additional runtime validator depth is required before claiming 99 percent coverage
 
 ---
 
 ## Product promise (target state)
 
-Messy input → structured understanding → plan → execution → artifacts → validation → approval → deployment-ready output
+Messy input -> complete commercial spec -> locked build contract -> governed execution -> validator-proven launch decision
 
 ---
 
 ## Release rule
 
-Botomatic may only be considered enterprise launchable when:
+Botomatic may only claim commercially launch-ready universal output when:
 
-- all P0 blockers in LAUNCH_BLOCKERS.md are closed
-- all validators in VALIDATION_MATRIX.md pass
-- all categories meet rubric requirements
+- benchmark and validator thresholds are met
+- no critical validator failures remain
+- no placeholder/fake production paths are present
+- build contract gates and high-risk approvals are satisfied
+- repo truth files remain consistent with evidence
 
 This file defines the intended product surface and must remain aligned with actual implementation.

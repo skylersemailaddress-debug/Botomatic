@@ -1,0 +1,65 @@
+{
+  "schemaVersion": "1.0",
+  "domainId": "ai_agent",
+  "integrationContractId": "integration_contract_ai_agent",
+  "deploymentTarget": "agent_runtime",
+  "requiredServices": [
+    "llm_provider",
+    "agent_runtime"
+  ],
+  "optionalServices": [
+    "vector_store",
+    "eval_pipeline"
+  ],
+  "requiredEnvVars": [
+    "LLM_API_KEY",
+    "LLM_MODEL"
+  ],
+  "optionalEnvVars": [
+    "VECTOR_STORE_URL",
+    "EVAL_RUNNER_URL"
+  ],
+  "requiredSecrets": [
+    "LLM_API_KEY"
+  ],
+  "optionalSecrets": [
+    "VECTOR_STORE_TOKEN",
+    "EVAL_RUNNER_TOKEN"
+  ],
+  "services": [
+    {
+      "service": "llm_provider",
+      "required": true,
+      "executed": false,
+      "executionMode": "dry_run",
+      "result": "skipped",
+      "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+    },
+    {
+      "service": "agent_runtime",
+      "required": true,
+      "executed": false,
+      "executionMode": "dry_run",
+      "result": "skipped",
+      "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+    },
+    {
+      "service": "vector_store",
+      "required": false,
+      "executed": false,
+      "executionMode": "not_executed",
+      "result": "skipped",
+      "reason": "Optional external integration not executed in local proof harness."
+    },
+    {
+      "service": "eval_pipeline",
+      "required": false,
+      "executed": false,
+      "executionMode": "not_executed",
+      "result": "skipped",
+      "reason": "Optional external integration not executed in local proof harness."
+    }
+  ],
+  "launchCaveat": "Live deployment requires LLM provider credentials, model access policy, and runtime governance approvals.",
+  "generatedAt": "2026-04-27T00:09:55.398Z"
+}

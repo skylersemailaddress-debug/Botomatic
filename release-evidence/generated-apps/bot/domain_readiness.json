@@ -1,0 +1,11 @@
+{
+  "domainId": "bot",
+  "runtimeEntrypoint": "src/worker.ts",
+  "deploymentInstructionsPath": "deploy/worker.md",
+  "environmentManifestPath": ".env.example",
+  "emittedFileCount": 11,
+  "noPlaceholderScanPassed": true,
+  "noPlaceholderIssues": [],
+  "readinessStatus": "passed",
+  "generatedAt": "2026-04-27T00:08:19.658Z"
+}

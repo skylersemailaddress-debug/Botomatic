@@ -1,0 +1,11 @@
+domain=dirty_repo_completion
+commandId=install
+kind=install
+startedAt=2026-04-27T00:09:15.714Z
+finishedAt=2026-04-27T00:09:16.001Z
+status=passed
+exitCode=0
+--- stdout ---
+v24.14.0
+
+--- stderr ---

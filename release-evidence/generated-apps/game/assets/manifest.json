@@ -1,0 +1,9 @@
+{
+  "textures": [
+    "player.png",
+    "world.png"
+  ],
+  "audio": [
+    "theme.ogg"
+  ]
+}

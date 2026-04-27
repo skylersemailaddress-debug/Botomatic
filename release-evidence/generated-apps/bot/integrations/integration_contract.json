@@ -1,0 +1,66 @@
+{
+  "schemaVersion": "1.0",
+  "domainId": "bot",
+  "integrationContractId": "integration_contract_bot",
+  "deploymentTarget": "worker_runtime",
+  "requiredServices": [
+    "bot_platform",
+    "webhook_gateway"
+  ],
+  "optionalServices": [
+    "queue_service",
+    "audit_sink"
+  ],
+  "requiredEnvVars": [
+    "BOT_TOKEN",
+    "BOT_WEBHOOK_SECRET"
+  ],
+  "optionalEnvVars": [
+    "QUEUE_URL",
+    "AUDIT_WEBHOOK_URL"
+  ],
+  "requiredSecrets": [
+    "BOT_TOKEN",
+    "BOT_WEBHOOK_SECRET"
+  ],
+  "optionalSecrets": [
+    "QUEUE_TOKEN",
+    "AUDIT_WEBHOOK_SECRET"
+  ],
+  "services": [
+    {
+      "service": "bot_platform",
+      "required": true,
+      "executed": false,
+      "executionMode": "dry_run",
+      "result": "skipped",
+      "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+    },
+    {
+      "service": "webhook_gateway",
+      "required": true,
+      "executed": false,
+      "executionMode": "dry_run",
+      "result": "skipped",
+      "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+    },
+    {
+      "service": "queue_service",
+      "required": false,
+      "executed": false,
+      "executionMode": "not_executed",
+      "result": "skipped",
+      "reason": "Optional external integration not executed in local proof harness."
+    },
+    {
+      "service": "audit_sink",
+      "required": false,
+      "executed": false,
+      "executionMode": "not_executed",
+      "result": "skipped",
+      "reason": "Optional external integration not executed in local proof harness."
+    }
+  ],
+  "launchCaveat": "Live bot deployment requires platform bot token issuance and webhook endpoint registration.",
+  "generatedAt": "2026-04-27T00:09:53.489Z"
+}

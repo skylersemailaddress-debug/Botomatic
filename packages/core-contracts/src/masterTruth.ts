@@ -36,6 +36,16 @@ export interface MasterTruth {
   constraints: string[];
   assumptions: string[];
   acceptanceCriteria: string[];
+  canonicalSpec?: {
+    productIntent: string;
+    users: string[];
+    pages: string[];
+    workflows: string[];
+    dataModel: string[];
+    integrations: string[];
+    acceptanceCriteria: string[];
+    openQuestions: string[];
+  };
   supportLevel: SupportLevel;
   requiredApprovals: string[];
   status: ProjectStatus;

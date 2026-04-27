@@ -1,0 +1,9 @@
+domain=api_service
+commandId=build
+kind=build
+startedAt=2026-04-27T00:09:00.367Z
+finishedAt=2026-04-27T00:09:02.234Z
+status=passed
+exitCode=0
+--- stdout ---
+--- stderr ---

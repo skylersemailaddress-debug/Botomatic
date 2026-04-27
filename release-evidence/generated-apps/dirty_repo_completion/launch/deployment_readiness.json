@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "1.0",
+  "domainId": "dirty_repo_completion",
+  "deploymentTarget": "existing_repo_hosting",
+  "deploymentInstructionsPath": "launch/launch_instructions.md",
+  "envManifestPath": null,
+  "envManifestPresent": true,
+  "requiredEnvVarsPresent": true,
+  "requiredEnvVarsMissing": [],
+  "fakeIntegrationScanPassed": true,
+  "fakeIntegrationScanIssues": [],
+  "secretScanPassed": true,
+  "secretScanIssues": [],
+  "dryRunStatus": {
+    "attempted": true,
+    "command": "node tests/repaired_workflows.test.js",
+    "status": "passed",
+    "reason": "Dry-run command succeeded."
+  },
+  "externalServicesNotExecuted": [
+    {
+      "service": "git_hosting",
+      "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+    },
+    {
+      "service": "ci_runner",
+      "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+    },
+    {
+      "service": "artifact_registry",
+      "reason": "Optional external integration not executed in local proof harness."
+    },
+    {
+      "service": "deployment_platform",
+      "reason": "Optional external integration not executed in local proof harness."
+    }
+  ],
+  "externalExecutionJustified": true,
+  "deploymentReadinessStatus": "passed",
+  "launchCaveat": "Live completion rollout requires repository hosting credentials and CI/deployment pipeline permissions.",
+  "generatedAt": "2026-04-26T23:35:09.859Z"
+}

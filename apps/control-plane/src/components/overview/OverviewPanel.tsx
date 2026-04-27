@@ -2,6 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { getProjectOverview } from "@/services/overview";
+import Panel from "@/components/ui/Panel";
+import StatusBadge from "@/components/ui/StatusBadge";
+import MetricCard from "@/components/ui/MetricCard";
+import LoadingSkeleton from "@/components/ui/LoadingSkeleton";
+import ErrorCallout from "@/components/ui/ErrorCallout";
+import ReadinessTimeline from "@/components/ui/ReadinessTimeline";
 
 export default function OverviewPanel({ projectId }: { projectId: string }) {
   const [data, setData] = useState<any>(null);
@@ -37,42 +43,57 @@ export default function OverviewPanel({ projectId }: { projectId: string }) {
 
   if (error) {
     return (
-      <div style={{ padding: 16, color: "#d4423f" }}>
-        <strong>Overview Error:</strong> {error}
-      </div>
+      <Panel title="Project Overview">
+        <ErrorCallout title="Overview error" detail={error} />
+      </Panel>
     );
   }
 
   if (!data) {
-    return <div style={{ padding: 16 }}>Loading overview...</div>;
+    return (
+      <Panel title="Project Overview" subtitle="Loading">
+        <LoadingSkeleton rows={3} />
+      </Panel>
+    );
   }
 
   return (
-    <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 16 }}>
-      <div style={{ border: "1px solid var(--border)", padding: 12 }}>
-        <strong>Run</strong>
-        <div>{data.latestRun.status}</div>
+    <Panel title="Project Overview" subtitle="Intelligence summary">
+      <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+        <StatusBadge status={data.latestRun.status} />
+        <StatusBadge status={data.readiness.status} />
       </div>
-      <div style={{ border: "1px solid var(--border)", padding: 12 }}>
-        <strong>Stages</strong>
-        <div>{data.summary.packetCount} packets • {data.summary.completedPackets} complete • {data.summary.failedPackets} failed</div>
+
+      <div className="surface-grid-2">
+        <MetricCard label="Packet count" value={data.summary.packetCount} />
+        <MetricCard label="Completed packets" value={data.summary.completedPackets} tone="success" />
+        <MetricCard label="Failed packets" value={data.summary.failedPackets} tone={data.summary.failedPackets > 0 ? "danger" : "default"} />
+        <MetricCard label="Artifact changes" value={data.latestArtifact.changedFiles} />
       </div>
-      <div style={{ border: "1px solid var(--border)", padding: 12 }}>
-        <strong>Readiness</strong>
-        <div>{data.readiness.status}</div>
+
+      <div style={{ marginTop: 10, fontSize: 12, color: "var(--text-muted)" }}>
+        {data.activity?.[0]?.label || "No recent activity yet."}
       </div>
-      <div style={{ border: "1px solid var(--border)", padding: 12 }}>
-        <strong>Activity</strong>
-        <div>{data.activity?.[0]?.label || "No recent activity"}</div>
+
+      <div style={{ marginTop: 10 }}>
+        <ReadinessTimeline
+          steps={[
+            { label: "Spec and contract readiness", status: data.readiness?.status === "ready" ? "passed" : "pending" },
+            { label: "Execution and packet health", status: data.summary?.failedPackets > 0 ? "blocked" : "passed" },
+            { label: "Validator-backed evidence", status: data.readiness?.status === "ready" ? "passed" : "pending" },
+          ]}
+        />
       </div>
-      <div style={{ border: "1px solid var(--border)", padding: 12 }}>
-        <strong>Artifacts</strong>
-        <div>{data.latestArtifact.changedFiles} changes</div>
-      </div>
-      <div style={{ border: "1px solid var(--border)", padding: 12 }}>
-        <strong>Blockers</strong>
-        <div>{data.blockers?.[0] || "None"}</div>
-      </div>
-    </div>
+
+      {data.blockers?.length > 0 ? (
+        <div className="state-callout warning" style={{ marginTop: 10 }}>
+          Top blocker: {data.blockers[0]}
+        </div>
+      ) : (
+        <div className="state-callout success" style={{ marginTop: 10 }}>
+          Launch gates satisfied under current validator-backed evidence.
+        </div>
+      )}
+    </Panel>
   );
 }

@@ -1,0 +1,11 @@
+{
+  "domainId": "api_service",
+  "runtimeEntrypoint": "src/server.ts",
+  "deploymentInstructionsPath": "deploy/container.md",
+  "environmentManifestPath": ".env.example",
+  "emittedFileCount": 12,
+  "noPlaceholderScanPassed": true,
+  "noPlaceholderIssues": [],
+  "readinessStatus": "passed",
+  "generatedAt": "2026-04-27T00:08:19.638Z"
+}

@@ -1,0 +1,30 @@
+{
+  "domainId": "api_service",
+  "generatedAt": "2026-04-27T00:09:57.280Z",
+  "emittedPath": "/workspaces/Botomatic/release-evidence/generated-apps/api_service",
+  "emittedFileCount": 20,
+  "emittedFiles": [
+    ".env.example",
+    "README.md",
+    "deploy/Dockerfile",
+    "deploy/container.md",
+    "deploy/deployment_readiness.json",
+    "dist/controllers/projectsController.js",
+    "dist/routes/projects.js",
+    "dist/server.js",
+    "domain_readiness.json",
+    "integrations/integration_contract.json",
+    "launch/launch_packet.json",
+    "no_placeholder_scan.json",
+    "openapi/openapi.json",
+    "package.json",
+    "schema/schema.sql",
+    "src/controllers/projectsController.ts",
+    "src/routes/projects.ts",
+    "src/server.ts",
+    "tests/routes.test.js",
+    "tsconfig.json"
+  ],
+  "note": "Preview manifest lists emitted source files. Actual preview rendering requires deployment to a preview environment.",
+  "previewEnvironmentTarget": "Container preview environment (requires registry + runtime)"
+}

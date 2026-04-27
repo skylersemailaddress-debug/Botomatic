@@ -1,0 +1,11 @@
+domain=dirty_repo_completion
+commandId=test
+kind=test
+startedAt=2026-04-27T00:09:16.276Z
+finishedAt=2026-04-27T00:09:16.632Z
+status=passed
+exitCode=0
+--- stdout ---
+dirty repo completion checks passed
+
+--- stderr ---

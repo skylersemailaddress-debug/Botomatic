@@ -10,6 +10,7 @@ import {
   type OpsQueue,
 } from "@/services/ops";
 import Panel from "@/components/ui/Panel";
+import EmptyState from "@/components/ui/EmptyState";
 
 export default function OpsPanel() {
   const [metrics, setMetrics] = useState<OpsMetrics | null>(null);
@@ -38,7 +39,7 @@ export default function OpsPanel() {
   }, []);
 
   return (
-    <Panel title="System Ops">
+    <Panel title="System Ops" subtitle="Queue, metrics, and recent failures">
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <div>
           <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Queue</div>
@@ -57,9 +58,7 @@ export default function OpsPanel() {
 
         <div>
           <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Recent Errors</div>
-          {errors.length === 0 && (
-            <div style={{ fontSize: 12, color: "var(--text-subtle)" }}>No errors</div>
-          )}
+          {errors.length === 0 ? <EmptyState title="No recent errors" detail="Operational error stream is currently clear." /> : null}
           {errors.slice(0, 5).map((e, idx) => (
             <div key={idx} style={{ fontSize: 12, color: "var(--danger)" }}>
               {e.type}: {e.message}

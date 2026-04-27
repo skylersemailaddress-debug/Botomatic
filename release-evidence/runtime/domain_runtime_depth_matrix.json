@@ -1,0 +1,1198 @@
+{
+  "generatedAt": "2026-04-27T00:08:18.067Z",
+  "proofGrade": "local_runtime",
+  "pathId": "universal_capability_pipeline",
+  "inputUsed": {
+    "appName": "Proof Universal Capability",
+    "request": "Build an AI-assisted operations platform with governed approvals, deep workflow orchestration, and launch packet generation from messy input."
+  },
+  "routeExercised": [
+    {
+      "method": "POST",
+      "path": "/api/projects/intake",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/projects/proj_1777248497959/universal/capability-pipeline",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/projects/proj_1777248497959/universal/capability-pipeline",
+      "status": 200,
+      "ok": true
+    }
+  ],
+  "apiFunctionPathExercised": [
+    "apps/orchestrator-api/src/server_app.ts#POST /api/projects/:projectId/universal/capability-pipeline",
+    "apps/orchestrator-api/src/server_app.ts#GET /api/projects/:projectId/universal/capability-pipeline",
+    "apps/orchestrator-api/src/server_app.ts#buildUniversalCapabilityArtifacts",
+    "packages/truth-engine/src/index.ts#extractProductTruth",
+    "packages/spec-engine/src/buildContract.ts#generateBuildContract",
+    "packages/packet-engine/src/generator.ts#generatePlan"
+  ],
+  "contract": {
+    "type": "build_contract",
+    "payload": {
+      "id": "contract_proj_1777248497959_1777248497977",
+      "projectId": "proj_1777248497959",
+      "appSummary": "Proof Universal Capability: Deliver a production-grade application with validated workflows.",
+      "targetUsers": [
+        "admin",
+        "operator",
+        "end_user"
+      ],
+      "businessModel": "commercial_service",
+      "pages": [
+        "Home",
+        "Dashboard",
+        "Settings",
+        "Admin"
+      ],
+      "roles": [
+        "admin",
+        "reviewer",
+        "operator",
+        "member"
+      ],
+      "permissions": [
+        "read",
+        "write",
+        "approve",
+        "deploy"
+      ],
+      "dataModel": {
+        "entities": [
+          "users",
+          "organizations",
+          "records"
+        ],
+        "relationships": [
+          "organizations has_many users",
+          "users has_many records"
+        ]
+      },
+      "workflows": [
+        "onboarding",
+        "core_task_execution",
+        "approval_and_audit"
+      ],
+      "integrations": [
+        "OIDC",
+        "Email",
+        "Storage",
+        "Analytics"
+      ],
+      "payments": [],
+      "notifications": [
+        "email"
+      ],
+      "adminTools": [
+        "audit_log",
+        "role_admin"
+      ],
+      "authRbac": "oidc; roles=admin, reviewer, operator, member",
+      "deploymentTarget": "vercel",
+      "complianceSecurity": [
+        "rbac_enforced",
+        "audit_events",
+        "token_validation"
+      ],
+      "brandUiDirection": "Trustworthy and execution-focused; Clean control-plane with dense operational clarity",
+      "acceptanceCriteria": [
+        "Core journeys implemented end-to-end",
+        "Role guards enforced",
+        "No placeholder production flows"
+      ],
+      "launchCriteria": [
+        "Build and validation pass",
+        "Security and compliance checks pass",
+        "No critical blockers remain"
+      ],
+      "assumptions": [
+        {
+          "id": "assumption_1777248497977_ejzbd7",
+          "field": "notification provider",
+          "decision": "Email is enabled by default",
+          "reason": "Low-risk baseline for transactional workflows",
+          "importance": 4,
+          "risk": "low",
+          "madeBy": "api_token:botoma",
+          "requiresApproval": false,
+          "approved": true,
+          "canChangeLater": true,
+          "createdAt": "2026-04-27T00:08:17.977Z"
+        },
+        {
+          "id": "assumption_1777248497977_gnvgft",
+          "field": "auth/security",
+          "decision": "OIDC with role guards",
+          "reason": "Enterprise-safe default",
+          "importance": 9,
+          "risk": "high",
+          "madeBy": "api_token:botoma",
+          "requiresApproval": true,
+          "approved": false,
+          "canChangeLater": true,
+          "createdAt": "2026-04-27T00:08:17.977Z"
+        }
+      ],
+      "excludedItems": [
+        "prototype-only shortcuts"
+      ],
+      "risks": [
+        "Unresolved high-risk questions remain"
+      ],
+      "unresolvedQuestions": [
+        "Any compliance obligations (GDPR, SOC2, HIPAA, PCI)?"
+      ],
+      "readinessScore": 94,
+      "readyToBuild": false,
+      "blockers": [
+        "High-risk questions remain unresolved.",
+        "High-risk assumptions require approval."
+      ],
+      "createdAt": "2026-04-27T00:08:17.977Z",
+      "updatedAt": "2026-04-27T00:08:17.977Z"
+    }
+  },
+  "generatedPlanOrBuildGraph": {
+    "buildGraphNodeCount": 12,
+    "buildGraphEdgeCount": 11,
+    "planPacketCount": 33,
+    "reusableSubsystemCount": 15,
+    "domainDepthMatrix": {
+      "totalDomains": 19,
+      "failedDomains": 0,
+      "results": [
+        {
+          "domainId": "web_apps",
+          "domainName": "Web Apps",
+          "request": "Build a production web app with auth, workflow logic, integrations, tests, and deployment readiness.",
+          "routeStatus": 200,
+          "hasRequiredOutputs": true,
+          "planPacketCount": 34,
+          "buildGraphNodeCount": 12,
+          "status": "passed",
+          "blockers": [
+            "High-risk questions remain unresolved.",
+            "High-risk assumptions require approval."
+          ],
+          "requiredSpecs": [
+            "target users",
+            "core workflows",
+            "auth/security",
+            "data model",
+            "launch criteria"
+          ],
+          "buildCommands": [
+            "npm run build"
+          ],
+          "testCommands": [
+            "npm test"
+          ],
+          "validationCommands": [
+            "npm run -s validate:all"
+          ],
+          "launchRubric": [
+            "buildable",
+            "domain validators pass",
+            "no placeholders",
+            "documented launch path"
+          ],
+          "noPlaceholderRules": [
+            "no TODO/FIXME",
+            "no fake integrations",
+            "no not-implemented production paths"
+          ],
+          "repairStrategy": [
+            "classify failure",
+            "retrieve similar fix",
+            "patch",
+            "rerun targeted validators",
+            "rerun full validators"
+          ],
+          "readinessStatus": "passed",
+          "validatorMapped": true
+        },
+        {
+          "domainId": "websites",
+          "domainName": "Websites",
+          "request": "Build a commercial website with forms, analytics, responsive UI, and deployment runbook.",
+          "routeStatus": 200,
+          "hasRequiredOutputs": true,
+          "planPacketCount": 33,
+          "buildGraphNodeCount": 12,
+          "status": "passed",
+          "blockers": [
+            "High-risk questions remain unresolved.",
+            "High-risk assumptions require approval."
+          ],
+          "requiredSpecs": [
+            "target users",
+            "core workflows",
+            "auth/security",
+            "data model",
+            "launch criteria"
+          ],
+          "buildCommands": [
+            "npm run build"
+          ],
+          "testCommands": [
+            "npm test"
+          ],
+          "validationCommands": [
+            "npm run -s validate:all"
+          ],
+          "launchRubric": [
+            "buildable",
+            "domain validators pass",
+            "no placeholders",
+            "documented launch path"
+          ],
+          "noPlaceholderRules": [
+            "no TODO/FIXME",
+            "no fake integrations",
+            "no not-implemented production paths"
+          ],
+          "repairStrategy": [
+            "classify failure",
+            "retrieve similar fix",
+            "patch",
+            "rerun targeted validators",
+            "rerun full validators"
+          ],
+          "readinessStatus": "passed",
+          "validatorMapped": true
+        },
+        {
+          "domainId": "saas_platforms",
+          "domainName": "SaaS Platforms",
+          "request": "Build a multi-tenant SaaS platform with RBAC, audit logs, billing, and launch packet.",
+          "routeStatus": 200,
+          "hasRequiredOutputs": true,
+          "planPacketCount": 34,
+          "buildGraphNodeCount": 12,
+          "status": "passed",
+          "blockers": [
+            "High-risk questions remain unresolved.",
+            "High-risk assumptions require approval."
+          ],
+          "requiredSpecs": [
+            "target users",
+            "core workflows",
+            "auth/security",
+            "data model",
+            "launch criteria"
+          ],
+          "buildCommands": [
+            "npm run build"
+          ],
+          "testCommands": [
+            "npm test"
+          ],
+          "validationCommands": [
+            "npm run -s validate:all"
+          ],
+          "launchRubric": [
+            "buildable",
+            "domain validators pass",
+            "no placeholders",
+            "documented launch path"
+          ],
+          "noPlaceholderRules": [
+            "no TODO/FIXME",
+            "no fake integrations",
+            "no not-implemented production paths"
+          ],
+          "repairStrategy": [
+            "classify failure",
+            "retrieve similar fix",
+            "patch",
+            "rerun targeted validators",
+            "rerun full validators"
+          ],
+          "readinessStatus": "passed",
+          "validatorMapped": true
+        },
+        {
+          "domainId": "mobile_apps",
+          "domainName": "Mobile Apps",
+          "request": "Build a mobile app backend/control plane with auth, data model, workflows, and release checks.",
+          "routeStatus": 200,
+          "hasRequiredOutputs": true,
+          "planPacketCount": 34,
+          "buildGraphNodeCount": 12,
+          "status": "passed",
+          "blockers": [
+            "High-risk questions remain unresolved.",
+            "High-risk assumptions require approval."
+          ],
+          "requiredSpecs": [
+            "target users",
+            "core workflows",
+            "auth/security",
+            "data model",
+            "launch criteria"
+          ],
+          "buildCommands": [
+            "npm run build"
+          ],
+          "testCommands": [
+            "npm test"
+          ],
+          "validationCommands": [
+            "npm run -s validate:all"
+          ],
+          "launchRubric": [
+            "buildable",
+            "domain validators pass",
+            "no placeholders",
+            "documented launch path"
+          ],
+          "noPlaceholderRules": [
+            "no TODO/FIXME",
+            "no fake integrations",
+            "no not-implemented production paths"
+          ],
+          "repairStrategy": [
+            "classify failure",
+            "retrieve similar fix",
+            "patch",
+            "rerun targeted validators",
+            "rerun full validators"
+          ],
+          "readinessStatus": "passed",
+          "validatorMapped": true
+        },
+        {
+          "domainId": "desktop_apps",
+          "domainName": "Desktop Apps",
+          "request": "Build a desktop app support system with auth, updates workflow, telemetry, and deployment docs.",
+          "routeStatus": 200,
+          "hasRequiredOutputs": true,
+          "planPacketCount": 34,
+          "buildGraphNodeCount": 12,
+          "status": "passed",
+          "blockers": [
+            "High-risk questions remain unresolved.",
+            "High-risk assumptions require approval."
+          ],
+          "requiredSpecs": [
+            "target users",
+            "core workflows",
+            "auth/security",
+            "data model",
+            "launch criteria"
+          ],
+          "buildCommands": [
+            "npm run build"
+          ],
+          "testCommands": [
+            "npm test"
+          ],
+          "validationCommands": [
+            "npm run -s validate:all"
+          ],
+          "launchRubric": [
+            "buildable",
+            "domain validators pass",
+            "no placeholders",
+            "documented launch path"
+          ],
+          "noPlaceholderRules": [
+            "no TODO/FIXME",
+            "no fake integrations",
+            "no not-implemented production paths"
+          ],
+          "repairStrategy": [
+            "classify failure",
+            "retrieve similar fix",
+            "patch",
+            "rerun targeted validators",
+            "rerun full validators"
+          ],
+          "readinessStatus": "passed",
+          "validatorMapped": true
+        },
+        {
+          "domainId": "browser_extensions",
+          "domainName": "Browser Extensions",
+          "request": "Build a browser extension system with permissions model, API integration, and release checklist.",
+          "routeStatus": 200,
+          "hasRequiredOutputs": true,
+          "planPacketCount": 32,
+          "buildGraphNodeCount": 12,
+          "status": "passed",
+          "blockers": [
+            "High-risk questions remain unresolved.",
+            "High-risk assumptions require approval."
+          ],
+          "requiredSpecs": [
+            "target users",
+            "core workflows",
+            "auth/security",
+            "data model",
+            "launch criteria"
+          ],
+          "buildCommands": [
+            "npm run build"
+          ],
+          "testCommands": [
+            "npm test"
+          ],
+          "validationCommands": [
+            "npm run -s validate:all"
+          ],
+          "launchRubric": [
+            "buildable",
+            "domain validators pass",
+            "no placeholders",
+            "documented launch path"
+          ],
+          "noPlaceholderRules": [
+            "no TODO/FIXME",
+            "no fake integrations",
+            "no not-implemented production paths"
+          ],
+          "repairStrategy": [
+            "classify failure",
+            "retrieve similar fix",
+            "patch",
+            "rerun targeted validators",
+            "rerun full validators"
+          ],
+          "readinessStatus": "passed",
+          "validatorMapped": true
+        },
+        {
+          "domainId": "apis",
+          "domainName": "APIs",
+          "request": "Build a production API service with auth, schema, workflows, tests, and deployment contract.",
+          "routeStatus": 200,
+          "hasRequiredOutputs": true,
+          "planPacketCount": 34,
+          "buildGraphNodeCount": 12,
+          "status": "passed",
+          "blockers": [
+            "High-risk questions remain unresolved.",
+            "High-risk assumptions require approval."
+          ],
+          "requiredSpecs": [
+            "target users",
+            "core workflows",
+            "auth/security",
+            "data model",
+            "launch criteria"
+          ],
+          "buildCommands": [
+            "npm run build"
+          ],
+          "testCommands": [
+            "npm test"
+          ],
+          "validationCommands": [
+            "npm run -s validate:all"
+          ],
+          "launchRubric": [
+            "buildable",
+            "domain validators pass",
+            "no placeholders",
+            "documented launch path"
+          ],
+          "noPlaceholderRules": [
+            "no TODO/FIXME",
+            "no fake integrations",
+            "no not-implemented production paths"
+          ],
+          "repairStrategy": [
+            "classify failure",
+            "retrieve similar fix",
+            "patch",
+            "rerun targeted validators",
+            "rerun full validators"
+          ],
+          "readinessStatus": "passed",
+          "validatorMapped": true
+        },
+        {
+          "domainId": "bots",
+          "domainName": "Bots",
+          "request": "Build a bot platform with role permissions, integrations, observability, and launch packet.",
+          "routeStatus": 200,
+          "hasRequiredOutputs": true,
+          "planPacketCount": 32,
+          "buildGraphNodeCount": 12,
+          "status": "passed",
+          "blockers": [
+            "High-risk questions remain unresolved.",
+            "High-risk assumptions require approval."
+          ],
+          "requiredSpecs": [
+            "target users",
+            "core workflows",
+            "auth/security",
+            "data model",
+            "launch criteria"
+          ],
+          "buildCommands": [
+            "npm run build"
+          ],
+          "testCommands": [
+            "npm test"
+          ],
+          "validationCommands": [
+            "npm run -s validate:all"
+          ],
+          "launchRubric": [
+            "buildable",
+            "domain validators pass",
+            "no placeholders",
+            "documented launch path"
+          ],
+          "noPlaceholderRules": [
+            "no TODO/FIXME",
+            "no fake integrations",
+            "no not-implemented production paths"
+          ],
+          "repairStrategy": [
+            "classify failure",
+            "retrieve similar fix",
+            "patch",
+            "rerun targeted validators",
+            "rerun full validators"
+          ],
+          "readinessStatus": "passed",
+          "validatorMapped": true
+        },
+        {
+          "domainId": "ai_agents",
+          "domainName": "AI Agents",
+          "request": "Build an AI agent orchestration app with tool permissions, approvals, and runtime evidence.",
+          "routeStatus": 200,
+          "hasRequiredOutputs": true,
+          "planPacketCount": 32,
+          "buildGraphNodeCount": 12,
+          "status": "passed",
+          "blockers": [
+            "High-risk questions remain unresolved.",
+            "High-risk assumptions require approval."
+          ],
+          "requiredSpecs": [
+            "target users",
+            "core workflows",
+            "auth/security",
+            "data model",
+            "launch criteria"
+          ],
+          "buildCommands": [
+            "npm run build"
+          ],
+          "testCommands": [
+            "npm test"
+          ],
+          "validationCommands": [
+            "npm run -s validate:all"
+          ],
+          "launchRubric": [
+            "buildable",
+            "domain validators pass",
+            "no placeholders",
+            "documented launch path"
+          ],
+          "noPlaceholderRules": [
+            "no TODO/FIXME",
+            "no fake integrations",
+            "no not-implemented production paths"
+          ],
+          "repairStrategy": [
+            "classify failure",
+            "retrieve similar fix",
+            "patch",
+            "rerun targeted validators",
+            "rerun full validators"
+          ],
+          "readinessStatus": "passed",
+          "validatorMapped": true
+        },
+        {
+          "domainId": "automations",
+          "domainName": "Automations",
+          "request": "Build an automation workflow system with governance checks, retries, and deployment controls.",
+          "routeStatus": 200,
+          "hasRequiredOutputs": true,
+          "planPacketCount": 33,
+          "buildGraphNodeCount": 12,
+          "status": "passed",
+          "blockers": [
+            "High-risk questions remain unresolved.",
+            "High-risk assumptions require approval."
+          ],
+          "requiredSpecs": [
+            "target users",
+            "core workflows",
+            "auth/security",
+            "data model",
+            "launch criteria"
+          ],
+          "buildCommands": [
+            "npm run build"
+          ],
+          "testCommands": [
+            "npm test"
+          ],
+          "validationCommands": [
+            "npm run -s validate:all"
+          ],
+          "launchRubric": [
+            "buildable",
+            "domain validators pass",
+            "no placeholders",
+            "documented launch path"
+          ],
+          "noPlaceholderRules": [
+            "no TODO/FIXME",
+            "no fake integrations",
+            "no not-implemented production paths"
+          ],
+          "repairStrategy": [
+            "classify failure",
+            "retrieve similar fix",
+            "patch",
+            "rerun targeted validators",
+            "rerun full validators"
+          ],
+          "readinessStatus": "passed",
+          "validatorMapped": true
+        },
+        {
+          "domainId": "steam_pc_games",
+          "domainName": "Steam/PC Games",
+          "request": "Build a game operations platform with moderation workflows, telemetry, and release readiness.",
+          "routeStatus": 200,
+          "hasRequiredOutputs": true,
+          "planPacketCount": 33,
+          "buildGraphNodeCount": 12,
+          "status": "passed",
+          "blockers": [
+            "High-risk questions remain unresolved.",
+            "High-risk assumptions require approval."
+          ],
+          "requiredSpecs": [
+            "target users",
+            "core workflows",
+            "auth/security",
+            "data model",
+            "launch criteria"
+          ],
+          "buildCommands": [
+            "npm run build"
+          ],
+          "testCommands": [
+            "npm test"
+          ],
+          "validationCommands": [
+            "npm run -s validate:all"
+          ],
+          "launchRubric": [
+            "buildable",
+            "domain validators pass",
+            "no placeholders",
+            "documented launch path"
+          ],
+          "noPlaceholderRules": [
+            "no TODO/FIXME",
+            "no fake integrations",
+            "no not-implemented production paths"
+          ],
+          "repairStrategy": [
+            "classify failure",
+            "retrieve similar fix",
+            "patch",
+            "rerun targeted validators",
+            "rerun full validators"
+          ],
+          "readinessStatus": "passed",
+          "validatorMapped": true
+        },
+        {
+          "domainId": "roblox_games",
+          "domainName": "Roblox Games",
+          "request": "Build a Roblox game ops backend with admin controls, auditability, and deployment checklist.",
+          "routeStatus": 200,
+          "hasRequiredOutputs": true,
+          "planPacketCount": 33,
+          "buildGraphNodeCount": 12,
+          "status": "passed",
+          "blockers": [
+            "High-risk questions remain unresolved.",
+            "High-risk assumptions require approval."
+          ],
+          "requiredSpecs": [
+            "target users",
+            "core workflows",
+            "auth/security",
+            "data model",
+            "launch criteria"
+          ],
+          "buildCommands": [
+            "npm run build"
+          ],
+          "testCommands": [
+            "npm test"
+          ],
+          "validationCommands": [
+            "npm run -s validate:all"
+          ],
+          "launchRubric": [
+            "buildable",
+            "domain validators pass",
+            "no placeholders",
+            "documented launch path"
+          ],
+          "noPlaceholderRules": [
+            "no TODO/FIXME",
+            "no fake integrations",
+            "no not-implemented production paths"
+          ],
+          "repairStrategy": [
+            "classify failure",
+            "retrieve similar fix",
+            "patch",
+            "rerun targeted validators",
+            "rerun full validators"
+          ],
+          "readinessStatus": "passed",
+          "validatorMapped": true
+        },
+        {
+          "domainId": "unity_games",
+          "domainName": "Unity Games",
+          "request": "Build a Unity game services platform with auth, economy workflows, notifications, and release gates.",
+          "routeStatus": 200,
+          "hasRequiredOutputs": true,
+          "planPacketCount": 36,
+          "buildGraphNodeCount": 12,
+          "status": "passed",
+          "blockers": [
+            "High-risk questions remain unresolved.",
+            "High-risk assumptions require approval."
+          ],
+          "requiredSpecs": [
+            "target users",
+            "core workflows",
+            "auth/security",
+            "data model",
+            "launch criteria"
+          ],
+          "buildCommands": [
+            "npm run build"
+          ],
+          "testCommands": [
+            "npm test"
+          ],
+          "validationCommands": [
+            "npm run -s validate:all"
+          ],
+          "launchRubric": [
+            "buildable",
+            "domain validators pass",
+            "no placeholders",
+            "documented launch path"
+          ],
+          "noPlaceholderRules": [
+            "no TODO/FIXME",
+            "no fake integrations",
+            "no not-implemented production paths"
+          ],
+          "repairStrategy": [
+            "classify failure",
+            "retrieve similar fix",
+            "patch",
+            "rerun targeted validators",
+            "rerun full validators"
+          ],
+          "readinessStatus": "passed",
+          "validatorMapped": true
+        },
+        {
+          "domainId": "unreal_games",
+          "domainName": "Unreal Games",
+          "request": "Build an Unreal game support platform with role controls, events workflow, and launch packet.",
+          "routeStatus": 200,
+          "hasRequiredOutputs": true,
+          "planPacketCount": 38,
+          "buildGraphNodeCount": 12,
+          "status": "passed",
+          "blockers": [
+            "High-risk questions remain unresolved.",
+            "High-risk assumptions require approval."
+          ],
+          "requiredSpecs": [
+            "target users",
+            "core workflows",
+            "auth/security",
+            "data model",
+            "launch criteria"
+          ],
+          "buildCommands": [
+            "npm run build"
+          ],
+          "testCommands": [
+            "npm test"
+          ],
+          "validationCommands": [
+            "npm run -s validate:all"
+          ],
+          "launchRubric": [
+            "buildable",
+            "domain validators pass",
+            "no placeholders",
+            "documented launch path"
+          ],
+          "noPlaceholderRules": [
+            "no TODO/FIXME",
+            "no fake integrations",
+            "no not-implemented production paths"
+          ],
+          "repairStrategy": [
+            "classify failure",
+            "retrieve similar fix",
+            "patch",
+            "rerun targeted validators",
+            "rerun full validators"
+          ],
+          "readinessStatus": "passed",
+          "validatorMapped": true
+        },
+        {
+          "domainId": "godot_games",
+          "domainName": "Godot Games",
+          "request": "Build a Godot game operations app with telemetry, moderation workflows, and deployment proof.",
+          "routeStatus": 200,
+          "hasRequiredOutputs": true,
+          "planPacketCount": 33,
+          "buildGraphNodeCount": 12,
+          "status": "passed",
+          "blockers": [
+            "High-risk questions remain unresolved.",
+            "High-risk assumptions require approval."
+          ],
+          "requiredSpecs": [
+            "target users",
+            "core workflows",
+            "auth/security",
+            "data model",
+            "launch criteria"
+          ],
+          "buildCommands": [
+            "npm run build"
+          ],
+          "testCommands": [
+            "npm test"
+          ],
+          "validationCommands": [
+            "npm run -s validate:all"
+          ],
+          "launchRubric": [
+            "buildable",
+            "domain validators pass",
+            "no placeholders",
+            "documented launch path"
+          ],
+          "noPlaceholderRules": [
+            "no TODO/FIXME",
+            "no fake integrations",
+            "no not-implemented production paths"
+          ],
+          "repairStrategy": [
+            "classify failure",
+            "retrieve similar fix",
+            "patch",
+            "rerun targeted validators",
+            "rerun full validators"
+          ],
+          "readinessStatus": "passed",
+          "validatorMapped": true
+        },
+        {
+          "domainId": "minecraft_mods",
+          "domainName": "Minecraft Mods",
+          "request": "Build a Minecraft mod distribution platform with permissions, updates workflow, and release validation.",
+          "routeStatus": 200,
+          "hasRequiredOutputs": true,
+          "planPacketCount": 33,
+          "buildGraphNodeCount": 12,
+          "status": "passed",
+          "blockers": [
+            "High-risk questions remain unresolved.",
+            "High-risk assumptions require approval."
+          ],
+          "requiredSpecs": [
+            "target users",
+            "core workflows",
+            "auth/security",
+            "data model",
+            "launch criteria"
+          ],
+          "buildCommands": [
+            "npm run build"
+          ],
+          "testCommands": [
+            "npm test"
+          ],
+          "validationCommands": [
+            "npm run -s validate:all"
+          ],
+          "launchRubric": [
+            "buildable",
+            "domain validators pass",
+            "no placeholders",
+            "documented launch path"
+          ],
+          "noPlaceholderRules": [
+            "no TODO/FIXME",
+            "no fake integrations",
+            "no not-implemented production paths"
+          ],
+          "repairStrategy": [
+            "classify failure",
+            "retrieve similar fix",
+            "patch",
+            "rerun targeted validators",
+            "rerun full validators"
+          ],
+          "readinessStatus": "passed",
+          "validatorMapped": true
+        },
+        {
+          "domainId": "cli_tools",
+          "domainName": "CLI Tools",
+          "request": "Build a CLI tool product system with docs, validation, release workflow, and integration checks.",
+          "routeStatus": 200,
+          "hasRequiredOutputs": true,
+          "planPacketCount": 33,
+          "buildGraphNodeCount": 12,
+          "status": "passed",
+          "blockers": [
+            "High-risk questions remain unresolved.",
+            "High-risk assumptions require approval."
+          ],
+          "requiredSpecs": [
+            "target users",
+            "core workflows",
+            "auth/security",
+            "data model",
+            "launch criteria"
+          ],
+          "buildCommands": [
+            "npm run build"
+          ],
+          "testCommands": [
+            "npm test"
+          ],
+          "validationCommands": [
+            "npm run -s validate:all"
+          ],
+          "launchRubric": [
+            "buildable",
+            "domain validators pass",
+            "no placeholders",
+            "documented launch path"
+          ],
+          "noPlaceholderRules": [
+            "no TODO/FIXME",
+            "no fake integrations",
+            "no not-implemented production paths"
+          ],
+          "repairStrategy": [
+            "classify failure",
+            "retrieve similar fix",
+            "patch",
+            "rerun targeted validators",
+            "rerun full validators"
+          ],
+          "readinessStatus": "passed",
+          "validatorMapped": true
+        },
+        {
+          "domainId": "libraries_sdks",
+          "domainName": "Libraries/SDKs",
+          "request": "Build an SDK product platform with versioning workflows, docs, tests, and publication readiness.",
+          "routeStatus": 200,
+          "hasRequiredOutputs": true,
+          "planPacketCount": 33,
+          "buildGraphNodeCount": 12,
+          "status": "passed",
+          "blockers": [
+            "High-risk questions remain unresolved.",
+            "High-risk assumptions require approval."
+          ],
+          "requiredSpecs": [
+            "target users",
+            "core workflows",
+            "auth/security",
+            "data model",
+            "launch criteria"
+          ],
+          "buildCommands": [
+            "npm run build"
+          ],
+          "testCommands": [
+            "npm test"
+          ],
+          "validationCommands": [
+            "npm run -s validate:all"
+          ],
+          "launchRubric": [
+            "buildable",
+            "domain validators pass",
+            "no placeholders",
+            "documented launch path"
+          ],
+          "noPlaceholderRules": [
+            "no TODO/FIXME",
+            "no fake integrations",
+            "no not-implemented production paths"
+          ],
+          "repairStrategy": [
+            "classify failure",
+            "retrieve similar fix",
+            "patch",
+            "rerun targeted validators",
+            "rerun full validators"
+          ],
+          "readinessStatus": "passed",
+          "validatorMapped": true
+        },
+        {
+          "domainId": "data_pipelines",
+          "domainName": "Data Pipelines",
+          "request": "Build a data pipeline control platform with governance approvals, validation proof, and deployment runbook.",
+          "routeStatus": 200,
+          "hasRequiredOutputs": true,
+          "planPacketCount": 32,
+          "buildGraphNodeCount": 12,
+          "status": "passed",
+          "blockers": [
+            "High-risk questions remain unresolved.",
+            "High-risk assumptions require approval."
+          ],
+          "requiredSpecs": [
+            "target users",
+            "core workflows",
+            "auth/security",
+            "data model",
+            "launch criteria"
+          ],
+          "buildCommands": [
+            "npm run build"
+          ],
+          "testCommands": [
+            "npm test"
+          ],
+          "validationCommands": [
+            "npm run -s validate:all"
+          ],
+          "launchRubric": [
+            "buildable",
+            "domain validators pass",
+            "no placeholders",
+            "documented launch path"
+          ],
+          "noPlaceholderRules": [
+            "no TODO/FIXME",
+            "no fake integrations",
+            "no not-implemented production paths"
+          ],
+          "repairStrategy": [
+            "classify failure",
+            "retrieve similar fix",
+            "patch",
+            "rerun targeted validators",
+            "rerun full validators"
+          ],
+          "readinessStatus": "passed",
+          "validatorMapped": true
+        }
+      ]
+    }
+  },
+  "executedSteps": [
+    {
+      "step": "intake_universal_pipeline_project",
+      "status": "passed",
+      "details": "status=200 projectId=proj_1777248497959"
+    },
+    {
+      "step": "run_universal_capability_pipeline",
+      "status": "passed",
+      "details": "status=200"
+    },
+    {
+      "step": "read_universal_capability_artifacts",
+      "status": "passed",
+      "details": "status=200"
+    }
+  ],
+  "validatorsRun": [
+    {
+      "name": "universal_output_contract",
+      "status": "passed",
+      "details": "hasRequiredOutputs=true packets=33 graphNodes=12"
+    },
+    {
+      "name": "universal_output_depth",
+      "status": "passed",
+      "details": "planPackets=33 graphNodes=12"
+    },
+    {
+      "name": "domain_specific_runtime_depth",
+      "status": "passed",
+      "details": "domainCount=19 failed=0"
+    }
+  ],
+  "producedArtifacts": [
+    "extractedProductTruth",
+    "buildContract",
+    "buildGraph",
+    "implementationPlan",
+    "generatedCode",
+    "validationProof",
+    "launchPacket",
+    "reusableSubsystems"
+  ],
+  "proofLedgerReferences": [
+    {
+      "entry": {
+        "scope": "release",
+        "claim": "Universal capability pipeline runtime route emits full multi-artifact contract from messy input.",
+        "evidence": [
+          "/api/projects/:projectId/universal/capability-pipeline",
+          "buildUniversalCapabilityArtifacts"
+        ],
+        "validatorSummary": "universal_output_contract:passed, universal_output_depth:passed, domain_specific_runtime_depth:passed",
+        "outcome": "passed",
+        "rollbackPlan": "Revert universal capability pipeline changes and regenerate artifact contract with proof checks.",
+        "id": "proof_1777248498067_yzojxt",
+        "timestamp": "2026-04-27T00:08:18.067Z"
+      },
+      "claimVerification": {
+        "ok": true,
+        "blockers": []
+      }
+    }
+  ],
+  "status": "passed",
+  "remainingBlockers": [
+    "High-risk questions remain unresolved.",
+    "High-risk assumptions require approval."
+  ],
+  "summary": {
+    "passedSteps": 3,
+    "failedSteps": 0
+  }
+}

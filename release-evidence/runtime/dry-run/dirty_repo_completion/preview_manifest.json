@@ -1,0 +1,22 @@
+{
+  "domainId": "dirty_repo_completion",
+  "generatedAt": "2026-04-27T00:09:57.288Z",
+  "emittedPath": "/workspaces/Botomatic/release-evidence/generated-apps/dirty_repo_completion",
+  "emittedFileCount": 12,
+  "emittedFiles": [
+    "README.md",
+    "audit/repo_audit_report.json",
+    "domain_readiness.json",
+    "integrations/integration_contract.json",
+    "launch/deployment_readiness.json",
+    "launch/launch_instructions.md",
+    "launch/launch_packet.json",
+    "no_placeholder_scan.json",
+    "repair/completion_contract.json",
+    "repair/repair_summary.md",
+    "repair/repaired_file_manifest.json",
+    "tests/repaired_workflows.test.js"
+  ],
+  "note": "Preview manifest lists emitted source files. Actual preview rendering requires deployment to a preview environment.",
+  "previewEnvironmentTarget": "CI/CD preview pipeline"
+}

@@ -1,0 +1,9 @@
+domain=bot
+commandId=build
+kind=build
+startedAt=2026-04-27T00:09:06.895Z
+finishedAt=2026-04-27T00:09:08.861Z
+status=passed
+exitCode=0
+--- stdout ---
+--- stderr ---

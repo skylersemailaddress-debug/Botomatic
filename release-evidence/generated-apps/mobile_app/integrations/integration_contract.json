@@ -1,0 +1,72 @@
+{
+  "schemaVersion": "1.0",
+  "domainId": "mobile_app",
+  "integrationContractId": "integration_contract_mobile_app",
+  "deploymentTarget": "ios_android_app_stores",
+  "requiredServices": [
+    "app_store_connect",
+    "play_console",
+    "mobile_api_backend"
+  ],
+  "optionalServices": [
+    "crash_reporting",
+    "push_notifications"
+  ],
+  "requiredEnvVars": [],
+  "optionalEnvVars": [
+    "SENTRY_DSN",
+    "PUSH_PROVIDER_KEY"
+  ],
+  "requiredSecrets": [
+    "IOS_SIGNING_CERT",
+    "ANDROID_KEYSTORE"
+  ],
+  "optionalSecrets": [
+    "SENTRY_AUTH_TOKEN",
+    "PUSH_PROVIDER_SECRET"
+  ],
+  "services": [
+    {
+      "service": "app_store_connect",
+      "required": true,
+      "executed": false,
+      "executionMode": "not_executed",
+      "result": "skipped",
+      "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+    },
+    {
+      "service": "play_console",
+      "required": true,
+      "executed": false,
+      "executionMode": "not_executed",
+      "result": "skipped",
+      "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+    },
+    {
+      "service": "mobile_api_backend",
+      "required": true,
+      "executed": false,
+      "executionMode": "not_executed",
+      "result": "skipped",
+      "reason": "External live execution requires credentials/platform login and is intentionally not executed in repository proof harness."
+    },
+    {
+      "service": "crash_reporting",
+      "required": false,
+      "executed": false,
+      "executionMode": "not_executed",
+      "result": "skipped",
+      "reason": "Optional external integration not executed in local proof harness."
+    },
+    {
+      "service": "push_notifications",
+      "required": false,
+      "executed": false,
+      "executionMode": "not_executed",
+      "result": "skipped",
+      "reason": "Optional external integration not executed in local proof harness."
+    }
+  ],
+  "launchCaveat": "Live store deployment requires developer account login, code signing material, and release approvals.",
+  "generatedAt": "2026-04-27T00:09:51.540Z"
+}

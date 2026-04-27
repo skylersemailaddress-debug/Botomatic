@@ -1,0 +1,11 @@
+domain=marketing_website
+commandId=install
+kind=install
+startedAt=2026-04-27T00:08:40.206Z
+finishedAt=2026-04-27T00:08:40.664Z
+status=passed
+exitCode=0
+--- stdout ---
+11.9.0
+
+--- stderr ---

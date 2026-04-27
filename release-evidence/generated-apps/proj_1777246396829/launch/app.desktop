@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Proof Greenfield SaaS
+Exec=bash -lc 'npm run build && npm run start'
+Icon=app.png
+Terminal=true
+Categories=Development;

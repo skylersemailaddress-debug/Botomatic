@@ -1,0 +1,145 @@
+{
+  "generatedAt": "2026-04-27T00:08:16.711Z",
+  "proofGrade": "local_runtime",
+  "pathId": "self_upgrade",
+  "inputUsed": {
+    "appName": "Proof Self Upgrade",
+    "request": "Improve validator depth for universal runtime proof and strengthen generated-output quality controls."
+  },
+  "routeExercised": [
+    {
+      "method": "POST",
+      "path": "/api/projects/intake",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "POST",
+      "path": "/api/projects/proj_1777248496063/self-upgrade/spec",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/projects/proj_1777248496063/self-upgrade/status",
+      "status": 200,
+      "ok": true
+    }
+  ],
+  "apiFunctionPathExercised": [
+    "apps/orchestrator-api/src/server_app.ts#POST /api/projects/:projectId/self-upgrade/spec",
+    "apps/orchestrator-api/src/server_app.ts#GET /api/projects/:projectId/self-upgrade/status",
+    "packages/self-upgrade-engine/src/planner.ts#planSelfUpgrade",
+    "packages/self-upgrade-engine/src/architectureDriftDetector.ts#detectArchitectureDrift",
+    "packages/self-upgrade-engine/src/regressionGuard.ts#runRegressionGuard"
+  ],
+  "contract": {
+    "type": "self_upgrade_spec",
+    "payload": {
+      "id": "su_1777248496096_cpad8k",
+      "request": "Improve validator depth for universal runtime proof and strengthen generated-output quality controls.",
+      "objective": "Safely upgrade Botomatic behavior while preserving governance and non-regression guarantees.",
+      "affectedModules": [
+        "packages/validation"
+      ],
+      "targetedValidators": [
+        "module-targeted validators"
+      ],
+      "regressionValidators": [
+        "npm run -s validate:all"
+      ],
+      "rollbackInstructions": [
+        "Revert upgrade commit(s)",
+        "Re-run regression validators"
+      ],
+      "requiresHumanApproval": true,
+      "createdAt": "2026-04-27T00:08:16.096Z"
+    }
+  },
+  "generatedPlanOrBuildGraph": {
+    "affectedModules": [
+      "packages/validation"
+    ],
+    "targetedValidators": [
+      "module-targeted validators"
+    ],
+    "regressionValidators": [
+      "npm run -s validate:all"
+    ]
+  },
+  "validatorWeakeningDetected": false,
+  "branchSafeOutput": {
+    "mode": "non_mutating_proof",
+    "branchName": null,
+    "prUrl": null,
+    "note": "Self-upgrade proof route executed in non-mutating runtime harness; no repository writes were performed."
+  },
+  "executedSteps": [
+    {
+      "step": "intake_self_upgrade_project",
+      "status": "passed",
+      "details": "status=200 projectId=proj_1777248496063"
+    },
+    {
+      "step": "create_self_upgrade_spec",
+      "status": "passed",
+      "details": "status=200 driftDetected=false"
+    },
+    {
+      "step": "fetch_self_upgrade_status",
+      "status": "passed",
+      "details": "status=200"
+    }
+  ],
+  "validatorsRun": [
+    {
+      "name": "test:self-upgrade",
+      "status": "passed",
+      "details": "exitCode=0"
+    },
+    {
+      "name": "runRegressionGuard",
+      "status": "passed",
+      "details": "no blockers"
+    },
+    {
+      "name": "validator_non_weakening_guard",
+      "status": "passed",
+      "details": "No validator weakening detected"
+    }
+  ],
+  "producedArtifacts": [
+    "selfUpgradeSpec",
+    "driftDetection",
+    "regressionGuard",
+    "branchSafeOutput"
+  ],
+  "proofLedgerReferences": [
+    {
+      "entry": {
+        "scope": "self_upgrade",
+        "claim": "Self-upgrade path generates spec, runs drift check, and executes regression guard against validate:all.",
+        "evidence": [
+          "/api/projects/:projectId/self-upgrade/spec",
+          "/api/projects/:projectId/self-upgrade/status",
+          "npm run -s test:self-upgrade"
+        ],
+        "validatorSummary": "test:self-upgrade:passed, runRegressionGuard:passed, validator_non_weakening_guard:passed",
+        "outcome": "passed",
+        "rollbackPlan": "Revert self-upgrade related changes and rerun targeted plus regression validators.",
+        "id": "proof_1777248496711_1e8slw",
+        "timestamp": "2026-04-27T00:08:16.711Z"
+      },
+      "claimVerification": {
+        "ok": true,
+        "blockers": []
+      }
+    }
+  ],
+  "status": "passed",
+  "remainingBlockers": [],
+  "summary": {
+    "passedSteps": 3,
+    "failedSteps": 0
+  }
+}

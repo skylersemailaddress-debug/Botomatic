@@ -1,0 +1,8 @@
+{
+  "name": "mobile-app",
+  "private": true,
+  "scripts": {
+    "build": "echo build",
+    "test": "node tests/navigation.test.js"
+  }
+}

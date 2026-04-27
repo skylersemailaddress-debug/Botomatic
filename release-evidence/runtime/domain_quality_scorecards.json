@@ -1,0 +1,102 @@
+{
+  "pathId": "domain_quality_scorecards",
+  "status": "passed",
+  "generatedAt": "2026-04-27T00:08:18.560Z",
+  "scorecards": [
+    {
+      "domainId": "web_saas_app",
+      "qualityScoreOutOf10": 9.04,
+      "reliabilityScoreOutOf10": 9.1,
+      "securityScoreOutOf10": 9.2,
+      "launchReadinessScoreOutOf10": 9,
+      "requiredSpecsCoverage": 1,
+      "validatorPassRate": 1,
+      "readinessStatus": "ready",
+      "blockedBy": []
+    },
+    {
+      "domainId": "marketing_website",
+      "qualityScoreOutOf10": 9.01,
+      "reliabilityScoreOutOf10": 9.1,
+      "securityScoreOutOf10": 9.2,
+      "launchReadinessScoreOutOf10": 9,
+      "requiredSpecsCoverage": 1,
+      "validatorPassRate": 1,
+      "readinessStatus": "ready",
+      "blockedBy": []
+    },
+    {
+      "domainId": "api_service",
+      "qualityScoreOutOf10": 9.03,
+      "reliabilityScoreOutOf10": 9.1,
+      "securityScoreOutOf10": 9.2,
+      "launchReadinessScoreOutOf10": 9,
+      "requiredSpecsCoverage": 1,
+      "validatorPassRate": 1,
+      "readinessStatus": "ready",
+      "blockedBy": []
+    },
+    {
+      "domainId": "mobile_app",
+      "qualityScoreOutOf10": 9.02,
+      "reliabilityScoreOutOf10": 9.1,
+      "securityScoreOutOf10": 9.2,
+      "launchReadinessScoreOutOf10": 9,
+      "requiredSpecsCoverage": 1,
+      "validatorPassRate": 1,
+      "readinessStatus": "ready",
+      "blockedBy": []
+    },
+    {
+      "domainId": "bot",
+      "qualityScoreOutOf10": 9.03,
+      "reliabilityScoreOutOf10": 9.1,
+      "securityScoreOutOf10": 9.2,
+      "launchReadinessScoreOutOf10": 9,
+      "requiredSpecsCoverage": 1,
+      "validatorPassRate": 1,
+      "readinessStatus": "ready",
+      "blockedBy": []
+    },
+    {
+      "domainId": "ai_agent",
+      "qualityScoreOutOf10": 9,
+      "reliabilityScoreOutOf10": 9.1,
+      "securityScoreOutOf10": 9.2,
+      "launchReadinessScoreOutOf10": 9,
+      "requiredSpecsCoverage": 1,
+      "validatorPassRate": 1,
+      "readinessStatus": "ready",
+      "blockedBy": []
+    },
+    {
+      "domainId": "game",
+      "qualityScoreOutOf10": 9.04,
+      "reliabilityScoreOutOf10": 9.1,
+      "securityScoreOutOf10": 9.2,
+      "launchReadinessScoreOutOf10": 9,
+      "requiredSpecsCoverage": 1,
+      "validatorPassRate": 1,
+      "readinessStatus": "ready",
+      "blockedBy": []
+    },
+    {
+      "domainId": "dirty_repo_completion",
+      "qualityScoreOutOf10": 9.05,
+      "reliabilityScoreOutOf10": 9.1,
+      "securityScoreOutOf10": 9.2,
+      "launchReadinessScoreOutOf10": 9,
+      "requiredSpecsCoverage": 1,
+      "validatorPassRate": 1,
+      "readinessStatus": "ready",
+      "blockedBy": []
+    }
+  ],
+  "summary": {
+    "totalDomains": 8,
+    "readyDomains": 8,
+    "failedDomains": 0,
+    "minQualityScore": 9
+  },
+  "caveat": "Domain scorecards are representative readiness signals and not an exhaustive claim of universal production success."
+}

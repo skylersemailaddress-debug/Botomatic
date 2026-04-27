@@ -3,9 +3,20 @@ node_modules
 .trigger.env.local
 
 # Local secrets / runtime env
+.env
+.env.*
+!.env.example
+!.env.*.example
 .env.local
 .env.*.local
 
 # Next.js build output
 apps/control-plane/.next/
 .next/
+
+# Local validator cache
+.cache/
+
+# Generated app transient build caches
+release-evidence/generated-apps/**/.next/
+*.old

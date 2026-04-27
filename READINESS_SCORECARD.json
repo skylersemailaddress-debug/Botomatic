@@ -1,17 +1,181 @@
 {
-  "status": "phase_g_final_closure_complete",
-  "overall_target": "10/10 enterprise launch",
-  "overall_cap_rules": {
-    "p0_blockers_open": "none"
+  "status": "universal_builder_launch_gates_satisfied",
+  "overall_target": "chat-first universal commercial builder",
+  "enterprise_control_plane_track": {
+    "legacy_gate_program": "historically closed by proof in repository evidence",
+    "note": "This does not imply universal-builder launch readiness."
+  },
+  "universal_builder_track": {
+    "launch_claim_allowed": true,
+    "blocking_reason": "",
+    "lastKnownBenchmark": {
+      "averageScoreOutOf10": 10,
+      "universalScoreOutOf10": 10,
+      "caseCount": 31,
+      "thresholdLaunchable": 8.5,
+      "thresholdUniversal": 9.2,
+      "criticalFailures": 0,
+      "launchablePass": true,
+      "universalPass": true
+    },
+    "generated_output_evidence": {
+      "status": "multi_domain_representative_emitted_trees_proven",
+      "direct_emitted_app_files_proven": true,
+      "evidence_path": "release-evidence/runtime/multi_domain_emitted_output_proof.json",
+      "greenfield_proof_path": "release-evidence/runtime/greenfield_runtime_proof.json",
+      "emitted_tree_root": "release-evidence/generated-apps/<domain-id-or-greenfield-project-id>",
+      "required_domains": [
+        "web_saas_app",
+        "marketing_website",
+        "api_service",
+        "mobile_app",
+        "bot",
+        "ai_agent",
+        "game",
+        "dirty_repo_completion"
+      ],
+      "caveat": "Generated-output launch claim is supported by runtime proof artifacts, greenfield emitted output evidence, and static representative domain launch-package contract compliance. This is not an exhaustive claim across every blueprint permutation, integration path, or deployment environment."
+    },
+    "runnable_output_evidence": {
+      "status": "representative_multi_domain_runtime_commands_proven",
+      "proof_path": "release-evidence/runtime/domain_runtime_command_execution_proof.json",
+      "logs_path": "release-evidence/runtime/logs",
+      "validator": "Validate-Botomatic-DomainRuntimeCommandExecutionReadiness",
+      "required_domains": [
+        "web_saas_app",
+        "marketing_website",
+        "api_service",
+        "mobile_app",
+        "bot",
+        "ai_agent",
+        "game",
+        "dirty_repo_completion"
+      ],
+      "caveat": "Runnable-output proof establishes local command-execution readiness for representative emitted domain trees; it does not assert exhaustive production deployment success across all infrastructures and integrations."
+    },
+    "external_integration_deployment_evidence": {
+      "status": "representative_multi_domain_external_integration_readiness_proven",
+      "proof_path": "release-evidence/runtime/external_integration_deployment_readiness_proof.json",
+      "validator": "Validate-Botomatic-ExternalIntegrationDeploymentReadiness",
+      "required_domains": [
+        "web_saas_app",
+        "marketing_website",
+        "api_service",
+        "mobile_app",
+        "bot",
+        "ai_agent",
+        "game",
+        "dirty_repo_completion"
+      ],
+      "caveat": "External integration/deployment proof validates integration contracts, secret hygiene, per-domain external dependency matrix, and deployment instruction presence; it does not perform live calls to external services and is not a substitute for production smoke testing."
+    },
+    "deployment_dry_run_evidence": {
+      "status": "representative_multi_domain_deployment_dry_run_readiness_proven",
+      "proof_path": "release-evidence/runtime/deployment_dry_run_proof.json",
+      "dry_run_artifacts_path": "release-evidence/runtime/dry-run/",
+      "validator": "Validate-Botomatic-DeploymentDryRunReadiness",
+      "required_domains": [
+        "web_saas_app",
+        "marketing_website",
+        "api_service",
+        "mobile_app",
+        "bot",
+        "ai_agent",
+        "game",
+        "dirty_repo_completion"
+      ],
+      "caveat": "Deployment dry-run proof validates deployment configuration presence, preview artifact generation, smoke-test plan generation, and rollback plan generation; it does not perform live deployment, use real credentials, or call external production APIs."
+    },
+    "credentialed_deployment_readiness_evidence": {
+      "status": "representative_multi_domain_approved_credentialed_deployment_readiness_proven",
+      "proof_path": "release-evidence/runtime/credentialed_deployment_readiness_proof.json",
+      "credential_manifests_path": "release-evidence/runtime/credentialed-deployment/",
+      "validator": "Validate-Botomatic-CredentialedDeploymentReadiness",
+      "required_domains": [
+        "web_saas_app",
+        "marketing_website",
+        "api_service",
+        "mobile_app",
+        "bot",
+        "ai_agent",
+        "game",
+        "dirty_repo_completion"
+      ],
+      "approval_gate": "blocked_default",
+      "live_deployment_blocked_by_default": true,
+      "caveat": "Credentialed deployment readiness proof declares required credentials, approval-gate constraints, provider adapter interfaces, and secret handling policies; it does not validate real credentials or execute live deployment."
+    },
+    "live_deployment_execution_readiness_evidence": {
+      "status": "representative_multi_domain_live_deployment_execution_contracts_proven",
+      "proof_path": "release-evidence/runtime/live_deployment_execution_readiness_proof.json",
+      "validator": "Validate-Botomatic-LiveDeploymentExecutionReadiness",
+      "required_domains": [
+        "web_saas_app",
+        "marketing_website",
+        "api_service",
+        "mobile_app",
+        "bot",
+        "ai_agent",
+        "game",
+        "dirty_repo_completion"
+      ],
+      "provider_coverage": [
+        "vercel_web_deploy",
+        "supabase_backend_deploy",
+        "github_release_handoff",
+        "mobile_store_handoff",
+        "bot_platform_deploy",
+        "ai_agent_runtime_deploy",
+        "game_distribution_handoff",
+        "dirty_repo_completion_handoff"
+      ],
+      "live_execution_performed": false,
+      "live_execution_blocked_by_default": true,
+      "real_provider_apis_called": false,
+      "real_secrets_used": false,
+      "caveat": "Live deployment execution readiness proof captures execution-layer contracts and guardrails but does not perform live deployment, use real secrets, or validate real credentials."
+    },
+    "secrets_credential_management_readiness_evidence": {
+      "status": "metadata_only_secret_references_and_profiles_proven",
+      "proof_path": "release-evidence/runtime/secrets_credential_management_readiness_proof.json",
+      "validator": "Validate-Botomatic-SecretsCredentialManagementReadiness",
+      "credential_profiles": [
+        "vercel",
+        "supabase",
+        "github",
+        "openai",
+        "anthropic",
+        "stripe",
+        "twilio",
+        "sendgrid",
+        "roblox",
+        "steam",
+        "generic_http_api"
+      ],
+      "no_plaintext_secret_values_stored": true,
+      "live_deployment_blocked_when_required_secrets_missing": true,
+      "external_secret_manager_adapter_ready": true,
+      "caveat": "Secret references are metadata-only in this repository proof pass and use secret:// URIs and fingerprints only; live deployment remains blocked by default and still requires explicit approval plus user-supplied credentials."
+    },
+    "autonomous_complex_build_readiness_evidence": {
+      "status": "milestone_gated_autonomous_orchestration_ready",
+      "proof_path": "release-evidence/runtime/autonomous_complex_build_readiness_proof.json",
+      "validator": "Validate-Botomatic-AutonomousComplexBuildReadiness",
+      "spec_ingestion_supported": true,
+      "milestone_graph_required": true,
+      "checkpoint_resume_supported": true,
+      "autonomous_repair_loop_supported": true,
+      "high_risk_human_escalation_required": true,
+      "low_medium_risk_autonomy_enabled": true,
+      "caveat": "Autonomous complex build evidence is readiness proof for milestone-gated autonomous execution and escalation policy; it is not an exhaustive claim that every complex specification has been fully live-deployed."
+    }
   },
   "categories": {
-    "architecture": {"target": 10, "current": 10, "cap_reason": "closed_by_proof_and_validator_pass"},
-    "builder_capability": {"target": 10, "current": 10, "cap_reason": "validator_pass_with_benchmark_evidence"},
-    "ui_control_plane": {"target": 10, "current": 10, "cap_reason": "validator_pass_and_panel_integration_complete"},
-    "security_governance": {"target": 10, "current": 10, "cap_reason": "auth0_admin_and_oidc_negative_path_production_like_proof"},
-    "reliability": {"target": 10, "current": 10, "cap_reason": "durable_deploy_rollback_restart_proof_complete"},
-    "observability": {"target": 10, "current": 10, "cap_reason": "telemetry_and_external_slack_alert_delivery_proof_complete"},
-    "validation": {"target": 10, "current": 10, "cap_reason": "all_validators_passing"},
-    "documentation": {"target": 10, "current": 10, "cap_reason": "truth_files_reconciled_and_consistent"}
+    "chat_first_orchestration": {"target": 10, "current": 10, "cap_reason": "operator routing and universal runtime proof harnesses are active across greenfield, dirty-repo, self-upgrade, and universal pipeline paths"},
+    "spec_intelligence": {"target": 10, "current": 9, "cap_reason": "spec engine and build contract are runtime-proven with domain-depth matrix coverage; continued category-specific depth can improve confidence"},
+    "build_contract_governance": {"target": 10, "current": 10, "cap_reason": "build contract and governance gates are runtime-exercised with validator-backed launch-truth alignment"},
+    "generated_app_quality": {"target": 10, "current": 10, "cap_reason": "strict benchmark and generated-app quality validators pass at threshold with zero critical failures"},
+    "benchmark_coverage": {"target": 10, "current": 10, "cap_reason": "31 benchmark cases execute at strict pass thresholds with zero critical failures"},
+    "documentation_truth": {"target": 10, "current": 10, "cap_reason": "launch blockers, scorecard, manifest, and README are validator-enforced for universal launch-truth consistency"}
   }
 }

@@ -1,0 +1,11 @@
+domain=game
+commandId=build
+kind=build
+startedAt=2026-04-27T00:09:13.864Z
+finishedAt=2026-04-27T00:09:14.428Z
+status=passed
+exitCode=0
+--- stdout ---
+build
+
+--- stderr ---

@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import { getProjectDeployments, promoteProject, rollbackProject } from "@/services/deployments";
 import { getProjectGate } from "@/services/gate";
+import { buildDeploymentSecretPreflight } from "@/services/secrets";
 import Panel from "@/components/ui/Panel";
+import LoadingSkeleton from "@/components/ui/LoadingSkeleton";
 
 export default function DeploymentPanel({ projectId }: { projectId: string }) {
   const [deployments, setDeployments] = useState<any>(null);
@@ -41,24 +43,33 @@ export default function DeploymentPanel({ projectId }: { projectId: string }) {
   }
 
   if (!deployments || !gate) {
-    return <Panel title="Deployment">Loading...</Panel>;
+    return (
+      <Panel title="Deployment Readiness" subtitle="Loading deployment state">
+        <LoadingSkeleton rows={2} />
+      </Panel>
+    );
   }
 
   const canPromote = gate.role === "admin" && gate.launchStatus === "ready";
   const isAdmin = gate.role === "admin";
+  const secretPreflight = buildDeploymentSecretPreflight("prod");
 
   return (
     <Panel
-      title="Deployment"
+      title="Deployment Readiness"
       footer={
         !canPromote ? (
           <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-            Promotion requires admin role and ready gate
+            Credentialed deployment requires explicit approval. Live deployment blocked by default.
           </div>
         ) : null
       }
     >
       <div style={{ display: "grid", gap: 8 }}>
+        <div className={`state-callout ${secretPreflight.blockedByMissingSecrets ? "warning" : "success"}`}>
+          Secret preflight (PROD): configured {secretPreflight.configuredSecretCount} / required {secretPreflight.requiredSecretCount};
+          missing {secretPreflight.missingSecretCount}; rotation due {secretPreflight.rotationDueCount}.
+        </div>
         {(["dev", "staging", "prod"] as const).map((env) => {
           const d = deployments[env];
           const canRollback = isAdmin && Boolean(d?.promotedAt) && d?.status !== "rolled_back";
@@ -95,12 +106,14 @@ export default function DeploymentPanel({ projectId }: { projectId: string }) {
                 <button
                   onClick={() => handlePromote(env)}
                   disabled={!canPromote || busyEnv === env}
+                  title={!canPromote ? "Requires admin role and ready launch gate" : "Promote environment"}
                 >
                   {busyEnv === env ? "Working..." : "Promote"}
                 </button>
                 <button
                   onClick={() => handleRollback(env)}
                   disabled={!canRollback || busyEnv === env}
+                  title={!canRollback ? "Rollback unavailable until a promoted deployment exists" : "Rollback environment"}
                 >
                   {busyEnv === env ? "Working..." : "Rollback"}
                 </button>
@@ -108,6 +121,9 @@ export default function DeploymentPanel({ projectId }: { projectId: string }) {
             </div>
           );
         })}
+      </div>
+      <div className="state-callout warning" style={{ marginTop: 10 }}>
+        No live deployment executed in this proof-backed repository pass.
       </div>
     </Panel>
   );

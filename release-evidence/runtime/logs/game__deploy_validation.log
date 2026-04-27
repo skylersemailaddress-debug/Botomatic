@@ -1,0 +1,9 @@
+domain=game
+commandId=deploy_validation
+kind=deploy_validation
+startedAt=2026-04-27T00:09:15.436Z
+finishedAt=2026-04-27T00:09:15.713Z
+status=passed
+exitCode=0
+--- stdout ---
+--- stderr ---

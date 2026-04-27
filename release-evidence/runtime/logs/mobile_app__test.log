@@ -1,0 +1,11 @@
+domain=mobile_app
+commandId=test
+kind=test
+startedAt=2026-04-27T00:09:05.240Z
+finishedAt=2026-04-27T00:09:05.870Z
+status=passed
+exitCode=0
+--- stdout ---
+mobile_app navigation test passed
+
+--- stderr ---

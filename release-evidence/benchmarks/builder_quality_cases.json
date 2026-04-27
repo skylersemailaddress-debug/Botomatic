@@ -1,17 +1,33 @@
 [
-  {
-    "id": "enterprise_crm",
-    "appName": "Enterprise CRM",
-    "request": "Build an enterprise CRM with login, role based access, analytics dashboard, messaging, and customer workflow automation."
-  },
-  {
-    "id": "volunteer_ops",
-    "appName": "Volunteer Ops",
-    "request": "Need volunteer operations platform with event scheduling, communications, approval workflow, and reporting dashboard."
-  },
-  {
-    "id": "booking_platform",
-    "appName": "Booking Platform",
-    "request": "Create appointment booking system with authentication, customer portal, admin dashboard, reminders, and analytics."
-  }
+  {"id":"vague_founder_ramble","appName":"Founder Ramble","request":"I need something like notion plus slack plus stripe maybe and maybe maybe with agents please just make it amazing and ready."},
+  {"id":"detailed_saas_dashboard","appName":"SaaS Dashboard","request":"Build a multi-role SaaS analytics dashboard with tenant isolation, RBAC, audit logs, and subscription billing."},
+  {"id":"crm","appName":"Commercial CRM","request":"Need enterprise CRM with pipeline, contacts, organizations, activity timeline, email sync, and role permissions."},
+  {"id":"booking_platform","appName":"Booking Platform","request":"Appointment booking platform with provider calendars, customer reminders, payments, and cancellation policies."},
+  {"id":"ecommerce","appName":"Ecommerce Store","request":"Build ecommerce site with catalog, cart, checkout, taxes, shipping, refunds, and admin order management."},
+  {"id":"marketplace","appName":"Two-Sided Marketplace","request":"Marketplace with buyer and seller portals, listing moderation, commissions, payouts, disputes, and trust signals."},
+  {"id":"marketing_website","appName":"Marketing Website","request":"High-conversion marketing website with CMS-managed sections, forms, analytics, SEO, and deployment checklist."},
+  {"id":"landing_page","appName":"Landing Page","request":"Single product landing page with pricing blocks, testimonials, newsletter capture, and A/B ready layout."},
+  {"id":"membership_community","appName":"Membership Community","request":"Community app with gated content, subscriptions, moderation workflows, notifications, and admin dashboard."},
+  {"id":"lms","appName":"LMS Platform","request":"Learning platform with courses, lessons, progress tracking, certificates, role-based instructor/admin/student access."},
+  {"id":"job_board","appName":"Job Board","request":"Job board with employer accounts, applicant workflow, paid listings, moderation, and search filters."},
+  {"id":"directory_listings","appName":"Directory Listings","request":"Directory site with paid featured listings, owner claims, moderation, map view, and admin tooling."},
+  {"id":"internal_admin_tool","appName":"Internal Admin Tool","request":"Internal operations console with approvals, audit logs, workflow queues, and strict role permissions."},
+  {"id":"workflow_operations_system","appName":"Workflow Ops","request":"Complex workflow operations app with state machines, escalations, SLA tracking, and auditability."},
+  {"id":"customer_portal","appName":"Customer Portal","request":"Customer support portal with auth, ticket views, account management, notifications, and analytics."},
+  {"id":"analytics_reporting","appName":"Reporting Suite","request":"Analytics app with dashboards, scheduled reports, exports, alerting, and role-based access control."},
+  {"id":"event_platform","appName":"Event Platform","request":"Event platform with ticketing, check-in workflow, sponsor pages, speaker management, and email notifications."},
+  {"id":"content_media_site","appName":"Content Media Site","request":"Media site with CMS, publishing workflow, paywall controls, ad slots, and subscription management."},
+  {"id":"ai_chatbot_app","appName":"AI Chatbot App","request":"AI chatbot web app with conversation history, safety policies, billing limits, and admin review logs."},
+  {"id":"ai_agent_workflow","appName":"AI Agent Workflow","request":"Agent workflow app with task queues, tool permissions, approval gates, and observability."},
+  {"id":"document_processing","appName":"Document Processing","request":"Document ingestion and extraction app with OCR pipeline, review workflow, and data retention policy."},
+  {"id":"inventory_order_management","appName":"Inventory Order Management","request":"Inventory and order management app with warehouse roles, reorder workflows, and supplier integrations."},
+  {"id":"support_helpdesk","appName":"Support Helpdesk","request":"Helpdesk with ticket routing, SLA policy engine, escalation workflow, and CSAT reporting."},
+  {"id":"real_estate_listings","appName":"Real Estate Listings","request":"Real-estate listing platform with agents, property workflows, lead capture, and visibility controls."},
+  {"id":"field_service","appName":"Field Service","request":"Field service operations app with dispatching, technician workflows, parts usage, and invoicing."},
+  {"id":"nonprofit_volunteer_ops","appName":"Nonprofit Volunteer Ops","request":"Volunteer management with scheduling, compliance checks, communication workflows, and impact reporting."},
+  {"id":"campaign_ops","appName":"Campaign Ops","request":"Campaign operations platform with canvassing workflow, permissions, compliance reporting, and analytics."},
+  {"id":"payments_heavy","appName":"Payments Heavy App","request":"Subscription and usage billing app with proration, invoices, refunds, disputes, and tax handling."},
+  {"id":"compliance_sensitive","appName":"Compliance Sensitive App","request":"Compliance-sensitive app requiring retention/deletion policies, audit trails, role segregation, and legal controls."},
+  {"id":"conflicting_requirements","appName":"Conflicting Requirements","request":"Need public anonymous access but also strict private tenant visibility with zero data exposure conflicts."},
+  {"id":"decide_everything_for_me","appName":"Decide For Me","request":"Decide everything for me and just build fast, but do not make mistakes in auth, payments, legal, and compliance."}
 ]

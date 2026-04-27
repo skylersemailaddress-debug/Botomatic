@@ -1,0 +1,12 @@
+{
+  "domainId": "game",
+  "targets": [
+    {
+      "id": "primary",
+      "label": "Primary deployment target",
+      "approvalRequired": true,
+      "credentialed": true,
+      "liveBlockedByDefault": true
+    }
+  ]
+}
