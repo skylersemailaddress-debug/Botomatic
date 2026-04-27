@@ -1986,7 +1986,7 @@ export function buildApp(config: RuntimeConfig) {
       }
       if (error instanceof multer.MulterError) {
         if (error.code === "LIMIT_FILE_SIZE") {
-          return res.status(400).json({
+          return res.status(413).json({
             error: `File too large (max ${formatMaxUploadLabel(config.intake.limits.maxUploadMb)}).`,
             code: "FILE_TOO_LARGE",
             configuredMaxUploadMb: config.intake.limits.maxUploadMb,
@@ -2008,10 +2008,49 @@ export function buildApp(config: RuntimeConfig) {
       const sizeBytes = uploadedFile.size;
       const fileName = uploadedFile.originalname;
       const mimeType = uploadedFile.mimetype;
+      const sourceType = classifyUploadedSourceType(fileName, mimeType || "");
       const uploadedAt = now();
       const uploadedPath = uploadedFile.path;
       const fullRepoAudit =
         String((req.query as any)?.fullRepoAudit || (req.body as any)?.fullRepoAudit || "").toLowerCase() === "true";
+      const route = routeIntakeInput({
+        sourceType,
+        sourceUri: `upload://${fileName}`,
+        displayName: fileName,
+        sizeBytes,
+        maxUploadBytes: config.intake.limits.maxUploadBytes,
+      });
+      const source = createIntakeSourceRecord({
+        projectId: project.projectId,
+        sourceType,
+        sourceUri: `upload://${fileName}`,
+        displayName: fileName,
+        sizeBytes,
+        provider: "local_upload",
+        status: "processing",
+        safetyStatus: "pending",
+        ingestionMode: route.recommendedIntakePath,
+      });
+      upsertIntakeSource(project, source);
+      emitEvent(project as any, {
+        id: `evt_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        projectId: project.projectId,
+        type: "intake_source_registered",
+        actorId: actor.actorId,
+        timestamp: now(),
+        metadata: { sourceId: source.sourceId, sourceType: source.sourceType, ingestionMode: source.ingestionMode },
+      });
+      emitEvent(project as any, {
+        id: `evt_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        projectId: project.projectId,
+        type: "intake_route_selected",
+        actorId: actor.actorId,
+        timestamp: now(),
+        metadata: { sourceId: source.sourceId, route: route.recommendedIntakePath, accepted: route.accepted },
+      });
+      (req as any).__intakeSourceId = source.sourceId;
+      await persistProject(config, project);
+
       const intakeWorkDir = path.join(config.intake.uploadDir, project.projectId, `intake_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`);
       fs.mkdirSync(intakeWorkDir, { recursive: true });
       (req as any).__intakeWorkDir = intakeWorkDir;
@@ -2076,6 +2115,7 @@ export function buildApp(config: RuntimeConfig) {
         parseError: processed.parseError,
         extractionManifest: processed.extractionManifest,
         binarySummary: processed.binarySummary,
+        sourceId: source.sourceId,
       };
 
       const existingIntake = getIntakeArtifacts(project);
@@ -2096,7 +2136,31 @@ export function buildApp(config: RuntimeConfig) {
           parseError: processed.parseError,
           extractionManifestCount: processed.extractionManifest.length,
           binarySummaryCount: processed.binarySummary.length,
+          sourceId: source.sourceId,
         },
+      });
+
+      const completedSource: IntakeSource = {
+        ...source,
+        status: "completed",
+        safetyStatus: processed.parseError ? "blocked" : "passed",
+        updatedAt: nowIso(),
+        metadata: {
+          extractedChars: processed.extractedChars,
+          parseError: processed.parseError,
+          extractionManifestCount: processed.extractionManifest.length,
+          binarySummaryCount: processed.binarySummary.length,
+          fullRepoAudit,
+        },
+      };
+      upsertIntakeSource(project, completedSource);
+      emitEvent(project as any, {
+        id: `evt_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        projectId: project.projectId,
+        type: "intake_completed",
+        actorId: actor.actorId,
+        timestamp: now(),
+        metadata: { sourceId: source.sourceId, sourceType: source.sourceType },
       });
       await persistProject(config, project);
 
@@ -2121,6 +2185,7 @@ export function buildApp(config: RuntimeConfig) {
         configuredMaxExtractedMb: config.intake.limits.maxExtractedMb,
         configuredMaxZipFiles: config.intake.limits.maxZipFiles,
         acceptedExtensions: getSupportedUploadExtensions(),
+        sourceId: source.sourceId,
         actorId: actor.actorId,
         message: processed.parseError
           ? `Uploaded ${fileName}; parse warning recorded; ingestion completed with safeguards.`
@@ -2148,6 +2213,24 @@ export function buildApp(config: RuntimeConfig) {
         try {
           const project = await repo.getProject(req.params.projectId);
           if (project) {
+            const sourceId = String((req as any).__intakeSourceId || "");
+            if (sourceId) {
+              const source = getIntakeSources(project).find((item) => item.sourceId === sourceId);
+              if (source) {
+                const failedSource: IntakeSource = {
+                  ...source,
+                  status: "failed",
+                  safetyStatus: "blocked",
+                  updatedAt: nowIso(),
+                  metadata: {
+                    ...(source.metadata || {}),
+                    failureCode: error.code,
+                    failureMessage: error.message,
+                  },
+                };
+                upsertIntakeSource(project, failedSource);
+              }
+            }
             emitEvent(project as any, {
               id: `evt_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
               projectId: project.projectId,
@@ -2157,6 +2240,7 @@ export function buildApp(config: RuntimeConfig) {
               metadata: {
                 code: error.code,
                 message: error.message,
+                sourceId: String((req as any).__intakeSourceId || ""),
               },
             });
             await persistProject(config, project);

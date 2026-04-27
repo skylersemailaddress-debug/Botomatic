@@ -8,6 +8,8 @@
  *  E - successful extraction message is not followed by "upload failed" unless extraction truly failed
  */
 import assert from "assert";
+import fs from "fs";
+import path from "path";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -79,6 +81,50 @@ async function simulatePipeline(
     }
   }
   return "pipeline-ok";
+}
+
+async function simulateBatchUploadFlow(params: {
+  files: string[];
+  uploadFn: (fileName: string) => Promise<void>;
+  compileFn: () => Promise<void>;
+  planFn: () => Promise<void>;
+}): Promise<{
+  callOrder: string[];
+  failedFiles: Array<{ fileName: string; className: string; errorMsg: string }>;
+}> {
+  const callOrder: string[] = [];
+  const failedFiles: Array<{ fileName: string; className: string; errorMsg: string }> = [];
+
+  for (const fileName of params.files) {
+    callOrder.push(`upload:${fileName}:start`);
+    try {
+      await params.uploadFn(fileName);
+      callOrder.push(`upload:${fileName}:success`);
+    } catch (err: any) {
+      const raw = String(err?.message || err);
+      const classified = classifyError(raw);
+      failedFiles.push({
+        fileName,
+        className: classified.className,
+        errorMsg: raw,
+      });
+      callOrder.push(`upload:${fileName}:failed:${classified.className}`);
+    }
+  }
+
+  if (failedFiles.length > 0) {
+    return { callOrder, failedFiles };
+  }
+
+  callOrder.push("compile:start");
+  await params.compileFn();
+  callOrder.push("compile:success");
+
+  callOrder.push("plan:start");
+  await params.planFn();
+  callOrder.push("plan:success");
+
+  return { callOrder, failedFiles };
 }
 
 // ─── tests ──────────────────────────────────────────────────────────────────
@@ -192,9 +238,133 @@ function testMasterTruthErrorClassifiedCorrectly() {
   assert.strictEqual(result2.className, "planning-sequence-error", `planning-sequence-error tag should be recognized`);
 }
 
+function testMultiFileSelectionEnabledInComposer() {
+  const root = process.cwd();
+  const composer = fs.readFileSync(path.join(root, "apps/control-plane/src/components/chat/Composer.tsx"), "utf8");
+  assert(composer.includes("multiple"), "Composer file input should enable multiple selection");
+  assert(composer.includes("e.dataTransfer.files"), "Composer drag/drop should use full files collection");
+}
+
+function testUploadRouteCreatesSourceRecordPerFile() {
+  const root = process.cwd();
+  const server = fs.readFileSync(path.join(root, "apps/orchestrator-api/src/server_app.ts"), "utf8");
+  assert(server.includes("createIntakeSourceRecord"), "Upload route should create intake source records");
+  assert(server.includes("sourceId: source.sourceId"), "Upload artifacts/response should carry sourceId");
+}
+
+async function testBatchUploadsAllFilesBeforeCompile() {
+  const files = ["spec-a.zip", "design.md", "api.json"];
+  const result = await simulateBatchUploadFlow({
+    files,
+    uploadFn: async () => {
+      // success
+    },
+    compileFn: async () => {
+      // success
+    },
+    planFn: async () => {
+      // success
+    },
+  });
+
+  const compileStartIdx = result.callOrder.indexOf("compile:start");
+  assert(compileStartIdx > 0, "compile should run after uploads");
+  for (const fileName of files) {
+    const successIdx = result.callOrder.indexOf(`upload:${fileName}:success`);
+    assert(successIdx >= 0, `expected upload success for ${fileName}`);
+    assert(successIdx < compileStartIdx, `all uploads must complete before compile; file=${fileName}`);
+  }
+}
+
+async function testCompileRunsOnceAfterBatchComplete() {
+  let compileCount = 0;
+  const result = await simulateBatchUploadFlow({
+    files: ["a.zip", "b.pdf"],
+    uploadFn: async () => {
+      // success
+    },
+    compileFn: async () => {
+      compileCount++;
+    },
+    planFn: async () => {
+      // success
+    },
+  });
+
+  assert.strictEqual(result.failedFiles.length, 0, "No failures expected in happy path");
+  assert.strictEqual(compileCount, 1, "compile should run exactly once for a successful batch");
+}
+
+async function testPlanRunsOnlyAfterCompile() {
+  const callOrder: string[] = [];
+  await simulateBatchUploadFlow({
+    files: ["a.ts", "b.tsx"],
+    uploadFn: async () => {
+      // success
+    },
+    compileFn: async () => {
+      callOrder.push("compile");
+    },
+    planFn: async () => {
+      callOrder.push("plan");
+    },
+  });
+
+  assert.deepStrictEqual(callOrder, ["compile", "plan"], "plan must run only after compile");
+}
+
+async function testFailedFileReportsPerFileError() {
+  const result = await simulateBatchUploadFlow({
+    files: ["ok1.md", "bad.zip", "ok2.json"],
+    uploadFn: async (fileName) => {
+      if (fileName === "bad.zip") {
+        throw new Error("validation failed while ingesting archive");
+      }
+    },
+    compileFn: async () => {
+      assert.fail("compile should not run when any file upload fails");
+    },
+    planFn: async () => {
+      assert.fail("plan should not run when any file upload fails");
+    },
+  });
+
+  assert.strictEqual(result.failedFiles.length, 1, "Exactly one file should be reported failed");
+  assert.strictEqual(result.failedFiles[0].fileName, "bad.zip", "Failed file name should be reported");
+  assert(result.failedFiles[0].errorMsg.includes("validation failed"), "Failed file error should include raw error");
+}
+
+async function testBatchFile413ClassifiedResourceLimitFailure() {
+  const result = await simulateBatchUploadFlow({
+    files: ["ok.md", "too-large.zip"],
+    uploadFn: async (fileName) => {
+      if (fileName === "too-large.zip") {
+        throw new Error("Request failed with status 413 Request Entity Too Large");
+      }
+    },
+    compileFn: async () => {
+      assert.fail("compile should not run when one file fails");
+    },
+    planFn: async () => {
+      assert.fail("plan should not run when one file fails");
+    },
+  });
+
+  assert.strictEqual(result.failedFiles.length, 1, "Expected one failed file");
+  assert.strictEqual(result.failedFiles[0].fileName, "too-large.zip", "Expected oversized file to fail");
+  assert.strictEqual(result.failedFiles[0].className, "resource_limit_failure", "413 should classify as resource_limit_failure");
+}
+
 // ─── runner ─────────────────────────────────────────────────────────────────
 
 const tests: Array<{ name: string; fn: () => Promise<void> | void }> = [
+  { name: "MF1: multiple files can be selected in composer", fn: testMultiFileSelectionEnabledInComposer },
+  { name: "MF1b: each uploaded file creates intake source record", fn: testUploadRouteCreatesSourceRecordPerFile },
+  { name: "MF2: all files upload before compile", fn: testBatchUploadsAllFilesBeforeCompile },
+  { name: "MF3: compile runs once after batch complete", fn: testCompileRunsOnceAfterBatchComplete },
+  { name: "MF4: plan runs only after compile", fn: testPlanRunsOnlyAfterCompile },
+  { name: "MF5: one failed file reports per-file error", fn: testFailedFileReportsPerFileError },
+  { name: "MF6: one file 413 is resource_limit_failure", fn: testBatchFile413ClassifiedResourceLimitFailure },
   { name: "A: Successful upload compiles before planning", fn: testA_SuccessfulUploadCompilesThenPlans },
   { name: "B: /plan not called when compile fails", fn: testB_PlanNotCalledWhenCompileFails },
   { name: "C: /plan 404 triggers compile fallback + one retry", fn: testC_Plan404NoMasterTruthFallbackRetry },

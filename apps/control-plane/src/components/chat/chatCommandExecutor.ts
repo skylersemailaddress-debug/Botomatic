@@ -474,17 +474,17 @@ export function buildPartnerEnvelope(context: RuntimeContext, command: string, d
   });
 }
 
-export function normalizeUploadedFileIntake(fileName: string): IntakeContext {
-  const lowered = fileName.toLowerCase();
-  const sourceType: IntakeSourceType =
-    lowered.endsWith(".zip")
-      ? "uploaded_zip"
-      : lowered.endsWith(".pdf") || lowered.endsWith(".doc") || lowered.endsWith(".docx")
-      ? "uploaded_document"
-      : "uploaded_file";
+export function normalizeUploadedFileIntake(fileNames: string | string[]): IntakeContext {
+  const names = Array.isArray(fileNames) ? fileNames : [fileNames];
+  const loweredNames = names.map((name) => String(name).toLowerCase());
+  const sourceType: IntakeSourceType = loweredNames.some((name) => name.endsWith(".zip"))
+    ? "uploaded_zip"
+    : loweredNames.some((name) => name.endsWith(".pdf") || name.endsWith(".doc") || name.endsWith(".docx"))
+    ? "uploaded_document"
+    : "uploaded_file";
   return normalizeIntakeContext({
     sourceType,
-    value: fileName,
+    value: names.join(", "),
     suggestedIntent: "generated_app_build",
   });
 }

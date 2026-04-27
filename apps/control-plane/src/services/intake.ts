@@ -9,6 +9,7 @@ export type IntakeResponse = {
 export type FileIntakeResponse = {
   ok: boolean;
   artifactId: string;
+  sourceId?: string;
   fileName: string;
   mimeType: string;
   sizeBytes: number;

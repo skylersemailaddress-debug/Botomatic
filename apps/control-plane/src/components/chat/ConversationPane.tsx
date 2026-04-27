@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Composer from "./Composer";
+import Composer, { type UploadBatchResult } from "./Composer";
 import MessageList from "./MessageList";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { uploadIntakeFile } from "@/services/intake";
@@ -149,12 +149,17 @@ export default function ConversationPane({ projectId }: { projectId: string }) {
   }
 
   async function handleFileUpload(
-    file: File,
+    files: File[],
     hooks: {
-      onUploadProgress: (progressPercent: number) => void;
-      onStatus: (statusText: string) => void;
+      onFileProgress: (fileName: string, progressPercent: number) => void;
+      onFileStatus: (fileName: string, statusText: string) => void;
+      onBatchStatus: (statusText: string) => void;
     }
-  ) {
+  ): Promise<UploadBatchResult> {
+    if (files.length === 0) {
+      return { failedFiles: [] };
+    }
+
     const relevantTypes = new Set([
       "upload_started",
       "upload_received",
@@ -169,6 +174,9 @@ export default function ConversationPane({ projectId }: { projectId: string }) {
     const seenEvents = new Set<string>();
     let stopped = false;
 
+    const failedFiles: UploadBatchResult["failedFiles"] = [];
+    const succeededFileNames: string[] = [];
+
     const pollAudit = async () => {
       if (stopped) return;
       try {
@@ -179,14 +187,15 @@ export default function ConversationPane({ projectId }: { projectId: string }) {
           }
           seenEvents.add(event.id);
           const metadata = (event as any).metadata || {};
-          if (event.type === "upload_started") hooks.onStatus("Upload started");
-          if (event.type === "upload_received") hooks.onStatus("Upload received");
-          if (event.type === "validation_started") hooks.onStatus("Validation started");
-          if (event.type === "archive_scan_started") hooks.onStatus("Archive scan started");
-          if (event.type === "extraction_started") hooks.onStatus("Extraction started");
-          if (event.type === "ingestion_started") hooks.onStatus("Ingestion started");
-          if (event.type === "ingestion_completed") hooks.onStatus("Ingestion completed");
-          if (event.type === "ingestion_failed") hooks.onStatus("Ingestion failed");
+          const eventFileName = String(metadata.fileName || "");
+          if (event.type === "upload_started") hooks.onFileStatus(eventFileName, "Upload started");
+          if (event.type === "upload_received") hooks.onFileStatus(eventFileName, "Upload received");
+          if (event.type === "validation_started") hooks.onFileStatus(eventFileName, "Validation started");
+          if (event.type === "archive_scan_started") hooks.onFileStatus(eventFileName, "Archive scan started");
+          if (event.type === "extraction_started") hooks.onFileStatus(eventFileName, "Extraction started");
+          if (event.type === "ingestion_started") hooks.onFileStatus(eventFileName, "Ingestion started");
+          if (event.type === "ingestion_completed") hooks.onFileStatus(eventFileName, "Ingestion completed");
+          if (event.type === "ingestion_failed") hooks.onFileStatus(eventFileName, "Ingestion failed");
           if (event.type === "extraction_progress") {
             const extractedBytes = Number(metadata.extractedBytes || 0);
             const maxExtractedBytes = Number(metadata.maxExtractedBytes || 0);
@@ -194,9 +203,9 @@ export default function ConversationPane({ projectId }: { projectId: string }) {
             const extractedEntries = Number(metadata.extractedEntries || 0);
             if (maxExtractedBytes > 0) {
               const percent = Math.min(100, Math.round((extractedBytes / maxExtractedBytes) * 100));
-              hooks.onStatus(`Extraction ${percent}% (${extractedEntries} files, scanned ${scannedEntries})`);
+              hooks.onFileStatus(eventFileName, `Extraction ${percent}% (${extractedEntries} files, scanned ${scannedEntries})`);
             } else {
-              hooks.onStatus(`Extraction progress (${extractedEntries} files, scanned ${scannedEntries})`);
+              hooks.onFileStatus(eventFileName, `Extraction progress (${extractedEntries} files, scanned ${scannedEntries})`);
             }
           }
         }
@@ -211,38 +220,68 @@ export default function ConversationPane({ projectId }: { projectId: string }) {
     }, 900);
 
     try {
-      const result = await uploadIntakeFile(projectId, file, {
-        onUploadProgress: hooks.onUploadProgress,
-      });
+      for (let index = 0; index < files.length; index++) {
+        const file = files[index];
+        hooks.onBatchStatus(`Uploading file ${index + 1}/${files.length}: ${file.name}`);
+        hooks.onFileStatus(file.name, "Uploading");
+        hooks.onFileProgress(file.name, 0);
 
-      appendSystemMessage(
-        result.message ||
-          `Uploaded ${result.fileName}; extracted ${result.extractedChars} characters; available to planning.`
-      );
+        try {
+          const result = await uploadIntakeFile(projectId, file, {
+            onUploadProgress: (progressPercent) => hooks.onFileProgress(file.name, progressPercent),
+          });
 
-      if ((result.binarySummary?.length || 0) > 0) {
-        appendSystemMessage(`Binary files summarized: ${result.binarySummary?.length || 0}.`);
+          succeededFileNames.push(result.fileName);
+          hooks.onFileProgress(file.name, 100);
+          hooks.onFileStatus(file.name, "Uploaded");
+
+          appendSystemMessage(
+            result.message ||
+              `Uploaded ${result.fileName}; extracted ${result.extractedChars} characters; available to planning.`
+          );
+
+          if ((result.binarySummary?.length || 0) > 0) {
+            appendSystemMessage(`Binary files summarized for ${result.fileName}: ${result.binarySummary?.length || 0}.`);
+          }
+        } catch (error: any) {
+          const raw = String(error?.message || error);
+          const classified = classifyError(raw);
+          failedFiles.push({
+            fileName: file.name,
+            errorMsg: raw,
+            className: classified.className,
+          });
+          hooks.onFileStatus(file.name, `Failed (${classified.className})`);
+          appendSystemMessage(
+            `Upload failed for ${file.name} (${classified.className}): ${raw}\nRecommended command: ${classified.recommendedCommand}`
+          );
+        }
       }
 
-      const runtime = await fetchRuntimeContext(projectId);
-      const intakeContext = normalizeUploadedFileIntake(result.fileName);
+      if (failedFiles.length > 0) {
+        hooks.onBatchStatus(`Uploaded ${succeededFileNames.length}/${files.length}; ${failedFiles.length} failed`);
+        return { failedFiles };
+      }
+
       try {
+        hooks.onBatchStatus("All uploads complete. Compiling master truth.");
+        const runtime = await fetchRuntimeContext(projectId);
+        const intakeContext = normalizeUploadedFileIntake(succeededFileNames);
         const details = await runPipelineFromIntakeContext(projectId, intakeContext);
         setClassification("generated_app_build");
         appendSystemMessage(buildPartnerEnvelope(runtime, "continue current generated app build", details));
+        hooks.onBatchStatus("Batch compile + plan completed");
+        return { failedFiles: [] };
       } catch (pipelineError: any) {
         const raw = String(pipelineError?.message || pipelineError);
         const classified = classifyError(raw);
         appendSystemMessage(
           `Pipeline failed (${classified.className}): ${raw}\nRecommended command: ${classified.recommendedCommand}`
         );
+        throw pipelineError;
       }
     } catch (error: any) {
-      const raw = String(error?.message || error);
-      const classified = classifyError(raw);
-      appendSystemMessage(
-        `Upload failed (${classified.className}): ${raw}\nRecommended command: ${classified.recommendedCommand}`
-      );
+      throw error;
     } finally {
       stopped = true;
       clearInterval(timer);

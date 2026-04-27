@@ -12,7 +12,18 @@ import {
 export type PendingFile = {
   file: File;
   status: "pending" | "uploading" | "done" | "error";
+  progressPercent?: number;
+  statusText?: string;
+  className?: string;
   errorMsg?: string;
+};
+
+export type UploadBatchResult = {
+  failedFiles: Array<{
+    fileName: string;
+    errorMsg: string;
+    className?: string;
+  }>;
 };
 
 export default function Composer({
@@ -26,19 +37,19 @@ export default function Composer({
   onChange: (value: string) => void;
   onSubmit: () => void;
   onFileUpload?: (
-    file: File,
+    files: File[],
     hooks: {
-      onUploadProgress: (progressPercent: number) => void;
-      onStatus: (statusText: string) => void;
+      onFileProgress: (fileName: string, progressPercent: number) => void;
+      onFileStatus: (fileName: string, statusText: string) => void;
+      onBatchStatus: (statusText: string) => void;
     }
-  ) => Promise<void>;
+  ) => Promise<UploadBatchResult>;
   disabled?: boolean;
 }) {
-  const [pendingFile, setPendingFile] = useState<PendingFile | null>(null);
+  const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
   const [dragging, setDragging] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
-  const [uploadProgress, setUploadProgress] = useState<number>(0);
-  const [uploadStatus, setUploadStatus] = useState<string>("Ready");
+  const [batchStatus, setBatchStatus] = useState<string>("Ready");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const composingRef = useRef(false);
 
@@ -59,20 +70,48 @@ export default function Composer({
     return null;
   }
 
-  function handleFileSelected(f: File) {
-    const err = validateFile(f);
-    if (err) { setFileError(err); return; }
-    setFileError(null);
-    setUploadProgress(0);
-    setUploadStatus("Ready");
-    setPendingFile({ file: f, status: "pending" });
+  function handleFileSelected(nextFiles: FileList | File[]) {
+    const fileArray = Array.from(nextFiles || []);
+    if (fileArray.length === 0) {
+      return;
+    }
+
+    const validFiles: PendingFile[] = [];
+    const validationErrors: string[] = [];
+
+    for (const file of fileArray) {
+      const err = validateFile(file);
+      if (err) {
+        validationErrors.push(`${file.name}: ${err}`);
+        continue;
+      }
+      validFiles.push({
+        file,
+        status: "pending",
+        progressPercent: 0,
+        statusText: "Ready",
+      });
+    }
+
+    if (validationErrors.length > 0) {
+      setFileError(validationErrors.join(" | "));
+    } else {
+      setFileError(null);
+    }
+
+    if (validFiles.length > 0) {
+      setBatchStatus("Ready");
+      setPendingFiles((prev) => [...prev, ...validFiles]);
+    }
   }
 
   function handleDrop(e: DragEvent<HTMLDivElement>) {
     e.preventDefault();
     setDragging(false);
-    const f = e.dataTransfer.files[0];
-    if (f) handleFileSelected(f);
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      handleFileSelected(files);
+    }
   }
 
   function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
@@ -91,34 +130,99 @@ export default function Composer({
 
   async function handleSend() {
     if (disabled) return;
-    const hadPendingFile = pendingFile && pendingFile.status === "pending";
-    if (pendingFile && pendingFile.status === "pending" && onFileUpload) {
-      setPendingFile((p) => p ? { ...p, status: "uploading" } : p);
-      setUploadProgress(0);
-      setUploadStatus("Uploading");
+    const filesToUpload = pendingFiles.filter((pendingFile) => pendingFile.status === "pending").map((pendingFile) => pendingFile.file);
+    const hadPendingFiles = filesToUpload.length > 0;
+
+    if (hadPendingFiles && onFileUpload) {
+      setPendingFiles((current) =>
+        current.map((item) =>
+          item.status === "pending"
+            ? { ...item, status: "uploading", progressPercent: 0, statusText: "Queued" }
+            : item
+        )
+      );
+      setBatchStatus(`Uploading ${filesToUpload.length} file${filesToUpload.length === 1 ? "" : "s"}`);
+
       try {
-        await onFileUpload(pendingFile.file, {
-          onUploadProgress: (progressPercent) => {
-            setUploadProgress(progressPercent);
-            setUploadStatus(progressPercent < 100 ? `Uploading ${progressPercent}%` : "Upload received; validating");
+        const result = await onFileUpload(filesToUpload, {
+          onFileProgress: (fileName, progressPercent) => {
+            setPendingFiles((current) =>
+              current.map((item) =>
+                item.file.name === fileName
+                  ? { ...item, progressPercent, statusText: progressPercent < 100 ? `Uploading ${progressPercent}%` : "Upload received" }
+                  : item
+              )
+            );
           },
-          onStatus: (statusText) => {
-            setUploadStatus(statusText);
+          onFileStatus: (fileName, statusText) => {
+            setPendingFiles((current) =>
+              current.map((item) =>
+                item.file.name === fileName ? { ...item, statusText } : item
+              )
+            );
+          },
+          onBatchStatus: (statusText) => {
+            setBatchStatus(statusText);
           },
         });
-        setPendingFile((p) => p ? { ...p, status: "done" } : p);
-        setUploadStatus("Uploaded");
+
+        const failedByName = new Map(result.failedFiles.map((failed) => [failed.fileName, failed]));
+        setPendingFiles((current) =>
+          current.map((item) => {
+            const failed = failedByName.get(item.file.name);
+            if (failed) {
+              return {
+                ...item,
+                status: "error",
+                className: failed.className,
+                errorMsg: failed.errorMsg,
+                statusText: failed.className ? `Error (${failed.className})` : "Error",
+              };
+            }
+            if (item.status === "uploading") {
+              return {
+                ...item,
+                status: "done",
+                progressPercent: 100,
+                statusText: "Uploaded",
+              };
+            }
+            return item;
+          })
+        );
+
+        if (result.failedFiles.length > 0) {
+          setBatchStatus(`Batch completed with ${result.failedFiles.length} failed file${result.failedFiles.length === 1 ? "" : "s"}`);
+          return;
+        }
+
+        setBatchStatus("Batch upload + compile succeeded");
       } catch (err: any) {
-        setPendingFile((p) => p ? { ...p, status: "error", errorMsg: String(err?.message || err) } : p);
-        setUploadStatus("Error");
+        setBatchStatus("Batch failed");
+        setFileError(String(err?.message || err));
+        setPendingFiles((current) =>
+          current.map((item) =>
+            item.status === "uploading"
+              ? { ...item, status: "error", errorMsg: String(err?.message || err), statusText: "Error" }
+              : item
+          )
+        );
         return;
       }
     }
-    if (value.trim() || hadPendingFile) onSubmit();
+    if (value.trim() || hadPendingFiles) onSubmit();
   }
 
-  const canSend = !disabled && (value.trim().length > 0 || (pendingFile != null && pendingFile.status === "pending"));
-  const isUploading = pendingFile?.status === "uploading";
+  const canSend = !disabled && (value.trim().length > 0 || pendingFiles.some((pendingFile) => pendingFile.status === "pending"));
+  const isUploading = pendingFiles.some((pendingFile) => pendingFile.status === "uploading");
+  const batchProgress = pendingFiles.length > 0
+    ? Math.round(
+        pendingFiles.reduce((sum, item) => {
+          if (item.status === "done") return sum + 100;
+          return sum + Number(item.progressPercent || 0);
+        }, 0) / pendingFiles.length
+      )
+    : 0;
 
   return (
     <div
@@ -128,48 +232,59 @@ export default function Composer({
       className={`composer ${dragging ? "is-dragging" : ""}`}
       aria-busy={disabled || isUploading}
     >
-      {pendingFile && (
-        <div className="composer-file-chip">
-          <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            File: {pendingFile.file.name} ({(pendingFile.file.size / 1024).toFixed(0)} KB | {pendingFile.file.type || "unknown"})
-          </span>
-          <span style={{ color: pendingFile.status === "error" ? "var(--danger)" : pendingFile.status === "done" ? "var(--success)" : "var(--text-muted)" }}>
-            {pendingFile.status === "uploading"
-              ? uploadStatus
-              : pendingFile.status === "done"
-              ? "Uploaded"
-              : pendingFile.status === "error"
-              ? `Error: ${pendingFile.errorMsg}`
-              : "Ready"}
-          </span>
-          {pendingFile.status !== "uploading" && (
-            <button
-              aria-label="Remove selected file"
-              onClick={() => { setPendingFile(null); setFileError(null); }}
-              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: 14, padding: "0 2px" }}
-            >
-              ✕
-            </button>
-          )}
+      {pendingFiles.length > 0 && (
+        <div style={{ display: "grid", gap: 6, padding: "2px 0" }}>
+          <div style={{ fontSize: 12, color: "var(--text-muted)", padding: "0 8px" }}>
+            Batch: {pendingFiles.length} file{pendingFiles.length === 1 ? "" : "s"} selected. Status: {batchStatus}
+          </div>
+          {pendingFiles.map((pendingFile, index) => (
+            <div className="composer-file-chip" key={`${pendingFile.file.name}_${pendingFile.file.size}_${index}`}>
+              <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {pendingFile.file.name} ({(pendingFile.file.size / 1024).toFixed(0)} KB | {pendingFile.file.type || "unknown"})
+              </span>
+              <span style={{ color: pendingFile.status === "error" ? "var(--danger)" : pendingFile.status === "done" ? "var(--success)" : "var(--text-muted)" }}>
+                {pendingFile.status === "uploading"
+                  ? pendingFile.statusText || "Uploading"
+                  : pendingFile.status === "done"
+                  ? "Uploaded"
+                  : pendingFile.status === "error"
+                  ? `Error: ${pendingFile.errorMsg || pendingFile.statusText || "Failed"}`
+                  : pendingFile.statusText || "Ready"}
+              </span>
+              {pendingFile.status !== "uploading" && (
+                <button
+                  aria-label={`Remove selected file ${pendingFile.file.name}`}
+                  onClick={() => {
+                    setPendingFiles((current) => current.filter((_, currentIndex) => currentIndex !== index));
+                    setFileError(null);
+                  }}
+                  style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: 14, padding: "0 2px" }}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          ))}
         </div>
       )}
       {fileError && (
         <div style={{ fontSize: 12, color: "var(--danger)", padding: "2px 8px" }}>{fileError}</div>
       )}
-      {pendingFile?.status === "uploading" && (
+      {isUploading && (
         <div style={{ padding: "2px 8px", fontSize: 12, color: "var(--text-muted)" }}>
-          <div>Upload progress: {uploadProgress}%</div>
-          <div>Status: {uploadStatus}</div>
+          <div>Upload progress: {batchProgress}%</div>
+          <div>Status: {batchStatus}</div>
         </div>
       )}
       <div className="composer-row">
         <input
           ref={fileInputRef}
           type="file"
+          multiple
           accept={ACCEPTED}
           aria-label="Upload file"
           style={{ display: "none" }}
-          onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileSelected(f); e.target.value = ""; }}
+          onChange={(e) => { const files = e.target.files; if (files && files.length > 0) handleFileSelected(files); e.target.value = ""; }}
         />
         <button
           type="button"
@@ -210,7 +325,7 @@ export default function Composer({
       </div>
       {dragging && (
         <div style={{ textAlign: "center", fontSize: 12, color: "var(--text-muted)", padding: "4px 0" }}>
-          Drop file here
+          Drop files here
         </div>
       )}
     </div>
