@@ -1,7 +1,7 @@
 {
   "domainId": "bot",
-  "generatedAt": "2026-04-27T02:25:35.313Z",
-  "emittedPath": "/workspaces/Botomatic/release-evidence/generated-apps/bot",
+  "generatedAt": "2026-04-27T22:32:17.850Z",
+  "emittedPath": "/workspace/Botomatic/release-evidence/generated-apps/bot",
   "emittedFileCount": 21,
   "emittedFiles": [
     ".env.example",

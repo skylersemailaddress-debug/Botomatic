@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-27T02:23:58.112Z",
+  "generatedAt": "2026-04-27T22:28:38.659Z",
   "proofGrade": "local_runtime",
   "pathId": "multi_domain_emitted_output",
   "requiredDomains": [
@@ -19,7 +19,7 @@
   "domainResults": [
     {
       "domainId": "web_saas_app",
-      "outputRoot": "/workspaces/Botomatic/release-evidence/generated-apps/web_saas_app",
+      "outputRoot": "/workspace/Botomatic/release-evidence/generated-apps/web_saas_app",
       "emittedFileCount": 13,
       "nonEmptyFiles": true,
       "noPlaceholderScanPassed": true,
@@ -30,7 +30,7 @@
     },
     {
       "domainId": "marketing_website",
-      "outputRoot": "/workspaces/Botomatic/release-evidence/generated-apps/marketing_website",
+      "outputRoot": "/workspace/Botomatic/release-evidence/generated-apps/marketing_website",
       "emittedFileCount": 11,
       "nonEmptyFiles": true,
       "noPlaceholderScanPassed": true,
@@ -41,7 +41,7 @@
     },
     {
       "domainId": "api_service",
-      "outputRoot": "/workspaces/Botomatic/release-evidence/generated-apps/api_service",
+      "outputRoot": "/workspace/Botomatic/release-evidence/generated-apps/api_service",
       "emittedFileCount": 12,
       "nonEmptyFiles": true,
       "noPlaceholderScanPassed": true,
@@ -52,7 +52,7 @@
     },
     {
       "domainId": "mobile_app",
-      "outputRoot": "/workspaces/Botomatic/release-evidence/generated-apps/mobile_app",
+      "outputRoot": "/workspace/Botomatic/release-evidence/generated-apps/mobile_app",
       "emittedFileCount": 10,
       "nonEmptyFiles": true,
       "noPlaceholderScanPassed": true,
@@ -63,7 +63,7 @@
     },
     {
       "domainId": "bot",
-      "outputRoot": "/workspaces/Botomatic/release-evidence/generated-apps/bot",
+      "outputRoot": "/workspace/Botomatic/release-evidence/generated-apps/bot",
       "emittedFileCount": 11,
       "nonEmptyFiles": true,
       "noPlaceholderScanPassed": true,
@@ -74,7 +74,7 @@
     },
     {
       "domainId": "ai_agent",
-      "outputRoot": "/workspaces/Botomatic/release-evidence/generated-apps/ai_agent",
+      "outputRoot": "/workspace/Botomatic/release-evidence/generated-apps/ai_agent",
       "emittedFileCount": 13,
       "nonEmptyFiles": true,
       "noPlaceholderScanPassed": true,
@@ -85,7 +85,7 @@
     },
     {
       "domainId": "game",
-      "outputRoot": "/workspaces/Botomatic/release-evidence/generated-apps/game",
+      "outputRoot": "/workspace/Botomatic/release-evidence/generated-apps/game",
       "emittedFileCount": 9,
       "nonEmptyFiles": true,
       "noPlaceholderScanPassed": true,
@@ -96,7 +96,7 @@
     },
     {
       "domainId": "dirty_repo_completion",
-      "outputRoot": "/workspaces/Botomatic/release-evidence/generated-apps/dirty_repo_completion",
+      "outputRoot": "/workspace/Botomatic/release-evidence/generated-apps/dirty_repo_completion",
       "emittedFileCount": 8,
       "nonEmptyFiles": true,
       "noPlaceholderScanPassed": true,

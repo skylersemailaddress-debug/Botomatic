@@ -15,6 +15,7 @@ export const CANONICAL_COMMAND_BY_PARSED: Record<Exclude<ParsedCommand, null>, s
   "prepare-deployment": "prepare deployment readiness, no live deployment",
   "launch-capsule": "generate launch capsule from latest generated app artifacts",
   "generate-plan": "generate execution plan from uploaded build contract",
+  "bind-build-contract": "bind uploaded contract as canonical build contract and compile project",
   "pause-run": "pause current generated app build",
 };
 

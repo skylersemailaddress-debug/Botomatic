@@ -1,8 +1,8 @@
 domain=api_service
 commandId=test
 kind=test
-startedAt=2026-04-27T02:24:42.659Z
-finishedAt=2026-04-27T02:24:43.379Z
+startedAt=2026-04-27T22:30:00.941Z
+finishedAt=2026-04-27T22:30:03.621Z
 status=passed
 exitCode=0
 --- stdout ---
