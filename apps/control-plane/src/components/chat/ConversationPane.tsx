@@ -226,9 +226,17 @@ export default function ConversationPane({ projectId }: { projectId: string }) {
 
       const runtime = await fetchRuntimeContext(projectId);
       const intakeContext = normalizeUploadedFileIntake(result.fileName);
-      const details = await runPipelineFromIntakeContext(projectId, intakeContext);
-      setClassification("generated_app_build");
-      appendSystemMessage(buildPartnerEnvelope(runtime, "continue current generated app build", details));
+      try {
+        const details = await runPipelineFromIntakeContext(projectId, intakeContext);
+        setClassification("generated_app_build");
+        appendSystemMessage(buildPartnerEnvelope(runtime, "continue current generated app build", details));
+      } catch (pipelineError: any) {
+        const raw = String(pipelineError?.message || pipelineError);
+        const classified = classifyError(raw);
+        appendSystemMessage(
+          `Pipeline failed (${classified.className}): ${raw}\nRecommended command: ${classified.recommendedCommand}`
+        );
+      }
     } catch (error: any) {
       const raw = String(error?.message || error);
       const classified = classifyError(raw);

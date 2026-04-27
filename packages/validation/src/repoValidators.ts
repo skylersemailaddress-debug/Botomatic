@@ -24,6 +24,7 @@ import { validateMultiSourceIntakeReadiness } from "./repoValidators/multiSource
 import { validateChatBehaviorExecution } from "./repoValidators/chatBehaviorExecution";
 import { validateFailureClassificationReadiness } from "./repoValidators/failureClassificationReadiness";
 import { validateAdaptiveRepairStrategyReadiness } from "./repoValidators/adaptiveRepairStrategyReadiness";
+import { validateUploadPlanHandoffReadiness } from "./repoValidators/uploadPlanHandoffReadiness";
 
 export type RepoValidatorResult = {
   name: string;
@@ -1148,7 +1149,7 @@ export function validateChatFirstOperatorRouting(root: string): RepoValidatorRes
     requiredRailMappings.every((mapping) => railCommands.includes(mapping)) &&
     requiredSourceTypes.every((sourceType) => intakePipeline.includes(`\"${sourceType}\"`)) &&
     requiredPipelineStages.every((stage) => intakePipeline.includes(stage)) &&
-    executor.includes("source_input -> intake_source -> source_manifest -> extracted_context -> build_contract_context -> planning -> execution") &&
+    (executor.includes("source_input -> intake_source -> source_manifest -> extracted_context -> compile -> build_contract_context -> planning -> execution") || executor.includes("source_input -> intake_source -> source_manifest -> extracted_context -> build_contract_context -> planning -> execution")) &&
     requiredNextActionInputs.every((field) => nextAction.includes(field)) &&
     executor.includes("Current state") &&
     executor.includes("Failed milestone") &&
@@ -1227,5 +1228,6 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateMultiSourceIntakeReadiness(root),
     validateFailureClassificationReadiness(root),
     validateAdaptiveRepairStrategyReadiness(root),
+    validateUploadPlanHandoffReadiness(root),
   ];
 }

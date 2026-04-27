@@ -1,5 +1,5 @@
 import { approveBuildContract, getSpecStatus } from "@/services/spec";
-import { planProject } from "@/services/actions";
+import { compileProject, planProject } from "@/services/actions";
 import { getAutonomousBuildStatus, resumeAutonomousBuild } from "@/services/autonomousBuild";
 import { getProjectOverview } from "@/services/overview";
 import { getProjectGate } from "@/services/gate";
@@ -256,11 +256,39 @@ async function runIntake(projectId: string, text: string, intent: CommandIntent)
 }
 
 export async function runPipelineFromIntakeContext(projectId: string, intakeContext: IntakeContext): Promise<string> {
-  await planProject(projectId);
+  // Step 1: compile master truth from uploaded intake before planning
+  try {
+    await compileProject(projectId);
+  } catch (compileErr: any) {
+    throw new Error(
+      `planning-sequence-error: Master truth compilation failed after upload. ${compileErr?.message || compileErr}`
+    );
+  }
+
+  // Step 2: call /plan (with one fallback retry if master truth is still missing)
+  try {
+    await planProject(projectId);
+  } catch (planErr: any) {
+    const errMsg = String(planErr?.message || planErr).toLowerCase();
+    if (errMsg.includes("no master truth") || errMsg.includes("master truth")) {
+      // Fallback: retry compile then plan once
+      try {
+        await compileProject(projectId);
+        await planProject(projectId);
+      } catch (retryErr: any) {
+        throw new Error(
+          `planning-sequence-error: Uploaded source exists, but master truth compilation failed. ${retryErr?.message || retryErr}`
+        );
+      }
+    } else {
+      throw planErr;
+    }
+  }
+
   const operator = await sendOperatorMessage(projectId, "continue current generated app build");
   return [
     `intake_context accepted from ${intakeContext.source_input.sourceType}.`,
-    "Pipeline: source_input -> intake_source -> source_manifest -> extracted_context -> build_contract_context -> planning -> execution",
+    "Pipeline: source_input -> intake_source -> source_manifest -> extracted_context -> compile -> build_contract_context -> planning -> execution",
     operator.operatorMessage,
   ].join("\n");
 }

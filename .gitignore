@@ -21,3 +21,4 @@ apps/control-plane/.next/
 release-evidence/generated-apps/**/.next/
 *.old
 release-evidence/runtime/repair_strategy_memory.json
+release-evidence/runtime/*.json

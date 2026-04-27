@@ -73,11 +73,23 @@ export function categorizeBlockers(blockers: string[]): CategorizedBlocker[] {
 }
 
 export function classifyError(errorMessage: string): {
-  className: "permission" | "validation" | "network" | "generated-app-failure" | "builder-defect";
+  className: "permission" | "validation" | "network" | "generated-app-failure" | "builder-defect" | "resource_limit_failure" | "planning-sequence-error";
   recommendedCommand: string;
 } {
   const message = errorMessage.toLowerCase();
 
+  if (/(413|too large|payload too large|request entity too large|content too large)/.test(message)) {
+    return {
+      className: "resource_limit_failure",
+      recommendedCommand: "use GitHub URL, cloud link, or local manifest intake for large files — the proxy blocked this upload",
+    };
+  }
+  if (/(planning.sequence.error|no master truth|master truth compilation failed|uploaded source exists.*master truth)/.test(message)) {
+    return {
+      className: "planning-sequence-error",
+      recommendedCommand: "compile master truth from latest uploaded intake",
+    };
+  }
   if (/(401|403|forbidden|unauthorized|permission|credential|secret)/.test(message)) {
     return { className: "permission", recommendedCommand: "explain blocker" };
   }
