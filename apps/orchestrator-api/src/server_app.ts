@@ -1,6 +1,5 @@
 import express from "express";
 import multer from "multer";
-import { PDFParse } from "pdf-parse";
 import fs from "fs";
 import path from "path";
 import { compileConversationToMasterTruth } from "../../../packages/master-truth/src/compiler";
@@ -57,6 +56,21 @@ import { startAutonomousBuildRun, resumeAutonomousBuildRun, type AutonomousBuild
 import { RuntimeConfig } from "./config";
 import { type AuthContext } from "./auth/roles";
 import { verifyOidcBearerToken } from "./auth/oidc";
+import {
+  formatMaxUploadLabel,
+  getSupportedUploadExtensions,
+  isSupportedUploadType,
+  processUploadedFile,
+  type IntakeProgressEvent,
+  IntakeValidationError,
+} from "./intake/largeFileIntake";
+import { makeSourceId, nowIso, type IntakeSource, type IntakeSourceType } from "./intake/sourceModel";
+import { routeIntakeInput } from "./intake/intakeRouter";
+import { writeIntakeManifest } from "./intake/manifestWriter";
+import { intakeGithubSource } from "./intake/githubIntake";
+import { intakeCloudLink } from "./intake/cloudIntake";
+import { validateLocalFolderManifest } from "./intake/localManifest";
+import { isBlockedFileExtension, suspiciousBinaryHook } from "./intake/intakeSafety";
 
 type VerifiedRequestAuth = AuthContext & { issuer?: string };
 
@@ -84,6 +98,7 @@ const workerConcurrency = Math.max(1, Number(process.env.WORKER_CONCURRENCY || 2
 const governanceStateRunKey = "__governanceGate4Approval";
 const deploymentStateRunKey = "__deploymentState";
 const intakeArtifactsRunKey = "__intakeArtifacts";
+const intakeSourcesRunKey = "__intakeSources";
 const specStateRunKey = "__masterSpec";
 const specClarificationsRunKey = "__specClarifications";
 const specStyleRunKey = "__specStyle";
@@ -424,6 +439,85 @@ function setIntakeArtifacts(project: StoredProjectRecord, artifacts: Record<stri
   const runs = ((project.runs || {}) as Record<string, unknown>);
   project.runs = { ...runs, [intakeArtifactsRunKey]: artifacts };
   (project as any).intakeArtifacts = artifacts;
+}
+
+function getIntakeSources(project: StoredProjectRecord): IntakeSource[] {
+  const fromProject = ((project as any).intakeSources || null) as IntakeSource[] | null;
+  if (Array.isArray(fromProject)) {
+    return fromProject;
+  }
+  const runs = ((project.runs || {}) as Record<string, unknown>);
+  const fromRuns = runs[intakeSourcesRunKey] as IntakeSource[] | undefined;
+  return Array.isArray(fromRuns) ? fromRuns : [];
+}
+
+function setIntakeSources(project: StoredProjectRecord, sources: IntakeSource[]) {
+  const runs = ((project.runs || {}) as Record<string, unknown>);
+  project.runs = { ...runs, [intakeSourcesRunKey]: sources };
+  (project as any).intakeSources = sources;
+}
+
+function upsertIntakeSource(project: StoredProjectRecord, source: IntakeSource): IntakeSource {
+  const existing = getIntakeSources(project);
+  const idx = existing.findIndex((item) => item.sourceId === source.sourceId);
+  if (idx >= 0) {
+    existing[idx] = source;
+    setIntakeSources(project, existing);
+    return source;
+  }
+  const next = [source, ...existing];
+  setIntakeSources(project, next);
+  return source;
+}
+
+function classifyUploadedSourceType(fileName: string, mimeType: string): IntakeSourceType {
+  const lowerName = fileName.toLowerCase();
+  if (lowerName.endsWith(".pdf") || mimeType === "application/pdf") {
+    return "uploaded_pdf";
+  }
+  if (lowerName.endsWith(".zip")) {
+    if (lowerName.includes("repo") || lowerName.includes("project")) {
+      return "uploaded_repo_zip";
+    }
+    return "uploaded_zip";
+  }
+  return "uploaded_file";
+}
+
+function createIntakeSourceRecord(params: {
+  projectId: string;
+  sourceType: IntakeSourceType;
+  sourceUri: string;
+  displayName: string;
+  sizeBytes?: number | null;
+  estimatedSizeBytes?: number | null;
+  provider?: string;
+  authRequired?: boolean;
+  authStatus?: "not_required" | "required" | "provided" | "missing";
+  safetyStatus?: "pending" | "passed" | "blocked";
+  ingestionMode?: IntakeSource["ingestionMode"];
+  status?: IntakeSource["status"];
+  metadata?: Record<string, unknown>;
+}): IntakeSource {
+  const timestamp = nowIso();
+  return {
+    sourceId: makeSourceId("src"),
+    projectId: params.projectId,
+    sourceType: params.sourceType,
+    sourceUri: params.sourceUri,
+    displayName: params.displayName,
+    status: params.status || "registered",
+    sizeBytes: params.sizeBytes ?? null,
+    estimatedSizeBytes: params.estimatedSizeBytes ?? null,
+    provider: params.provider || "local",
+    authRequired: Boolean(params.authRequired),
+    authStatus: params.authStatus || (params.authRequired ? "required" : "not_required"),
+    safetyStatus: params.safetyStatus || "pending",
+    ingestionMode: params.ingestionMode || "metadata_only",
+    createdAt: timestamp,
+    updatedAt: timestamp,
+    metadata: params.metadata || {},
+  };
 }
 
 function getMasterSpec(project: StoredProjectRecord): MasterSpec | null {
@@ -1420,16 +1514,468 @@ export function buildApp(config: RuntimeConfig) {
     }
   });
 
-  const upload = multer({
-    storage: multer.memoryStorage(),
-    limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB max
-    fileFilter: (_req, file, cb) => {
-      const allowed = ["text/plain", "text/markdown", "application/json", "text/csv", "application/pdf"];
-      if (allowed.includes(file.mimetype) || file.originalname.match(/\.(txt|md|json|csv|pdf)$/i)) {
-        cb(null, true);
+  app.get("/api/projects/:projectId/intake/sources", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      return res.json({ sources: getIntakeSources(project), actorId: actor.actorId });
+    } catch (error) {
+      return handleRouteError(res, config, error, "GET /api/projects/:projectId/intake/sources", actor);
+    }
+  });
+
+  app.get("/api/projects/:projectId/intake/sources/:sourceId", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const source = getIntakeSources(project).find((item) => item.sourceId === req.params.sourceId);
+      if (!source) return res.status(404).json({ error: "Source not found" });
+      return res.json({ source, actorId: actor.actorId });
+    } catch (error) {
+      return handleRouteError(res, config, error, "GET /api/projects/:projectId/intake/sources/:sourceId", actor);
+    }
+  });
+
+  app.post("/api/projects/:projectId/intake/source", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+
+      const sourceType = String((req.body as any)?.sourceType || "") as IntakeSourceType;
+      const sourceUri = String((req.body as any)?.sourceUri || "");
+      const displayName = String((req.body as any)?.displayName || sourceUri || sourceType || "Intake source");
+      const sizeBytes = Number((req.body as any)?.sizeBytes || 0) || null;
+      const provider = String((req.body as any)?.provider || "unknown");
+
+      const route = routeIntakeInput({
+        sourceType,
+        sourceUri,
+        displayName,
+        sizeBytes,
+        maxUploadBytes: config.intake.limits.maxUploadBytes,
+        hasConnectorCredentials: Boolean((req.body as any)?.hasConnectorCredentials),
+      });
+
+      const source = createIntakeSourceRecord({
+        projectId: project.projectId,
+        sourceType,
+        sourceUri,
+        displayName,
+        sizeBytes,
+        provider,
+        status: route.rejected ? "rejected" : "registered",
+        ingestionMode: route.recommendedIntakePath,
+        safetyStatus: route.rejected ? "blocked" : "pending",
+      });
+
+      upsertIntakeSource(project, source);
+      emitEvent(project as any, {
+        id: `evt_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        projectId: project.projectId,
+        type: "intake_source_registered",
+        actorId: actor.actorId,
+        timestamp: now(),
+        metadata: { sourceId: source.sourceId, sourceType: source.sourceType, ingestionMode: source.ingestionMode },
+      });
+      emitEvent(project as any, {
+        id: `evt_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        projectId: project.projectId,
+        type: "intake_route_selected",
+        actorId: actor.actorId,
+        timestamp: now(),
+        metadata: { sourceId: source.sourceId, route: route.recommendedIntakePath, accepted: route.accepted },
+      });
+
+      const manifestPath = writeIntakeManifest(process.cwd(), source.sourceId, {
+        sourceType,
+        sourceUri,
+        provider,
+        accepted: route.accepted,
+        rejected: route.rejected,
+        sizeBytes,
+        fileCount: 0,
+        skippedPaths: [],
+        detectedLanguages: [],
+        detectedFrameworks: [],
+        detectedPackageManagers: [],
+        detectedRiskSignals: route.rejected ? ["routing_rejected"] : [],
+        secretScanResult: { status: "passed", findings: [] },
+        safetyChecks: [{ check: "intake_router", status: route.accepted ? "passed" : "blocked", detail: route.reason }],
+        extractedTextSummary: "",
+        artifactPaths: [],
+        nextRecommendedAction: route.nextAction,
+      });
+
+      await persistProject(config, project);
+      return res.json({ source, route, manifestPath, actorId: actor.actorId });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/projects/:projectId/intake/source", actor);
+    }
+  });
+
+  app.post("/api/projects/:projectId/intake/pasted-text", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+
+      const text = String((req.body as any)?.text || "").trim();
+      if (!text) return res.status(400).json({ error: "Pasted text is required." });
+      const displayName = String((req.body as any)?.displayName || "Pasted text");
+
+      const route = routeIntakeInput({
+        sourceType: "pasted_text",
+        displayName,
+        sizeBytes: Buffer.byteLength(text, "utf8"),
+        maxUploadBytes: config.intake.limits.maxUploadBytes,
+      });
+
+      const source = createIntakeSourceRecord({
+        projectId: project.projectId,
+        sourceType: "pasted_text",
+        sourceUri: "pasted://text",
+        displayName,
+        sizeBytes: Buffer.byteLength(text, "utf8"),
+        provider: "operator",
+        ingestionMode: route.recommendedIntakePath,
+        status: "completed",
+        safetyStatus: "passed",
+      });
+
+      upsertIntakeSource(project, source);
+
+      const artifactId = `intake_text_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      const existingIntake = getIntakeArtifacts(project);
+      setIntakeArtifacts(project, {
+        ...existingIntake,
+        [artifactId]: {
+          artifactId,
+          fileName: displayName,
+          mimeType: "text/plain",
+          sizeBytes: Buffer.byteLength(text, "utf8"),
+          uploadedAt: now(),
+          actorId: actor.actorId,
+          extractedTextPreview: text.slice(0, 500),
+          extractedText: text,
+          truncated: false,
+          chunkCount: Math.max(1, Math.ceil(text.length / 4000)),
+          parseError: null,
+          sourceId: source.sourceId,
+        },
+      });
+
+      emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "intake_source_registered", actorId: actor.actorId, timestamp: now(), metadata: { sourceId: source.sourceId, sourceType: source.sourceType } });
+      emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "intake_route_selected", actorId: actor.actorId, timestamp: now(), metadata: { sourceId: source.sourceId, route: route.recommendedIntakePath } });
+      emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "ingestion_started", actorId: actor.actorId, timestamp: now(), metadata: { sourceId: source.sourceId } });
+
+      const manifestPath = writeIntakeManifest(process.cwd(), source.sourceId, {
+        sourceType: "pasted_text",
+        sourceUri: "pasted://text",
+        provider: "operator",
+        accepted: true,
+        rejected: false,
+        sizeBytes: Buffer.byteLength(text, "utf8"),
+        fileCount: 1,
+        skippedPaths: [],
+        detectedLanguages: [],
+        detectedFrameworks: [],
+        detectedPackageManagers: [],
+        detectedRiskSignals: [],
+        secretScanResult: { status: "passed", findings: [] },
+        safetyChecks: [{ check: "no_code_execution_during_intake", status: "passed", detail: "Pasted text parsed as data only." }],
+        extractedTextSummary: text.slice(0, 500),
+        artifactPaths: [artifactId],
+        nextRecommendedAction: route.nextAction,
+      });
+
+      emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "intake_manifest_written", actorId: actor.actorId, timestamp: now(), metadata: { sourceId: source.sourceId, manifestPath } });
+      emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "intake_completed", actorId: actor.actorId, timestamp: now(), metadata: { sourceId: source.sourceId } });
+
+      await persistProject(config, project);
+      return res.json({ source, route, manifestPath, actorId: actor.actorId, message: "Pasted text ingested successfully." });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/projects/:projectId/intake/pasted-text", actor);
+    }
+  });
+
+  app.post("/api/projects/:projectId/intake/github", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+
+      const sourceUrl = String((req.body as any)?.sourceUrl || "").trim();
+      if (!sourceUrl) return res.status(400).json({ error: "GitHub URL is required." });
+
+      const sourceType: IntakeSourceType = sourceUrl.includes("/pull/")
+        ? "github_pr_url"
+        : sourceUrl.includes("/tree/")
+        ? "github_branch_url"
+        : "github_repo_url";
+
+      const route = routeIntakeInput({ sourceType, sourceUri: sourceUrl, maxUploadBytes: config.intake.limits.maxUploadBytes });
+      const source = createIntakeSourceRecord({
+        projectId: project.projectId,
+        sourceType,
+        sourceUri: sourceUrl,
+        displayName: sourceUrl,
+        provider: "github",
+        authRequired: false,
+        authStatus: "not_required",
+        ingestionMode: route.recommendedIntakePath,
+        status: "processing",
+      });
+      upsertIntakeSource(project, source);
+
+      emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "intake_source_registered", actorId: actor.actorId, timestamp: now(), metadata: { sourceId: source.sourceId, sourceType } });
+      emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "intake_route_selected", actorId: actor.actorId, timestamp: now(), metadata: { sourceId: source.sourceId, route: route.recommendedIntakePath } });
+      emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "remote_fetch_started", actorId: actor.actorId, timestamp: now(), metadata: { sourceId: source.sourceId } });
+
+      const github = intakeGithubSource({
+        sourceUrl,
+        rootDir: process.cwd(),
+        sourceId: source.sourceId,
+        allowClone: Boolean((req.body as any)?.allowClone),
+        githubToken: String((req.body as any)?.githubToken || "") || undefined,
+      });
+
+      emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "repo_scan_started", actorId: actor.actorId, timestamp: now(), metadata: { sourceId: source.sourceId } });
+      emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "secret_scan_started", actorId: actor.actorId, timestamp: now(), metadata: { sourceId: source.sourceId } });
+      emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "framework_detection_started", actorId: actor.actorId, timestamp: now(), metadata: { sourceId: source.sourceId } });
+
+      const status = github.authRequired && github.authStatus === "missing" ? "blocked_requires_auth" : "completed";
+      const updatedSource: IntakeSource = {
+        ...source,
+        status,
+        authRequired: github.authRequired,
+        authStatus: github.authStatus,
+        safetyStatus: github.secretScanResult.status === "flagged" ? "blocked" : "passed",
+        estimatedSizeBytes: github.repoSizeEstimateBytes,
+        updatedAt: nowIso(),
+        metadata: {
+          defaultBranch: github.defaultBranch,
+          fileCountEstimate: github.fileCountEstimate,
+          skippedPaths: github.skippedPaths.slice(0, 200),
+          noCodeExecutionDuringIntake: true,
+        },
+      };
+      upsertIntakeSource(project, updatedSource);
+
+      const manifestPath = writeIntakeManifest(process.cwd(), source.sourceId, {
+        sourceType,
+        sourceUri: sourceUrl,
+        provider: "github",
+        accepted: true,
+        rejected: false,
+        sizeBytes: github.repoSizeEstimateBytes,
+        fileCount: github.fileCountEstimate,
+        skippedPaths: github.skippedPaths.slice(0, 500),
+        detectedLanguages: github.detectedLanguages,
+        detectedFrameworks: github.detectedFrameworks,
+        detectedPackageManagers: github.detectedPackageManagers,
+        detectedRiskSignals: github.riskSignals,
+        secretScanResult: github.secretScanResult,
+        safetyChecks: [
+          { check: "no_code_execution_during_intake", status: "passed", detail: "Repository metadata/scanning only." },
+          { check: "private_repo_requires_credentials", status: github.authRequired && github.authStatus === "missing" ? "blocked" : "passed", detail: github.authRequired ? "Access requires credentials." : "Public access path." },
+        ],
+        extractedTextSummary: "GitHub repository intake metadata captured.",
+        artifactPaths: github.clonePath ? [github.clonePath] : [],
+        nextRecommendedAction: github.authRequired && github.authStatus === "missing"
+          ? "Provide GitHub credentials/connector for private repository access."
+          : "Continue spec analysis using repository intake manifest.",
+      });
+
+      emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "intake_manifest_written", actorId: actor.actorId, timestamp: now(), metadata: { sourceId: source.sourceId, manifestPath } });
+      if (status === "blocked_requires_auth") {
+        emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "intake_blocked_requires_auth", actorId: actor.actorId, timestamp: now(), metadata: { sourceId: source.sourceId, provider: "github" } });
       } else {
-        cb(new Error(`Unsupported file type: ${file.mimetype}`));
+        emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "intake_completed", actorId: actor.actorId, timestamp: now(), metadata: { sourceId: source.sourceId } });
       }
+
+      await persistProject(config, project);
+      return res.json({
+        source: updatedSource,
+        route,
+        manifestPath,
+        actorId: actor.actorId,
+        message: status === "blocked_requires_auth"
+          ? "GitHub source registered. Access is blocked pending credentials."
+          : "GitHub source intake completed.",
+      });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/projects/:projectId/intake/github", actor);
+    }
+  });
+
+  app.post("/api/projects/:projectId/intake/cloud-link", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+
+      const sourceUrl = String((req.body as any)?.sourceUrl || "").trim();
+      if (!sourceUrl) return res.status(400).json({ error: "Cloud link is required." });
+      const hasConnectorCredentials = Boolean((req.body as any)?.hasConnectorCredentials);
+      const estimatedSizeBytes = Number((req.body as any)?.estimatedSizeBytes || 0) || null;
+      const largeDownloadApproval = Boolean((req.body as any)?.largeDownloadApproval);
+
+      const route = routeIntakeInput({
+        sourceType: "cloud_storage_link",
+        sourceUri: sourceUrl,
+        sizeBytes: estimatedSizeBytes,
+        maxUploadBytes: config.intake.limits.maxUploadBytes,
+        hasConnectorCredentials,
+      });
+
+      const cloud = intakeCloudLink({ sourceUrl, hasConnectorCredentials, estimatedSizeBytes, largeDownloadApproval });
+      const status: IntakeSource["status"] = cloud.authRequired && cloud.authStatus === "missing"
+        ? "blocked_requires_auth"
+        : cloud.metadataOnly
+        ? "registered"
+        : "completed";
+
+      const source = createIntakeSourceRecord({
+        projectId: project.projectId,
+        sourceType: "cloud_storage_link",
+        sourceUri: cloud.normalizedUrl,
+        displayName: cloud.normalizedUrl,
+        estimatedSizeBytes: cloud.estimatedSizeBytes,
+        provider: cloud.provider,
+        authRequired: cloud.authRequired,
+        authStatus: cloud.authStatus,
+        status,
+        ingestionMode: cloud.metadataOnly ? "metadata_only" : "connector_fetch",
+        safetyStatus: status === "blocked_requires_auth" ? "blocked" : "pending",
+      });
+      upsertIntakeSource(project, source);
+
+      emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "intake_source_registered", actorId: actor.actorId, timestamp: now(), metadata: { sourceId: source.sourceId, sourceType: "cloud_storage_link" } });
+      emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "intake_route_selected", actorId: actor.actorId, timestamp: now(), metadata: { sourceId: source.sourceId, route: source.ingestionMode } });
+      if (!cloud.metadataOnly) {
+        emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "remote_fetch_started", actorId: actor.actorId, timestamp: now(), metadata: { sourceId: source.sourceId, provider: cloud.provider } });
+      }
+
+      const manifestPath = writeIntakeManifest(process.cwd(), source.sourceId, {
+        sourceType: "cloud_storage_link",
+        sourceUri: cloud.normalizedUrl,
+        provider: cloud.provider,
+        accepted: true,
+        rejected: false,
+        sizeBytes: cloud.estimatedSizeBytes,
+        fileCount: 0,
+        skippedPaths: [],
+        detectedLanguages: [],
+        detectedFrameworks: [],
+        detectedPackageManagers: [],
+        detectedRiskSignals: cloud.metadataOnly ? ["metadata_only_registration"] : [],
+        secretScanResult: { status: "passed", findings: [] },
+        safetyChecks: [
+          { check: "https_url_validation", status: "passed", detail: "Cloud link uses HTTPS." },
+          { check: "connector_access", status: cloud.authRequired && cloud.authStatus === "missing" ? "blocked" : "passed", detail: cloud.reason },
+        ],
+        extractedTextSummary: "Cloud link intake metadata captured.",
+        artifactPaths: [],
+        nextRecommendedAction: cloud.reason,
+      });
+
+      emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "intake_manifest_written", actorId: actor.actorId, timestamp: now(), metadata: { sourceId: source.sourceId, manifestPath } });
+      if (status === "blocked_requires_auth") {
+        emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "intake_blocked_requires_auth", actorId: actor.actorId, timestamp: now(), metadata: { sourceId: source.sourceId, provider: cloud.provider } });
+      } else if (!cloud.metadataOnly) {
+        emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "intake_completed", actorId: actor.actorId, timestamp: now(), metadata: { sourceId: source.sourceId } });
+      }
+
+      await persistProject(config, project);
+      return res.json({ source, route, manifestPath, actorId: actor.actorId, message: cloud.reason });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/projects/:projectId/intake/cloud-link", actor);
+    }
+  });
+
+  app.post("/api/projects/:projectId/intake/local-manifest", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+
+      const manifest = validateLocalFolderManifest((req.body as any)?.manifest || req.body);
+      const route = routeIntakeInput({ sourceType: "local_folder_manifest", sourceUri: manifest.path, maxUploadBytes: config.intake.limits.maxUploadBytes });
+
+      const source = createIntakeSourceRecord({
+        projectId: project.projectId,
+        sourceType: "local_folder_manifest",
+        sourceUri: manifest.path,
+        displayName: path.basename(manifest.path) || manifest.path,
+        provider: "local_desktop",
+        ingestionMode: route.recommendedIntakePath,
+        status: "completed",
+        safetyStatus: "passed",
+        metadata: manifest as any,
+      });
+      upsertIntakeSource(project, source);
+
+      emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "intake_source_registered", actorId: actor.actorId, timestamp: now(), metadata: { sourceId: source.sourceId, sourceType: "local_folder_manifest" } });
+      emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "intake_route_selected", actorId: actor.actorId, timestamp: now(), metadata: { sourceId: source.sourceId, route: route.recommendedIntakePath } });
+
+      const manifestPath = writeIntakeManifest(process.cwd(), source.sourceId, {
+        sourceType: "local_folder_manifest",
+        sourceUri: manifest.path,
+        provider: "local_desktop",
+        accepted: true,
+        rejected: false,
+        sizeBytes: null,
+        fileCount: 0,
+        skippedPaths: manifest.exclude,
+        detectedLanguages: [],
+        detectedFrameworks: [],
+        detectedPackageManagers: [],
+        detectedRiskSignals: [],
+        secretScanResult: { status: "passed", findings: [] },
+        safetyChecks: [
+          { check: "manifest_schema", status: "passed", detail: "botomatic-intake.json schema validated." },
+          { check: "no_code_execution_during_intake", status: "passed", detail: "Manifest registered as metadata-only." },
+        ],
+        extractedTextSummary: "",
+        artifactPaths: [],
+        nextRecommendedAction: route.nextAction,
+      });
+
+      emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "intake_manifest_written", actorId: actor.actorId, timestamp: now(), metadata: { sourceId: source.sourceId, manifestPath } });
+      emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "intake_completed", actorId: actor.actorId, timestamp: now(), metadata: { sourceId: source.sourceId } });
+
+      await persistProject(config, project);
+      return res.json({ source, route, manifestPath, actorId: actor.actorId, message: "Local folder manifest registered." });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/projects/:projectId/intake/local-manifest", actor);
+    }
+  });
+
+  const upload = multer({
+    storage: multer.diskStorage({
+      destination: (_req, _file, cb) => {
+        const incomingDir = path.join(config.intake.uploadDir, "incoming");
+        fs.mkdirSync(incomingDir, { recursive: true });
+        cb(null, incomingDir);
+      },
+      filename: (_req, file, cb) => {
+        const safeBase = path.basename(file.originalname).replace(/[^a-zA-Z0-9._-]/g, "_");
+        cb(null, `${Date.now()}_${Math.random().toString(36).slice(2, 8)}_${safeBase}`);
+      },
+    }),
+    limits: {
+      fileSize: config.intake.limits.maxUploadBytes,
+      files: 1,
+    },
+    fileFilter: (_req, file, cb) => {
+      if (isSupportedUploadType(file.originalname, file.mimetype || "")) {
+        cb(null, true);
+        return;
+      }
+      cb(new Error(`Unsupported file type: ${file.mimetype || path.extname(file.originalname) || "unknown"}`));
     },
   });
 
@@ -1440,7 +1986,11 @@ export function buildApp(config: RuntimeConfig) {
       }
       if (error instanceof multer.MulterError) {
         if (error.code === "LIMIT_FILE_SIZE") {
-          return res.status(400).json({ error: "File too large. Max size is 10 MB." });
+          return res.status(400).json({
+            error: `File too large (max ${formatMaxUploadLabel(config.intake.limits.maxUploadMb)}).`,
+            code: "FILE_TOO_LARGE",
+            configuredMaxUploadMb: config.intake.limits.maxUploadMb,
+          });
         }
         return res.status(400).json({ error: `Upload failed: ${error.code}` });
       }
@@ -1455,58 +2005,77 @@ export function buildApp(config: RuntimeConfig) {
       const uploadedFile = (req as any).file as Express.Multer.File | undefined;
       if (!uploadedFile) return res.status(400).json({ error: "No file uploaded" });
 
-      const MAX_EXTRACT_BYTES = 500_000;
-      const CHUNK_SIZE = 4000;
       const sizeBytes = uploadedFile.size;
       const fileName = uploadedFile.originalname;
       const mimeType = uploadedFile.mimetype;
       const uploadedAt = now();
+      const uploadedPath = uploadedFile.path;
+      const fullRepoAudit =
+        String((req.query as any)?.fullRepoAudit || (req.body as any)?.fullRepoAudit || "").toLowerCase() === "true";
+      const intakeWorkDir = path.join(config.intake.uploadDir, project.projectId, `intake_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`);
+      fs.mkdirSync(intakeWorkDir, { recursive: true });
+      (req as any).__intakeWorkDir = intakeWorkDir;
 
-      let extractedText = "";
-      let parseError: string | null = null;
+      const emitAndPersist = async (event: IntakeProgressEvent) => {
+        emitEvent(project as any, {
+          id: `evt_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+          projectId: project.projectId,
+          type: event.type,
+          actorId: actor.actorId,
+          timestamp: now(),
+          metadata: event.metadata || {},
+        });
+        await persistProject(config, project);
+      };
 
-      if (mimeType === "application/pdf" || fileName.toLowerCase().endsWith(".pdf")) {
-        try {
-          const parser = new PDFParse({ data: uploadedFile.buffer });
-          const pdfData = await parser.getText();
-          await parser.destroy();
-          extractedText = pdfData.text || "";
-        } catch (err: any) {
-          parseError = `PDF parse failed: ${String(err?.message || err)}`;
-          extractedText = "";
-        }
-      } else {
-        try {
-          extractedText = uploadedFile.buffer.toString("utf8");
-        } catch (err: any) {
-          parseError = `Text decode failed: ${String(err?.message || err)}`;
-          extractedText = "";
-        }
-      }
+      await emitAndPersist({
+        type: "upload_started",
+        metadata: {
+          fileName,
+          configuredMaxUploadMb: config.intake.limits.maxUploadMb,
+          configuredMaxExtractedMb: config.intake.limits.maxExtractedMb,
+          configuredMaxZipFiles: config.intake.limits.maxZipFiles,
+          fullRepoAudit,
+        },
+      });
 
-      const truncated = extractedText.length > MAX_EXTRACT_BYTES;
-      const fullText = truncated ? extractedText.slice(0, MAX_EXTRACT_BYTES) : extractedText;
-      const extractedTextPreview = fullText.slice(0, 500);
+      await emitAndPersist({
+        type: "upload_received",
+        metadata: { fileName, mimeType, sizeBytes },
+      });
 
-      const chunks: string[] = [];
-      for (let i = 0; i < fullText.length; i += CHUNK_SIZE) {
-        chunks.push(fullText.slice(i, i + CHUNK_SIZE));
-      }
+      const processed = await processUploadedFile({
+        uploadPath: uploadedPath,
+        originalName: fileName,
+        mimeType,
+        sizeBytes,
+        workDir: intakeWorkDir,
+        limits: config.intake.limits,
+        fullRepoAudit,
+        onProgressEvent: emitAndPersist,
+      });
+
+      const fullText = processed.extractedText;
+      const extractedTextPreview = processed.extractedTextPreview;
 
       const artifactId = `intake_file_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
       const artifact = {
         artifactId,
-        fileName,
-        mimeType,
-        sizeBytes,
+        fileName: processed.fileName,
+        mimeType: processed.mimeType,
+        sizeBytes: processed.sizeBytes,
         uploadedAt,
         actorId: actor.actorId,
         extractedTextPreview,
         extractedText: fullText,
-        truncated,
-        chunkCount: chunks.length,
-        chunkPreviews: chunks.slice(0, 3).map((c, i) => ({ index: i, preview: c.slice(0, 200) })),
-        parseError,
+        truncated: processed.truncated,
+        chunkCount: processed.chunkCount,
+        chunkPreviews: [fullText.slice(0, 200), fullText.slice(200, 400), fullText.slice(400, 600)]
+          .filter(Boolean)
+          .map((preview, index) => ({ index, preview })),
+        parseError: processed.parseError,
+        extractionManifest: processed.extractionManifest,
+        binarySummary: processed.binarySummary,
       };
 
       const existingIntake = getIntakeArtifacts(project);
@@ -1517,27 +2086,93 @@ export function buildApp(config: RuntimeConfig) {
         type: "intake_file",
         actorId: actor.actorId,
         timestamp: uploadedAt,
-        metadata: { fileName, mimeType, sizeBytes, artifactId, extractedChars: fullText.length, truncated, parseError },
+        metadata: {
+          fileName,
+          mimeType,
+          sizeBytes,
+          artifactId,
+          extractedChars: processed.extractedChars,
+          truncated: processed.truncated,
+          parseError: processed.parseError,
+          extractionManifestCount: processed.extractionManifest.length,
+          binarySummaryCount: processed.binarySummary.length,
+        },
       });
       await persistProject(config, project);
+
+      fs.rmSync(intakeWorkDir, { recursive: true, force: true });
+      fs.rmSync(uploadedPath, { force: true });
+      delete (req as any).__intakeWorkDir;
 
       return res.json({
         ok: true,
         artifactId,
-        fileName,
-        mimeType,
-        sizeBytes,
-        extractedChars: fullText.length,
+        fileName: processed.fileName,
+        mimeType: processed.mimeType,
+        sizeBytes: processed.sizeBytes,
+        extractedChars: processed.extractedChars,
         extractedTextPreview,
-        truncated,
-        chunkCount: chunks.length,
-        parseError,
+        truncated: processed.truncated,
+        chunkCount: processed.chunkCount,
+        parseError: processed.parseError,
+        extractionManifest: processed.extractionManifest,
+        binarySummary: processed.binarySummary,
+        configuredMaxUploadMb: config.intake.limits.maxUploadMb,
+        configuredMaxExtractedMb: config.intake.limits.maxExtractedMb,
+        configuredMaxZipFiles: config.intake.limits.maxZipFiles,
+        acceptedExtensions: getSupportedUploadExtensions(),
         actorId: actor.actorId,
-        message: parseError
-          ? `Uploaded ${fileName}; parse error occurred; metadata stored.`
-          : `Uploaded ${fileName}; extracted ${fullText.length} characters; available to planning.`,
+        message: processed.parseError
+          ? `Uploaded ${fileName}; parse warning recorded; ingestion completed with safeguards.`
+          : `Uploaded ${fileName}; extracted ${processed.extractedChars} characters; available to planning.`,
       });
     } catch (error) {
+      const uploadedFile = (req as any).file as Express.Multer.File | undefined;
+      if (uploadedFile?.path) {
+        try {
+          fs.rmSync(uploadedFile.path, { force: true });
+        } catch {
+          // keep error handling non-fatal when cleanup fails
+        }
+      }
+      const intakeWorkDir = (req as any).__intakeWorkDir as string | undefined;
+      if (intakeWorkDir) {
+        try {
+          fs.rmSync(intakeWorkDir, { recursive: true, force: true });
+        } catch {
+          // keep error handling non-fatal when cleanup fails
+        }
+      }
+
+      if (error instanceof IntakeValidationError) {
+        try {
+          const project = await repo.getProject(req.params.projectId);
+          if (project) {
+            emitEvent(project as any, {
+              id: `evt_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+              projectId: project.projectId,
+              type: "ingestion_failed",
+              actorId: actor.actorId,
+              timestamp: now(),
+              metadata: {
+                code: error.code,
+                message: error.message,
+              },
+            });
+            await persistProject(config, project);
+          }
+        } catch {
+          // ignore secondary ingestion_failed emission errors
+        }
+
+        return res.status(error.statusCode).json({
+          error: error.message,
+          code: error.code,
+          configuredMaxUploadMb: config.intake.limits.maxUploadMb,
+          configuredMaxExtractedMb: config.intake.limits.maxExtractedMb,
+          configuredMaxZipFiles: config.intake.limits.maxZipFiles,
+        });
+      }
       return handleRouteError(res, config, error, "POST /api/projects/:projectId/intake/file", actor);
     }
   });

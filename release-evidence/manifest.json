@@ -70,7 +70,30 @@
     "autonomousComplexBuildCheckpointResumeSupported": true,
     "autonomousComplexBuildLowRiskAutonomyEnabled": true,
     "autonomousComplexBuildHighRiskEscalationEnabled": true,
-    "autonomousComplexBuildCaveat": "Autonomous complex build evidence is readiness proof for milestone-gated orchestration and safe escalation policy; it is not an exhaustive claim that every complex input has been fully live-deployed."
+    "autonomousComplexBuildCaveat": "Autonomous complex build evidence is readiness proof for milestone-gated orchestration and safe escalation policy; it is not an exhaustive claim that every complex input has been fully live-deployed.",
+    "largeFileIntakeReadinessProofPath": "release-evidence/runtime/large_file_intake_readiness_proof.json",
+    "largeFileIntakeReadinessTruth": "large_spec_repo_intake_production_ready",
+    "largeFileIntakeDefaultMaxUploadMb": 250,
+    "largeFileIntakeDefaultMaxExtractedMb": 2000,
+    "largeFileIntakeDefaultMaxZipFiles": 20000,
+    "largeFileIntakeProgressEventsEnabled": true,
+    "largeFileIntakeCaveat": "Very large repositories should prefer GitHub/cloud-link intake when available; browser upload remains supported with explicit size and archive safety enforcement.",
+    "multiSourceIntakeReadinessProofPath": "release-evidence/runtime/multi_source_intake_readiness_proof.json",
+    "multiSourceIntakeReadinessTruth": "multi_source_project_intake_production_ready",
+    "multiSourceIntakeSupportedSources": [
+      "github_repo_url",
+      "github_branch_url",
+      "github_pr_url",
+      "cloud_storage_link",
+      "pasted_text",
+      "local_folder_manifest",
+      "uploaded_zip",
+      "uploaded_pdf",
+      "existing_project_reference"
+    ],
+    "multiSourceIntakeLifecycleEventsEnabled": true,
+    "multiSourceIntakeNoCodeExecutionDeclared": true,
+    "multiSourceIntakeCaveat": "Connector-backed cloud/private-repo fetch remains approval and credential dependent; readiness proof validates fail-closed source routing, intake manifests, and metadata-only fallback behavior."
   },
   "launchClaim": {
     "enterpriseReady": true,

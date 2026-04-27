@@ -1,6 +1,8 @@
 import { InMemoryProjectRepository } from "../../../packages/supabase-adapter/src/memoryRepo";
 import { DurableProjectRepository } from "../../../packages/supabase-adapter/src/durableRepo";
 import { ProjectRepository } from "../../../packages/supabase-adapter/src/types";
+import path from "path";
+import { getIntakeLimitsFromEnv, type IntakeLimits } from "./intake/largeFileIntake";
 
 export type RepositoryMode = "memory" | "durable";
 export type AuthImplementation = "bearer_token" | "oidc" | "disabled";
@@ -35,6 +37,10 @@ export type RuntimeConfig = {
   repository: RepositoryContext;
   auth: AuthContext;
   alertWebhookUrl: string | null;
+  intake: {
+    limits: IntakeLimits;
+    uploadDir: string;
+  };
 };
 
 function now(): string {
@@ -131,6 +137,8 @@ export function createRuntimeConfig(): RuntimeConfig {
   const repository = createRepositoryContext(runtimeMode);
   const auth = createAuthContext(runtimeMode);
   const alertWebhookUrl = process.env.BOTOMATIC_ALERT_WEBHOOK_URL || process.env.SLACK_WEBHOOK_URL || null;
+  const limits = getIntakeLimitsFromEnv(process.env);
+  const uploadDir = process.env.BOTOMATIC_UPLOAD_DIR || path.join(process.cwd(), "runtime", "uploads");
 
   return {
     appName: "botomatic-orchestrator-api",
@@ -142,5 +150,9 @@ export function createRuntimeConfig(): RuntimeConfig {
     repository,
     auth,
     alertWebhookUrl,
+    intake: {
+      limits,
+      uploadDir,
+    },
   };
 }

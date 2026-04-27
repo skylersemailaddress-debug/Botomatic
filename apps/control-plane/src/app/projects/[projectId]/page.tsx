@@ -22,6 +22,7 @@ import SecretsCredentialsPanel from "@/components/overview/SecretsCredentialsPan
 import AutonomousBuildRunPanel from "@/components/overview/AutonomousBuildRunPanel";
 import FirstRunWhatsNextPanel from "@/components/overview/FirstRunWhatsNextPanel";
 import SecurityCenterPanel from "@/components/overview/SecurityCenterPanel";
+import IntakeHubPanel from "@/components/overview/IntakeHubPanel";
 
 export default async function ProjectPage({ params }: { params: { projectId: string } }) {
   const projectId = params.projectId;
@@ -38,6 +39,7 @@ export default async function ProjectPage({ params }: { params: { projectId: str
             <ArtifactPanel projectId={projectId} />
             <DeploymentPanel projectId={projectId} />
             <FirstRunWhatsNextPanel projectId={projectId} />
+            <IntakeHubPanel projectId={projectId} />
             <SecretsCredentialsPanel projectId={projectId} />
             <SecurityCenterPanel projectId={projectId} />
             <AutonomousBuildRunPanel projectId={projectId} />

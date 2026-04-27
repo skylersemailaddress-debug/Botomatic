@@ -5,6 +5,7 @@ export type ProjectAuditEvent = {
   type: string;
   actorId?: string;
   timestamp?: string;
+  metadata?: Record<string, unknown>;
 };
 
 export type ProjectAuditResponse = {

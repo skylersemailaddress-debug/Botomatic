@@ -8,6 +8,7 @@ import StatusBadge from "@/components/ui/StatusBadge";
 import { getProjectOverview } from "@/services/overview";
 import { uploadIntakeFile } from "@/services/intake";
 import { sendOperatorMessage } from "@/services/operator";
+import { getProjectAudit } from "@/services/audit";
 
 export default function ConversationPane({ projectId }: { projectId: string }) {
   const [input, setInput] = useState("");
@@ -108,14 +109,94 @@ export default function ConversationPane({ projectId }: { projectId: string }) {
     setMode("validating");
   }
 
-  async function handleFileUpload(file: File) {
-    const result = await uploadIntakeFile(projectId, file);
-    setMessages((m) => [...m, {
-      id: `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-      role: "system",
-      content: result.message || `Uploaded ${result.fileName}; extracted ${result.extractedChars} characters; available to planning.`,
-      timestamp: new Date().toISOString(),
-    }]);
+  async function handleFileUpload(
+    file: File,
+    hooks: {
+      onUploadProgress: (progressPercent: number) => void;
+      onStatus: (statusText: string) => void;
+    }
+  ) {
+    const relevantTypes = new Set([
+      "upload_started",
+      "upload_received",
+      "validation_started",
+      "archive_scan_started",
+      "extraction_started",
+      "extraction_progress",
+      "ingestion_started",
+      "ingestion_completed",
+      "ingestion_failed",
+    ]);
+    const seenEvents = new Set<string>();
+    let stopped = false;
+
+    const pollAudit = async () => {
+      if (stopped) return;
+      try {
+        const audit = await getProjectAudit(projectId);
+        for (const event of audit.events || []) {
+          if (!event?.id || seenEvents.has(event.id) || !relevantTypes.has(event.type)) {
+            continue;
+          }
+          seenEvents.add(event.id);
+          const metadata = (event as any).metadata || {};
+          if (event.type === "upload_started") hooks.onStatus("Upload started");
+          if (event.type === "upload_received") hooks.onStatus("Upload received");
+          if (event.type === "validation_started") hooks.onStatus("Validation started");
+          if (event.type === "archive_scan_started") hooks.onStatus("Archive scan started");
+          if (event.type === "extraction_started") hooks.onStatus("Extraction started");
+          if (event.type === "ingestion_started") hooks.onStatus("Ingestion started");
+          if (event.type === "ingestion_completed") hooks.onStatus("Ingestion completed");
+          if (event.type === "ingestion_failed") hooks.onStatus("Ingestion failed");
+          if (event.type === "extraction_progress") {
+            const extractedBytes = Number(metadata.extractedBytes || 0);
+            const maxExtractedBytes = Number(metadata.maxExtractedBytes || 0);
+            const scannedEntries = Number(metadata.scannedEntries || 0);
+            const extractedEntries = Number(metadata.extractedEntries || 0);
+            if (maxExtractedBytes > 0) {
+              const percent = Math.min(100, Math.round((extractedBytes / maxExtractedBytes) * 100));
+              hooks.onStatus(`Extraction ${percent}% (${extractedEntries} files, scanned ${scannedEntries})`);
+            } else {
+              hooks.onStatus(`Extraction progress (${extractedEntries} files, scanned ${scannedEntries})`);
+            }
+          }
+        }
+      } catch {
+        // keep upload flow resilient to transient audit polling errors
+      }
+    };
+
+    void pollAudit();
+    const timer = setInterval(() => {
+      void pollAudit();
+    }, 900);
+
+    try {
+      const result = await uploadIntakeFile(projectId, file, {
+        onUploadProgress: hooks.onUploadProgress,
+      });
+
+      setMessages((m) => [...m, {
+        id: `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        role: "system",
+        content:
+          result.message ||
+          `Uploaded ${result.fileName}; extracted ${result.extractedChars} characters; available to planning.`,
+        timestamp: new Date().toISOString(),
+      }]);
+
+      if ((result.binarySummary?.length || 0) > 0) {
+        setMessages((m) => [...m, {
+          id: `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+          role: "system",
+          content: `Binary files summarized: ${result.binarySummary?.length || 0}.`,
+          timestamp: new Date().toISOString(),
+        }]);
+      }
+    } finally {
+      stopped = true;
+      clearInterval(timer);
+    }
   }
 
   return (

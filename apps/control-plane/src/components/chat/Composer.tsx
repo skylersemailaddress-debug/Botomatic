@@ -1,6 +1,13 @@
 "use client";
 
 import { useRef, useState, DragEvent, KeyboardEvent } from "react";
+import {
+  ACCEPTED_UPLOAD_ACCEPT_ATTR,
+  ACCEPTED_UPLOAD_EXTENSIONS,
+  formatMaxUploadLabel,
+  isSupportedUploadSelection,
+  MAX_UPLOAD_BYTES,
+} from "@/services/intakeConfig";
 
 export type PendingFile = {
   file: File;
@@ -18,28 +25,35 @@ export default function Composer({
   value: string;
   onChange: (value: string) => void;
   onSubmit: () => void;
-  onFileUpload?: (file: File) => Promise<void>;
+  onFileUpload?: (
+    file: File,
+    hooks: {
+      onUploadProgress: (progressPercent: number) => void;
+      onStatus: (statusText: string) => void;
+    }
+  ) => Promise<void>;
   disabled?: boolean;
 }) {
   const [pendingFile, setPendingFile] = useState<PendingFile | null>(null);
   const [dragging, setDragging] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [uploadStatus, setUploadStatus] = useState<string>("Ready");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const composingRef = useRef(false);
 
-  const MAX_BYTES = 10 * 1024 * 1024;
-  const ACCEPTED = ".txt,.md,.json,.csv,.pdf";
-  const ACCEPTED_TYPES = ["text/plain", "text/markdown", "application/json", "text/csv",
-    "application/pdf"];
+  const ACCEPTED = ACCEPTED_UPLOAD_ACCEPT_ATTR;
 
   async function submitComposer() {
     await handleSend();
   }
 
   function validateFile(f: File): string | null {
-    if (f.size > MAX_BYTES) return `File too large (max 10 MB, got ${(f.size / 1024 / 1024).toFixed(1)} MB)`;
+    if (f.size > MAX_UPLOAD_BYTES) {
+      return `File too large (max ${formatMaxUploadLabel()}, got ${(f.size / 1024 / 1024).toFixed(1)} MB)`;
+    }
     const ext = f.name.split(".").pop()?.toLowerCase() || "";
-    if (!ACCEPTED_TYPES.includes(f.type) && !["txt", "md", "json", "csv", "pdf"].includes(ext)) {
+    if (!isSupportedUploadSelection(f)) {
       return `Unsupported file type: ${f.type || ext}`;
     }
     return null;
@@ -49,6 +63,8 @@ export default function Composer({
     const err = validateFile(f);
     if (err) { setFileError(err); return; }
     setFileError(null);
+    setUploadProgress(0);
+    setUploadStatus("Ready");
     setPendingFile({ file: f, status: "pending" });
   }
 
@@ -78,11 +94,23 @@ export default function Composer({
     const hadPendingFile = pendingFile && pendingFile.status === "pending";
     if (pendingFile && pendingFile.status === "pending" && onFileUpload) {
       setPendingFile((p) => p ? { ...p, status: "uploading" } : p);
+      setUploadProgress(0);
+      setUploadStatus("Uploading");
       try {
-        await onFileUpload(pendingFile.file);
+        await onFileUpload(pendingFile.file, {
+          onUploadProgress: (progressPercent) => {
+            setUploadProgress(progressPercent);
+            setUploadStatus(progressPercent < 100 ? `Uploading ${progressPercent}%` : "Upload received; validating");
+          },
+          onStatus: (statusText) => {
+            setUploadStatus(statusText);
+          },
+        });
         setPendingFile((p) => p ? { ...p, status: "done" } : p);
+        setUploadStatus("Uploaded");
       } catch (err: any) {
         setPendingFile((p) => p ? { ...p, status: "error", errorMsg: String(err?.message || err) } : p);
+        setUploadStatus("Error");
         return;
       }
     }
@@ -106,7 +134,13 @@ export default function Composer({
             File: {pendingFile.file.name} ({(pendingFile.file.size / 1024).toFixed(0)} KB | {pendingFile.file.type || "unknown"})
           </span>
           <span style={{ color: pendingFile.status === "error" ? "var(--danger)" : pendingFile.status === "done" ? "var(--success)" : "var(--text-muted)" }}>
-            {pendingFile.status === "uploading" ? "Uploading..." : pendingFile.status === "done" ? "Uploaded" : pendingFile.status === "error" ? `Error: ${pendingFile.errorMsg}` : "Ready"}
+            {pendingFile.status === "uploading"
+              ? uploadStatus
+              : pendingFile.status === "done"
+              ? "Uploaded"
+              : pendingFile.status === "error"
+              ? `Error: ${pendingFile.errorMsg}`
+              : "Ready"}
           </span>
           {pendingFile.status !== "uploading" && (
             <button
@@ -122,6 +156,12 @@ export default function Composer({
       {fileError && (
         <div style={{ fontSize: 12, color: "var(--danger)", padding: "2px 8px" }}>{fileError}</div>
       )}
+      {pendingFile?.status === "uploading" && (
+        <div style={{ padding: "2px 8px", fontSize: 12, color: "var(--text-muted)" }}>
+          <div>Upload progress: {uploadProgress}%</div>
+          <div>Status: {uploadStatus}</div>
+        </div>
+      )}
       <div className="composer-row">
         <input
           ref={fileInputRef}
@@ -136,7 +176,7 @@ export default function Composer({
           aria-label="Attach file"
           onClick={() => fileInputRef.current?.click()}
           disabled={disabled || isUploading}
-          title="Attach .txt, .md, .json, .csv, .pdf"
+           title={`Attach ${ACCEPTED_UPLOAD_EXTENSIONS.join(", ")}`}
            style={{ padding: "8px 10px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontSize: 13, color: "var(--text-muted)", fontWeight: 700 }}
         >
           Upload
@@ -166,7 +206,7 @@ export default function Composer({
         </button>
       </div>
       <div className="composer-help">
-        Live deployment blocked by default. Credentialed deployment requires explicit approval.
+        Max upload: {formatMaxUploadLabel()}. Accepted: {ACCEPTED_UPLOAD_EXTENSIONS.join(", ")}. Live deployment remains approval-gated.
       </div>
       {dragging && (
         <div style={{ textAlign: "center", fontSize: 12, color: "var(--text-muted)", padding: "4px 0" }}>

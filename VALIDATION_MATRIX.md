@@ -44,6 +44,8 @@ Purpose: Map each launch category to required validators.
 | First-Run Experience Readiness | Validate-Botomatic-FirstRunExperienceReadiness | IMPLEMENTED (PASS) |
 | Validation Cache Readiness | Validate-Botomatic-ValidationCacheReadiness | IMPLEMENTED (PASS) |
 | Installer Runtime Readiness | Validate-Botomatic-InstallerRuntimeReadiness | IMPLEMENTED (PASS) |
+| Large-File Intake Readiness | Validate-Botomatic-LargeFileIntakeReadiness | IMPLEMENTED (PASS) |
+| Multi-Source Intake Readiness | Validate-Botomatic-MultiSourceIntakeReadiness | IMPLEMENTED (PASS) |
 | Self-Upgrading Factory Readiness | Validate-Botomatic-SelfUpgradingFactoryReadiness | IMPLEMENTED (PASS) |
 | Dirty Repo Rescue Readiness | Validate-Botomatic-DirtyRepoRescueReadiness | IMPLEMENTED (PASS) |
 | Universal Capability Stress Readiness | Validate-Botomatic-UniversalCapabilityStressReadiness | IMPLEMENTED (PASS) |
@@ -72,6 +74,8 @@ Runtime-proof harness requirements (content-inspected validators):
 - `Validate-Botomatic-FirstRunExperienceReadiness` enforces first-run onboarding + What's Next panel coverage for build-from-idea, spec upload, dirty-repo upload, key configuration, local launch, and deployment preparation paths.
 - `Validate-Botomatic-ValidationCacheReadiness` enforces fast command wiring and content-hash validator cache implementation (`validate:fast`, `validate:changed`, `proof:fast`, `cache:clear`).
 - `Validate-Botomatic-InstallerRuntimeReadiness` enforces installer/doctor/easy-start runtime anchors, package script wiring, and Linux shell-script executable permission checks.
+- `Validate-Botomatic-LargeFileIntakeReadiness` requires `release-evidence/runtime/large_file_intake_readiness_proof.json` and fails closed on hardcoded 10 MB intake limits, upload max below 100 MB, missing archive traversal/zip-bomb guards, missing extraction limits, missing progress events, or non-config-driven UI max upload messaging.
+- `Validate-Botomatic-MultiSourceIntakeReadiness` requires `release-evidence/runtime/multi_source_intake_readiness_proof.json` and fails closed on missing multi-source intake routes, source-model coverage, intake-router decisions, adapter modules, intake lifecycle events, Intake Hub UI wiring, or no-code-execution intake declarations.
 - `Validate-Botomatic-Documentation` enforces launch-truth alignment across `LAUNCH_BLOCKERS.md`, `READINESS_SCORECARD.json`, `release-evidence/manifest.json`, and `README.md`.
 - `Validate-Botomatic-UIReadiness` and `Validate-Botomatic-UIControlPlaneIntegration` now enforce enterprise surface wiring, no-placeholder UI signals, loading/error/empty states, and real API service bindings.
 
@@ -90,6 +94,8 @@ Proof harness commands:
 - `npm run -s proof:live-deployment-execution-readiness`
 - `npm run -s proof:secrets-credential-management`
 - `npm run -s proof:autonomous-complex-build`
+- `npm run -s proof:large-file-intake`
+- `npm run -s proof:multi-source-intake`
 - `npm run -s proof:fast`
 - `npm run -s proof:all`
 

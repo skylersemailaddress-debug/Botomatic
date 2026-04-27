@@ -168,6 +168,41 @@
       "high_risk_human_escalation_required": true,
       "low_medium_risk_autonomy_enabled": true,
       "caveat": "Autonomous complex build evidence is readiness proof for milestone-gated autonomous execution and escalation policy; it is not an exhaustive claim that every complex specification has been fully live-deployed."
+    },
+    "large_file_intake_readiness_evidence": {
+      "status": "large_spec_repo_intake_production_ready",
+      "proof_path": "release-evidence/runtime/large_file_intake_readiness_proof.json",
+      "validator": "Validate-Botomatic-LargeFileIntakeReadiness",
+      "default_max_upload_mb": 250,
+      "default_max_extracted_mb": 2000,
+      "default_max_zip_files": 20000,
+      "zip_traversal_protection": true,
+      "zip_bomb_protection": true,
+      "streaming_or_disk_backed_upload": true,
+      "progress_events_enabled": true,
+      "ui_limit_config_driven": true,
+      "caveat": "Very large repositories should prefer GitHub/cloud-link intake when available; browser upload remains supported with explicit size and archive safety enforcement."
+    },
+    "multi_source_intake_readiness_evidence": {
+      "status": "multi_source_project_intake_production_ready",
+      "proof_path": "release-evidence/runtime/multi_source_intake_readiness_proof.json",
+      "validator": "Validate-Botomatic-MultiSourceIntakeReadiness",
+      "supported_sources": [
+        "github_repo_url",
+        "github_branch_url",
+        "github_pr_url",
+        "cloud_storage_link",
+        "pasted_text",
+        "local_folder_manifest",
+        "uploaded_zip",
+        "uploaded_pdf",
+        "existing_project_reference"
+      ],
+      "intake_router_present": true,
+      "per_source_manifest_writing": true,
+      "metadata_only_auth_fallback": true,
+      "intake_hub_ui_present": true,
+      "caveat": "Remote and connector-backed sources remain approval/credential dependent at runtime; readiness proof validates fail-closed routing, source registration, and no-code-execution intake behavior."
     }
   },
   "categories": {

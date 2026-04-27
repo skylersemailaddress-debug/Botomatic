@@ -17,6 +17,10 @@ function start() {
       authEnabled: config.auth.enabled,
       authImplementation: config.auth.implementation,
       durableEnvPresent: config.durableEnvPresent,
+      intakeMaxUploadMb: config.intake.limits.maxUploadMb,
+      intakeMaxExtractedMb: config.intake.limits.maxExtractedMb,
+      intakeMaxZipFiles: config.intake.limits.maxZipFiles,
+      intakeUploadDir: config.intake.uploadDir,
       commitSha: config.commitSha,
       startupTimestamp: config.startupTimestamp,
     })

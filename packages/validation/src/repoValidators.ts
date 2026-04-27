@@ -19,6 +19,8 @@ import { validateSecurityCenterReadiness } from "./repoValidators/securityCenter
 import { validateFirstRunExperienceReadiness } from "./repoValidators/firstRunExperienceReadiness";
 import { validateValidationCacheReadiness } from "./repoValidators/validationCacheReadiness";
 import { validateInstallerRuntimeReadiness } from "./repoValidators/installerRuntimeReadiness";
+import { validateLargeFileIntakeReadiness } from "./repoValidators/largeFileIntakeReadiness";
+import { validateMultiSourceIntakeReadiness } from "./repoValidators/multiSourceIntakeReadiness";
 
 export type RepoValidatorResult = {
   name: string;
@@ -927,9 +929,11 @@ export function validateBuilderQualityBenchmarks(root: string): RepoValidatorRes
 export function validateFileIngestion(root: string): RepoValidatorResult {
   const checks = [
     "apps/orchestrator-api/src/server_app.ts",
+    "apps/orchestrator-api/src/intake/largeFileIntake.ts",
     "apps/control-plane/src/components/chat/Composer.tsx",
     "apps/control-plane/src/services/api.ts",
     "apps/control-plane/src/services/intake.ts",
+    "apps/control-plane/src/services/intakeConfig.ts",
   ];
   const fileOk = checks.every((p) => has(root, p));
   if (!fileOk) {
@@ -941,29 +945,37 @@ export function validateFileIngestion(root: string): RepoValidatorResult {
     );
   }
   const server = read(root, "apps/orchestrator-api/src/server_app.ts");
+  const intakeCore = read(root, "apps/orchestrator-api/src/intake/largeFileIntake.ts");
   const composer = read(root, "apps/control-plane/src/components/chat/Composer.tsx");
   const api = read(root, "apps/control-plane/src/services/api.ts");
   const intakeSvc = read(root, "apps/control-plane/src/services/intake.ts");
+  const intakeConfig = read(root, "apps/control-plane/src/services/intakeConfig.ts");
 
   const ok =
     server.includes("/intake/file") &&
     server.includes("multer") &&
-    server.includes("pdf-parse") &&
-    server.includes("intakeArtifacts") &&
-    server.includes("Uploaded Specs") &&
+    server.includes("upload_started") &&
+    intakeCore.includes("DEFAULT_MAX_UPLOAD_MB") &&
+    intakeCore.includes("sanitizeArchivePath") &&
+    intakeCore.includes("POTENTIAL_SECRET_DETECTED") &&
+    intakeCore.includes("TOO_MANY_FILES") &&
+    intakeCore.includes("EXTRACTED_SIZE_TOO_LARGE") &&
     composer.includes("onFileUpload") &&
+    composer.includes("Upload progress") &&
     composer.includes("onKeyDown") &&
     composer.includes("Shift+Enter") &&
     api.includes("postMultipart") &&
+    api.includes("postMultipartWithProgress") &&
     intakeSvc.includes("uploadIntakeFile") &&
-    intakeSvc.includes("postMultipart");
+    intakeSvc.includes("postMultipartWithProgress") &&
+    intakeConfig.includes("NEXT_PUBLIC_BOTOMATIC_MAX_UPLOAD_MB");
 
   return result(
     "Validate-Botomatic-FileIngestion",
     ok,
     ok
-      ? "File upload route, multipart API helper, keyboard shortcuts, and intake service wiring exist."
-      : "File ingestion wiring is incomplete (route/multipart/composer/shortcuts).",
+      ? "Large-file upload route, secure archive safeguards, progress wiring, and config-driven UI limits are present."
+      : "File ingestion wiring is incomplete (limits/safeguards/progress/composer integration).",
     checks
   );
 }
@@ -1055,5 +1067,7 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateFirstRunExperienceReadiness(root),
     validateValidationCacheReadiness(root),
     validateInstallerRuntimeReadiness(root),
+    validateLargeFileIntakeReadiness(root),
+    validateMultiSourceIntakeReadiness(root),
   ];
 }

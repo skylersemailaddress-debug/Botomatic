@@ -93,3 +93,50 @@ export async function postMultipart<T>(url: string, formData: FormData): Promise
   }
   return response.json() as Promise<T>;
 }
+
+export async function postMultipartWithProgress<T>(
+  url: string,
+  formData: FormData,
+  options: {
+    onUploadProgress?: (progressPercent: number) => void;
+  } = {}
+): Promise<T> {
+  const finalUrl = buildApiUrl(url);
+  const headers = buildHeaders();
+
+  return new Promise<T>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", finalUrl, true);
+
+    Object.entries(headers).forEach(([key, value]) => {
+      xhr.setRequestHeader(key, value);
+    });
+
+    xhr.upload.onprogress = (event) => {
+      if (!event.lengthComputable || !options.onUploadProgress) {
+        return;
+      }
+      const percent = Math.min(100, Math.max(0, Math.round((event.loaded / event.total) * 100)));
+      options.onUploadProgress(percent);
+    };
+
+    xhr.onerror = () => {
+      reject(new Error(`Request failed: network error (${finalUrl})`));
+    };
+
+    xhr.onload = () => {
+      if (xhr.status < 200 || xhr.status >= 300) {
+        reject(new Error(`Request failed: ${xhr.status} ${xhr.statusText} (${finalUrl}) Body: ${xhr.responseText || "<empty>"}`));
+        return;
+      }
+
+      try {
+        resolve(JSON.parse(xhr.responseText) as T);
+      } catch {
+        reject(new Error(`Request failed: invalid JSON response (${finalUrl})`));
+      }
+    };
+
+    xhr.send(formData);
+  });
+}

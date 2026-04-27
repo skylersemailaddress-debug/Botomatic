@@ -38,7 +38,7 @@ Observed strict benchmark result:
 - universalPass: true
 
 Observed final validator result:
-- Passed: 38
+- Passed: 40
 - Failed: 0
 
 ## 4) Additional Verification Runs
@@ -66,11 +66,13 @@ No fail-open condition was found in launch-critical validator/proof gating.
 
 ## 6) Validation Surface
 
-Validation suite now reports 38/38 passing. Added/active hardening in this wave includes:
+Validation suite now reports 40/40 passing. Added/active hardening in this wave includes:
 - security center readiness
 - first-run experience readiness
 - validation cache readiness
 - installer runtime readiness
+- large-file intake readiness
+- multi-source intake readiness
 - domain quality scorecards and eval suite readiness
 
 ## 7) Builder Quality & Commercial Readiness
@@ -97,6 +99,11 @@ Validated posture remains:
 - redacted secret audit events
 - live deployment blocked by default when credentials/approvals are missing
 - no claim of real provider API calls or real secret usage in proof pass
+- default large-file intake limits are configurable (250 MB upload / 2000 MB extracted / 20000 zip files)
+- unsafe archives are rejected (path traversal, symlink escapes, zip bomb ceilings)
+- upload/extraction progress events are emitted and visible in control-plane status flows
+- multi-source intake routing is fail-closed across GitHub/cloud/pasted/local-manifest/upload/existing-project paths
+- auth-constrained remote sources degrade to truthful metadata-only registration rather than fail-open fetch behavior
 
 ## 10) UI/Operator Surface Audit
 
@@ -117,9 +124,9 @@ Completed cleanup in this pass:
 ## 12) Documentation Truth Alignment
 
 Updated truth artifacts to align with current pass status:
-- validator count reflected as 38 in final commercial evidence
+- validator count reflected as 40 in final commercial evidence
 - launch caveat language aligned with static sample drift finding
-- scorecard/manifest caveats aligned with canonical evidence boundary
+- scorecard/manifest caveats aligned with canonical evidence boundary and multi-source intake readiness proof
 
 ## 13) Monetization Boundary
 

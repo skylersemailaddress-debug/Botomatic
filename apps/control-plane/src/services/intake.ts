@@ -1,4 +1,4 @@
-import { postJson, postMultipart } from "./api";
+import { postJson, postMultipartWithProgress } from "./api";
 
 export type IntakeResponse = {
   projectId: string;
@@ -17,8 +17,19 @@ export type FileIntakeResponse = {
   truncated: boolean;
   chunkCount: number;
   parseError: string | null;
+  extractionManifest?: Array<{ path: string; action: string; sizeBytes: number }>;
+  binarySummary?: Array<{ path: string; reason: string; sizeBytes: number }>;
+  configuredMaxUploadMb?: number;
+  configuredMaxExtractedMb?: number;
+  configuredMaxZipFiles?: number;
+  acceptedExtensions?: string[];
   actorId: string;
   message: string;
+};
+
+export type UploadIntakeOptions = {
+  onUploadProgress?: (progressPercent: number) => void;
+  fullRepoAudit?: boolean;
 };
 
 export async function createLaunchProject(
@@ -30,8 +41,15 @@ export async function createLaunchProject(
   });
 }
 
-export async function uploadIntakeFile(projectId: string, file: File): Promise<FileIntakeResponse> {
+export async function uploadIntakeFile(
+  projectId: string,
+  file: File,
+  options: UploadIntakeOptions = {}
+): Promise<FileIntakeResponse> {
   const form = new FormData();
   form.append("file", file, file.name);
-  return postMultipart<FileIntakeResponse>(`/api/projects/${encodeURIComponent(projectId)}/intake/file`, form);
+  const endpoint = `/api/projects/${encodeURIComponent(projectId)}/intake/file${options.fullRepoAudit ? "?fullRepoAudit=true" : ""}`;
+  return postMultipartWithProgress<FileIntakeResponse>(endpoint, form, {
+    onUploadProgress: options.onUploadProgress,
+  });
 }

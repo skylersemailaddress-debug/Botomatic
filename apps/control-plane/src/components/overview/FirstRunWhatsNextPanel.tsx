@@ -6,6 +6,7 @@ import ErrorCallout from "@/components/ui/ErrorCallout";
 import EmptyState from "@/components/ui/EmptyState";
 import { sendOperatorMessage } from "@/services/operator";
 import { uploadIntakeFile } from "@/services/intake";
+import { ACCEPTED_UPLOAD_ACCEPT_ATTR, formatMaxUploadLabel } from "@/services/intakeConfig";
 
 const QUICK_ACTIONS = [
   { label: "Build from idea", message: "Build from idea and generate launch-ready contract." },
@@ -18,6 +19,7 @@ export default function FirstRunWhatsNextPanel({ projectId }: { projectId: strin
   const [error, setError] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<string>("");
   const [busy, setBusy] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
 
   async function runMessage(message: string) {
     setBusy(true);
@@ -37,8 +39,11 @@ export default function FirstRunWhatsNextPanel({ projectId }: { projectId: strin
     if (!file) return;
     setBusy(true);
     setError(null);
+    setUploadProgress(0);
     try {
-      await uploadIntakeFile(projectId, file);
+      await uploadIntakeFile(projectId, file, {
+        onUploadProgress: (progressPercent) => setUploadProgress(progressPercent),
+      });
       const message = mode === "spec"
         ? "Uploaded spec zip. Continue build from uploaded complex spec."
         : "Uploaded dirty repo zip. Generate completion contract and repair plan.";
@@ -71,16 +76,21 @@ export default function FirstRunWhatsNextPanel({ projectId }: { projectId: strin
 
         <div className="proof-status-card">
           <div className="proof-status-title">Upload inputs</div>
+          <div className="proof-status-detail">Max upload: {formatMaxUploadLabel()}</div>
           <label>
             Upload spec zip
-            <input type="file" accept=".zip,.md,.txt,.pdf" onChange={(event) => void onUpload(event, "spec")} />
+            <input type="file" accept={ACCEPTED_UPLOAD_ACCEPT_ATTR} onChange={(event) => void onUpload(event, "spec")} />
           </label>
           <label style={{ marginTop: 8, display: "block" }}>
             Upload dirty repo
-            <input type="file" accept=".zip,.tar,.gz,.tgz" onChange={(event) => void onUpload(event, "repo")} />
+            <input type="file" accept={ACCEPTED_UPLOAD_ACCEPT_ATTR} onChange={(event) => void onUpload(event, "repo")} />
           </label>
+          {busy ? <div className="proof-status-detail">Upload progress: {uploadProgress}%</div> : null}
           <div className="state-callout warning" style={{ marginTop: 8 }}>
             Live deployment remains approval-gated and blocked by default in first-run mode.
+          </div>
+          <div className="proof-status-detail" style={{ marginTop: 8 }}>
+            For very large repos, prefer GitHub/cloud-link intake when available.
           </div>
         </div>
       </div>
