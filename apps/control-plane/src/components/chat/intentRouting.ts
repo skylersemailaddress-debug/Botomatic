@@ -65,16 +65,16 @@ export type ParsedCommand =
 export function parseCommand(message: string): ParsedCommand {
   const normalized = message.trim().toLowerCase();
 
-  if (/(continue build|resume build|continue run)/.test(normalized)) return "continue-build";
-  if (/(^validate$|run validation|validate now)/.test(normalized)) return "validate";
+  if (/^(continue|resume)$/.test(normalized) || /(continue build|resume build|continue run)/.test(normalized)) return "continue-build";
+  if (/(^validate$|validate it|run validation|validate now)/.test(normalized)) return "validate";
   if (/(explain blocker|show blocker)/.test(normalized)) return "explain-blocker";
   if (/(explain state|system state|status summary)/.test(normalized)) return "explain-state";
   if (/(approve plan|approve contract)/.test(normalized)) return "approve-plan";
   if (/(show proof|show evidence|show validator)/.test(normalized)) return "show-proof";
-  if (/(fix failure|repair failure)/.test(normalized)) return "fix-failure";
-  if (/(inspect failure|inspect error)/.test(normalized)) return "inspect-failure";
+  if (/(fix failure|repair failure|fix failed milestone)/.test(normalized)) return "fix-failure";
+  if (/(inspect failure|inspect error|inspect failed milestone)/.test(normalized)) return "inspect-failure";
   if (/(resolve blocker|unblock)/.test(normalized)) return "resolve-blocker";
-  if (/(next best action|what next|next action)/.test(normalized)) return "next-best-action";
+  if (/(next best action|what next|next action|what now)/.test(normalized)) return "next-best-action";
   if (/(configure keys|missing secrets|show missing secrets|configure missing keys)/.test(normalized)) return "configure-keys";
   if (/(prepare deployment|deployment readiness|preflight deployment)/.test(normalized)) return "prepare-deployment";
   if (/(launch capsule|generate launch capsule|review launch package)/.test(normalized)) return "launch-capsule";

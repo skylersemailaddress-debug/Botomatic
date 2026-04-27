@@ -16,8 +16,6 @@ import {
 import { classifyError } from "./systemIntelligence";
 import { type CommandIntent } from "./intentRouting";
 
-// Validator marker: canonical operator route remains sendOperatorMessage via chatCommandExecutor.
-
 type ChatMessage = {
   id: string;
   role: "system" | "operator";

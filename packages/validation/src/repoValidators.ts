@@ -21,6 +21,7 @@ import { validateValidationCacheReadiness } from "./repoValidators/validationCac
 import { validateInstallerRuntimeReadiness } from "./repoValidators/installerRuntimeReadiness";
 import { validateLargeFileIntakeReadiness } from "./repoValidators/largeFileIntakeReadiness";
 import { validateMultiSourceIntakeReadiness } from "./repoValidators/multiSourceIntakeReadiness";
+import { validateChatBehaviorExecution } from "./repoValidators/chatBehaviorExecution";
 
 export type RepoValidatorResult = {
   name: string;
@@ -984,9 +985,18 @@ export function validateChatFirstOperatorRouting(root: string): RepoValidatorRes
   const checks = [
     "apps/orchestrator-api/src/server_app.ts",
     "apps/control-plane/src/components/chat/ConversationPane.tsx",
-    "apps/control-plane/src/components/chat/QuickActionRow.tsx",
+    "apps/control-plane/src/components/overview/BuildStatusRail.tsx",
+    "apps/control-plane/src/components/chat/commandGrammar.ts",
+    "apps/control-plane/src/components/chat/intentRouting.ts",
+    "apps/control-plane/src/components/chat/selfUpgradeGuard.ts",
+    "apps/control-plane/src/components/chat/intakePipeline.ts",
+    "apps/control-plane/src/components/chat/nextBestAction.ts",
+    "apps/control-plane/src/components/chat/chatCommandExecutor.ts",
+    "apps/control-plane/src/components/chat/actionRailCommands.ts",
     "apps/control-plane/src/services/operator.ts",
     "packages/master-truth/src/compiler.ts",
+    "packages/validation/src/tests/chatDrivenControl.test.ts",
+    "package.json",
   ];
 
   const fileOk = checks.every((p) => has(root, p));
@@ -1001,21 +1011,160 @@ export function validateChatFirstOperatorRouting(root: string): RepoValidatorRes
 
   const server = read(root, "apps/orchestrator-api/src/server_app.ts");
   const conversation = read(root, "apps/control-plane/src/components/chat/ConversationPane.tsx");
-  const quickActions = read(root, "apps/control-plane/src/components/chat/QuickActionRow.tsx");
+  const rail = read(root, "apps/control-plane/src/components/overview/BuildStatusRail.tsx");
+  const grammar = read(root, "apps/control-plane/src/components/chat/commandGrammar.ts");
+  const router = read(root, "apps/control-plane/src/components/chat/intentRouting.ts");
+  const guard = read(root, "apps/control-plane/src/components/chat/selfUpgradeGuard.ts");
+  const intakePipeline = read(root, "apps/control-plane/src/components/chat/intakePipeline.ts");
+  const nextAction = read(root, "apps/control-plane/src/components/chat/nextBestAction.ts");
+  const executor = read(root, "apps/control-plane/src/components/chat/chatCommandExecutor.ts");
+  const railCommands = read(root, "apps/control-plane/src/components/chat/actionRailCommands.ts");
   const operatorSvc = read(root, "apps/control-plane/src/services/operator.ts");
   const compiler = read(root, "packages/master-truth/src/compiler.ts");
+  const tests = read(root, "packages/validation/src/tests/chatDrivenControl.test.ts");
+  const packageJson = read(root, "package.json");
+
+  const requiredIntents = [
+    "intake",
+    "planning",
+    "generated_app_build",
+    "repo_rescue",
+    "validation_proof",
+    "deployment_readiness",
+    "secrets_vault",
+    "self_upgrade",
+    "blocker_resolution",
+    "status_query",
+    "general_chat",
+  ];
+
+  const requiredRailMappings = [
+    "continue current generated app build",
+    "inspect failed milestone and recommend repair",
+    "explain blocker and propose safe default",
+    "run validate all and summarize proof",
+    "show latest proof and launch readiness",
+    "show missing secrets and recommended setup",
+    "prepare deployment readiness, no live deployment",
+    "approve current generated app build contract",
+    "generate execution plan from uploaded build contract",
+  ];
+
+  const requiredSourceTypes = [
+    "uploaded_file",
+    "uploaded_zip",
+    "uploaded_document",
+    "github_url",
+    "cloud_link",
+    "pasted_text",
+    "local_manifest_json",
+    "existing_project_reference",
+  ];
+
+  const requiredPipelineStages = [
+    "source_input",
+    "intake_source",
+    "source_manifest",
+    "extracted_context",
+    "build_contract_context",
+    "planning",
+    "execution",
+  ];
+
+  const requiredNextActionInputs = [
+    "projectStatus",
+    "uploadedSpecExists",
+    "buildContractApproved",
+    "approvalStatus",
+    "activeRunId",
+    "currentMilestone",
+    "completedMilestones",
+    "failedMilestone",
+    "repairAttempts",
+    "blockers",
+    "validationStatus",
+    "launchGateStatus",
+    "missingSecretsCount",
+    "proofStatus",
+  ];
+
+  const explicitSelfUpgradePhrases = [
+    "self-upgrade",
+    "self upgrade",
+    "upgrade botomatic",
+    "modify botomatic",
+    "patch botomatic",
+    "fix botomatic builder",
+    "change botomatic itself",
+  ];
+
+  const forbiddenImplicitSelfUpgradePhrases = [
+    "build nexus",
+    "uploaded spec",
+    "update ui",
+    "continue build",
+    "fix generated app",
+    "inspect failed milestone",
+    "validate it",
+    "what now",
+  ];
+
+  const selfUpgradeTriggerMatch = grammar.match(/intent:\s*\"self_upgrade\"[\s\S]*?triggers:\s*\[([\s\S]*?)\]/);
+  const selfUpgradeTriggers = selfUpgradeTriggerMatch?.[1] || "";
 
   const ok =
     server.includes("/operator/send") &&
     server.includes("formatOperatorVoice") &&
     server.includes("hasUncompiledIntake") &&
     server.includes("hasLaunchIntent") &&
-    conversation.includes("sendOperatorMessage") &&
-    quickActions.includes("Advanced") &&
+    conversation.includes("executeCanonicalCommand") &&
+    conversation.includes("buildPartnerEnvelope") &&
+    conversation.includes("handleFileUpload") &&
+    rail.includes("ACTION_RAIL_COMMANDS") &&
+    rail.includes("executeCanonicalCommand") &&
     operatorSvc.includes("/operator/send") &&
     compiler.includes("canonicalSpec") &&
     compiler.includes("productIntent") &&
-    compiler.includes("openQuestions");
+    compiler.includes("openQuestions") &&
+    requiredIntents.every((intent) => grammar.includes(`\"${intent}\"`)) &&
+    grammar.includes("CANONICAL_COMMAND_CLASSES") &&
+    router.includes("classifyIntent") &&
+    router.includes("activeGeneratedAppRun") &&
+    router.includes("uploadedSpecExists") &&
+    router.includes("build nexus") &&
+    router.includes("continue") &&
+    router.includes("validate") &&
+    router.includes("what now") &&
+    explicitSelfUpgradePhrases.every((phrase) => selfUpgradeTriggers.includes(`\"${phrase}\"`)) &&
+    forbiddenImplicitSelfUpgradePhrases.every((phrase) => !selfUpgradeTriggers.includes(`\"${phrase}\"`)) &&
+    guard.includes("SELF_UPGRADE_EXPLICIT_PHRASES") &&
+    guard.includes("Self-upgrade blocked because the user did not explicitly request Botomatic modification") &&
+    executor.includes("evaluateSelfUpgradeGuard") &&
+    executor.includes("createSelfUpgradeSpec") &&
+    executor.includes("intent: \"generated_app_build\"") &&
+    executor.includes("runPipelineFromIntakeContext") &&
+    requiredRailMappings.every((mapping) => railCommands.includes(mapping)) &&
+    requiredSourceTypes.every((sourceType) => intakePipeline.includes(`\"${sourceType}\"`)) &&
+    requiredPipelineStages.every((stage) => intakePipeline.includes(stage)) &&
+    executor.includes("source_input -> intake_source -> source_manifest -> extracted_context -> build_contract_context -> planning -> execution") &&
+    requiredNextActionInputs.every((field) => nextAction.includes(field)) &&
+    executor.includes("Current state") &&
+    executor.includes("Next best action") &&
+    executor.includes("Why") &&
+    executor.includes("Risk") &&
+    executor.includes("Command I will run") &&
+    tests.includes("build Nexus from uploaded v11") &&
+    tests.includes("generated_app_build") &&
+    tests.includes("validate it") &&
+    tests.includes("what now") &&
+    tests.includes("upgrade Botomatic validator logic") &&
+    tests.includes("modify Botomatic itself") &&
+    tests.includes("assert.notStrictEqual(classifyIntent(\"build Nexus from uploaded v11\"") &&
+    tests.includes("assert.notStrictEqual(classifyIntent(\"continue build\"") &&
+    tests.includes("ACTION_RAIL_COMMANDS") &&
+    packageJson.includes("test:chat-driven-control") &&
+    packageJson.includes("test:universal") &&
+    packageJson.includes("test:chat-driven-control");
 
   return result(
     "Validate-Botomatic-ChatFirstOperatorRouting",
@@ -1048,6 +1197,7 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateFinalLaunchReadiness(root),
     validateFileIngestion(root),
     validateChatFirstOperatorRouting(root),
+    validateChatBehaviorExecution(root),
     validateUniversalBuilderReadiness(root),
     validateSelfUpgradingFactoryReadiness(root),
     validateDirtyRepoRescueReadiness(root),
