@@ -15,6 +15,7 @@ const proofs = [
   "proof:live-deployment-execution-readiness",
   "proof:secrets-credential-management",
   "proof:autonomous-complex-build",
+  "proof:adaptive-repair-strategy",
   "proof:large-file-intake",
   "proof:multi-source-intake",
 ];

@@ -21,6 +21,57 @@ export type AutonomousBuildRunResponse = {
       completedMilestones: string[];
       failedMilestone: string | null;
       repairAttempts: number;
+      repairAttemptsBySignature: Record<string, number>;
+      repairAttemptsByMilestoneCategory: Record<string, number>;
+      repairHistory: Array<{
+        milestoneId: string;
+        failureCategory: string;
+        failureSignature: string;
+        repairAction: string;
+        outcome: "repaired" | "failed" | "skipped";
+        reason: string;
+        attemptedAt: string;
+      }>;
+      lastFailure: {
+        runId: string;
+        milestoneId: string;
+        failureCategory: string;
+        confidence: number;
+        evidence: string[];
+        lastError: string;
+        failingCommand: string;
+        affectedFiles: string[];
+        affectedSubsystem: string;
+        safeRepairAvailable: boolean;
+        recommendedRepair: string;
+        escalationRequired: boolean;
+        userQuestion?: string;
+        resumeCommand: string;
+        validationCommandAfterRepair: string;
+        failureSignature: string;
+        attemptsBySignature: number;
+        attemptsByMilestoneCategory: number;
+        attemptedRepairs: string[];
+        recommendedStrategyId?: string;
+        recommendedStrategyName?: string;
+        whyThisStrategy?: string;
+        rejectedStrategies: Array<{ strategyId: string; reason: string }>;
+        priorSimilarOutcomes: Array<{
+          strategyId: string;
+          outcome: "success" | "failed" | "skipped" | "escalated";
+          timestamp: string;
+          notes: string;
+        }>;
+        approvalRequired: boolean;
+        expectedValidationCommand: string;
+        rollbackPlan: string;
+        repairBudgetExhausted?: {
+          whatFailed: string;
+          attemptedRepairs: string[];
+          whyRepairsFailed: string;
+          exactNextAction: string;
+        };
+      } | null;
       artifactPaths: string[];
       logs: string[];
       resumeCommand: string;

@@ -121,12 +121,22 @@ export default function AutonomousBuildRunPanel({ projectId }: { projectId: stri
               <div className="proof-status-detail">Current milestone: {run.checkpoint.currentMilestone}</div>
               <div className="proof-status-detail">Completed milestones: {run.checkpoint.completedMilestones.length}</div>
               <div className="proof-status-detail">Repair attempts: {run.checkpoint.repairAttempts}</div>
+              <div className="proof-status-detail">Failure category: {run.checkpoint.lastFailure?.failureCategory || "none"}</div>
+              <div className="proof-status-detail">Recommended strategy: {run.checkpoint.lastFailure?.recommendedStrategyId || run.checkpoint.lastFailure?.recommendedStrategyName || "none"}</div>
+              <div className="proof-status-detail">Why this strategy: {run.checkpoint.lastFailure?.whyThisStrategy || "n/a"}</div>
+              <div className="proof-status-detail">Rejected strategies: {(run.checkpoint.lastFailure?.rejectedStrategies || []).map((item) => `${item.strategyId}(${item.reason})`).join(", ") || "none"}</div>
+              <div className="proof-status-detail">Prior similar outcomes: {(run.checkpoint.lastFailure?.priorSimilarOutcomes || []).map((item) => `${item.strategyId}:${item.outcome}`).join(", ") || "none"}</div>
+              <div className="proof-status-detail">Signature attempts: {run.checkpoint.lastFailure ? run.checkpoint.repairAttemptsBySignature?.[run.checkpoint.lastFailure.failureSignature] || run.checkpoint.lastFailure.attemptsBySignature : 0}</div>
+              <div className="proof-status-detail">Human decision required: {run.checkpoint.lastFailure?.escalationRequired ? "yes" : "no"}</div>
               <div className="proof-status-detail">Resume command: {run.checkpoint.resumeCommand}</div>
             </div>
             <div className="proof-status-card">
               <div className="proof-status-title">Final release assembly</div>
               <div className="proof-status-detail">Assembled: {run.finalReleaseAssembled ? "yes" : "not yet"}</div>
               <div className="proof-status-detail">Next action: {run.checkpoint.nextAction}</div>
+              <div className="proof-status-detail">Recommended repair: {run.checkpoint.lastFailure?.recommendedRepair || "none"}</div>
+              <div className="proof-status-detail">Validation after repair: {run.checkpoint.lastFailure?.expectedValidationCommand || run.checkpoint.lastFailure?.validationCommandAfterRepair || "n/a"}</div>
+              <div className="proof-status-detail">Rollback plan: {run.checkpoint.lastFailure?.rollbackPlan || "Revert touched files"}</div>
               <div className="proof-status-detail">Artifacts tracked: {run.checkpoint.artifactPaths.length}</div>
             </div>
           </div>

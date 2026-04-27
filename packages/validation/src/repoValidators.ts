@@ -22,6 +22,8 @@ import { validateInstallerRuntimeReadiness } from "./repoValidators/installerRun
 import { validateLargeFileIntakeReadiness } from "./repoValidators/largeFileIntakeReadiness";
 import { validateMultiSourceIntakeReadiness } from "./repoValidators/multiSourceIntakeReadiness";
 import { validateChatBehaviorExecution } from "./repoValidators/chatBehaviorExecution";
+import { validateFailureClassificationReadiness } from "./repoValidators/failureClassificationReadiness";
+import { validateAdaptiveRepairStrategyReadiness } from "./repoValidators/adaptiveRepairStrategyReadiness";
 
 export type RepoValidatorResult = {
   name: string;
@@ -1149,10 +1151,14 @@ export function validateChatFirstOperatorRouting(root: string): RepoValidatorRes
     executor.includes("source_input -> intake_source -> source_manifest -> extracted_context -> build_contract_context -> planning -> execution") &&
     requiredNextActionInputs.every((field) => nextAction.includes(field)) &&
     executor.includes("Current state") &&
-    executor.includes("Next best action") &&
-    executor.includes("Why") &&
+    executor.includes("Failed milestone") &&
+    executor.includes("Failure category") &&
+    executor.includes("Evidence") &&
+    executor.includes("What I already tried") &&
+    executor.includes("Recommended next action") &&
     executor.includes("Risk") &&
     executor.includes("Command I will run") &&
+    executor.includes("Need your decision?") &&
     tests.includes("build Nexus from uploaded v11") &&
     tests.includes("generated_app_build") &&
     tests.includes("validate it") &&
@@ -1219,5 +1225,7 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateInstallerRuntimeReadiness(root),
     validateLargeFileIntakeReadiness(root),
     validateMultiSourceIntakeReadiness(root),
+    validateFailureClassificationReadiness(root),
+    validateAdaptiveRepairStrategyReadiness(root),
   ];
 }

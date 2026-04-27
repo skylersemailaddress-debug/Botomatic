@@ -23,6 +23,19 @@ export type SystemIntelligence = {
 function categoryFromText(text: string): BlockerCategory {
   const normalized = text.toLowerCase();
 
+  if (/(missing_human_decision|missing_secret_or_credential)/.test(normalized)) {
+    return "user-decision";
+  }
+  if (/build_contract_ambiguity/.test(normalized)) {
+    return "build-contract-gap";
+  }
+  if (/(generated_app_implementation_failure|validation_contract_failure|resource_limit_failure|external_provider_unavailable)/.test(normalized)) {
+    return "generated-app-failure";
+  }
+  if (/botomatic_builder_defect/.test(normalized)) {
+    return "builder-defect";
+  }
+
   if (/(approve|approval|required decision|choose|consent|legal|compliance|security decision)/.test(normalized)) {
     return "user-decision";
   }

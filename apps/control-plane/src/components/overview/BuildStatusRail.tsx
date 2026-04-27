@@ -69,6 +69,10 @@ export default function BuildStatusRail({ projectId }: BuildStatusRailProps) {
   }, [autonomous?.run?.humanBlockers, overview?.blockers, specStatus?.blockers]);
 
   const run = autonomous?.run;
+  const failure = run?.checkpoint?.lastFailure || null;
+  const signatureAttempts = failure ? run?.checkpoint?.repairAttemptsBySignature?.[failure.failureSignature] || failure.attemptsBySignature : 0;
+  const repairBudgetExhausted = Boolean(failure?.repairBudgetExhausted);
+  const needsHumanDecision = Boolean(failure?.escalationRequired || failure?.userQuestion);
   const latestArtifact = run?.checkpoint?.artifactPaths?.slice(-1)?.[0] || "None";
 
   async function executeAction(key: ActionRailCommandKey) {
@@ -154,6 +158,16 @@ export default function BuildStatusRail({ projectId }: BuildStatusRailProps) {
           <div className="rail-label">Current milestone</div>
           <div className="rail-value">{run?.checkpoint?.currentMilestone || "Not started"}</div>
           <div className="rail-muted">Completed: {run?.checkpoint?.completedMilestones?.length || 0}</div>
+          <div className="rail-muted">Failure category: {failure?.failureCategory || "none"}</div>
+          <div className="rail-muted">Recommended strategy: {failure?.recommendedStrategyId || failure?.recommendedStrategyName || "none"}</div>
+          <div className="rail-muted">Why this strategy: {failure?.whyThisStrategy || "n/a"}</div>
+          <div className="rail-muted">Rejected strategies: {(failure?.rejectedStrategies || []).map((item: any) => `${item.strategyId}(${item.reason})`).join(", ") || "none"}</div>
+          <div className="rail-muted">Prior similar outcomes: {(failure?.priorSimilarOutcomes || []).map((item: any) => `${item.strategyId}:${item.outcome}`).join(", ") || "none"}</div>
+          <div className="rail-muted">Repair attempts by signature: {signatureAttempts}</div>
+          <div className="rail-muted">Recommended next action: {failure?.repairBudgetExhausted?.exactNextAction || failure?.recommendedRepair || run?.checkpoint?.nextAction || "continue build"}</div>
+          <div className="rail-muted">Validation after repair: {failure?.expectedValidationCommand || failure?.validationCommandAfterRepair || "n/a"}</div>
+          <div className="rail-muted">Rollback plan: {failure?.rollbackPlan || "Revert touched files"}</div>
+          <div className="rail-muted">Human decision required: {needsHumanDecision ? "yes" : "no"}</div>
           {actionTriplet("failure")}
         </div>
         <div className="rail-card">
@@ -184,8 +198,17 @@ export default function BuildStatusRail({ projectId }: BuildStatusRailProps) {
       <div className="rail-section">
         <div className="rail-title">Shortcut controls (optional)</div>
         <div className="rail-controls">
-          <button disabled={Boolean(busy)} onClick={() => void executeAction("continue_build")}>{busy === "continue_build" ? "Working..." : "Continue build"}</button>
-          <button disabled={Boolean(busy)} onClick={() => void executeAction("inspect_failure")}>{busy === "inspect_failure" ? "Working..." : "Inspect failure"}</button>
+          {repairBudgetExhausted ? (
+            <>
+              <button disabled={Boolean(busy)} onClick={() => void executeAction("inspect_failure")}>{busy === "inspect_failure" ? "Working..." : "Inspect failure"}</button>
+              <button disabled={Boolean(busy)} onClick={() => void executeAction("continue_build")}>{busy === "continue_build" ? "Working..." : "Continue build"}</button>
+            </>
+          ) : (
+            <>
+              <button disabled={Boolean(busy)} onClick={() => void executeAction("continue_build")}>{busy === "continue_build" ? "Working..." : "Continue build"}</button>
+              <button disabled={Boolean(busy)} onClick={() => void executeAction("inspect_failure")}>{busy === "inspect_failure" ? "Working..." : "Inspect failure"}</button>
+            </>
+          )}
           <button disabled={Boolean(busy)} onClick={() => void executeAction("resolve_blocker")}>{busy === "resolve_blocker" ? "Working..." : "Resolve blocker"}</button>
           <button disabled={Boolean(busy)} onClick={() => void executeAction("validate")}>{busy === "validate" ? "Working..." : "Validate"}</button>
           <button disabled={Boolean(busy)} onClick={() => void executeAction("configure_keys")}>{busy === "configure_keys" ? "Working..." : "Configure keys"}</button>

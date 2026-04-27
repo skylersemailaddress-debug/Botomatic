@@ -61,14 +61,34 @@ function processMilestones(
       milestoneId: milestone.id,
       failureCode: "runtime_failure",
       failureDetail: `Milestone ${milestone.id} execution attempt`,
+      failingCommand: `build milestone ${milestone.id}`,
+      affectedFiles: milestone.artifacts,
+      affectedSubsystem: "generated-app-build-loop",
+      validatorOrProofName: milestone.validators[0],
       repairBudget,
+      selfUpgradeApproved: false,
     });
+
+    const nextRepairAttemptsBySignature = {
+      ...next.checkpoint.repairAttemptsBySignature,
+      [repair.failureInspection.failureSignature]: repair.failureInspection.attemptsBySignature,
+    };
+    const milestoneCategoryKey = `${milestone.id}:${repair.failureInspection.failureCategory}`;
+    const nextRepairAttemptsByMilestoneCategory = {
+      ...next.checkpoint.repairAttemptsByMilestoneCategory,
+      [milestoneCategoryKey]: repair.failureInspection.attemptsByMilestoneCategory,
+    };
+    const nextRepairHistory = [...next.checkpoint.repairHistory, repair.repairHistoryEntry];
 
     if (!repair.repaired) {
       next = updateCheckpoint(next, {
         currentMilestone: milestone.id,
         failedMilestone: milestone.id,
         repairAttempts: next.checkpoint.repairAttempts + 1,
+        repairAttemptsBySignature: nextRepairAttemptsBySignature,
+        repairAttemptsByMilestoneCategory: nextRepairAttemptsByMilestoneCategory,
+        repairHistory: nextRepairHistory,
+        lastFailure: repair.failureInspection,
         nextAction: `Repair failed for ${milestone.id}; ${repair.strategy}`,
         log: repair.log,
       });
@@ -81,6 +101,10 @@ function processMilestones(
       completedMilestones: [...next.checkpoint.completedMilestones, milestone.id],
       failedMilestone: null,
       repairAttempts: next.checkpoint.repairAttempts + 1,
+      repairAttemptsBySignature: nextRepairAttemptsBySignature,
+      repairAttemptsByMilestoneCategory: nextRepairAttemptsByMilestoneCategory,
+      repairHistory: nextRepairHistory,
+      lastFailure: repair.failureInspection,
       artifactPaths: Array.from(new Set([...next.checkpoint.artifactPaths, ...milestone.artifacts])),
       nextAction: `Proceed to next milestone after ${milestone.id}`,
       log: `Milestone ${milestone.id} completed with autonomous policy (${repair.strategy}).`,

@@ -37,6 +37,46 @@ export type RuntimeContext = {
   launchGateStatus: string;
   missingSecretsCount: number;
   proofStatus: "passed" | "failed" | "not_started";
+  failureInspection?: {
+    runId: string;
+    milestoneId: string;
+    failureCategory: string;
+    confidence: number;
+    evidence: string[];
+    lastError: string;
+    failingCommand: string;
+    affectedFiles: string[];
+    affectedSubsystem: string;
+    safeRepairAvailable: boolean;
+    recommendedRepair: string;
+    escalationRequired: boolean;
+    userQuestion?: string;
+    resumeCommand: string;
+    validationCommandAfterRepair: string;
+    failureSignature: string;
+    attemptsBySignature: number;
+    attemptsByMilestoneCategory: number;
+    attemptedRepairs: string[];
+    recommendedStrategyId?: string;
+    recommendedStrategyName?: string;
+    whyThisStrategy?: string;
+    rejectedStrategies: Array<{ strategyId: string; reason: string }>;
+    priorSimilarOutcomes: Array<{
+      strategyId: string;
+      outcome: "success" | "failed" | "skipped" | "escalated";
+      timestamp: string;
+      notes: string;
+    }>;
+    approvalRequired: boolean;
+    expectedValidationCommand: string;
+    rollbackPlan: string;
+    repairBudgetExhausted?: {
+      whatFailed: string;
+      attemptedRepairs: string[];
+      whyRepairsFailed: string;
+      exactNextAction: string;
+    };
+  } | null;
 };
 
 export type CommandExecutionResult = {
@@ -49,19 +89,45 @@ export type CommandExecutionResult = {
 
 export function formatPartnerMessage(input: {
   currentState: string;
+  failedMilestone: string;
+  failureCategory: string;
+  evidence: string;
+  failureSignature: string;
+  recommendedStrategy: string;
+  whyThisStrategy: string;
+  rejectedStrategies: string;
+  priorSimilarOutcomes: string;
+  whatAlreadyTried: string;
   nextBestAction: string;
-  why: string;
   risk: string;
+  validationAfterRepair: string;
+  rollback: string;
   command: string;
+  needDecision: boolean;
+  userQuestion?: string;
   details?: string;
 }): string {
   const lines = [
     `Current state:\n${input.currentState}`,
-    `Next best action:\n${input.nextBestAction}`,
-    `Why:\n${input.why}`,
+    `Failed milestone:\n${input.failedMilestone}`,
+    `Failure category:\n${input.failureCategory}`,
+    `Evidence:\n${input.evidence}`,
+    `Failure signature:\n${input.failureSignature}`,
+    `Recommended strategy:\n${input.recommendedStrategy}`,
+    `Why this strategy:\n${input.whyThisStrategy}`,
+    `Rejected strategies:\n${input.rejectedStrategies}`,
+    `Prior similar outcomes:\n${input.priorSimilarOutcomes}`,
+    `What I already tried:\n${input.whatAlreadyTried}`,
+    `Recommended next action:\n${input.nextBestAction}`,
     `Risk:\n${input.risk}`,
+    `Validation after repair:\n${input.validationAfterRepair}`,
+    `Rollback:\n${input.rollback}`,
     `Command I will run:\n${input.command}`,
+    `Need your decision?\n${input.needDecision ? "Yes" : "No"}.`,
   ];
+  if (input.userQuestion) {
+    lines.push(`Decision needed:\n${input.userQuestion}`);
+  }
   if (input.details) {
     lines.push(`Result:\n${input.details}`);
   }
@@ -114,24 +180,8 @@ export async function fetchRuntimeContext(projectId: string): Promise<RuntimeCon
     launchGateStatus: gate.launchStatus || "blocked",
     missingSecretsCount,
     proofStatus: proof.benchmark?.launchablePass ? "passed" : proof.lastProofRun ? "failed" : "not_started",
+    failureInspection: run?.checkpoint?.lastFailure || null,
   };
-}
-
-function classifyFailureType(context: RuntimeContext): string {
-  const blockerText = context.blockers.join(" ").toLowerCase();
-  if (/repair_budget_exhausted/.test(blockerText) || context.repairAttempts >= 6) {
-    return "generated Nexus app implementation failure";
-  }
-  if (/spec|contract|clarification|assumption/.test(blockerText)) {
-    return "build contract ambiguity";
-  }
-  if (/internal|orchestrator|builder/.test(blockerText)) {
-    return "Botomatic builder defect";
-  }
-  if (/approve|decision|compliance|legal/.test(blockerText)) {
-    return "missing human decision";
-  }
-  return "generated Nexus app implementation failure";
 }
 
 function resolveRoute(intent: CommandIntent): "intake" | "planning" | "execution" | "validation" {
@@ -294,7 +344,7 @@ export async function executeCanonicalCommand(params: {
   }
 
   if (runtimeContext.repairAttempts >= 6 || /repair_budget_exhausted/.test(runtimeContext.blockers.join(" ").toLowerCase())) {
-    const failureType = classifyFailureType(runtimeContext);
+    const failure = runtimeContext.failureInspection;
     const operator = await sendOperatorMessage(projectId, "inspect failed milestone and recommend repair");
     return {
       intent: "blocker_resolution",
@@ -302,10 +352,19 @@ export async function executeCanonicalCommand(params: {
       route: "execution",
       details: [
         `repair_budget_exhausted detected.`,
-        `Failure classification: ${failureType}.`,
-        `Failing milestone: ${runtimeContext.failedMilestone || "unknown"}.`,
+        `Failure classification: ${failure?.failureCategory || "generated_app_implementation_failure"}.`,
+        `Failure signature: ${failure?.failureSignature || "unknown"}.`,
+        `Recommended strategy: ${failure?.recommendedStrategyId || failure?.recommendedStrategyName || "inspect_failure"}.`,
+        `Why this strategy: ${failure?.whyThisStrategy || "adaptive selector chose safest applicable strategy"}.`,
+        `Rejected strategies: ${(failure?.rejectedStrategies || []).map((item) => `${item.strategyId}(${item.reason})`).join(", ") || "none"}.`,
+        `Failing milestone: ${failure?.milestoneId || runtimeContext.failedMilestone || "unknown"}.`,
         `Repair attempts: ${runtimeContext.repairAttempts}.`,
-        `Smallest safe repair: inspect milestone logs before continuing.`,
+        `Smallest safe repair: ${failure?.recommendedRepair || "inspect milestone logs before continuing"}.`,
+        `Validation after repair: ${failure?.expectedValidationCommand || failure?.validationCommandAfterRepair || "validate:all"}.`,
+        `Rollback: ${failure?.rollbackPlan || "Revert files touched in this repair attempt."}.`,
+        failure?.repairBudgetExhausted
+          ? `why failed: ${failure.repairBudgetExhausted.whyRepairsFailed}`
+          : "why failed: repeated retries without successful targeted remediation",
         operator.operatorMessage,
       ].join("\n"),
     };
@@ -336,16 +395,53 @@ export function buildPartnerEnvelope(context: RuntimeContext, command: string, d
     launchGateStatus: context.launchGateStatus,
     missingSecretsCount: context.missingSecretsCount,
     proofStatus: context.proofStatus,
+    failureCategory: context.failureInspection?.failureCategory,
+    failureSignature: context.failureInspection?.failureSignature,
+    attemptsBySignature: context.failureInspection?.attemptsBySignature,
+    escalationRequired: context.failureInspection?.escalationRequired,
+    approvalRequired: context.failureInspection?.approvalRequired,
+    repairBudgetExhausted: Boolean(context.failureInspection?.repairBudgetExhausted),
   });
 
   const risk = next.userApprovalRequired ? "Medium. A human approval is still required before high-impact actions." : "Low. Safe-default automation can proceed.";
 
+  const failure = context.failureInspection;
+  const failedMilestone = failure?.milestoneId || context.failedMilestone || context.currentMilestone || "none";
+  const failureCategory = failure?.failureCategory || "none";
+  const evidence = failure
+    ? [...failure.evidence, failure.lastError ? `lastError=${failure.lastError}` : ""].filter(Boolean).join(" | ")
+    : context.blockers.join(" | ") || "No active failure evidence.";
+  const whatAlreadyTried = failure?.attemptedRepairs?.length
+    ? `${failure.attemptedRepairs.join("; ")} (signature=${failure.failureSignature}, attempts=${failure.attemptsBySignature})`
+    : `repairAttempts=${context.repairAttempts}`;
+  const needDecision = next.userApprovalRequired || Boolean(failure?.escalationRequired);
+  const nextAction = failure?.repairBudgetExhausted?.exactNextAction || next.nextBestAction;
+  const recommendedStrategy = failure?.recommendedStrategyId || failure?.recommendedStrategyName || "inspect_failure";
+  const rejectedStrategies = (failure?.rejectedStrategies || [])
+    .map((item) => `${item.strategyId} - ${item.reason}`)
+    .join("; ") || "none";
+  const priorSimilarOutcomes = (failure?.priorSimilarOutcomes || [])
+    .map((item) => `${item.strategyId}:${item.outcome}`)
+    .join("; ") || "none";
+
   return formatPartnerMessage({
     currentState: next.currentState,
-    nextBestAction: next.nextBestAction,
-    why: `${next.why} Safe default: ${next.safeDefault}`,
+    failedMilestone,
+    failureCategory,
+    evidence,
+    failureSignature: failure?.failureSignature || "none",
+    recommendedStrategy,
+    whyThisStrategy: failure?.whyThisStrategy || "Lowest-risk applicable strategy selected by adaptive policy.",
+    rejectedStrategies,
+    priorSimilarOutcomes,
+    whatAlreadyTried,
+    nextBestAction: `${nextAction}. Safe default: ${next.safeDefault}`,
     risk,
+    validationAfterRepair: failure?.expectedValidationCommand || failure?.validationCommandAfterRepair || "validate:all",
+    rollback: failure?.rollbackPlan || "Revert files touched in this repair attempt.",
     command,
+    needDecision,
+    userQuestion: failure?.userQuestion,
     details,
   });
 }

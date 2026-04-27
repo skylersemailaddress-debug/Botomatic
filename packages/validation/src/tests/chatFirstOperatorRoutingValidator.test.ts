@@ -147,10 +147,14 @@ function createFixture(options: FixtureOptions = {}): string {
       "runPipelineFromIntakeContext",
       "source_input -> intake_source -> source_manifest -> extracted_context -> build_contract_context -> planning -> execution",
       "Current state",
-      "Next best action",
-      "Why",
+      "Failed milestone",
+      "Failure category",
+      "Evidence",
+      "What I already tried",
+      "Recommended next action",
       "Risk",
       "Command I will run",
+      "Need your decision?",
     ].join("\n")
   );
 

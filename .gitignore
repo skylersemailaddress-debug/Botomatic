@@ -20,3 +20,4 @@ apps/control-plane/.next/
 # Generated app transient build caches
 release-evidence/generated-apps/**/.next/
 *.old
+release-evidence/runtime/repair_strategy_memory.json

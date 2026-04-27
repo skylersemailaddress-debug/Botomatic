@@ -1,0 +1,405 @@
+{
+  "status": "passed",
+  "generatedAt": "2026-04-27T05:06:37.009Z",
+  "strategiesRegistered": [
+    {
+      "strategyId": "add_missing_file",
+      "riskLevel": "low",
+      "allowedTargets": [
+        "generated_output",
+        "launch_capsule"
+      ],
+      "requiresApproval": false
+    },
+    {
+      "strategyId": "fix_import_or_export",
+      "riskLevel": "low",
+      "allowedTargets": [
+        "generated_output"
+      ],
+      "requiresApproval": false
+    },
+    {
+      "strategyId": "repair_schema_mismatch",
+      "riskLevel": "medium",
+      "allowedTargets": [
+        "generated_output"
+      ],
+      "requiresApproval": false
+    },
+    {
+      "strategyId": "complete_launch_capsule",
+      "riskLevel": "low",
+      "allowedTargets": [
+        "launch_capsule"
+      ],
+      "requiresApproval": false
+    },
+    {
+      "strategyId": "replace_placeholder_output",
+      "riskLevel": "medium",
+      "allowedTargets": [
+        "generated_output",
+        "launch_capsule"
+      ],
+      "requiresApproval": false
+    },
+    {
+      "strategyId": "apply_safe_default_assumption",
+      "riskLevel": "medium",
+      "allowedTargets": [
+        "build_contract"
+      ],
+      "requiresApproval": false
+    },
+    {
+      "strategyId": "split_large_input",
+      "riskLevel": "low",
+      "allowedTargets": [
+        "build_contract"
+      ],
+      "requiresApproval": false
+    },
+    {
+      "strategyId": "reduce_concurrency_and_resume",
+      "riskLevel": "low",
+      "allowedTargets": [
+        "build_contract"
+      ],
+      "requiresApproval": false
+    },
+    {
+      "strategyId": "clean_port_and_restart",
+      "riskLevel": "low",
+      "allowedTargets": [
+        "build_contract"
+      ],
+      "requiresApproval": false
+    },
+    {
+      "strategyId": "route_to_vault_setup",
+      "riskLevel": "low",
+      "allowedTargets": [
+        "build_contract"
+      ],
+      "requiresApproval": false
+    },
+    {
+      "strategyId": "stop_for_builder_defect",
+      "riskLevel": "high",
+      "allowedTargets": [
+        "botomatic_source"
+      ],
+      "requiresApproval": true
+    }
+  ],
+  "selectionRules": [
+    "Never select high-risk strategy without approval",
+    "Never select botomatic_source target without explicit self-upgrade approval",
+    "Prefer previously successful strategies for same category+subsystem",
+    "Avoid strategies that failed for same failureSignature",
+    "Avoid repeating same strategy for same failureSignature",
+    "Prefer lowest-risk applicable strategy",
+    "Escalate with exact question when no safe strategy exists",
+    "Missing secret routes to Vault setup and never requests plaintext in chat",
+    "Provider unavailable prefers alternate intake/source path before provider calls"
+  ],
+  "sampleSimulatedFailures": [
+    {
+      "name": "missing_launch_capsule_file",
+      "selected": "complete_launch_capsule",
+      "rejected": [
+        {
+          "strategyId": "fix_import_or_export",
+          "reason": "not_applicable"
+        },
+        {
+          "strategyId": "repair_schema_mismatch",
+          "reason": "not_applicable"
+        },
+        {
+          "strategyId": "replace_placeholder_output",
+          "reason": "not_applicable"
+        },
+        {
+          "strategyId": "apply_safe_default_assumption",
+          "reason": "not_applicable"
+        },
+        {
+          "strategyId": "split_large_input",
+          "reason": "not_applicable"
+        },
+        {
+          "strategyId": "reduce_concurrency_and_resume",
+          "reason": "not_applicable"
+        },
+        {
+          "strategyId": "clean_port_and_restart",
+          "reason": "not_applicable"
+        },
+        {
+          "strategyId": "route_to_vault_setup",
+          "reason": "not_applicable"
+        },
+        {
+          "strategyId": "stop_for_builder_defect",
+          "reason": "not_applicable"
+        }
+      ]
+    },
+    {
+      "name": "typescript_missing_import",
+      "selected": "fix_import_or_export",
+      "rejected": [
+        {
+          "strategyId": "repair_schema_mismatch",
+          "reason": "not_applicable"
+        },
+        {
+          "strategyId": "complete_launch_capsule",
+          "reason": "not_applicable"
+        },
+        {
+          "strategyId": "replace_placeholder_output",
+          "reason": "not_applicable"
+        },
+        {
+          "strategyId": "apply_safe_default_assumption",
+          "reason": "not_applicable"
+        },
+        {
+          "strategyId": "split_large_input",
+          "reason": "not_applicable"
+        },
+        {
+          "strategyId": "reduce_concurrency_and_resume",
+          "reason": "not_applicable"
+        },
+        {
+          "strategyId": "clean_port_and_restart",
+          "reason": "not_applicable"
+        },
+        {
+          "strategyId": "route_to_vault_setup",
+          "reason": "not_applicable"
+        },
+        {
+          "strategyId": "stop_for_builder_defect",
+          "reason": "not_applicable"
+        }
+      ]
+    },
+    {
+      "name": "missing_secret",
+      "selected": "route_to_vault_setup",
+      "rejected": [
+        {
+          "strategyId": "add_missing_file",
+          "reason": "not_applicable"
+        },
+        {
+          "strategyId": "fix_import_or_export",
+          "reason": "not_applicable"
+        },
+        {
+          "strategyId": "repair_schema_mismatch",
+          "reason": "not_applicable"
+        },
+        {
+          "strategyId": "complete_launch_capsule",
+          "reason": "not_applicable"
+        },
+        {
+          "strategyId": "replace_placeholder_output",
+          "reason": "not_applicable"
+        },
+        {
+          "strategyId": "apply_safe_default_assumption",
+          "reason": "not_applicable"
+        },
+        {
+          "strategyId": "split_large_input",
+          "reason": "not_applicable"
+        },
+        {
+          "strategyId": "reduce_concurrency_and_resume",
+          "reason": "not_applicable"
+        },
+        {
+          "strategyId": "clean_port_and_restart",
+          "reason": "not_applicable"
+        },
+        {
+          "strategyId": "stop_for_builder_defect",
+          "reason": "not_applicable"
+        }
+      ]
+    },
+    {
+      "name": "builder_defect",
+      "selected": null,
+      "approvalRequired": true
+    },
+    {
+      "name": "same_signature_strategy_suppression",
+      "selected": null,
+      "rejected": [
+        {
+          "strategyId": "add_missing_file",
+          "reason": "not_applicable"
+        },
+        {
+          "strategyId": "fix_import_or_export",
+          "reason": "already_attempted_for_same_signature"
+        },
+        {
+          "strategyId": "repair_schema_mismatch",
+          "reason": "not_applicable"
+        },
+        {
+          "strategyId": "complete_launch_capsule",
+          "reason": "not_applicable"
+        },
+        {
+          "strategyId": "replace_placeholder_output",
+          "reason": "not_applicable"
+        },
+        {
+          "strategyId": "apply_safe_default_assumption",
+          "reason": "not_applicable"
+        },
+        {
+          "strategyId": "split_large_input",
+          "reason": "not_applicable"
+        },
+        {
+          "strategyId": "reduce_concurrency_and_resume",
+          "reason": "not_applicable"
+        },
+        {
+          "strategyId": "clean_port_and_restart",
+          "reason": "not_applicable"
+        },
+        {
+          "strategyId": "route_to_vault_setup",
+          "reason": "not_applicable"
+        },
+        {
+          "strategyId": "stop_for_builder_defect",
+          "reason": "not_applicable"
+        }
+      ]
+    }
+  ],
+  "selectedStrategies": {
+    "missingLaunchCapsule": "complete_launch_capsule",
+    "missingImport": "fix_import_or_export",
+    "missingSecret": "route_to_vault_setup",
+    "builderDefect": null
+  },
+  "rejectedStrategies": {
+    "repeatedSignature": [
+      {
+        "strategyId": "add_missing_file",
+        "reason": "not_applicable"
+      },
+      {
+        "strategyId": "fix_import_or_export",
+        "reason": "already_attempted_for_same_signature"
+      },
+      {
+        "strategyId": "repair_schema_mismatch",
+        "reason": "not_applicable"
+      },
+      {
+        "strategyId": "complete_launch_capsule",
+        "reason": "not_applicable"
+      },
+      {
+        "strategyId": "replace_placeholder_output",
+        "reason": "not_applicable"
+      },
+      {
+        "strategyId": "apply_safe_default_assumption",
+        "reason": "not_applicable"
+      },
+      {
+        "strategyId": "split_large_input",
+        "reason": "not_applicable"
+      },
+      {
+        "strategyId": "reduce_concurrency_and_resume",
+        "reason": "not_applicable"
+      },
+      {
+        "strategyId": "clean_port_and_restart",
+        "reason": "not_applicable"
+      },
+      {
+        "strategyId": "route_to_vault_setup",
+        "reason": "not_applicable"
+      },
+      {
+        "strategyId": "stop_for_builder_defect",
+        "reason": "not_applicable"
+      }
+    ],
+    "builderDefect": [
+      {
+        "strategyId": "add_missing_file",
+        "reason": "not_applicable"
+      },
+      {
+        "strategyId": "fix_import_or_export",
+        "reason": "not_applicable"
+      },
+      {
+        "strategyId": "repair_schema_mismatch",
+        "reason": "not_applicable"
+      },
+      {
+        "strategyId": "complete_launch_capsule",
+        "reason": "not_applicable"
+      },
+      {
+        "strategyId": "replace_placeholder_output",
+        "reason": "not_applicable"
+      },
+      {
+        "strategyId": "apply_safe_default_assumption",
+        "reason": "not_applicable"
+      },
+      {
+        "strategyId": "split_large_input",
+        "reason": "not_applicable"
+      },
+      {
+        "strategyId": "reduce_concurrency_and_resume",
+        "reason": "not_applicable"
+      },
+      {
+        "strategyId": "clean_port_and_restart",
+        "reason": "not_applicable"
+      },
+      {
+        "strategyId": "route_to_vault_setup",
+        "reason": "not_applicable"
+      },
+      {
+        "strategyId": "stop_for_builder_defect",
+        "reason": "high_risk_requires_approval"
+      }
+    ]
+  },
+  "memoryBehavior": {
+    "boostsSuccessfulStrategies": true,
+    "suppressesFailedSameSignatureStrategies": true,
+    "detectsFlappingRepairs": true
+  },
+  "noHighRiskAutoRepairProof": true,
+  "noBotomaticSourceAutoRepairProof": true,
+  "missingSecretRoutesToVaultProof": true,
+  "repeatedSameSignatureStrategySuppressionProof": true,
+  "caveat": "Adaptive strategy selection improves repair choice quality but cannot override validators, launch gates, approval gates, secret policy, or live deployment blocks.",
+  "noLiveDeploymentClaim": true
+}

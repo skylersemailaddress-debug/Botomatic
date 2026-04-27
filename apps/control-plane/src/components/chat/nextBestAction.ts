@@ -15,6 +15,12 @@ export type NextActionInput = {
   launchGateStatus: string;
   missingSecretsCount: number;
   proofStatus: "passed" | "failed" | "not_started";
+  failureCategory?: string;
+  failureSignature?: string;
+  attemptsBySignature?: number;
+  escalationRequired?: boolean;
+  approvalRequired?: boolean;
+  repairBudgetExhausted?: boolean;
 };
 
 export type NextBestActionOutput = SystemIntelligence & {
@@ -29,6 +35,9 @@ export function buildNextBestAction(input: NextActionInput): NextBestActionOutpu
 
   if ((input.repairAttempts || 0) >= 6 && input.failedMilestone) {
     blockers.unshift(`repair_budget_exhausted on milestone ${input.failedMilestone}`);
+  }
+  if (input.failureCategory) {
+    blockers.unshift(`failure_category=${input.failureCategory}`);
   }
 
   const base = buildSystemIntelligence({
@@ -57,6 +66,23 @@ export function buildNextBestAction(input: NextActionInput): NextBestActionOutpu
     base.nextBestAction = `inspect failed milestone ${input.failedMilestone}`;
     base.why = "Repair budget is exhausted. Continuing blindly is likely to repeat the failure loop.";
     base.suggestedCommand = `inspect failed milestone ${input.failedMilestone}`;
+  }
+
+  if (input.repairBudgetExhausted && input.failedMilestone) {
+    base.nextBestAction = `inspect failed milestone ${input.failedMilestone}`;
+    base.why = "Signature-level repair budget is exhausted; inspect before attempting another repair.";
+    base.suggestedCommand = `inspect failed milestone ${input.failedMilestone}`;
+  }
+
+  if (input.failureCategory === "missing_human_decision" || input.failureCategory === "missing_secret_or_credential" || input.escalationRequired || input.approvalRequired) {
+    base.nextBestAction = `resolve blocker for ${input.failedMilestone || input.currentMilestone || "current milestone"}`;
+    base.why = "This failure category requires a human decision before safe continuation.";
+    base.suggestedCommand = "resolve blocker";
+    userApprovalRequired = true;
+  }
+
+  if (input.attemptsBySignature && input.failureSignature) {
+    base.safeDefault = `${base.safeDefault} Failure signature ${input.failureSignature} has ${input.attemptsBySignature} attempt(s).`;
   }
 
   return {

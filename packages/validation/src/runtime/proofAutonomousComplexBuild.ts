@@ -8,6 +8,9 @@ import {
   runAutonomousRepairLoop,
   evaluateHumanEscalation,
   assembleFinalReleaseBundle,
+  createFailureSignature,
+  normalizeErrorMessage,
+  evaluateRepairPolicy,
 } from "../../../autonomous-build/src";
 
 const ROOT = process.cwd();
@@ -55,6 +58,28 @@ function main() {
     detail: "missing required credential references",
   });
 
+  const normalizedError = normalizeErrorMessage("TypeScript build failed: cannot find module src/workflows/router.ts");
+  const failureSignature = createFailureSignature({
+    milestoneId: "core_workflows",
+    failingCommand: "npm run build",
+    normalizedError,
+    affectedFiles: ["release-evidence/generated-apps/proj_reference/src/workflows/router.ts"],
+    validatorOrProofName: "no-placeholder",
+  });
+  const failurePolicy = evaluateRepairPolicy({
+    failure: {
+      milestoneId: "core_workflows",
+      failureCode: "build_failed",
+      failureDetail: "TypeScript build error in generated output",
+      failingCommand: "npm run build",
+      affectedFiles: ["release-evidence/generated-apps/proj_reference/src/workflows/router.ts"],
+      affectedSubsystem: "generated-app-build-loop",
+      validatorOrProofName: "no-placeholder",
+    },
+    attemptedRepairs: [],
+    affectedFiles: ["release-evidence/generated-apps/proj_reference/src/workflows/router.ts"],
+  });
+
   const finalBundle = assembleFinalReleaseBundle({
     ...resumed,
     status: "completed",
@@ -74,6 +99,13 @@ function main() {
     secretsBlockLiveExecution: true,
     lowRiskAutonomyEnabled: true,
     highRiskEscalationEnabled: true,
+    failureClassificationPolicyReady: true,
+    failureClassificationSample: {
+      category: failurePolicy.category,
+      confidence: failurePolicy.confidence,
+      safeRepairAvailable: failurePolicy.safeRepairAvailable,
+      failureSignature,
+    },
     representativeLargeSpecCase: {
       sourceType: "multi_file_spec",
       milestoneCount: milestoneGraph.length,

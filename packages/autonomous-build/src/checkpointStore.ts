@@ -1,4 +1,5 @@
 import type { MilestoneDefinition } from "./milestonePlanner";
+import type { FailureInspection, RepairAttemptHistory } from "./failurePolicy";
 
 export type RunStatus = "idle" | "running" | "paused_human_blocker" | "failed" | "completed";
 
@@ -8,6 +9,10 @@ export type RunCheckpoint = {
   completedMilestones: string[];
   failedMilestone: string | null;
   repairAttempts: number;
+  repairAttemptsBySignature: Record<string, number>;
+  repairAttemptsByMilestoneCategory: Record<string, number>;
+  repairHistory: RepairAttemptHistory[];
+  lastFailure: FailureInspection | null;
   artifactPaths: string[];
   logs: string[];
   resumeCommand: string;
@@ -32,6 +37,10 @@ export function createInitialCheckpoint(runId: string, firstMilestone: string): 
     completedMilestones: [],
     failedMilestone: null,
     repairAttempts: 0,
+    repairAttemptsBySignature: {},
+    repairAttemptsByMilestoneCategory: {},
+    repairHistory: [],
+    lastFailure: null,
     artifactPaths: [],
     logs: ["Run initialized."],
     resumeCommand: `npm run -s autonomous-build:resume -- ${runId}`,

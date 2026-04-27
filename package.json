@@ -35,6 +35,7 @@
     "proof:live-deployment-execution-readiness": "tsx packages/validation/src/runtime/proofLiveDeploymentExecutionReadiness.ts",
     "proof:secrets-credential-management": "tsx packages/validation/src/runtime/proofSecretsCredentialManagement.ts",
     "proof:autonomous-complex-build": "tsx packages/validation/src/runtime/proofAutonomousComplexBuild.ts",
+    "proof:adaptive-repair-strategy": "tsx packages/validation/src/runtime/proofAdaptiveRepairStrategy.ts",
     "proof:large-file-intake": "tsx packages/validation/src/runtime/proofLargeFileIntake.ts",
     "proof:multi-source-intake": "tsx packages/validation/src/runtime/proofMultiSourceIntake.ts",
     "proof:fast": "tsx packages/validation/src/runtime/proofFast.ts",
@@ -51,7 +52,9 @@
     "test:chat-driven-control": "tsx packages/validation/src/tests/chatDrivenControl.test.ts",
     "test:chat-routing-validator": "tsx packages/validation/src/tests/chatFirstOperatorRoutingValidator.test.ts",
     "test:chat-behavior-execution-validator": "tsx packages/validation/src/tests/chatBehaviorExecutionValidator.test.ts",
-    "test:universal": "npm run -s test:spec-engine && npm run -s test:build-contract && npm run -s test:blueprints && npm run -s test:domain-builders && npm run -s test:proof-engine && npm run -s test:self-upgrade && npm run -s test:no-placeholder && npm run -s test:large-file-intake && npm run -s test:multi-source-intake && npm run -s test:chat-driven-control && npm run -s test:chat-routing-validator && npm run -s test:chat-behavior-execution-validator"
+    "test:failure-classification-policy": "tsx packages/validation/src/tests/failureClassificationPolicy.test.ts",
+    "test:adaptive-repair-strategy": "tsx packages/validation/src/tests/adaptiveRepairStrategy.test.ts",
+    "test:universal": "npm run -s test:spec-engine && npm run -s test:build-contract && npm run -s test:blueprints && npm run -s test:domain-builders && npm run -s test:proof-engine && npm run -s test:self-upgrade && npm run -s test:no-placeholder && npm run -s test:large-file-intake && npm run -s test:multi-source-intake && npm run -s test:chat-driven-control && npm run -s test:chat-routing-validator && npm run -s test:chat-behavior-execution-validator && npm run -s test:failure-classification-policy && npm run -s test:adaptive-repair-strategy"
   },
   "dependencies": {
     "@trigger.dev/sdk": "^4.4.4"
