@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-26T23:33:18.183Z",
+  "generatedAt": "2026-04-27T00:08:14.861Z",
   "proofGrade": "local_runtime",
   "pathId": "dirty_repo_rescue_completion",
   "inputUsed": {
@@ -15,13 +15,13 @@
     },
     {
       "method": "POST",
-      "path": "/api/projects/proj_1777246398147/repo/completion-contract",
+      "path": "/api/projects/proj_1777248494838/repo/completion-contract",
       "status": 200,
       "ok": true
     },
     {
       "method": "GET",
-      "path": "/api/projects/proj_1777246398147/repo/status",
+      "path": "/api/projects/proj_1777248494838/repo/status",
       "status": 200,
       "ok": true
     }
@@ -134,7 +134,7 @@
     {
       "step": "intake_existing_repo_project",
       "status": "passed",
-      "details": "status=200 projectId=proj_1777246398147"
+      "details": "status=200 projectId=proj_1777248494838"
     },
     {
       "step": "build_completion_contract",
@@ -179,8 +179,8 @@
         "validatorSummary": "validateExistingRepoReadiness:failed, incremental_repo_validation:passed",
         "outcome": "passed",
         "rollbackPlan": "Revert repo-intake/audit/repair/completion contract changes and rerun rescue proof.",
-        "id": "proof_1777246398183_8osm2c",
-        "timestamp": "2026-04-26T23:33:18.183Z"
+        "id": "proof_1777248494861_r13gpu",
+        "timestamp": "2026-04-27T00:08:14.861Z"
       },
       "claimVerification": {
         "ok": true,

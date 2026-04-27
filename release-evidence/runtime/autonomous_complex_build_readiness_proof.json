@@ -1,6 +1,6 @@
 {
   "status": "passed",
-  "generatedAt": "2026-04-26T23:35:12.665Z",
+  "generatedAt": "2026-04-27T00:09:59.470Z",
   "specIngestion": true,
   "milestoneGraphCreated": true,
   "autonomousExecutionPlanCreated": true,
@@ -19,7 +19,7 @@
     "runStatus": "failed",
     "humanBlockerCategories": [],
     "checkpoint": {
-      "runId": "autonomous_run_1777246512664",
+      "runId": "autonomous_run_1777248599469",
       "currentMilestone": "core_workflows",
       "completedMilestones": [
         "foundation_runtime",
@@ -44,20 +44,20 @@
         "Repair budget exhausted at attempt 4.",
         "Repair budget exhausted at attempt 5."
       ],
-      "resumeCommand": "npm run -s autonomous-build:resume -- autonomous_run_1777246512664",
+      "resumeCommand": "npm run -s autonomous-build:resume -- autonomous_run_1777248599469",
       "nextAction": "Repair failed for core_workflows; repair_budget_exhausted",
       "log": "Repair budget exhausted at attempt 5."
     },
     "finalReleaseBundle": {
-      "finalAppOutputPath": "release-evidence/generated-apps/autonomous_run_1777246512664/app",
-      "launchPackagePath": "release-evidence/generated-apps/autonomous_run_1777246512664/launch",
-      "secretRequirementsPath": "release-evidence/generated-apps/autonomous_run_1777246512664/launch/secret-requirements.json",
-      "deploymentReadinessPath": "release-evidence/generated-apps/autonomous_run_1777246512664/deploy/deployment_readiness.json",
-      "smokeTestsPath": "release-evidence/generated-apps/autonomous_run_1777246512664/launch/SMOKE_TESTS.md",
-      "rollbackPlanPath": "release-evidence/generated-apps/autonomous_run_1777246512664/launch/ROLLBACK.md",
+      "finalAppOutputPath": "release-evidence/generated-apps/autonomous_run_1777248599469/app",
+      "launchPackagePath": "release-evidence/generated-apps/autonomous_run_1777248599469/launch",
+      "secretRequirementsPath": "release-evidence/generated-apps/autonomous_run_1777248599469/launch/secret-requirements.json",
+      "deploymentReadinessPath": "release-evidence/generated-apps/autonomous_run_1777248599469/deploy/deployment_readiness.json",
+      "smokeTestsPath": "release-evidence/generated-apps/autonomous_run_1777248599469/launch/SMOKE_TESTS.md",
+      "rollbackPlanPath": "release-evidence/generated-apps/autonomous_run_1777248599469/launch/ROLLBACK.md",
       "proofArtifactsPath": "release-evidence/runtime",
-      "readmePath": "release-evidence/generated-apps/autonomous_run_1777246512664/README.md",
-      "runbookPath": "release-evidence/generated-apps/autonomous_run_1777246512664/RUNBOOK.md",
+      "readmePath": "release-evidence/generated-apps/autonomous_run_1777248599469/README.md",
+      "runbookPath": "release-evidence/generated-apps/autonomous_run_1777248599469/RUNBOOK.md",
       "finalReleaseEvidencePath": "release-evidence/runtime/final_commercial_release_evidence.json",
       "assembled": true
     }

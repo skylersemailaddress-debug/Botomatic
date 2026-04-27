@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-26T23:33:21.931Z",
+  "generatedAt": "2026-04-27T00:08:18.067Z",
   "proofGrade": "local_runtime",
   "pathId": "universal_capability_pipeline",
   "inputUsed": {
@@ -15,13 +15,13 @@
     },
     {
       "method": "POST",
-      "path": "/api/projects/proj_1777246401814/universal/capability-pipeline",
+      "path": "/api/projects/proj_1777248497959/universal/capability-pipeline",
       "status": 200,
       "ok": true
     },
     {
       "method": "GET",
-      "path": "/api/projects/proj_1777246401814/universal/capability-pipeline",
+      "path": "/api/projects/proj_1777248497959/universal/capability-pipeline",
       "status": 200,
       "ok": true
     }
@@ -37,8 +37,8 @@
   "contract": {
     "type": "build_contract",
     "payload": {
-      "id": "contract_proj_1777246401814_1777246401829",
-      "projectId": "proj_1777246401814",
+      "id": "contract_proj_1777248497959_1777248497977",
+      "projectId": "proj_1777248497959",
       "appSummary": "Proof Universal Capability: Deliver a production-grade application with validated workflows.",
       "targetUsers": [
         "admin",
@@ -114,7 +114,7 @@
       ],
       "assumptions": [
         {
-          "id": "assumption_1777246401829_knbm3g",
+          "id": "assumption_1777248497977_ejzbd7",
           "field": "notification provider",
           "decision": "Email is enabled by default",
           "reason": "Low-risk baseline for transactional workflows",
@@ -124,10 +124,10 @@
           "requiresApproval": false,
           "approved": true,
           "canChangeLater": true,
-          "createdAt": "2026-04-26T23:33:21.829Z"
+          "createdAt": "2026-04-27T00:08:17.977Z"
         },
         {
-          "id": "assumption_1777246401829_11st8l",
+          "id": "assumption_1777248497977_gnvgft",
           "field": "auth/security",
           "decision": "OIDC with role guards",
           "reason": "Enterprise-safe default",
@@ -137,7 +137,7 @@
           "requiresApproval": true,
           "approved": false,
           "canChangeLater": true,
-          "createdAt": "2026-04-26T23:33:21.829Z"
+          "createdAt": "2026-04-27T00:08:17.977Z"
         }
       ],
       "excludedItems": [
@@ -155,8 +155,8 @@
         "High-risk questions remain unresolved.",
         "High-risk assumptions require approval."
       ],
-      "createdAt": "2026-04-26T23:33:21.829Z",
-      "updatedAt": "2026-04-26T23:33:21.829Z"
+      "createdAt": "2026-04-27T00:08:17.977Z",
+      "updatedAt": "2026-04-27T00:08:17.977Z"
     }
   },
   "generatedPlanOrBuildGraph": {
@@ -1137,7 +1137,7 @@
     {
       "step": "intake_universal_pipeline_project",
       "status": "passed",
-      "details": "status=200 projectId=proj_1777246401814"
+      "details": "status=200 projectId=proj_1777248497959"
     },
     {
       "step": "run_universal_capability_pipeline",
@@ -1189,8 +1189,8 @@
         "validatorSummary": "universal_output_contract:passed, universal_output_depth:passed, domain_specific_runtime_depth:passed",
         "outcome": "passed",
         "rollbackPlan": "Revert universal capability pipeline changes and regenerate artifact contract with proof checks.",
-        "id": "proof_1777246401931_u46ib4",
-        "timestamp": "2026-04-26T23:33:21.931Z"
+        "id": "proof_1777248498067_yzojxt",
+        "timestamp": "2026-04-27T00:08:18.067Z"
       },
       "claimVerification": {
         "ok": true,

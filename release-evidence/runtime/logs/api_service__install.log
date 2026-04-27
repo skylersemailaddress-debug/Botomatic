@@ -1,8 +1,8 @@
 domain=api_service
 commandId=install
 kind=install
-startedAt=2026-04-26T23:34:09.560Z
-finishedAt=2026-04-26T23:34:10.118Z
+startedAt=2026-04-27T00:08:59.891Z
+finishedAt=2026-04-27T00:09:00.367Z
 status=passed
 exitCode=0
 --- stdout ---
