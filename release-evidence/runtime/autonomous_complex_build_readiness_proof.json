@@ -1,6 +1,6 @@
 {
   "status": "passed",
-  "generatedAt": "2026-04-27T02:25:37.591Z",
+  "generatedAt": "2026-04-27T22:32:22.479Z",
   "specIngestion": true,
   "milestoneGraphCreated": true,
   "autonomousExecutionPlanCreated": true,
@@ -12,52 +12,190 @@
   "secretsBlockLiveExecution": true,
   "lowRiskAutonomyEnabled": true,
   "highRiskEscalationEnabled": true,
+  "failureClassificationPolicyReady": true,
+  "failureClassificationSample": {
+    "category": "generated_app_implementation_failure",
+    "confidence": 0.78,
+    "safeRepairAvailable": true,
+    "failureSignature": "fb73e1250aacc394"
+  },
   "representativeLargeSpecCase": {
     "sourceType": "multi_file_spec",
     "milestoneCount": 11,
-    "completedMilestones": 3,
+    "completedMilestones": 0,
     "runStatus": "failed",
     "humanBlockerCategories": [],
     "checkpoint": {
-      "runId": "autonomous_run_1777256737590",
-      "currentMilestone": "core_workflows",
-      "completedMilestones": [
-        "foundation_runtime",
-        "auth_security",
-        "data_model"
+      "runId": "autonomous_run_1777329142465",
+      "currentMilestone": "foundation_runtime",
+      "completedMilestones": [],
+      "failedMilestone": "foundation_runtime",
+      "repairAttempts": 2,
+      "repairAttemptsBySignature": {
+        "7442bd38cfa2b9e6": 2
+      },
+      "repairAttemptsByMilestoneCategory": {
+        "foundation_runtime:generated_app_implementation_failure": 2
+      },
+      "repairHistory": [
+        {
+          "milestoneId": "foundation_runtime",
+          "failureCategory": "generated_app_implementation_failure",
+          "failureSignature": "7442bd38cfa2b9e6",
+          "repairAction": "Apply targeted generated-output patch and rerun milestone validators",
+          "outcome": "failed",
+          "reason": "Selected strategy requires explicit approval before execution.",
+          "attemptedAt": "2026-04-27T22:32:22.475Z"
+        },
+        {
+          "milestoneId": "foundation_runtime",
+          "failureCategory": "generated_app_implementation_failure",
+          "failureSignature": "7442bd38cfa2b9e6",
+          "repairAction": "Apply targeted generated-output patch and rerun milestone validators",
+          "outcome": "failed",
+          "reason": "Identical failure signature repeated and same repair was already attempted.",
+          "attemptedAt": "2026-04-27T22:32:22.477Z"
+        }
       ],
-      "failedMilestone": "core_workflows",
-      "repairAttempts": 5,
-      "artifactPaths": [
-        "release-evidence/generated-apps/<project>/milestones/foundation_runtime.md",
-        "release-evidence/generated-apps/<project>/milestones/foundation_runtime.json",
-        "release-evidence/generated-apps/<project>/milestones/auth_security.md",
-        "release-evidence/generated-apps/<project>/milestones/auth_security.json",
-        "release-evidence/generated-apps/<project>/milestones/data_model.md",
-        "release-evidence/generated-apps/<project>/milestones/data_model.json"
-      ],
+      "lastFailure": {
+        "runId": "autonomous_run_1777329142465",
+        "milestoneId": "foundation_runtime",
+        "failureCategory": "generated_app_implementation_failure",
+        "confidence": 0.78,
+        "evidence": [
+          "Generated-output implementation failure indicators used as default classification."
+        ],
+        "lastError": "Milestone foundation_runtime execution attempt",
+        "failingCommand": "build milestone foundation_runtime",
+        "affectedFiles": [
+          "release-evidence/generated-apps/<project>/milestones/foundation_runtime.md",
+          "release-evidence/generated-apps/<project>/milestones/foundation_runtime.json"
+        ],
+        "affectedSubsystem": "generated-app-build-loop",
+        "safeRepairAvailable": true,
+        "recommendedRepair": "Apply targeted generated-output patch and rerun milestone validators",
+        "escalationRequired": false,
+        "resumeCommand": "npm run -s autonomous-build:resume -- autonomous_run_1777329142465",
+        "validationCommandAfterRepair": "validate:foundation_runtime",
+        "failureSignature": "7442bd38cfa2b9e6",
+        "attemptsBySignature": 2,
+        "attemptsByMilestoneCategory": 2,
+        "attemptedRepairs": [
+          "Apply targeted generated-output patch and rerun milestone validators",
+          "Apply targeted generated-output patch and rerun milestone validators"
+        ],
+        "whyThisStrategy": "No safe adaptive strategy is available. Human decision required.",
+        "rejectedStrategies": [
+          {
+            "strategyId": "add_missing_file",
+            "reason": "not_applicable"
+          },
+          {
+            "strategyId": "fix_import_or_export",
+            "reason": "not_applicable"
+          },
+          {
+            "strategyId": "repair_schema_mismatch",
+            "reason": "not_applicable"
+          },
+          {
+            "strategyId": "complete_launch_capsule",
+            "reason": "not_applicable"
+          },
+          {
+            "strategyId": "replace_placeholder_output",
+            "reason": "not_applicable"
+          },
+          {
+            "strategyId": "apply_safe_default_assumption",
+            "reason": "not_applicable"
+          },
+          {
+            "strategyId": "split_large_input",
+            "reason": "not_applicable"
+          },
+          {
+            "strategyId": "reduce_concurrency_and_resume",
+            "reason": "not_applicable"
+          },
+          {
+            "strategyId": "clean_port_and_restart",
+            "reason": "not_applicable"
+          },
+          {
+            "strategyId": "route_to_vault_setup",
+            "reason": "not_applicable"
+          },
+          {
+            "strategyId": "stop_for_builder_defect",
+            "reason": "not_applicable"
+          }
+        ],
+        "priorSimilarOutcomes": [
+          {
+            "strategyId": "none",
+            "outcome": "escalated",
+            "timestamp": "2026-04-27T22:32:22.474Z",
+            "notes": "Selected strategy requires explicit approval before execution."
+          },
+          {
+            "strategyId": "none",
+            "outcome": "escalated",
+            "timestamp": "2026-04-27T22:28:18.060Z",
+            "notes": "Selected strategy requires explicit approval before execution."
+          },
+          {
+            "strategyId": "none",
+            "outcome": "escalated",
+            "timestamp": "2026-04-27T22:28:18.059Z",
+            "notes": "Identical failure signature repeated and same repair was already attempted."
+          },
+          {
+            "strategyId": "none",
+            "outcome": "escalated",
+            "timestamp": "2026-04-27T22:28:18.057Z",
+            "notes": "Selected strategy requires explicit approval before execution."
+          },
+          {
+            "strategyId": "none",
+            "outcome": "escalated",
+            "timestamp": "2026-04-27T22:27:50.958Z",
+            "notes": "Selected strategy requires explicit approval before execution."
+          }
+        ],
+        "approvalRequired": true,
+        "expectedValidationCommand": "inspect_failure_before_continue",
+        "rollbackPlan": "No safe strategy selected; no automatic file mutation.",
+        "repairBudgetExhausted": {
+          "whatFailed": "foundation_runtime (generated_app_implementation_failure)",
+          "attemptedRepairs": [
+            "Apply targeted generated-output patch and rerun milestone validators",
+            "Apply targeted generated-output patch and rerun milestone validators"
+          ],
+          "whyRepairsFailed": "Identical failure signature repeated and same repair was already attempted.",
+          "exactNextAction": "inspect failed milestone foundation_runtime and apply targeted remediation"
+        }
+      },
+      "artifactPaths": [],
       "logs": [
         "Run initialized.",
-        "Milestone foundation_runtime completed with autonomous policy (apply_safe_default_assumption).",
-        "Milestone auth_security completed with autonomous policy (apply_safe_default_assumption).",
-        "Milestone data_model completed with autonomous policy (apply_safe_default_assumption).",
-        "Repair budget exhausted at attempt 4.",
-        "Repair budget exhausted at attempt 5."
+        "repair_budget_exhausted: Selected strategy requires explicit approval before execution.",
+        "repair_budget_exhausted: Identical failure signature repeated and same repair was already attempted."
       ],
-      "resumeCommand": "npm run -s autonomous-build:resume -- autonomous_run_1777256737590",
-      "nextAction": "Repair failed for core_workflows; repair_budget_exhausted",
-      "log": "Repair budget exhausted at attempt 5."
+      "resumeCommand": "npm run -s autonomous-build:resume -- autonomous_run_1777329142465",
+      "nextAction": "Repair failed for foundation_runtime; repair_budget_exhausted",
+      "log": "repair_budget_exhausted: Identical failure signature repeated and same repair was already attempted."
     },
     "finalReleaseBundle": {
-      "finalAppOutputPath": "release-evidence/generated-apps/autonomous_run_1777256737590/app",
-      "launchPackagePath": "release-evidence/generated-apps/autonomous_run_1777256737590/launch",
-      "secretRequirementsPath": "release-evidence/generated-apps/autonomous_run_1777256737590/launch/secret-requirements.json",
-      "deploymentReadinessPath": "release-evidence/generated-apps/autonomous_run_1777256737590/deploy/deployment_readiness.json",
-      "smokeTestsPath": "release-evidence/generated-apps/autonomous_run_1777256737590/launch/SMOKE_TESTS.md",
-      "rollbackPlanPath": "release-evidence/generated-apps/autonomous_run_1777256737590/launch/ROLLBACK.md",
+      "finalAppOutputPath": "release-evidence/generated-apps/autonomous_run_1777329142465/app",
+      "launchPackagePath": "release-evidence/generated-apps/autonomous_run_1777329142465/launch",
+      "secretRequirementsPath": "release-evidence/generated-apps/autonomous_run_1777329142465/launch/secret-requirements.json",
+      "deploymentReadinessPath": "release-evidence/generated-apps/autonomous_run_1777329142465/deploy/deployment_readiness.json",
+      "smokeTestsPath": "release-evidence/generated-apps/autonomous_run_1777329142465/launch/SMOKE_TESTS.md",
+      "rollbackPlanPath": "release-evidence/generated-apps/autonomous_run_1777329142465/launch/ROLLBACK.md",
       "proofArtifactsPath": "release-evidence/runtime",
-      "readmePath": "release-evidence/generated-apps/autonomous_run_1777256737590/README.md",
-      "runbookPath": "release-evidence/generated-apps/autonomous_run_1777256737590/RUNBOOK.md",
+      "readmePath": "release-evidence/generated-apps/autonomous_run_1777329142465/README.md",
+      "runbookPath": "release-evidence/generated-apps/autonomous_run_1777329142465/RUNBOOK.md",
       "finalReleaseEvidencePath": "release-evidence/runtime/final_commercial_release_evidence.json",
       "assembled": true
     }

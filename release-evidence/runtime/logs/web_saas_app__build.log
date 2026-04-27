@@ -1,8 +1,8 @@
 domain=web_saas_app
 commandId=build
 kind=build
-startedAt=2026-04-27T02:23:59.313Z
-finishedAt=2026-04-27T02:24:18.147Z
+startedAt=2026-04-27T22:28:41.815Z
+finishedAt=2026-04-27T22:29:08.917Z
 status=passed
 exitCode=0
 --- stdout ---
@@ -44,4 +44,4 @@ Route (app)                              Size     First Load JS
 
 --- stderr ---
 --- generatedArtifacts ---
-/workspaces/Botomatic/release-evidence/generated-apps/web_saas_app/.next
+/workspace/Botomatic/release-evidence/generated-apps/web_saas_app/.next

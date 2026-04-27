@@ -25,10 +25,19 @@ function CheckLine({ title, text }: { title: string; text: string }) {
   return <li style={{ display: "grid", gridTemplateColumns: "18px 1fr", gap: 8, margin: "7px 0", alignItems: "start" }}><span style={{ width: 16, height: 16, borderRadius: 999, background: "#35d46b", color: "white", display: "grid", placeItems: "center", fontSize: 11, fontWeight: 1000, boxShadow: "0 0 14px rgba(53,212,107,.45)" }}>✓</span><span style={{ color: "#d6e0ed", fontSize: 13, lineHeight: 1.35 }}><strong style={{ color: "#f7fbff" }}>{title}:</strong> {text}</span></li>;
 }
 
-export default function RepositorySuccessDashboard() {
+type RepositorySuccessDashboardProps = {
+  projectId?: string;
+  mode?: "vibe" | "pro";
+};
+
+export default function RepositorySuccessDashboard({
+  projectId = "demo",
+  mode = "pro",
+}: RepositorySuccessDashboardProps) {
   const [data, setData] = useState<DashboardData | null>(null);
   const [hybrid, setHybrid] = useState<any>(null);
   const [running, setRunning] = useState(false);
+
 
   async function load(runGates = false) {
     const url = `/api/local-repo-dashboard${runGates ? "?runGates=1" : "?autoRunOnChange=1"}`;
