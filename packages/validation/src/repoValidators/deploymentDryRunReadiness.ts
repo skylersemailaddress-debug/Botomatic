@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import type { RepoValidatorResult } from "../repoValidators";
+import { resolveEvidencePath } from "./evidencePath";
 
 const REQUIRED_DOMAINS = [
   "web_saas_app",
@@ -19,20 +20,6 @@ function has(root: string, rel: string): boolean {
 
 function read(root: string, rel: string): string {
   return fs.readFileSync(path.join(root, rel), "utf8");
-}
-
-function resolveEvidencePath(root: string, proofPath: string): string {
-  if (fs.existsSync(proofPath)) return proofPath;
-  if (proofPath.startsWith("/workspaces/")) {
-    const normalized = proofPath.replace(/^\/workspaces\//, "/workspace/");
-    if (fs.existsSync(normalized)) return normalized;
-  }
-  if (proofPath.startsWith("/workspaces/Botomatic/")) {
-    const rel = proofPath.replace("/workspaces/Botomatic/", "");
-    const joined = path.join(root, rel);
-    if (fs.existsSync(joined)) return joined;
-  }
-  return proofPath;
 }
 
 function result(ok: boolean, summary: string, checks: string[]): RepoValidatorResult {
