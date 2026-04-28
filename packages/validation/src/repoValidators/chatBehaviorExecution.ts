@@ -160,6 +160,7 @@ export function evaluateChatBehaviorExecutionSimulation(
     { input: "fix failed milestone", command: "inspect failed milestone and recommend repair" },
     { input: "validate it", command: "run validate all and summarize proof" },
     { input: "what now", command: "show current system state and next best action" },
+    { input: "compile project from uploaded sources and set masterTruth", command: "bind uploaded contract as canonical build contract and compile project" },
   ];
 
   for (const item of canonicalExpectations) {
