@@ -21,6 +21,20 @@ function read(root: string, rel: string): string {
   return fs.readFileSync(path.join(root, rel), "utf8");
 }
 
+function resolveEvidencePath(root: string, proofPath: string): string {
+  if (fs.existsSync(proofPath)) return proofPath;
+  if (proofPath.startsWith("/workspaces/")) {
+    const normalized = proofPath.replace(/^\/workspaces\//, "/workspace/");
+    if (fs.existsSync(normalized)) return normalized;
+  }
+  if (proofPath.startsWith("/workspaces/Botomatic/")) {
+    const rel = proofPath.replace("/workspaces/Botomatic/", "");
+    const joined = path.join(root, rel);
+    if (fs.existsSync(joined)) return joined;
+  }
+  return proofPath;
+}
+
 function result(ok: boolean, summary: string, checks: string[]): RepoValidatorResult {
   return {
     name: "Validate-Botomatic-DeploymentDryRunReadiness",
@@ -110,7 +124,8 @@ export function validateDeploymentDryRunReadiness(root: string): RepoValidatorRe
     if (typeof d?.smokeTestPlanPath !== "string" || !d.smokeTestPlanPath) {
       return result(false, `Domain ${domainId}: smokeTestPlanPath is missing.`, checks);
     }
-    if (!fs.existsSync(d.smokeTestPlanPath)) {
+    const smokeTestPlanPath = resolveEvidencePath(root, d.smokeTestPlanPath);
+    if (!fs.existsSync(smokeTestPlanPath)) {
       return result(false, `Domain ${domainId}: smokeTestPlanPath does not exist at ${d.smokeTestPlanPath}.`, checks);
     }
 
@@ -118,7 +133,8 @@ export function validateDeploymentDryRunReadiness(root: string): RepoValidatorRe
     if (typeof d?.rollbackPlanPath !== "string" || !d.rollbackPlanPath) {
       return result(false, `Domain ${domainId}: rollbackPlanPath is missing.`, checks);
     }
-    if (!fs.existsSync(d.rollbackPlanPath)) {
+    const rollbackPlanPath = resolveEvidencePath(root, d.rollbackPlanPath);
+    if (!fs.existsSync(rollbackPlanPath)) {
       return result(false, `Domain ${domainId}: rollbackPlanPath does not exist at ${d.rollbackPlanPath}.`, checks);
     }
 

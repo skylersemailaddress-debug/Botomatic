@@ -21,6 +21,20 @@ function read(root: string, rel: string): string {
   return fs.readFileSync(path.join(root, rel), "utf8");
 }
 
+function resolveEvidencePath(root: string, proofPath: string): string {
+  if (fs.existsSync(proofPath)) return proofPath;
+  if (proofPath.startsWith("/workspaces/")) {
+    const normalized = proofPath.replace(/^\/workspaces\//, "/workspace/");
+    if (fs.existsSync(normalized)) return normalized;
+  }
+  if (proofPath.startsWith("/workspaces/Botomatic/")) {
+    const rel = proofPath.replace("/workspaces/Botomatic/", "");
+    const joined = path.join(root, rel);
+    if (fs.existsSync(joined)) return joined;
+  }
+  return proofPath;
+}
+
 function result(ok: boolean, summary: string, checks: string[]): RepoValidatorResult {
   return {
     name: "Validate-Botomatic-ExternalIntegrationDeploymentReadiness",
@@ -57,7 +71,9 @@ export function validateExternalIntegrationDeploymentReadiness(root: string): Re
     const d = domainResults.find((item: any) => item?.domainId === id);
     if (!d) return false;
 
-    if (typeof d?.emittedPath !== "string" || !d.emittedPath || !fs.existsSync(d.emittedPath)) return false;
+    if (typeof d?.emittedPath !== "string" || !d.emittedPath) return false;
+    const emittedPath = resolveEvidencePath(root, d.emittedPath);
+    if (!fs.existsSync(emittedPath)) return false;
     if (!Array.isArray(d?.externalServicesRequired)) return false;
     if (!Array.isArray(d?.optionalServices)) return false;
     if (!Array.isArray(d?.environmentVariablesRequired)) return false;
@@ -66,9 +82,9 @@ export function validateExternalIntegrationDeploymentReadiness(root: string): Re
     if (typeof d?.integrationContractPath !== "string" || !d.integrationContractPath) return false;
     if (typeof d?.deploymentReadinessPath !== "string" || !d.deploymentReadinessPath) return false;
 
-    const deployPath = path.join(d.emittedPath, d.deploymentInstructionsPath);
-    const contractPath = path.join(d.emittedPath, d.integrationContractPath);
-    const readinessPath = path.join(d.emittedPath, d.deploymentReadinessPath);
+    const deployPath = path.join(emittedPath, d.deploymentInstructionsPath);
+    const contractPath = path.join(emittedPath, d.integrationContractPath);
+    const readinessPath = path.join(emittedPath, d.deploymentReadinessPath);
     if (!fs.existsSync(deployPath) || !fs.existsSync(contractPath) || !fs.existsSync(readinessPath)) return false;
 
     if (d?.deploymentInstructionsPresent !== true) return false;

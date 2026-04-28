@@ -21,6 +21,20 @@ function read(root: string, rel: string): string {
   return fs.readFileSync(path.join(root, rel), "utf8");
 }
 
+function resolveEvidencePath(root: string, proofPath: string): string {
+  if (fs.existsSync(proofPath)) return proofPath;
+  if (proofPath.startsWith("/workspaces/")) {
+    const normalized = proofPath.replace(/^\/workspaces\//, "/workspace/");
+    if (fs.existsSync(normalized)) return normalized;
+  }
+  if (proofPath.startsWith("/workspaces/Botomatic/")) {
+    const rel = proofPath.replace("/workspaces/Botomatic/", "");
+    const joined = path.join(root, rel);
+    if (fs.existsSync(joined)) return joined;
+  }
+  return proofPath;
+}
+
 function listFilesRecursive(dir: string): string[] {
   if (!fs.existsSync(dir)) return [];
   const out: string[] = [];
@@ -71,15 +85,16 @@ export function validateMultiDomainEmittedOutputReadiness(root: string): RepoVal
 
     const outputRoot = String(domain?.outputRoot || "");
     if (!outputRoot) return false;
-    if (!fs.existsSync(outputRoot)) return false;
+    const resolvedOutputRoot = resolveEvidencePath(root, outputRoot);
+    if (!fs.existsSync(resolvedOutputRoot)) return false;
 
-    const files = listFilesRecursive(outputRoot);
+    const files = listFilesRecursive(resolvedOutputRoot);
     if (files.length < 6) return false;
 
     const nonEmpty = files.every((filePath) => fs.readFileSync(filePath, "utf8").trim().length > 0);
-    const readinessPath = path.join(outputRoot, "domain_readiness.json");
-    const scanPath = path.join(outputRoot, "no_placeholder_scan.json");
-    const launchPath = path.join(outputRoot, "launch", "launch_packet.json");
+    const readinessPath = path.join(resolvedOutputRoot, "domain_readiness.json");
+    const scanPath = path.join(resolvedOutputRoot, "no_placeholder_scan.json");
+    const launchPath = path.join(resolvedOutputRoot, "launch", "launch_packet.json");
     if (!fs.existsSync(readinessPath) || !fs.existsSync(scanPath) || !fs.existsSync(launchPath)) return false;
 
     let readiness: any;

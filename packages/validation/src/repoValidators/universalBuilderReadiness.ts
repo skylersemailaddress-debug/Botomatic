@@ -11,6 +11,20 @@ function read(root: string, rel: string): string {
   return fs.readFileSync(path.join(root, rel), "utf8");
 }
 
+function resolveEvidencePath(root: string, proofPath: string): string {
+  if (fs.existsSync(proofPath)) return proofPath;
+  if (proofPath.startsWith("/workspaces/")) {
+    const normalized = proofPath.replace(/^\/workspaces\//, "/workspace/");
+    if (fs.existsSync(normalized)) return normalized;
+  }
+  if (proofPath.startsWith("/workspaces/Botomatic/")) {
+    const rel = proofPath.replace("/workspaces/Botomatic/", "");
+    const joined = path.join(root, rel);
+    if (fs.existsSync(joined)) return joined;
+  }
+  return proofPath;
+}
+
 function result(ok: boolean, summary: string, checks: string[]): RepoValidatorResult {
   return {
     name: "Validate-Botomatic-UniversalBuilderReadiness",
@@ -121,7 +135,7 @@ export function validateUniversalBuilderReadiness(root: string): RepoValidatorRe
     greenfieldOutput?.launchPacketPresent === true &&
     greenfieldOutput?.noPlaceholderScanPresent === true;
 
-  const emittedOutputDir = String(greenfieldOutput?.emittedOutputDir || "");
+  const emittedOutputDir = resolveEvidencePath(root, String(greenfieldOutput?.emittedOutputDir || ""));
   const claimsEmittedOutput = greenfieldOutput?.emittedFileTreeProof === true;
   const emittedProofValidation = claimsEmittedOutput
     ? validateEmittedOutput(emittedOutputDir)

@@ -21,6 +21,20 @@ function read(root: string, rel: string): string {
   return fs.readFileSync(path.join(root, rel), "utf8");
 }
 
+function resolveEvidencePath(root: string, proofPath: string): string {
+  if (fs.existsSync(proofPath)) return proofPath;
+  if (proofPath.startsWith("/workspaces/")) {
+    const normalized = proofPath.replace(/^\/workspaces\//, "/workspace/");
+    if (fs.existsSync(normalized)) return normalized;
+  }
+  if (proofPath.startsWith("/workspaces/Botomatic/")) {
+    const rel = proofPath.replace("/workspaces/Botomatic/", "");
+    const joined = path.join(root, rel);
+    if (fs.existsSync(joined)) return joined;
+  }
+  return proofPath;
+}
+
 function result(ok: boolean, summary: string, checks: string[]): RepoValidatorResult {
   return {
     name: "Validate-Botomatic-DomainRuntimeCommandExecutionReadiness",
@@ -59,9 +73,10 @@ export function validateDomainRuntimeCommandExecutionReadiness(root: string): Re
     if (!domain) return false;
 
     if (typeof domain?.emittedPath !== "string" || !domain.emittedPath) return false;
-    if (!fs.existsSync(domain.emittedPath)) return false;
+    const emittedPath = resolveEvidencePath(root, domain.emittedPath);
+    if (!fs.existsSync(emittedPath)) return false;
     if (typeof domain?.packageProjectManifest !== "string" || !domain.packageProjectManifest) return false;
-    if (!fs.existsSync(path.join(domain.emittedPath, domain.packageProjectManifest))) return false;
+    if (!fs.existsSync(path.join(emittedPath, domain.packageProjectManifest))) return false;
 
     const commandResults = Array.isArray(domain?.commandResults) ? domain.commandResults : [];
     if (commandResults.length === 0) return false;
@@ -76,8 +91,9 @@ export function validateDomainRuntimeCommandExecutionReadiness(root: string): Re
       if (!cmd?.commandId || !cmd?.kind || !cmd?.command) return false;
       if (!["passed", "failed", "skipped"].includes(String(cmd?.status))) return false;
       if (typeof cmd?.logArtifactPath !== "string" || !cmd.logArtifactPath) return false;
-      if (!fs.existsSync(cmd.logArtifactPath)) return false;
-      const logContent = fs.readFileSync(cmd.logArtifactPath, "utf8");
+      const logArtifactPath = resolveEvidencePath(root, cmd.logArtifactPath);
+      if (!fs.existsSync(logArtifactPath)) return false;
+      const logContent = fs.readFileSync(logArtifactPath, "utf8");
       if (String(cmd?.status) !== "skipped" && !logContent.trim()) return false;
 
       if (String(cmd?.status) === "skipped") {

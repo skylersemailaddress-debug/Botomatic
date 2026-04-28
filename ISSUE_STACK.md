@@ -2,13 +2,15 @@
 
 ## Active Operating Baseline
 - OPS-001 is complete in baseline (`main`).
-- OPS-002 is active: branch protection and required automated checks.
+- OPS-002 is complete: branch protection and required automated checks.
+- VALIDATION-001 is complete: `validate:all` baseline cleanup and strict readiness gate promotion.
+- LEGAL-001 is active: claim-boundary docs.
 
 ## Ordered Priority Stack
 1. OPS-001 freeze random merging (complete)
-2. OPS-002 branch protection and required checks (active)
-3. VALIDATION-001 close current `validate:all` baseline failures and promote strict readiness gate to required
-4. LEGAL-001 claim-boundary docs
+2. OPS-002 branch protection and required checks (complete)
+3. VALIDATION-001 close current `validate:all` baseline failures and promote strict readiness gate to required (complete)
+4. LEGAL-001 claim-boundary docs (active)
 5. LEGAL-002 claim-boundary validator
 6. UI-001 screenshot-true Vibe dashboard
 7. UI-002 screenshot-true Pro dashboard
