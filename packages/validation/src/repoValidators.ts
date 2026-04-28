@@ -119,6 +119,7 @@ export function validateUIReadiness(root: string): RepoValidatorResult {
     "apps/control-plane/src/app/projects/[projectId]/vibe/page.tsx",
     "apps/control-plane/src/app/projects/[projectId]/advanced/page.tsx",
     "apps/control-plane/src/components/builder/NorthStarBuilderShell.tsx",
+    "apps/control-plane/src/components/vibe/VibeDashboard.tsx",
     "apps/control-plane/src/styles/tokens.css",
     "apps/control-plane/src/styles/globals.css",
   ];
@@ -132,6 +133,7 @@ export function validateUIReadiness(root: string): RepoValidatorResult {
   const vibePage = read(root, "apps/control-plane/src/app/projects/[projectId]/vibe/page.tsx");
   const advancedPage = read(root, "apps/control-plane/src/app/projects/[projectId]/advanced/page.tsx");
   const northStarShell = read(root, "apps/control-plane/src/components/builder/NorthStarBuilderShell.tsx");
+  const vibeDashboard = read(root, "apps/control-plane/src/components/vibe/VibeDashboard.tsx");
   const globals = read(root, "apps/control-plane/src/styles/globals.css");
   const tokenCss = read(root, "apps/control-plane/src/styles/tokens.css");
   const uiFiles = listFilesRecursive(path.join(root, "apps/control-plane/src"))
@@ -158,7 +160,7 @@ export function validateUIReadiness(root: string): RepoValidatorResult {
 
   const routeShellAlignment =
     projectPage.includes("<VibeBuilderSkeleton") &&
-    vibePage.includes("<VibeBuilderSkeleton") &&
+    vibePage.includes("<VibeDashboard") &&
     advancedPage.includes("<ProBuilderSkeleton");
 
   const northStarSurfaceSignals =
@@ -166,7 +168,14 @@ export function validateUIReadiness(root: string): RepoValidatorResult {
     northStarShell.includes("Launch Readiness") &&
     northStarShell.includes("ChatInputBar");
 
-  const ok = hasDesignSystemSignals && hasStateSignals && noPlaceholderUi && routeShellAlignment && northStarSurfaceSignals;
+  const vibeSurfaceSignals =
+    vibeDashboard.includes("Vibe Mode") &&
+    vibeDashboard.includes("Build Map") &&
+    vibeDashboard.includes("One-Click Launch") &&
+    vibeDashboard.includes("Improve Design") &&
+    vibeDashboard.includes("Launch App");
+
+  const ok = hasDesignSystemSignals && hasStateSignals && noPlaceholderUi && routeShellAlignment && northStarSurfaceSignals && vibeSurfaceSignals;
   return result(
     "Validate-Botomatic-UIReadiness",
     ok,
