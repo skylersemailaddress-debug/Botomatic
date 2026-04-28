@@ -2542,7 +2542,16 @@ export function buildApp(config: RuntimeConfig) {
       const spec = getSelfUpgradeSpec(project);
       if (!spec) return res.status(404).json({ error: "No self-upgrade spec found" });
       const drift = detectArchitectureDrift(spec);
-      const regression = runRegressionGuard(spec, 1);
+      const regression = runRegressionGuard({
+        spec,
+        validatorCommand: null,
+        validatorExitCode: null,
+        targetBranch: "main",
+        mutationMode: "read_only_proof",
+        validatorWeakeningDetected: false,
+        driftDetected: drift.driftDetected,
+        driftReasons: drift.reasons,
+      });
       return res.json({ ok: true, spec, drift, regression, actorId: actor.actorId });
     } catch (error) {
       return handleRouteError(res, config, error, "GET /api/projects/:projectId/self-upgrade/status", actor);
