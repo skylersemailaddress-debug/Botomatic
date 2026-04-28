@@ -97,6 +97,9 @@ export function parseCommand(message: string): ParsedCommand {
   if (/(prepare deployment|deployment readiness|preflight deployment)/.test(normalized)) return "prepare-deployment";
   if (/(launch capsule|generate launch capsule|review launch package)/.test(normalized)) return "launch-capsule";
   if (/(generate plan|^plan$|create plan)/.test(normalized)) return "generate-plan";
+  if (/(bind build contract|canonical build contract|compile project|mastertruth|master truth|bind uploaded contract)/.test(normalized)) {
+    return "bind-build-contract";
+  }
   if (/(pause run|stop run|halt run)/.test(normalized)) return "pause-run";
 
   return null;

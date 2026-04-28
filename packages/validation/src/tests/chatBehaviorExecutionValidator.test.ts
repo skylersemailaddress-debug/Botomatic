@@ -25,6 +25,9 @@ function makeDeps(overrides: Partial<ChatBehaviorSimulationDeps>): ChatBehaviorS
       if (text.includes("fix failed milestone")) return { parsed: "fix-failure", command: "inspect failed milestone and recommend repair" };
       if (text.includes("validate")) return { parsed: "validate", command: "run validate all and summarize proof" };
       if (text.includes("what now")) return { parsed: "next-best-action", command: "show current system state and next best action" };
+      if (text.includes("compile project") || text.includes("mastertruth") || text.includes("master truth") || text.includes("canonical build contract")) {
+        return { parsed: "bind-build-contract", command: "bind uploaded contract as canonical build contract and compile project" };
+      }
       return { parsed: null, command: input };
     }) as ChatBehaviorSimulationDeps["resolveCanonicalCommandInputFn"],
     evaluateSelfUpgradeGuardFn: ((input: string) => {
