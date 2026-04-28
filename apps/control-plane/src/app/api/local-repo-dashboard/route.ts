@@ -236,7 +236,7 @@ export async function GET(request: NextRequest) {
   const autoRunOnChange = request.nextUrl.searchParams.get("autoRunOnChange") === "1";
   const remote = parseRemoteStatus();
   let cache = readCache();
-  const shouldBootstrap = !cache || cache.gates.length === 0;
+  const shouldBootstrap = Boolean(autoRunOnChange && (!cache || cache.gates.length === 0));
   const changedSinceLastGateRun = cache?.sha !== remote.localSha;
 
   if (runGates || shouldBootstrap || (autoRunOnChange && changedSinceLastGateRun)) {

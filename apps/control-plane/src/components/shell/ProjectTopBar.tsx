@@ -87,7 +87,7 @@ export default function ProjectTopBar({ projectId, environment }: ProjectTopBarP
 
       <div className="topbar-meta">
         <div>Environment: {environment}</div>
-        <Link href="/" className="topbar-link-plain">Switch project</Link>
+        <Link href="/" className="topbar-link-plain">New Project</Link>
       </div>
     </header>
   );
