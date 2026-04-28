@@ -63,6 +63,13 @@ Botomatic is governed by a locked enterprise launch contract in this repository:
 - `VALIDATION_MATRIX.md`
 - `PRODUCT_SCOPE.md`
 
+## Claim boundaries
+
+For evidence-bound claim language and marketing constraints, see:
+- `LEGAL_CLAIM_BOUNDARIES.md`
+- `EVIDENCE_BOUNDARY_POLICY.md`
+- `MARKETING_CLAIMS_ALLOWED.md`
+
 ## Current launch status
 
 - Enterprise control-plane gate program: previously closed by proof in this repo's historical gate model.
