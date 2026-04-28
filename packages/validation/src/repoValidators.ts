@@ -29,6 +29,7 @@ import { validateDashboardRouteIntegrityReadiness } from "./repoValidators/dashb
 import { validateClaimBoundaryReadiness } from "./repoValidators/claimBoundaryReadiness";
 import { validateGeneratedAppNoPlaceholderValidatorReadiness } from "./repoValidators/generatedAppNoPlaceholderValidatorReadiness";
 import { validateGeneratedAppCommercialReadinessGateReadiness } from "./repoValidators/generatedAppCommercialReadinessGateReadiness";
+import { validateGeneratedAppCorpusHarnessReadiness } from "./repoValidators/generatedAppCorpusHarnessReadiness";
 
 export type RepoValidatorResult = {
   name: string;
@@ -1284,5 +1285,6 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateClaimBoundaryReadiness(root),
     validateGeneratedAppNoPlaceholderValidatorReadiness(root),
     validateGeneratedAppCommercialReadinessGateReadiness(root),
+    validateGeneratedAppCorpusHarnessReadiness(root),
   ];
 }

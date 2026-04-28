@@ -31,7 +31,8 @@
 12. GEN-002 generated UI preview engine (complete)
 13. GEN-003 no-placeholder generated-app validator (complete)
 14. GEN-004 generated-app commercial readiness gate (complete)
-15. GEN-005 generated app corpus harness and readiness reassessment (recommended next)
+15. GEN-005 generated app corpus harness and readiness reassessment (complete)
+16. GEN-006 representative generated app fixture batch (recommended next)
 
 ## Stale PR Handling Guidance
 - PR #71 merged baseline.
