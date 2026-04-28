@@ -1,7 +1,7 @@
 {
   "domainId": "dirty_repo_completion",
-  "generatedAt": "2026-04-28T07:54:29.387Z",
-  "emittedPath": "/workspaces/Botomatic/release-evidence/generated-apps/dirty_repo_completion",
+  "generatedAt": "2026-04-28T23:52:18.736Z",
+  "emittedPath": "/workspace/Botomatic/release-evidence/generated-apps/dirty_repo_completion",
   "emittedFileCount": 12,
   "emittedFiles": [
     "README.md",
