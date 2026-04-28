@@ -32,6 +32,8 @@ export function validateUniversalBuilderReadiness(root: string): RepoValidatorRe
     "packages/blueprints/src/registry.ts",
     "packages/validation/src/generatedApp/validateGeneratedApp.ts",
     "packages/validation/src/generatedApp/validateNoPlaceholders.ts",
+    "packages/validation/src/generatedApp/validateGeneratedAppNoPlaceholders.ts",
+    "packages/validation/src/generatedApp/tests/generatedAppNoPlaceholders.test.ts",
     "packages/validation/src/generatedApp/validateCommercialReadiness.ts",
     "release-evidence/benchmarks/builder_quality_cases.json",
     "release-evidence/runtime/greenfield_runtime_proof.json",
