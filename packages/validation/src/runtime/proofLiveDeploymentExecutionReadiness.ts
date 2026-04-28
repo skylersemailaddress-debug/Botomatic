@@ -13,6 +13,7 @@ import {
 } from "./liveDeploymentExecutionSchemas";
 import { buildDeploymentSecretPreflight, createInMemorySecretStore } from "./secretsCredentialManagement";
 import type { DeploymentEnvironmentId, DeploymentProviderId, ProviderHandoffCompleteness, ProviderRollbackCompleteness, ProviderSecretPreflightLinkage, ProviderSmokeContract } from "./deploymentProviderContracts";
+import { PROVIDER_DEPLOYMENT_REQUIREMENTS } from "./deploymentProviderContracts";
 
 type DomainId =
   | "web_saas_app"
@@ -233,6 +234,7 @@ function buildProof() {
   for (const domainId of REQUIRED_DOMAINS) {
     const providerId = DOMAIN_PROVIDER[domainId];
     const adapter = adapters.find((item) => item.providerId === providerId)!;
+    const providerRequirement = PROVIDER_DEPLOYMENT_REQUIREMENTS[providerId];
     const deploymentTarget = DOMAIN_TARGET[domainId];
     const domainPath = path.join(generatedApps, domainId);
 
@@ -264,9 +266,9 @@ function buildProof() {
     const binding: CredentialBindingContract = {
       credentialBindingId,
       providerId,
-      requiredCredentialKeys: adapter.requiredCredentialKeys,
+      requiredCredentialKeys: providerRequirement.requiredSecretsReferenced,
       suppliedCredentialKeys: [],
-      missingCredentialKeys: [...adapter.requiredCredentialKeys],
+      missingCredentialKeys: [...providerRequirement.requiredSecretsReferenced],
       secretStoragePolicy: "env_or_secret_manager_only",
       plaintextSecretAllowed: false,
       credentialValidationMode: "metadata_only_non_executing",
@@ -279,32 +281,32 @@ function buildProof() {
     providerHandoffCompleteness.push({
       providerId,
       environment,
-      requiredSecretsReferenced: adapter.requiredCredentialKeys,
-      buildCommandKnown: true,
-      outputDirectoryKnown: true,
-      deployCommandTemplatePresent: Boolean(adapter.deployCommandTemplate),
-      healthCheckPathKnown: true,
-      smokePlanPresent: true,
-      rollbackPlanPresent: true,
+      requiredSecretsReferenced: providerRequirement.requiredSecretsReferenced,
+      buildCommandKnown: providerRequirement.buildCommandKnown,
+      outputDirectoryKnown: providerRequirement.outputDirectoryKnown,
+      deployCommandTemplatePresent: providerRequirement.deployCommandTemplatePresent,
+      healthCheckPathKnown: providerRequirement.healthCheckPathKnown,
+      smokePlanPresent: providerRequirement.smokePlanPresent,
+      rollbackPlanPresent: providerRequirement.rollbackPlanPresent,
       approvalRequired: true,
       status: "blocked",
     });
     providerRollbackCompleteness.push({
       providerId,
       environment,
-      rollbackStrategy: adapter.rollbackStrategy,
-      rollbackCommandTemplatePresent: true,
+      rollbackStrategy: providerRequirement.rollbackStrategy,
+      rollbackCommandTemplatePresent: providerRequirement.rollbackPlanPresent,
       previousVersionReferenceRequired: true,
       dataRollbackBoundaryDocumented: true,
       approvalRequired: true,
       status: "blocked",
     });
-    providerSmokeContracts.push({ providerId, environment, healthCheckPathKnown: true, smokePlanPresent: true, status: "blocked" });
+    providerSmokeContracts.push({ providerId, environment, healthCheckPathKnown: providerRequirement.healthCheckPathKnown, smokePlanPresent: providerRequirement.smokePlanPresent, status: "blocked" });
     providerSecretPreflightLinkage.push({
       providerId,
       environment,
       usesSecretReferencesOnly: true,
-      missingSecretRefs: adapter.requiredCredentialKeys,
+      missingSecretRefs: providerRequirement.requiredSecretsReferenced,
       plaintextSecretsStored: false,
       preflightRequiredBeforeDeploy: true,
     });

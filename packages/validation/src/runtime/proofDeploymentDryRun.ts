@@ -16,7 +16,7 @@
 import fs from "fs";
 import path from "path";
 import { spawnSync } from "child_process";
-import type { DeploymentProviderId, ProviderHandoffCompleteness, ProviderRollbackCompleteness } from "./deploymentProviderContracts";
+import { PROVIDER_DEPLOYMENT_REQUIREMENTS, type DeploymentProviderId, type ProviderHandoffCompleteness, type ProviderRollbackCompleteness } from "./deploymentProviderContracts";
 
 type DomainId =
   | "web_saas_app"
@@ -471,6 +471,8 @@ function runDomain(matrix: DomainDryRunMatrix): DomainDryRunResult {
   const readinessCaveat =
     "Dry-run readiness is based on structural validation of deployment configs, preview manifest generation, smoke-test plan generation, and rollback plan generation. Live deployment and credential-authenticated preview environment validation are not performed.";
 
+  const providerId = DOMAIN_PROVIDER[domainId];
+  const providerRequirement = PROVIDER_DEPLOYMENT_REQUIREMENTS[providerId];
   return {
     domainId,
     emittedPath,
@@ -490,23 +492,23 @@ function runDomain(matrix: DomainDryRunMatrix): DomainDryRunResult {
     readinessStatus,
     readinessCaveat,
     providerHandoffCompleteness: {
-      providerId: DOMAIN_PROVIDER[domainId],
+      providerId,
       environment: "prod",
-      requiredSecretsReferenced: [],
-      buildCommandKnown: true,
-      outputDirectoryKnown: true,
-      deployCommandTemplatePresent: true,
-      healthCheckPathKnown: true,
-      smokePlanPresent: true,
-      rollbackPlanPresent: true,
+      requiredSecretsReferenced: providerRequirement.requiredSecretsReferenced,
+      buildCommandKnown: providerRequirement.buildCommandKnown,
+      outputDirectoryKnown: providerRequirement.outputDirectoryKnown,
+      deployCommandTemplatePresent: providerRequirement.deployCommandTemplatePresent,
+      healthCheckPathKnown: providerRequirement.healthCheckPathKnown,
+      smokePlanPresent: providerRequirement.smokePlanPresent,
+      rollbackPlanPresent: providerRequirement.rollbackPlanPresent,
       approvalRequired: true,
       status: "blocked",
     },
     providerRollbackCompleteness: {
-      providerId: DOMAIN_PROVIDER[domainId],
+      providerId,
       environment: "prod",
-      rollbackStrategy: "plan_generated_dry_run_only",
-      rollbackCommandTemplatePresent: true,
+      rollbackStrategy: providerRequirement.rollbackStrategy,
+      rollbackCommandTemplatePresent: providerRequirement.rollbackPlanPresent,
       previousVersionReferenceRequired: true,
       dataRollbackBoundaryDocumented: true,
       approvalRequired: true,

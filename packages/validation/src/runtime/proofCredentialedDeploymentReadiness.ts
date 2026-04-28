@@ -36,6 +36,7 @@ import type {
   ProviderSecretPreflightLinkage,
   ProviderSmokeContract,
 } from "./deploymentProviderContracts";
+import { PROVIDER_DEPLOYMENT_REQUIREMENTS } from "./deploymentProviderContracts";
 
 const ROOT = process.cwd();
 const PROOF_OUT = path.join(ROOT, "release-evidence", "runtime", "credentialed_deployment_readiness_proof.json");
@@ -521,33 +522,34 @@ function buildManifest(domainId: DomainId): DomainCredentialManifest {
   };
 }
 
-function providerCompleteness(domainId: DomainId, requiredSecrets: string[]): {
+function providerCompleteness(domainId: DomainId): {
   handoff: ProviderHandoffCompleteness;
   rollback: ProviderRollbackCompleteness;
   smoke: ProviderSmokeContract;
   secretPreflightLinkage: ProviderSecretPreflightLinkage;
 } {
   const providerId = DOMAIN_PROVIDER[domainId];
+  const providerRequirement = PROVIDER_DEPLOYMENT_REQUIREMENTS[providerId];
   const environment: DeploymentEnvironmentId = "prod";
   return {
     handoff: {
       providerId,
       environment,
-      requiredSecretsReferenced: requiredSecrets,
-      buildCommandKnown: true,
-      outputDirectoryKnown: true,
-      deployCommandTemplatePresent: true,
-      healthCheckPathKnown: true,
-      smokePlanPresent: true,
-      rollbackPlanPresent: true,
+      requiredSecretsReferenced: providerRequirement.requiredSecretsReferenced,
+      buildCommandKnown: providerRequirement.buildCommandKnown,
+      outputDirectoryKnown: providerRequirement.outputDirectoryKnown,
+      deployCommandTemplatePresent: providerRequirement.deployCommandTemplatePresent,
+      healthCheckPathKnown: providerRequirement.healthCheckPathKnown,
+      smokePlanPresent: providerRequirement.smokePlanPresent,
+      rollbackPlanPresent: providerRequirement.rollbackPlanPresent,
       approvalRequired: true,
       status: "complete",
     },
     rollback: {
       providerId,
       environment,
-      rollbackStrategy: "provider_defined_strategy",
-      rollbackCommandTemplatePresent: true,
+      rollbackStrategy: providerRequirement.rollbackStrategy,
+      rollbackCommandTemplatePresent: providerRequirement.rollbackPlanPresent,
       previousVersionReferenceRequired: true,
       dataRollbackBoundaryDocumented: true,
       approvalRequired: true,
@@ -556,15 +558,15 @@ function providerCompleteness(domainId: DomainId, requiredSecrets: string[]): {
     smoke: {
       providerId,
       environment,
-      healthCheckPathKnown: true,
-      smokePlanPresent: true,
+      healthCheckPathKnown: providerRequirement.healthCheckPathKnown,
+      smokePlanPresent: providerRequirement.smokePlanPresent,
       status: "complete",
     },
     secretPreflightLinkage: {
       providerId,
       environment,
       usesSecretReferencesOnly: true,
-      missingSecretRefs: requiredSecrets,
+      missingSecretRefs: providerRequirement.requiredSecretsReferenced,
       plaintextSecretsStored: false,
       preflightRequiredBeforeDeploy: true,
     },
@@ -648,7 +650,7 @@ function main() {
     caveat: "Credentialed deployment readiness proof declares credential requirements, approval gate model, provider adapter interfaces, and secret handling policies per domain. No credentials are stored, validated, or used. Live deployment is blocked by default and requires explicit user approval and user-supplied credentials. This is not proof of live deployment.",
     domainResults: domainResults.map((d) => {
       const requiredCredentials = d.credentialRequirements.filter((c) => c.required).map((c) => c.name);
-      const completeness = providerCompleteness(d.domainId as DomainId, requiredCredentials);
+      const completeness = providerCompleteness(d.domainId as DomainId);
       return ({
       domainId: d.domainId,
       deploymentTarget: d.deploymentTarget,
