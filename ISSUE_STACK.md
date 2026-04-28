@@ -35,7 +35,7 @@
 14. GEN-004 generated-app commercial readiness gate (complete)
 15. GEN-005 generated app corpus harness and readiness reassessment (complete)
 16. GEN-006 representative generated app fixture batch (complete)
-17. REPO-001 dirty repo evidence contract (recommended parallel lane)
+17. REPO-001 dirty repo evidence contract (complete)
 18. SELF-001 executable self-upgrade safety contract (complete)
 19. DEPLOY-001 secret leak prevention and secret-reference policy scope (complete)
 20. DEPLOY-002 deployment runtime hardening follow-up (next)
@@ -51,8 +51,8 @@
 
 
 ## Next Recommended Parallel Lane Execution
-- REPO-001 dirty repo evidence contract
-- SELF-001 executable self-upgrade safety contract
+- REPO-001 dirty repo evidence contract (complete)
+- SELF-001 executable self-upgrade safety contract (complete)
 - DEPLOY-001 secret leak prevention and secret-reference policy scope (complete)
 - DEPLOY-002 deployment runtime hardening follow-up (next)
 

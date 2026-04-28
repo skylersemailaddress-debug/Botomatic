@@ -1000,10 +1000,28 @@ function buildExistingRepoCompletionContract(project: StoredProjectRecord, opera
 
   const commercialAudit = commercialReadinessAudit(audits);
   const blockers = Array.from(new Set([...(commercialAudit.issues || []), ...risk.fakeIntegrationSignals.map((s) => `Fake integration signal: ${s}`)]));
+
+  let evidenceSnapshot = createDirtyRepoEvidenceSnapshot({ entries: [] });
+  (commercialAudit.issues || []).forEach((issue: string, i: number) => {
+    evidenceSnapshot = addDirtyRepoEvidenceEntry(evidenceSnapshot, { id: `audit_${i + 1}`, source: "commercial_audit", severity: "high", category: "commercial", message: issue, completionArea: "launch_readiness" });
+  });
+  risk.fakeIntegrationSignals.forEach((signal: string, i: number) => {
+    evidenceSnapshot = addDirtyRepoEvidenceEntry(evidenceSnapshot, { id: `fake_${i + 1}`, source: "risk_fake_integration", severity: "high", category: "integration", message: `Fake integration signal: ${signal}`, completionArea: "integrations" });
+  });
+  risk.securityRiskSignals.forEach((signal: string, i: number) => {
+    evidenceSnapshot = addDirtyRepoEvidenceEntry(evidenceSnapshot, { id: `security_${i + 1}`, source: "risk_security", severity: "critical", category: "security", message: signal, completionArea: "security" });
+  });
+  risk.placeholderSignals.forEach((signal: string, i: number) => {
+    evidenceSnapshot = addDirtyRepoEvidenceEntry(evidenceSnapshot, { id: `placeholder_${i + 1}`, source: "risk_placeholder", severity: "high", category: "placeholder", message: signal, completionArea: "code_quality" });
+  });
+  const completionBlockers = deriveDirtyRepoCompletionBlockers(evidenceSnapshot);
+
   const completionContract = runCompletionContract({
     detectedProduct: inferredDomain,
     detectedStack: Array.from(new Set([...frameworkHints, ...languageHints])),
     blockers,
+    evidenceSnapshot,
+    completionBlockers,
   });
 
   const existingRepoValidation = validateExistingRepoReadiness({
