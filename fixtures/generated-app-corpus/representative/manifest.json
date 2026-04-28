@@ -1,0 +1,145 @@
+{
+  "manifestVersion": "1",
+  "corpusName": "generated-app-representative-corpus",
+  "cases": [
+    {
+      "id": "webSaasDashboard",
+      "displayName": "webSaasDashboard",
+      "domain": "web-saas",
+      "appPath": "web-saas-dashboard",
+      "expectedBlueprintId": "uiBlueprint.webSaasDashboard",
+      "expectedReadinessStatus": "candidate_ready",
+      "requiredChecks": [
+        "no_placeholder_scan",
+        "commercial_readiness",
+        "claim_boundary"
+      ],
+      "notes": "Representative static corpus fixture; not exhaustive and not launch proof."
+    },
+    {
+      "id": "bookingApp",
+      "displayName": "bookingApp",
+      "domain": "booking",
+      "appPath": "booking-app",
+      "expectedBlueprintId": "uiBlueprint.bookingApp",
+      "expectedReadinessStatus": "candidate_ready",
+      "requiredChecks": [
+        "no_placeholder_scan",
+        "commercial_readiness",
+        "claim_boundary"
+      ],
+      "notes": "Representative static corpus fixture; not exhaustive and not launch proof."
+    },
+    {
+      "id": "ecommerceStore",
+      "displayName": "ecommerceStore",
+      "domain": "ecommerce",
+      "appPath": "ecommerce-store",
+      "expectedBlueprintId": "uiBlueprint.ecommerceStore",
+      "expectedReadinessStatus": "candidate_ready",
+      "requiredChecks": [
+        "no_placeholder_scan",
+        "commercial_readiness",
+        "claim_boundary"
+      ],
+      "notes": "Representative static corpus fixture; not exhaustive and not launch proof."
+    },
+    {
+      "id": "marketplace",
+      "displayName": "marketplace",
+      "domain": "marketplace",
+      "appPath": "marketplace",
+      "expectedBlueprintId": "uiBlueprint.marketplace",
+      "expectedReadinessStatus": "candidate_ready",
+      "requiredChecks": [
+        "no_placeholder_scan",
+        "commercial_readiness",
+        "claim_boundary"
+      ],
+      "notes": "Representative static corpus fixture; not exhaustive and not launch proof."
+    },
+    {
+      "id": "customerPortal",
+      "displayName": "customerPortal",
+      "domain": "customer-portal",
+      "appPath": "customer-portal",
+      "expectedBlueprintId": "uiBlueprint.customerPortal",
+      "expectedReadinessStatus": "candidate_ready",
+      "requiredChecks": [
+        "no_placeholder_scan",
+        "commercial_readiness",
+        "claim_boundary"
+      ],
+      "notes": "Representative static corpus fixture; not exhaustive and not launch proof."
+    },
+    {
+      "id": "apiService",
+      "displayName": "apiService",
+      "domain": "api-service",
+      "appPath": "api-service",
+      "expectedBlueprintId": "serviceBlueprint.apiService",
+      "expectedReadinessStatus": "candidate_ready",
+      "requiredChecks": [
+        "no_placeholder_scan",
+        "commercial_readiness",
+        "claim_boundary"
+      ],
+      "notes": "Representative static corpus fixture; not exhaustive and not launch proof."
+    },
+    {
+      "id": "botAgentConsole",
+      "displayName": "botAgentConsole",
+      "domain": "bot-agent",
+      "appPath": "bot-agent-console",
+      "expectedBlueprintId": "uiBlueprint.botAgentConsole",
+      "expectedReadinessStatus": "candidate_ready",
+      "requiredChecks": [
+        "no_placeholder_scan",
+        "commercial_readiness",
+        "claim_boundary"
+      ],
+      "notes": "Representative static corpus fixture; not exhaustive and not launch proof."
+    },
+    {
+      "id": "mobileAppShell",
+      "displayName": "mobileAppShell",
+      "domain": "mobile",
+      "appPath": "mobile-app-shell",
+      "expectedBlueprintId": "mobileBlueprint.mobileAppShell",
+      "expectedReadinessStatus": "preview_ready",
+      "requiredChecks": [
+        "no_placeholder_scan",
+        "commercial_readiness",
+        "claim_boundary"
+      ],
+      "notes": "Representative static corpus fixture; not exhaustive and not launch proof."
+    },
+    {
+      "id": "gameLandingPage",
+      "displayName": "gameLandingPage",
+      "domain": "gaming",
+      "appPath": "game-landing-page",
+      "expectedBlueprintId": "uiBlueprint.gameLandingPage",
+      "expectedReadinessStatus": "candidate_ready",
+      "requiredChecks": [
+        "no_placeholder_scan",
+        "commercial_readiness",
+        "claim_boundary"
+      ],
+      "notes": "Representative static corpus fixture; not exhaustive and not launch proof."
+    },
+    {
+      "id": "negativePlaceholderBlocked",
+      "displayName": "negativePlaceholderBlocked",
+      "domain": "negative-control",
+      "appPath": "negative/placeholder-blocked-controlled",
+      "expectedReadinessStatus": "blocked",
+      "requiredChecks": [
+        "no_placeholder_scan",
+        "commercial_readiness",
+        "claim_boundary"
+      ],
+      "notes": "Controlled negative fixture isolated under negative/ to verify blocked status behavior."
+    }
+  ]
+}

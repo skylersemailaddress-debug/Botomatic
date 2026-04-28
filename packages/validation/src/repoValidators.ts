@@ -30,6 +30,7 @@ import { validateClaimBoundaryReadiness } from "./repoValidators/claimBoundaryRe
 import { validateGeneratedAppNoPlaceholderValidatorReadiness } from "./repoValidators/generatedAppNoPlaceholderValidatorReadiness";
 import { validateGeneratedAppCommercialReadinessGateReadiness } from "./repoValidators/generatedAppCommercialReadinessGateReadiness";
 import { validateGeneratedAppCorpusHarnessReadiness } from "./repoValidators/generatedAppCorpusHarnessReadiness";
+import { validateGeneratedAppRepresentativeCorpusReadiness } from "./repoValidators/generatedAppRepresentativeCorpusReadiness";
 
 export type RepoValidatorResult = {
   name: string;
@@ -1286,5 +1287,6 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateGeneratedAppNoPlaceholderValidatorReadiness(root),
     validateGeneratedAppCommercialReadinessGateReadiness(root),
     validateGeneratedAppCorpusHarnessReadiness(root),
+    validateGeneratedAppRepresentativeCorpusReadiness(root),
   ];
 }
