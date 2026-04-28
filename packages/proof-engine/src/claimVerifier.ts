@@ -28,8 +28,9 @@ export type ProofClaimVerificationResult = {
   freshness?: ProofEvidenceFreshness;
 };
 
-function parseNow(now?: string | Date): Date {
-  return now ? new Date(now) : new Date();
+function parseNow(now?: string | Date): { value: Date; valid: boolean } {
+  const parsed = now ? new Date(now) : new Date();
+  return { value: parsed, valid: !Number.isNaN(parsed.getTime()) };
 }
 
 export function classifyClaimType(entry: ProofLedgerEntry): ProofClaimType {
@@ -88,15 +89,30 @@ export function normalizeEvidenceRefs(entry: ProofLedgerEntry): ProofEvidenceRef
   });
 }
 
-function hasSelfUpgradeMetadata(entry: ProofLedgerEntry): boolean {
+function getSelfUpgradeMetadataStatus(entry: ProofLedgerEntry): { present: boolean; positive: boolean; unsafe: boolean } {
   const metadata = entry.selfUpgradeSafety;
-  return !!(
-    metadata &&
-    (metadata.mode ||
-      typeof metadata.targetMainBlocked === "boolean" ||
-      typeof metadata.regressionMetadataFromCommandEvidence === "boolean" ||
-      typeof metadata.driftChecksEnabled === "boolean")
-  );
+  if (!metadata) return { present: false, positive: false, unsafe: false };
+
+  const modeAllowed = metadata.mode === "pr_only" || metadata.mode === "read_only_proof";
+  const modeUnsafe = metadata.mode != null && !modeAllowed;
+  const targetMainBlockedUnsafe = metadata.targetMainBlocked === false;
+  const regressionUnsafe = metadata.regressionMetadataFromCommandEvidence === false;
+  const driftUnsafe = metadata.driftChecksEnabled === false;
+
+  const positive =
+    modeAllowed &&
+    metadata.targetMainBlocked === true &&
+    metadata.regressionMetadataFromCommandEvidence === true &&
+    metadata.driftChecksEnabled === true;
+
+  const unsafe =
+    modeUnsafe ||
+    targetMainBlockedUnsafe ||
+    regressionUnsafe ||
+    driftUnsafe ||
+    !positive;
+
+  return { present: true, positive, unsafe };
 }
 
 function evidenceNeedsCapturedAt(evidenceClass: ProofEvidenceClass): boolean {
@@ -128,12 +144,18 @@ export function verifyClaim(
     suppliedEvidenceClasses.includes(requiredClass),
   );
 
-  if (!hasAnyRequired && !(claimType === "self_upgrade_claim" && hasSelfUpgradeMetadata(entry))) {
+  const selfUpgradeMetadata = getSelfUpgradeMetadataStatus(entry);
+
+  if (!hasAnyRequired && !(claimType === "self_upgrade_claim" && selfUpgradeMetadata.positive)) {
     errors.push(`Required evidence class missing for claim type '${claimType}'.`);
   }
 
-  const now = parseNow(options?.now);
-  if (options?.maxEvidenceAgeMs != null) {
+  const freshnessNow = parseNow(options?.now);
+  if (!freshnessNow.valid) {
+    errors.push("Invalid freshness reference timestamp.");
+  }
+
+  if (options?.maxEvidenceAgeMs != null && freshnessNow.valid) {
     evidenceRefs.forEach((ref) => {
       if (!ref.capturedAt) return;
       const capturedAt = new Date(ref.capturedAt);
@@ -141,7 +163,7 @@ export function verifyClaim(
         errors.push(`Evidence '${ref.id}' has invalid capturedAt timestamp.`);
         return;
       }
-      if (now.getTime() - capturedAt.getTime() > options.maxEvidenceAgeMs!) {
+      if (freshnessNow.value.getTime() - capturedAt.getTime() > options.maxEvidenceAgeMs!) {
         errors.push(`Evidence '${ref.id}' is stale.`);
       }
     });
@@ -170,9 +192,13 @@ export function verifyClaim(
   if (
     claimType === "self_upgrade_claim" &&
     !suppliedEvidenceClasses.includes("self_upgrade_safety_contract") &&
-    !hasSelfUpgradeMetadata(entry)
+    !selfUpgradeMetadata.positive
   ) {
-    errors.push("Self-upgrade claim requires self_upgrade_safety_contract evidence or explicit SELF-001 metadata.");
+    errors.push("Self-upgrade claim requires self_upgrade_safety_contract evidence or explicit positive SELF-001 metadata.");
+  }
+
+  if (claimType === "self_upgrade_claim" && selfUpgradeMetadata.present && selfUpgradeMetadata.unsafe) {
+    errors.push("SELF-001 metadata is unsafe for readiness eligibility.");
   }
 
   const recordValid = errors.length === 0;

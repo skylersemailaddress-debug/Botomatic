@@ -119,3 +119,68 @@ assert(isProofRecordValid(readinessResult), "isProofRecordValid should accept ve
 assert(isProofRecordValid(readinessPassed), "isProofRecordValid should accept ledger entries");
 
 console.log("claimVerifier.test.ts passed");
+
+const selfUpgradeWithUnsafeMetadata = createProofEntry({
+  scope: "self_upgrade",
+  claim: "Self-upgrade readiness",
+  claimType: "self_upgrade_claim",
+  evidence: [
+    {
+      id: "doc-su-1",
+      evidenceClass: "documentation",
+      source: "manual",
+      summary: "manual note",
+    },
+  ],
+  selfUpgradeSafety: {
+    mode: "pr_only",
+    targetMainBlocked: false,
+    regressionMetadataFromCommandEvidence: true,
+    driftChecksEnabled: true,
+  },
+  validatorSummary: "self-upgrade metadata review",
+  outcome: "passed",
+  rollbackPlan: "rollback",
+});
+const unsafeMetadataResult = verifyClaim(selfUpgradeWithUnsafeMetadata);
+assert(!unsafeMetadataResult.readinessEligible, "unsafe SELF-001 metadata should not be readiness eligible");
+assert(
+  unsafeMetadataResult.errors.includes("SELF-001 metadata is unsafe for readiness eligibility."),
+  "unsafe SELF-001 metadata should produce an explicit error",
+);
+
+const selfUpgradeWithPositiveMetadata = createProofEntry({
+  scope: "self_upgrade",
+  claim: "Self-upgrade readiness",
+  claimType: "self_upgrade_claim",
+  evidence: [
+    {
+      id: "doc-su-2",
+      evidenceClass: "documentation",
+      source: "manual",
+      summary: "manual note",
+    },
+  ],
+  selfUpgradeSafety: {
+    mode: "pr_only",
+    targetMainBlocked: true,
+    regressionMetadataFromCommandEvidence: true,
+    driftChecksEnabled: true,
+  },
+  validatorSummary: "self-upgrade metadata review",
+  outcome: "passed",
+  rollbackPlan: "rollback",
+});
+const positiveMetadataResult = verifyClaim(selfUpgradeWithPositiveMetadata);
+assert(positiveMetadataResult.recordValid, "positive SELF-001 metadata should satisfy self-upgrade evidence requirement");
+assert(positiveMetadataResult.readinessEligible, "positive SELF-001 metadata should allow readiness eligibility when passed");
+
+const invalidNowResult = verifyClaim(readinessPassed, {
+  now: "not-a-date",
+  maxEvidenceAgeMs: 1000,
+});
+assert(!invalidNowResult.readinessEligible, "invalid now must not allow readiness eligibility");
+assert(
+  invalidNowResult.errors.includes("Invalid freshness reference timestamp."),
+  "invalid now should emit freshness reference error",
+);
