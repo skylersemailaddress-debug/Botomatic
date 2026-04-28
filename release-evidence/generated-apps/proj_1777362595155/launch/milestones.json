@@ -1,0 +1,84 @@
+[
+  {
+    "milestoneId": "proj_1777362595155_foundation",
+    "name": "Foundation",
+    "goal": "Establish Proof Greenfield SaaS structure, routes, secrets references, and local launch path.",
+    "dependencies": [],
+    "requiredSpecs": [
+      "product intent",
+      "build contract",
+      "launch package"
+    ],
+    "outputArtifacts": [
+      "launch/README_LAUNCH.md",
+      "launch/env.example",
+      "launch/run_checkpoint.json"
+    ],
+    "validators": [
+      "Validate-GeneratedAppLaunchPackage"
+    ],
+    "launchCriteria": [
+      "local launcher exists",
+      "secret requirements declared",
+      "resume hint written"
+    ]
+  },
+  {
+    "milestoneId": "proj_1777362595155_integration",
+    "name": "Integration",
+    "goal": "Wire core integrations and deployment targets for Proof Greenfield SaaS without performing live deploys.",
+    "dependencies": [
+      "proj_1777362595155_foundation"
+    ],
+    "requiredSpecs": [
+      "integration contract",
+      "deployment targets",
+      "smoke tests"
+    ],
+    "outputArtifacts": [
+      "launch/CLOUD_DEPLOY.md",
+      "launch/deployment-targets.json",
+      "launch/SMOKE_TESTS.md"
+    ],
+    "validators": [
+      "build",
+      "tests",
+      "no-gap-policy",
+      "security"
+    ],
+    "launchCriteria": [
+      "deployment targets declared",
+      "smoke tests documented",
+      "approval gates preserved"
+    ]
+  },
+  {
+    "milestoneId": "proj_1777362595155_launch",
+    "name": "Launch Gate",
+    "goal": "Package Proof Greenfield SaaS for local launch and approval-gated cloud deployment handoff.",
+    "dependencies": [
+      "proj_1777362595155_integration"
+    ],
+    "requiredSpecs": [
+      "rollback plan",
+      "launch packet",
+      "validator summary"
+    ],
+    "outputArtifacts": [
+      "launch/ROLLBACK.md",
+      "launch/launch_packet.json",
+      "launch/ONE_CLICK_LOCAL_LAUNCH.md"
+    ],
+    "validators": [
+      "build",
+      "tests",
+      "no-gap-policy",
+      "security"
+    ],
+    "launchCriteria": [
+      "launch docs complete",
+      "validator set declared",
+      "deployment remains approval-gated"
+    ]
+  }
+]

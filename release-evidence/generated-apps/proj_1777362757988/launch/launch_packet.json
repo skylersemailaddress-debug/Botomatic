@@ -1,0 +1,13 @@
+{
+  "validators": [
+    "build",
+    "tests",
+    "no-gap-policy",
+    "security"
+  ],
+  "localLaunchDefault": true,
+  "cloudDeploymentApprovalRequired": true,
+  "cloudDeploymentCredentialed": true,
+  "representativeNotExhaustive": true,
+  "resumeHint": "Resume by rerunning: npm run build && npm run start"
+}

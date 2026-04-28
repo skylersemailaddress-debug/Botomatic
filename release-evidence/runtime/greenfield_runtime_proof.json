@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-27T23:25:12.282Z",
+  "generatedAt": "2026-04-28T07:52:38.050Z",
   "proofGrade": "local_runtime",
   "pathId": "greenfield_app_build",
   "inputUsed": {
@@ -15,49 +15,49 @@
     },
     {
       "method": "POST",
-      "path": "/api/projects/proj_1777332312211/spec/analyze",
+      "path": "/api/projects/proj_1777362757988/spec/analyze",
       "status": 200,
       "ok": true
     },
     {
       "method": "GET",
-      "path": "/api/projects/proj_1777332312211/spec/status",
+      "path": "/api/projects/proj_1777362757988/spec/status",
       "status": 200,
       "ok": true
     },
     {
       "method": "POST",
-      "path": "/api/projects/proj_1777332312211/spec/assumptions/accept",
+      "path": "/api/projects/proj_1777362757988/spec/assumptions/accept",
       "status": 200,
       "ok": true
     },
     {
       "method": "POST",
-      "path": "/api/projects/proj_1777332312211/spec/build-contract",
+      "path": "/api/projects/proj_1777362757988/spec/build-contract",
       "status": 200,
       "ok": true
     },
     {
       "method": "POST",
-      "path": "/api/projects/proj_1777332312211/spec/approve",
+      "path": "/api/projects/proj_1777362757988/spec/approve",
       "status": 200,
       "ok": true
     },
     {
       "method": "POST",
-      "path": "/api/projects/proj_1777332312211/compile",
+      "path": "/api/projects/proj_1777362757988/compile",
       "status": 200,
       "ok": true
     },
     {
       "method": "POST",
-      "path": "/api/projects/proj_1777332312211/plan",
+      "path": "/api/projects/proj_1777362757988/plan",
       "status": 200,
       "ok": true
     },
     {
       "method": "GET",
-      "path": "/api/projects/proj_1777332312211/status",
+      "path": "/api/projects/proj_1777362757988/status",
       "status": 200,
       "ok": true
     }
@@ -74,8 +74,8 @@
   "contract": {
     "type": "build_contract",
     "payload": {
-      "id": "contract_proj_1777332312211_1777332312244",
-      "projectId": "proj_1777332312211",
+      "id": "contract_proj_1777362757988_1777362758014",
+      "projectId": "proj_1777362757988",
       "appSummary": "Proof Greenfield SaaS: Deliver a production-grade application with validated workflows.",
       "targetUsers": [
         "admin",
@@ -152,7 +152,7 @@
       ],
       "assumptions": [
         {
-          "id": "assumption_1777332312230_7l8w4f",
+          "id": "assumption_1777362758003_fw9oc2",
           "field": "notification provider",
           "decision": "Email is enabled by default",
           "reason": "Low-risk baseline for transactional workflows",
@@ -162,10 +162,10 @@
           "requiresApproval": false,
           "approved": true,
           "canChangeLater": true,
-          "createdAt": "2026-04-27T23:25:12.230Z"
+          "createdAt": "2026-04-28T07:52:38.003Z"
         },
         {
-          "id": "assumption_1777332312230_4vl99x",
+          "id": "assumption_1777362758003_rnamj4",
           "field": "auth/security",
           "decision": "OIDC with role guards",
           "reason": "Enterprise-safe default",
@@ -175,7 +175,7 @@
           "requiresApproval": true,
           "approved": true,
           "canChangeLater": true,
-          "createdAt": "2026-04-27T23:25:12.230Z"
+          "createdAt": "2026-04-28T07:52:38.003Z"
         }
       ],
       "excludedItems": [
@@ -186,8 +186,8 @@
       "readinessScore": 97,
       "readyToBuild": true,
       "blockers": [],
-      "createdAt": "2026-04-27T23:25:12.244Z",
-      "updatedAt": "2026-04-27T23:25:12.244Z"
+      "createdAt": "2026-04-28T07:52:38.014Z",
+      "updatedAt": "2026-04-28T07:52:38.014Z"
     }
   },
   "generatedPlanOrBuildGraph": {
@@ -247,7 +247,7 @@
       ],
       "emittedFileCount": 39,
       "packetTargetCount": 34,
-      "emittedOutputDir": "/workspace/Botomatic/release-evidence/generated-apps/proj_1777256631918",
+      "emittedOutputDir": "/workspaces/Botomatic/release-evidence/generated-apps/proj_1777362757988",
       "caveat": "Runtime path now emits a representative generated app tree and validates both emitted files and packet-target planning."
     }
   },
@@ -271,14 +271,14 @@
     "noPlaceholderScanPassed": true,
     "generatedAppValidatorsPassed": true,
     "generationReality": "direct_emitted_app_tree",
-    "emittedOutputDir": "/workspace/Botomatic/release-evidence/generated-apps/proj_1777256631918",
+    "emittedOutputDir": "/workspaces/Botomatic/release-evidence/generated-apps/proj_1777362757988",
     "caveat": "Runtime path now emits a representative generated app tree and validates both emitted files and packet-target planning."
   },
   "executedSteps": [
     {
       "step": "intake_project",
       "status": "passed",
-      "details": "status=200 projectId=proj_1777332312211"
+      "details": "status=200 projectId=proj_1777362757988"
     },
     {
       "step": "analyze_spec",
@@ -356,8 +356,8 @@
         "validatorSummary": "greenfield_contract_and_plan_integrity:passed, generated_app_validator:passed, no_placeholder_validator:passed",
         "outcome": "passed",
         "rollbackPlan": "Revert greenfield planner and contract changes; rerun benchmark and validators.",
-        "id": "proof_1777332312282_l8nyes",
-        "timestamp": "2026-04-27T23:25:12.282Z"
+        "id": "proof_1777362758050_vybrns",
+        "timestamp": "2026-04-28T07:52:38.050Z"
       },
       "claimVerification": {
         "ok": true,

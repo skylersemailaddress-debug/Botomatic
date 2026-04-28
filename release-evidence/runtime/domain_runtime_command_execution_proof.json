@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-27T22:31:11.625Z",
+  "generatedAt": "2026-04-28T07:53:47.680Z",
   "proofGrade": "local_runtime",
   "pathId": "domain_runtime_command_execution",
   "requiredDomains": [
@@ -18,7 +18,7 @@
   "domainResults": [
     {
       "domainId": "web_saas_app",
-      "emittedPath": "/workspace/Botomatic/release-evidence/generated-apps/web_saas_app",
+      "emittedPath": "/workspaces/Botomatic/release-evidence/generated-apps/web_saas_app",
       "packageProjectManifest": "package.json",
       "installCommand": "npm --version",
       "buildCommand": "npm run -s build",
@@ -41,9 +41,9 @@
           "status": "passed",
           "skipReason": null,
           "exitCode": 0,
-          "stdoutSummary": "11.4.2",
+          "stdoutSummary": "11.9.0",
           "stderrSummary": "",
-          "logArtifactPath": "/workspace/Botomatic/release-evidence/runtime/logs/web_saas_app__install.log",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/web_saas_app__install.log",
           "generatedArtifacts": []
         },
         {
@@ -55,9 +55,9 @@
           "exitCode": 0,
           "stdoutSummary": "Attention: Next.js now collects completely anonymous telemetry regarding usage. | This information is used to shape Next.js' roadmap and prioritize features. | You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL: | https://nextjs.org/telemetry |   ▲ Next.js 14.2.5 |    Creating an optimized production build ...",
           "stderrSummary": "",
-          "logArtifactPath": "/workspace/Botomatic/release-evidence/runtime/logs/web_saas_app__build.log",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/web_saas_app__build.log",
           "generatedArtifacts": [
-            "/workspace/Botomatic/release-evidence/generated-apps/web_saas_app/.next"
+            "/workspaces/Botomatic/release-evidence/generated-apps/web_saas_app/.next"
           ]
         },
         {
@@ -69,7 +69,7 @@
           "exitCode": 0,
           "stdoutSummary": "web_saas_app readiness passed",
           "stderrSummary": "",
-          "logArtifactPath": "/workspace/Botomatic/release-evidence/runtime/logs/web_saas_app__test.log",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/web_saas_app__test.log",
           "generatedArtifacts": []
         },
         {
@@ -81,7 +81,7 @@
           "exitCode": 0,
           "stdoutSummary": "",
           "stderrSummary": "",
-          "logArtifactPath": "/workspace/Botomatic/release-evidence/runtime/logs/web_saas_app__lint_typecheck.log",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/web_saas_app__lint_typecheck.log",
           "generatedArtifacts": []
         },
         {
@@ -93,7 +93,7 @@
           "exitCode": 0,
           "stdoutSummary": "",
           "stderrSummary": "",
-          "logArtifactPath": "/workspace/Botomatic/release-evidence/runtime/logs/web_saas_app__deploy_validation.log",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/web_saas_app__deploy_validation.log",
           "generatedArtifacts": []
         }
       ],
@@ -103,7 +103,7 @@
     },
     {
       "domainId": "marketing_website",
-      "emittedPath": "/workspace/Botomatic/release-evidence/generated-apps/marketing_website",
+      "emittedPath": "/workspaces/Botomatic/release-evidence/generated-apps/marketing_website",
       "packageProjectManifest": "package.json",
       "installCommand": "npm --version",
       "buildCommand": "npm run -s build",
@@ -126,9 +126,9 @@
           "status": "passed",
           "skipReason": null,
           "exitCode": 0,
-          "stdoutSummary": "11.4.2",
+          "stdoutSummary": "11.9.0",
           "stderrSummary": "",
-          "logArtifactPath": "/workspace/Botomatic/release-evidence/runtime/logs/marketing_website__install.log",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/marketing_website__install.log",
           "generatedArtifacts": []
         },
         {
@@ -140,9 +140,9 @@
           "exitCode": 0,
           "stdoutSummary": "Attention: Next.js now collects completely anonymous telemetry regarding usage. | This information is used to shape Next.js' roadmap and prioritize features. | You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL: | https://nextjs.org/telemetry |   ▲ Next.js 14.2.5 |    Creating an optimized production build ...",
           "stderrSummary": "",
-          "logArtifactPath": "/workspace/Botomatic/release-evidence/runtime/logs/marketing_website__build.log",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/marketing_website__build.log",
           "generatedArtifacts": [
-            "/workspace/Botomatic/release-evidence/generated-apps/marketing_website/.next"
+            "/workspaces/Botomatic/release-evidence/generated-apps/marketing_website/.next"
           ]
         },
         {
@@ -154,7 +154,7 @@
           "exitCode": 0,
           "stdoutSummary": "marketing_website seo test passed",
           "stderrSummary": "",
-          "logArtifactPath": "/workspace/Botomatic/release-evidence/runtime/logs/marketing_website__test.log",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/marketing_website__test.log",
           "generatedArtifacts": []
         },
         {
@@ -166,7 +166,7 @@
           "exitCode": 0,
           "stdoutSummary": "",
           "stderrSummary": "",
-          "logArtifactPath": "/workspace/Botomatic/release-evidence/runtime/logs/marketing_website__lint_typecheck.log",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/marketing_website__lint_typecheck.log",
           "generatedArtifacts": []
         },
         {
@@ -178,7 +178,7 @@
           "exitCode": 0,
           "stdoutSummary": "",
           "stderrSummary": "",
-          "logArtifactPath": "/workspace/Botomatic/release-evidence/runtime/logs/marketing_website__deploy_validation.log",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/marketing_website__deploy_validation.log",
           "generatedArtifacts": []
         }
       ],
@@ -188,7 +188,7 @@
     },
     {
       "domainId": "api_service",
-      "emittedPath": "/workspace/Botomatic/release-evidence/generated-apps/api_service",
+      "emittedPath": "/workspaces/Botomatic/release-evidence/generated-apps/api_service",
       "packageProjectManifest": "package.json",
       "installCommand": "npm --version",
       "buildCommand": "npm run -s build",
@@ -211,9 +211,9 @@
           "status": "passed",
           "skipReason": null,
           "exitCode": 0,
-          "stdoutSummary": "11.4.2",
+          "stdoutSummary": "11.9.0",
           "stderrSummary": "",
-          "logArtifactPath": "/workspace/Botomatic/release-evidence/runtime/logs/api_service__install.log",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/api_service__install.log",
           "generatedArtifacts": []
         },
         {
@@ -225,7 +225,7 @@
           "exitCode": 0,
           "stdoutSummary": "",
           "stderrSummary": "",
-          "logArtifactPath": "/workspace/Botomatic/release-evidence/runtime/logs/api_service__build.log",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/api_service__build.log",
           "generatedArtifacts": []
         },
         {
@@ -237,7 +237,7 @@
           "exitCode": 0,
           "stdoutSummary": "api_service routes test passed",
           "stderrSummary": "",
-          "logArtifactPath": "/workspace/Botomatic/release-evidence/runtime/logs/api_service__test.log",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/api_service__test.log",
           "generatedArtifacts": []
         },
         {
@@ -249,7 +249,7 @@
           "exitCode": 0,
           "stdoutSummary": "",
           "stderrSummary": "",
-          "logArtifactPath": "/workspace/Botomatic/release-evidence/runtime/logs/api_service__lint_typecheck.log",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/api_service__lint_typecheck.log",
           "generatedArtifacts": []
         },
         {
@@ -261,7 +261,7 @@
           "exitCode": 0,
           "stdoutSummary": "",
           "stderrSummary": "",
-          "logArtifactPath": "/workspace/Botomatic/release-evidence/runtime/logs/api_service__deploy_validation.log",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/api_service__deploy_validation.log",
           "generatedArtifacts": []
         }
       ],
@@ -271,7 +271,7 @@
     },
     {
       "domainId": "mobile_app",
-      "emittedPath": "/workspace/Botomatic/release-evidence/generated-apps/mobile_app",
+      "emittedPath": "/workspaces/Botomatic/release-evidence/generated-apps/mobile_app",
       "packageProjectManifest": "package.json",
       "installCommand": "npm --version",
       "buildCommand": "npm run -s build",
@@ -294,9 +294,9 @@
           "status": "passed",
           "skipReason": null,
           "exitCode": 0,
-          "stdoutSummary": "11.4.2",
+          "stdoutSummary": "11.9.0",
           "stderrSummary": "",
-          "logArtifactPath": "/workspace/Botomatic/release-evidence/runtime/logs/mobile_app__install.log",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/mobile_app__install.log",
           "generatedArtifacts": []
         },
         {
@@ -308,7 +308,7 @@
           "exitCode": 0,
           "stdoutSummary": "build",
           "stderrSummary": "",
-          "logArtifactPath": "/workspace/Botomatic/release-evidence/runtime/logs/mobile_app__build.log",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/mobile_app__build.log",
           "generatedArtifacts": []
         },
         {
@@ -320,7 +320,7 @@
           "exitCode": 0,
           "stdoutSummary": "mobile_app navigation test passed",
           "stderrSummary": "",
-          "logArtifactPath": "/workspace/Botomatic/release-evidence/runtime/logs/mobile_app__test.log",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/mobile_app__test.log",
           "generatedArtifacts": []
         },
         {
@@ -332,7 +332,7 @@
           "exitCode": 0,
           "stdoutSummary": "",
           "stderrSummary": "",
-          "logArtifactPath": "/workspace/Botomatic/release-evidence/runtime/logs/mobile_app__lint_typecheck.log",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/mobile_app__lint_typecheck.log",
           "generatedArtifacts": []
         },
         {
@@ -344,7 +344,7 @@
           "exitCode": 0,
           "stdoutSummary": "",
           "stderrSummary": "",
-          "logArtifactPath": "/workspace/Botomatic/release-evidence/runtime/logs/mobile_app__deploy_validation.log",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/mobile_app__deploy_validation.log",
           "generatedArtifacts": []
         }
       ],
@@ -354,7 +354,7 @@
     },
     {
       "domainId": "bot",
-      "emittedPath": "/workspace/Botomatic/release-evidence/generated-apps/bot",
+      "emittedPath": "/workspaces/Botomatic/release-evidence/generated-apps/bot",
       "packageProjectManifest": "package.json",
       "installCommand": "npm --version",
       "buildCommand": "npm run -s build",
@@ -377,9 +377,9 @@
           "status": "passed",
           "skipReason": null,
           "exitCode": 0,
-          "stdoutSummary": "11.4.2",
+          "stdoutSummary": "11.9.0",
           "stderrSummary": "",
-          "logArtifactPath": "/workspace/Botomatic/release-evidence/runtime/logs/bot__install.log",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/bot__install.log",
           "generatedArtifacts": []
         },
         {
@@ -391,7 +391,7 @@
           "exitCode": 0,
           "stdoutSummary": "",
           "stderrSummary": "",
-          "logArtifactPath": "/workspace/Botomatic/release-evidence/runtime/logs/bot__build.log",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/bot__build.log",
           "generatedArtifacts": []
         },
         {
@@ -403,7 +403,7 @@
           "exitCode": 0,
           "stdoutSummary": "bot permission checks passed",
           "stderrSummary": "",
-          "logArtifactPath": "/workspace/Botomatic/release-evidence/runtime/logs/bot__test.log",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/bot__test.log",
           "generatedArtifacts": []
         },
         {
@@ -415,7 +415,7 @@
           "exitCode": 0,
           "stdoutSummary": "",
           "stderrSummary": "",
-          "logArtifactPath": "/workspace/Botomatic/release-evidence/runtime/logs/bot__lint_typecheck.log",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/bot__lint_typecheck.log",
           "generatedArtifacts": []
         },
         {
@@ -427,7 +427,7 @@
           "exitCode": 0,
           "stdoutSummary": "",
           "stderrSummary": "",
-          "logArtifactPath": "/workspace/Botomatic/release-evidence/runtime/logs/bot__deploy_validation.log",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/bot__deploy_validation.log",
           "generatedArtifacts": []
         }
       ],
@@ -437,7 +437,7 @@
     },
     {
       "domainId": "ai_agent",
-      "emittedPath": "/workspace/Botomatic/release-evidence/generated-apps/ai_agent",
+      "emittedPath": "/workspaces/Botomatic/release-evidence/generated-apps/ai_agent",
       "packageProjectManifest": "package.json",
       "installCommand": "npm --version",
       "buildCommand": "npm run -s build",
@@ -460,9 +460,9 @@
           "status": "passed",
           "skipReason": null,
           "exitCode": 0,
-          "stdoutSummary": "11.4.2",
+          "stdoutSummary": "11.9.0",
           "stderrSummary": "",
-          "logArtifactPath": "/workspace/Botomatic/release-evidence/runtime/logs/ai_agent__install.log",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/ai_agent__install.log",
           "generatedArtifacts": []
         },
         {
@@ -474,7 +474,7 @@
           "exitCode": 0,
           "stdoutSummary": "",
           "stderrSummary": "",
-          "logArtifactPath": "/workspace/Botomatic/release-evidence/runtime/logs/ai_agent__build.log",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/ai_agent__build.log",
           "generatedArtifacts": []
         },
         {
@@ -486,7 +486,7 @@
           "exitCode": 0,
           "stdoutSummary": "ai_agent safety checks passed",
           "stderrSummary": "",
-          "logArtifactPath": "/workspace/Botomatic/release-evidence/runtime/logs/ai_agent__test.log",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/ai_agent__test.log",
           "generatedArtifacts": []
         },
         {
@@ -498,7 +498,7 @@
           "exitCode": 0,
           "stdoutSummary": "",
           "stderrSummary": "",
-          "logArtifactPath": "/workspace/Botomatic/release-evidence/runtime/logs/ai_agent__lint_typecheck.log",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/ai_agent__lint_typecheck.log",
           "generatedArtifacts": []
         },
         {
@@ -510,7 +510,7 @@
           "exitCode": 0,
           "stdoutSummary": "",
           "stderrSummary": "",
-          "logArtifactPath": "/workspace/Botomatic/release-evidence/runtime/logs/ai_agent__deploy_validation.log",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/ai_agent__deploy_validation.log",
           "generatedArtifacts": []
         }
       ],
@@ -520,7 +520,7 @@
     },
     {
       "domainId": "game",
-      "emittedPath": "/workspace/Botomatic/release-evidence/generated-apps/game",
+      "emittedPath": "/workspaces/Botomatic/release-evidence/generated-apps/game",
       "packageProjectManifest": "package.json",
       "installCommand": "npm --version",
       "buildCommand": "npm run -s build",
@@ -543,9 +543,9 @@
           "status": "passed",
           "skipReason": null,
           "exitCode": 0,
-          "stdoutSummary": "11.4.2",
+          "stdoutSummary": "11.9.0",
           "stderrSummary": "",
-          "logArtifactPath": "/workspace/Botomatic/release-evidence/runtime/logs/game__install.log",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/game__install.log",
           "generatedArtifacts": []
         },
         {
@@ -557,7 +557,7 @@
           "exitCode": 0,
           "stdoutSummary": "build",
           "stderrSummary": "",
-          "logArtifactPath": "/workspace/Botomatic/release-evidence/runtime/logs/game__build.log",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/game__build.log",
           "generatedArtifacts": []
         },
         {
@@ -569,7 +569,7 @@
           "exitCode": 0,
           "stdoutSummary": "game gameplay validation passed",
           "stderrSummary": "",
-          "logArtifactPath": "/workspace/Botomatic/release-evidence/runtime/logs/game__test.log",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/game__test.log",
           "generatedArtifacts": []
         },
         {
@@ -581,7 +581,7 @@
           "exitCode": 0,
           "stdoutSummary": "",
           "stderrSummary": "",
-          "logArtifactPath": "/workspace/Botomatic/release-evidence/runtime/logs/game__lint_typecheck.log",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/game__lint_typecheck.log",
           "generatedArtifacts": []
         },
         {
@@ -593,7 +593,7 @@
           "exitCode": 0,
           "stdoutSummary": "",
           "stderrSummary": "",
-          "logArtifactPath": "/workspace/Botomatic/release-evidence/runtime/logs/game__deploy_validation.log",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/game__deploy_validation.log",
           "generatedArtifacts": []
         }
       ],
@@ -603,7 +603,7 @@
     },
     {
       "domainId": "dirty_repo_completion",
-      "emittedPath": "/workspace/Botomatic/release-evidence/generated-apps/dirty_repo_completion",
+      "emittedPath": "/workspaces/Botomatic/release-evidence/generated-apps/dirty_repo_completion",
       "packageProjectManifest": "repair/completion_contract.json",
       "installCommand": "node --version",
       "buildCommand": "test -f repair/repaired_file_manifest.json",
@@ -626,9 +626,9 @@
           "status": "passed",
           "skipReason": null,
           "exitCode": 0,
-          "stdoutSummary": "v20.19.6",
+          "stdoutSummary": "v24.14.0",
           "stderrSummary": "",
-          "logArtifactPath": "/workspace/Botomatic/release-evidence/runtime/logs/dirty_repo_completion__install.log",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/dirty_repo_completion__install.log",
           "generatedArtifacts": []
         },
         {
@@ -640,7 +640,7 @@
           "exitCode": 0,
           "stdoutSummary": "",
           "stderrSummary": "",
-          "logArtifactPath": "/workspace/Botomatic/release-evidence/runtime/logs/dirty_repo_completion__build.log",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/dirty_repo_completion__build.log",
           "generatedArtifacts": []
         },
         {
@@ -652,7 +652,7 @@
           "exitCode": 0,
           "stdoutSummary": "dirty repo completion checks passed",
           "stderrSummary": "",
-          "logArtifactPath": "/workspace/Botomatic/release-evidence/runtime/logs/dirty_repo_completion__test.log",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/dirty_repo_completion__test.log",
           "generatedArtifacts": []
         },
         {
@@ -664,7 +664,7 @@
           "exitCode": 0,
           "stdoutSummary": "",
           "stderrSummary": "",
-          "logArtifactPath": "/workspace/Botomatic/release-evidence/runtime/logs/dirty_repo_completion__lint_typecheck.log",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/dirty_repo_completion__lint_typecheck.log",
           "generatedArtifacts": []
         },
         {
@@ -676,7 +676,7 @@
           "exitCode": 0,
           "stdoutSummary": "",
           "stderrSummary": "",
-          "logArtifactPath": "/workspace/Botomatic/release-evidence/runtime/logs/dirty_repo_completion__deploy_validation.log",
+          "logArtifactPath": "/workspaces/Botomatic/release-evidence/runtime/logs/dirty_repo_completion__deploy_validation.log",
           "generatedArtifacts": []
         }
       ],

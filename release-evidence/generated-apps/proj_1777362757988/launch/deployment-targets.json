@@ -1,0 +1,11 @@
+{
+  "targets": [
+    {
+      "id": "vercel",
+      "label": "Vercel",
+      "approvalRequired": true,
+      "credentialed": true,
+      "liveBlockedByDefault": true
+    }
+  ]
+}
