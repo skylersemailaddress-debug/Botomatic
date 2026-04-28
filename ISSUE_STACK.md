@@ -1,8 +1,12 @@
 # Issue Stack
 
+## Active Operating Baseline
+- OPS-001 is complete in baseline (`main`).
+- OPS-002 is active: branch protection and required automated checks.
+
 ## Ordered Priority Stack
-1. OPS-001 freeze random merging
-2. OPS-002 branch protection and required checks
+1. OPS-001 freeze random merging (complete)
+2. OPS-002 branch protection and required checks (active)
 3. LEGAL-001 claim-boundary docs
 4. LEGAL-002 claim-boundary validator
 5. UI-001 screenshot-true Vibe dashboard

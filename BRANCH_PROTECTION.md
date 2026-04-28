@@ -1,0 +1,48 @@
+# Branch Protection Baseline for `main`
+
+This repository uses required pull request checks before merge. Configure the `main` branch in GitHub branch protection / rulesets with the following baseline.
+
+## Required protections
+
+1. **Require a pull request before merging**
+   - Disallow direct pushes to `main`.
+2. **Require status checks to pass before merging**
+   - Require `Botomatic PR Gates / Build, test, and validate`.
+3. **Require branches to be up to date before merging**
+   - Enable strict status checks so PRs must rebase or merge latest `main` before merge.
+4. **Block force pushes**
+   - Force pushes must be disabled for `main`.
+5. **Block branch deletion**
+   - Prevent deletion of `main`.
+6. **Require conversation resolution before merging**
+   - All review conversations must be resolved.
+7. **Require human approval**
+   - At least 1 approving review from a human reviewer.
+8. **No auto-merge for high-risk PRs without explicit approval**
+   - High-risk PR categories (release claims, validator behavior, deployment policy, compliance changes) require explicit maintainer approval before enabling auto-merge.
+9. **UI PRs require screenshot proof**
+   - PR description must include screenshot evidence for user-visible changes.
+10. **Generated-app PRs require generated-output proof**
+    - PR description must include generated output artifacts/logs.
+11. **Self-upgrade PRs require drift/regression proof**
+    - PR description must include drift/regression evidence.
+
+## PR gate workflow commands
+
+The required status check runs the following real repository commands:
+
+- `npm ci`
+- `npm run -s build`
+- `npm run -s test:universal`
+- `npm run -s validate:all`
+- `npm run -s doctor`
+
+## Optional proof commands (not required on every PR)
+
+Proof suites can be expensive and are intentionally **not** required on every pull request. Run them for release readiness or scoped risk reviews:
+
+- `npm run -s proof:fast`
+- `npm run -s proof:all`
+- `npm run -s proof:self-upgrade` (for self-upgrade changes)
+
+Keep these optional to avoid excessive CI time while preserving truthful release evidence workflows.
