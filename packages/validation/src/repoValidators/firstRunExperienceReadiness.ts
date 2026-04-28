@@ -22,14 +22,14 @@ function result(ok: boolean, summary: string, checks: string[]): RepoValidatorRe
 export function validateFirstRunExperienceReadiness(root: string): RepoValidatorResult {
   const checks = [
     "apps/control-plane/src/components/overview/FirstRunWhatsNextPanel.tsx",
-    "apps/control-plane/src/app/projects/[projectId]/page.tsx",
+    "apps/control-plane/src/app/projects/[projectId]/onboarding/page.tsx",
   ];
 
   if (!checks.every((rel) => has(root, rel))) {
     return result(false, "First-run experience files are missing.", checks);
   }
 
-  const page = read(root, "apps/control-plane/src/app/projects/[projectId]/page.tsx");
+  const page = read(root, "apps/control-plane/src/app/projects/[projectId]/onboarding/page.tsx");
   const panel = read(root, "apps/control-plane/src/components/overview/FirstRunWhatsNextPanel.tsx").toLowerCase();
 
   const ok =

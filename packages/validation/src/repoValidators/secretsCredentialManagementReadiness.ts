@@ -53,7 +53,7 @@ export function validateSecretsCredentialManagementReadiness(root: string): Repo
     "apps/control-plane/src/components/overview/SecretsCredentialsPanel.tsx",
     "apps/control-plane/src/services/secrets.ts",
     "apps/control-plane/src/components/overview/DeploymentPanel.tsx",
-    "apps/control-plane/src/app/projects/[projectId]/page.tsx",
+    "apps/control-plane/src/app/projects/[projectId]/vault/page.tsx",
     ".gitignore",
   ];
 
@@ -67,7 +67,7 @@ export function validateSecretsCredentialManagementReadiness(root: string): Repo
   const uiService = read(root, "apps/control-plane/src/services/secrets.ts");
   const uiPanel = read(root, "apps/control-plane/src/components/overview/SecretsCredentialsPanel.tsx");
   const deploymentPanel = read(root, "apps/control-plane/src/components/overview/DeploymentPanel.tsx");
-  const projectPage = read(root, "apps/control-plane/src/app/projects/[projectId]/page.tsx");
+  const vaultPage = read(root, "apps/control-plane/src/app/projects/[projectId]/vault/page.tsx");
   const gitignore = read(root, ".gitignore");
 
   const requiredModelFields = [
@@ -136,7 +136,7 @@ export function validateSecretsCredentialManagementReadiness(root: string): Repo
     return result(false, ".gitignore does not protect environment files with explicit example-file exceptions.", checks);
   }
 
-  if (!uiPanel.includes("Secrets & Credentials") || !projectPage.includes("<SecretsCredentialsPanel")) {
+  if (!uiPanel.includes("Secrets & Credentials") || !vaultPage.includes("<SecretsCredentialsPanel")) {
     return result(false, "Secrets & Credentials UI surface is missing or not mounted.", checks);
   }
 

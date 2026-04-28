@@ -114,16 +114,10 @@ export function validateBuilderCapability(root: string): RepoValidatorResult {
 
 export function validateUIReadiness(root: string): RepoValidatorResult {
   const checks = [
-    "apps/control-plane/src/components/chat/ConversationPane.tsx",
-    "apps/control-plane/src/components/overview/OverviewPanel.tsx",
-    "apps/control-plane/src/components/overview/GatePanel.tsx",
-    "apps/control-plane/src/components/overview/DeploymentPanel.tsx",
-    "apps/control-plane/src/components/overview/PacketPanel.tsx",
-    "apps/control-plane/src/components/overview/ArtifactPanel.tsx",
-    "apps/control-plane/src/components/overview/ProofValidationPanel.tsx",
-    "apps/control-plane/src/components/overview/RepoRescuePanel.tsx",
-    "apps/control-plane/src/components/overview/SelfUpgradePanel.tsx",
-    "apps/control-plane/src/components/overview/LaunchReadinessPanel.tsx",
+    "apps/control-plane/src/app/projects/[projectId]/page.tsx",
+    "apps/control-plane/src/app/projects/[projectId]/vibe/page.tsx",
+    "apps/control-plane/src/app/projects/[projectId]/advanced/page.tsx",
+    "apps/control-plane/src/components/builder/NorthStarBuilderShell.tsx",
     "apps/control-plane/src/styles/tokens.css",
     "apps/control-plane/src/styles/globals.css",
   ];
@@ -134,6 +128,9 @@ export function validateUIReadiness(root: string): RepoValidatorResult {
   }
 
   const projectPage = read(root, "apps/control-plane/src/app/projects/[projectId]/page.tsx");
+  const vibePage = read(root, "apps/control-plane/src/app/projects/[projectId]/vibe/page.tsx");
+  const advancedPage = read(root, "apps/control-plane/src/app/projects/[projectId]/advanced/page.tsx");
+  const northStarShell = read(root, "apps/control-plane/src/components/builder/NorthStarBuilderShell.tsx");
   const globals = read(root, "apps/control-plane/src/styles/globals.css");
   const tokenCss = read(root, "apps/control-plane/src/styles/tokens.css");
   const uiFiles = listFilesRecursive(path.join(root, "apps/control-plane/src"))
@@ -158,13 +155,17 @@ export function validateUIReadiness(root: string): RepoValidatorResult {
     !uiText.includes("fixme") &&
     !uiText.includes("fake demo data");
 
-  const pageMountsRequiredPanels =
-    projectPage.includes("<ProofValidationPanel") &&
-    projectPage.includes("<RepoRescuePanel") &&
-    projectPage.includes("<SelfUpgradePanel") &&
-    projectPage.includes("<LaunchReadinessPanel");
+  const routeShellAlignment =
+    projectPage.includes("<VibeBuilderSkeleton") &&
+    vibePage.includes("<VibeBuilderSkeleton") &&
+    advancedPage.includes("<ProBuilderSkeleton");
 
-  const ok = hasDesignSystemSignals && hasStateSignals && noPlaceholderUi && pageMountsRequiredPanels;
+  const northStarSurfaceSignals =
+    northStarShell.includes("What’s Next") &&
+    northStarShell.includes("Launch Readiness") &&
+    northStarShell.includes("ChatInputBar");
+
+  const ok = hasDesignSystemSignals && hasStateSignals && noPlaceholderUi && routeShellAlignment && northStarSurfaceSignals;
   return result(
     "Validate-Botomatic-UIReadiness",
     ok,
@@ -773,6 +774,11 @@ export function validateBehavioralRuntimeCoverage(root: string): RepoValidatorRe
 export function validateUIControlPlaneIntegration(root: string): RepoValidatorResult {
   const checks = [
     "apps/control-plane/src/app/projects/[projectId]/page.tsx",
+    "apps/control-plane/src/app/projects/[projectId]/advanced/page.tsx",
+    "apps/control-plane/src/app/projects/[projectId]/settings/page.tsx",
+    "apps/control-plane/src/app/projects/[projectId]/evidence/page.tsx",
+    "apps/control-plane/src/app/projects/[projectId]/deployment/page.tsx",
+    "apps/control-plane/src/app/projects/[projectId]/logs/page.tsx",
     "apps/control-plane/src/components/overview/AuditPanel.tsx",
     "apps/control-plane/src/services/audit.ts",
     "apps/control-plane/src/services/spec.ts",
@@ -782,6 +788,11 @@ export function validateUIControlPlaneIntegration(root: string): RepoValidatorRe
   ];
   const fileOk = checks.every((p) => has(root, p));
   const page = fileOk ? read(root, "apps/control-plane/src/app/projects/[projectId]/page.tsx") : "";
+  const advancedPage = fileOk ? read(root, "apps/control-plane/src/app/projects/[projectId]/advanced/page.tsx") : "";
+  const settingsPage = fileOk ? read(root, "apps/control-plane/src/app/projects/[projectId]/settings/page.tsx") : "";
+  const evidencePage = fileOk ? read(root, "apps/control-plane/src/app/projects/[projectId]/evidence/page.tsx") : "";
+  const deploymentPage = fileOk ? read(root, "apps/control-plane/src/app/projects/[projectId]/deployment/page.tsx") : "";
+  const logsPage = fileOk ? read(root, "apps/control-plane/src/app/projects/[projectId]/logs/page.tsx") : "";
   const specSvc = fileOk ? read(root, "apps/control-plane/src/services/spec.ts") : "";
   const overviewSvc = fileOk ? read(root, "apps/control-plane/src/services/overview.ts") : "";
   const packetSvc = fileOk ? read(root, "apps/control-plane/src/services/packets.ts") : "";
@@ -795,16 +806,15 @@ export function validateUIControlPlaneIntegration(root: string): RepoValidatorRe
     deploySvc.includes("/deploy/promote");
   const ok =
     fileOk &&
-    page.includes("<OverviewPanel") &&
-    page.includes("<GatePanel") &&
-    page.includes("<PacketPanel") &&
-    page.includes("<ArtifactPanel") &&
-    page.includes("<DeploymentPanel") &&
-    page.includes("<AuditPanel") &&
-    page.includes("<ProofValidationPanel") &&
-    page.includes("<RepoRescuePanel") &&
-    page.includes("<SelfUpgradePanel") &&
-    page.includes("<LaunchReadinessPanel") &&
+    page.includes("<VibeBuilderSkeleton") &&
+    advancedPage.includes("<ProBuilderSkeleton") &&
+    settingsPage.includes("<GatePanel") &&
+    settingsPage.includes("<LaunchReadinessPanel") &&
+    evidencePage.includes("<ProofValidationPanel") &&
+    evidencePage.includes("<PacketPanel") &&
+    evidencePage.includes("<ArtifactPanel") &&
+    deploymentPage.includes("<DeploymentPanel") &&
+    logsPage.includes("<AuditPanel") &&
     servicesUseRealApi;
   return result(
     "Validate-Botomatic-UIControlPlaneIntegration",
