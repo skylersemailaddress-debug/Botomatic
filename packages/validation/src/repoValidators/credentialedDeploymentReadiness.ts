@@ -194,6 +194,21 @@ export function validateCredentialedDeploymentReadiness(root: string): RepoValid
     if (d?.manifestStatus !== "ready_for_approved_credentialed_deployment") {
       return result(false, `Domain ${domainId}: manifestStatus is "${d?.manifestStatus}" — must be ready_for_approved_credentialed_deployment.`, checks);
     }
+    const handoff = d?.providerHandoffCompleteness;
+    if (!handoff || handoff.status !== "complete" || handoff.approvalRequired !== true || handoff.rollbackPlanPresent !== true) {
+      return result(false, `Domain ${domainId}: providerHandoffCompleteness is missing/incomplete or not approval-gated.`, checks);
+    }
+    const rollback = d?.providerRollbackCompleteness;
+    if (!rollback || rollback.status !== "complete" || rollback.approvalRequired !== true || rollback.rollbackCommandTemplatePresent !== true) {
+      return result(false, `Domain ${domainId}: providerRollbackCompleteness is missing/incomplete or not approval-gated.`, checks);
+    }
+    const secretLinkage = d?.providerSecretPreflightLinkage;
+    if (!secretLinkage || secretLinkage.plaintextSecretsStored !== false || secretLinkage.preflightRequiredBeforeDeploy !== true) {
+      return result(false, `Domain ${domainId}: providerSecretPreflightLinkage violates secret preflight contract.`, checks);
+    }
+    if (!Array.isArray(secretLinkage.missingSecretRefs) || secretLinkage.missingSecretRefs.length < 1) {
+      return result(false, `Domain ${domainId}: providerSecretPreflightLinkage must include missingSecretRefs for blocked deployment readiness.`, checks);
+    }
 
     // Per-domain manifest file must exist
     const manifestPath = d?.manifestPath;
