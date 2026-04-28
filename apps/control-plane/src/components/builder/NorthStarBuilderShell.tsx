@@ -82,8 +82,8 @@ function ChatInputBar({ placeholder = "Ask Botomatic anything…", compact = fal
 
 export function NorthStarBuilderShell({ projectId, workspace, children, rightRail }: BuilderShellProps) {
   const isVibe = workspace === "vibe";
-  const primaryHref = isVibe ? `/projects/${projectId}/advanced` : `/projects/${projectId}/vibe`;
-  const primaryLabel = isVibe ? "Open Pro Builder" : "Open Vibe Builder";
+  const primaryHref = isVibe ? `/projects/${projectId}/advanced` : `/projects/${projectId}`;
+  const primaryLabel = isVibe ? "Advanced controls" : "Chat workspace";
 
   return (
     <section className={`northstar-shell northstar-shell--${workspace}`}>
@@ -94,8 +94,8 @@ export function NorthStarBuilderShell({ projectId, workspace, children, rightRai
         </Link>
         <Link href="/" className="northstar-new-project">+ New Project</Link>
         <nav className="northstar-nav" aria-label="Primary builder navigation">
-          <Link href={`/projects/${projectId}/vibe`} className={isVibe ? "is-active" : ""}>Home</Link>
-          <Link href={`/projects/${projectId}/advanced`} className={!isVibe ? "is-active" : ""}>Pro Control</Link>
+          <Link href={`/projects/${projectId}`} className={isVibe ? "is-active" : ""}>Chat workspace</Link>
+          <Link href={`/projects/${projectId}/advanced`} className={!isVibe ? "is-active" : ""}>Advanced controls</Link>
           <DisabledNavItem>Projects</DisabledNavItem>
           <DisabledNavItem>Templates</DisabledNavItem>
           <DisabledNavItem>Design Studio</DisabledNavItem>
