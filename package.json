@@ -63,7 +63,8 @@
     "test:generated-app-no-placeholders": "tsx packages/validation/src/generatedApp/tests/generatedAppNoPlaceholders.test.ts",
     "test:generated-app-commercial-readiness": "tsx packages/validation/src/generatedApp/tests/generatedAppCommercialReadiness.test.ts",
     "test:generated-app-corpus": "tsx packages/validation/src/generatedApp/tests/generatedAppCorpusHarness.test.ts",
-    "test:generated-app-representative-corpus": "tsx packages/validation/src/generatedApp/tests/generatedAppRepresentativeCorpus.test.ts"
+    "test:generated-app-representative-corpus": "tsx packages/validation/src/generatedApp/tests/generatedAppRepresentativeCorpus.test.ts",
+    "test:secret-leak-prevention": "tsx packages/validation/src/tests/secretLeakPrevention.test.ts"
   },
   "dependencies": {
     "@trigger.dev/sdk": "^4.4.4"
