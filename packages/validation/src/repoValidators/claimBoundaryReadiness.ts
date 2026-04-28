@@ -151,38 +151,23 @@ function sectionForLine(line: number, sections: Array<{ start: number; end: numb
 }
 
 function findPhraseOccurrences(content: string, phrase: string, sections: Array<{ start: number; end: number; title: string }>): Occurrence[] {
-  const lowerContent = content.toLowerCase();
   const needle = phrase.toLowerCase();
   const lines = content.split(/\r?\n/);
-
-  const offsets: number[] = [];
-  let running = 0;
-  for (const line of lines) {
-    offsets.push(running);
-    running += line.length + 1;
-  }
-
   const occurrences: Occurrence[] = [];
-  let from = 0;
-  while (from < lowerContent.length) {
-    const index = lowerContent.indexOf(needle, from);
-    if (index === -1) break;
-    from = index + needle.length;
-
-    let lineNumber = 1;
-    for (let i = 0; i < offsets.length; i += 1) {
-      const next = i + 1 < offsets.length ? offsets[i + 1] : Number.MAX_SAFE_INTEGER;
-      if (index >= offsets[i] && index < next) {
-        lineNumber = i + 1;
-        break;
-      }
+  for (let i = 0; i < lines.length; i += 1) {
+    const lowerLine = lines[i].toLowerCase();
+    let from = 0;
+    while (from < lowerLine.length) {
+      const index = lowerLine.indexOf(needle, from);
+      if (index === -1) break;
+      from = index + needle.length;
+      const lineNumber = i + 1;
+      occurrences.push({
+        phrase,
+        line: lineNumber,
+        section: sectionForLine(lineNumber, sections),
+      });
     }
-
-    occurrences.push({
-      phrase,
-      line: lineNumber,
-      section: sectionForLine(lineNumber, sections),
-    });
   }
 
   return occurrences;

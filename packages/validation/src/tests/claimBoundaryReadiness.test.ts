@@ -50,10 +50,26 @@ function testProhibitedExamplesSectionAllowed() {
   assert(!result.summary.includes("Unsupported public claim language detected"));
 }
 
+function testCrlfProhibitedClaimOutsideSectionFails() {
+  const root = buildFixtureRoot();
+  writeRequiredDocs(root);
+  writeFile(
+    root,
+    "MARKETING_CLAIMS_ALLOWED.md",
+    "# MARKETING\r\n\r\n## Prohibited current claims\r\n- \"Builds 99% of all software\"\r\n\r\n## Allowed current claims\r\nThis is guaranteed launch-ready.\r\n"
+  );
+
+  const result = validateClaimBoundaryReadiness(root);
+  assert.strictEqual(result.status, "failed");
+  assert(result.summary.includes("Unsupported public claim language detected"));
+  assert(result.summary.includes("MARKETING_CLAIMS_ALLOWED.md:"));
+}
+
 function run() {
   testGoodFixturePasses();
   testProhibitedClaimOutsideSectionFails();
   testProhibitedExamplesSectionAllowed();
+  testCrlfProhibitedClaimOutsideSectionFails();
   console.log("claimBoundaryReadiness.test.ts passed");
 }
 
