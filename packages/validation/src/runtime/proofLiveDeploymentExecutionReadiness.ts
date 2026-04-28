@@ -12,6 +12,8 @@ import {
   type RollbackExecutionPlan,
 } from "./liveDeploymentExecutionSchemas";
 import { buildDeploymentSecretPreflight, createInMemorySecretStore } from "./secretsCredentialManagement";
+import type { DeploymentEnvironmentId, DeploymentProviderId, ProviderHandoffCompleteness, ProviderRollbackCompleteness, ProviderSecretPreflightLinkage, ProviderSmokeContract } from "./deploymentProviderContracts";
+import { PROVIDER_DEPLOYMENT_REQUIREMENTS } from "./deploymentProviderContracts";
 
 type DomainId =
   | "web_saas_app"
@@ -37,7 +39,7 @@ const REQUIRED_DOMAINS: DomainId[] = [
   "dirty_repo_completion",
 ];
 
-const DOMAIN_PROVIDER: Record<DomainId, string> = {
+const DOMAIN_PROVIDER: Record<DomainId, DeploymentProviderId> = {
   web_saas_app: "vercel_web_deploy",
   marketing_website: "github_release_handoff",
   api_service: "supabase_backend_deploy",
@@ -224,10 +226,15 @@ function buildProof() {
   const rollbackPlans: RollbackExecutionPlan[] = [];
   const auditEvents: DeploymentAuditEvent[] = [];
   const liveContracts: LiveDeploymentExecutionContract[] = [];
+  const providerHandoffCompleteness: ProviderHandoffCompleteness[] = [];
+  const providerRollbackCompleteness: ProviderRollbackCompleteness[] = [];
+  const providerSmokeContracts: ProviderSmokeContract[] = [];
+  const providerSecretPreflightLinkage: ProviderSecretPreflightLinkage[] = [];
 
   for (const domainId of REQUIRED_DOMAINS) {
     const providerId = DOMAIN_PROVIDER[domainId];
     const adapter = adapters.find((item) => item.providerId === providerId)!;
+    const providerRequirement = PROVIDER_DEPLOYMENT_REQUIREMENTS[providerId];
     const deploymentTarget = DOMAIN_TARGET[domainId];
     const domainPath = path.join(generatedApps, domainId);
 
@@ -259,9 +266,9 @@ function buildProof() {
     const binding: CredentialBindingContract = {
       credentialBindingId,
       providerId,
-      requiredCredentialKeys: adapter.requiredCredentialKeys,
+      requiredCredentialKeys: providerRequirement.requiredSecretsReferenced,
       suppliedCredentialKeys: [],
-      missingCredentialKeys: [...adapter.requiredCredentialKeys],
+      missingCredentialKeys: [...providerRequirement.requiredSecretsReferenced],
       secretStoragePolicy: "env_or_secret_manager_only",
       plaintextSecretAllowed: false,
       credentialValidationMode: "metadata_only_non_executing",
@@ -270,6 +277,39 @@ function buildProof() {
       createdAt: now(),
     };
     bindings.push(binding);
+    const environment: DeploymentEnvironmentId = "prod";
+    providerHandoffCompleteness.push({
+      providerId,
+      environment,
+      requiredSecretsReferenced: providerRequirement.requiredSecretsReferenced,
+      buildCommandKnown: providerRequirement.buildCommandKnown,
+      outputDirectoryKnown: providerRequirement.outputDirectoryKnown,
+      deployCommandTemplatePresent: providerRequirement.deployCommandTemplatePresent,
+      healthCheckPathKnown: providerRequirement.healthCheckPathKnown,
+      smokePlanPresent: providerRequirement.smokePlanPresent,
+      rollbackPlanPresent: providerRequirement.rollbackPlanPresent,
+      approvalRequired: true,
+      status: "blocked",
+    });
+    providerRollbackCompleteness.push({
+      providerId,
+      environment,
+      rollbackStrategy: providerRequirement.rollbackStrategy,
+      rollbackCommandTemplatePresent: providerRequirement.rollbackPlanPresent,
+      previousVersionReferenceRequired: true,
+      dataRollbackBoundaryDocumented: true,
+      approvalRequired: true,
+      status: "blocked",
+    });
+    providerSmokeContracts.push({ providerId, environment, healthCheckPathKnown: providerRequirement.healthCheckPathKnown, smokePlanPresent: providerRequirement.smokePlanPresent, status: "blocked" });
+    providerSecretPreflightLinkage.push({
+      providerId,
+      environment,
+      usesSecretReferencesOnly: true,
+      missingSecretRefs: providerRequirement.requiredSecretsReferenced,
+      plaintextSecretsStored: false,
+      preflightRequiredBeforeDeploy: true,
+    });
 
     const smokePlan: PostDeploySmokeTestPlan = {
       postDeploySmokeTestPlanId,
@@ -414,6 +454,10 @@ function buildProof() {
     rollbackPlans,
     auditEvents,
     liveDeploymentContracts: liveContracts,
+    providerHandoffCompleteness,
+    providerRollbackCompleteness,
+    providerSmokeContracts,
+    providerSecretPreflightLinkage,
     caveat:
       "This artifact proves live deployment execution readiness contracts, approval gates, credential binding rules, provider adapter coverage, smoke-test planning, rollback planning, and audit preparation. It does not prove that any live deployment was executed. Live execution remains blocked by default and requires explicit user approval plus user-supplied credentials.",
   };

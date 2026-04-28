@@ -141,6 +141,18 @@ export function validateDeploymentDryRunReadiness(root: string): RepoValidatorRe
     if (typeof d?.readinessCaveat !== "string" || !d.readinessCaveat.trim()) {
       return result(false, `Domain ${domainId}: readinessCaveat is missing.`, checks);
     }
+    if (!d?.providerHandoffCompleteness || !["complete", "blocked"].includes(String(d.providerHandoffCompleteness.status))) {
+      return result(false, `Domain ${domainId}: providerHandoffCompleteness missing or invalid.`, checks);
+    }
+    if (d.providerHandoffCompleteness.approvalRequired !== true || d.providerHandoffCompleteness.rollbackPlanPresent !== true) {
+      return result(false, `Domain ${domainId}: providerHandoffCompleteness must require approval and rollback plan.`, checks);
+    }
+    if (!d?.providerRollbackCompleteness || !["complete", "blocked"].includes(String(d.providerRollbackCompleteness.status))) {
+      return result(false, `Domain ${domainId}: providerRollbackCompleteness missing or invalid.`, checks);
+    }
+    if (d.providerRollbackCompleteness.approvalRequired !== true || d.providerRollbackCompleteness.rollbackCommandTemplatePresent !== true) {
+      return result(false, `Domain ${domainId}: providerRollbackCompleteness must require approval and rollback command template.`, checks);
+    }
 
     // If credentialed live deployment is claimed without evidence (i.e., credentialClass is no_credentials_required
     // but liveDeploymentSkippedReason implies credentials were used), fail closed.
