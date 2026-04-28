@@ -25,3 +25,4 @@ This file defines currently allowed and prohibited marketing language for Botoma
 
 - All external claims must align with `LEGAL_CLAIM_BOUNDARIES.md` and `EVIDENCE_BOUNDARY_POLICY.md`.
 - If uncertain, use narrower representative language and explicit caveats.
+- Real credentials are required for live deployment.

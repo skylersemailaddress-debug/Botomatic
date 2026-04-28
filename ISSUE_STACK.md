@@ -6,6 +6,8 @@
 - OPS-003 is complete: stable required PR gate aggregator.
 - VALIDATION-001 is complete: `validate:all` baseline cleanup and strict readiness gate promotion.
 - LEGAL-001 is complete: claim-boundary docs.
+- LEGAL-002 is complete: claim-boundary validator.
+- UI-001 is active next: screenshot-true Vibe dashboard.
 
 ## Ordered Priority Stack
 1. OPS-001 freeze random merging (complete)
@@ -13,8 +15,8 @@
 3. VALIDATION-001 close current `validate:all` baseline failures and promote strict readiness gate to required (complete)
 4. LEGAL-001 claim-boundary docs (complete)
 5. OPS-003 add stable required PR gate aggregator (complete)
-6. LEGAL-002 claim-boundary validator
-7. UI-001 screenshot-true Vibe dashboard
+6. LEGAL-002 claim-boundary validator (complete)
+7. UI-001 screenshot-true Vibe dashboard (active next)
 8. UI-002 screenshot-true Pro dashboard
 9. UI-003 remove visible mode-toggle UX
 10. UI-004 UI regression tests
