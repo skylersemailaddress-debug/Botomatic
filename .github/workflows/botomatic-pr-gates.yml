@@ -55,3 +55,14 @@ jobs:
 
       - name: Full validation
         run: npm run -s validate:all
+
+  required-pr-gate:
+    name: Required PR Gate
+    runs-on: ubuntu-latest
+    needs:
+      - baseline-required-checks
+      - strict-readiness-audit
+
+    steps:
+      - name: Final required gate
+        run: echo "All required Botomatic PR gates passed."
