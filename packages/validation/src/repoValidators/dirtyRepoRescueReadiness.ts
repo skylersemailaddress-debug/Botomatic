@@ -28,6 +28,8 @@ export function validateDirtyRepoRescueReadiness(root: string): RepoValidatorRes
     "packages/repo-audit/src/index.ts",
     "packages/repo-repair/src/index.ts",
     "packages/repo-completion/src/index.ts",
+    "packages/validation/src/tests/dirtyRepoCompletionContractV2.test.ts",
+    "docs/dirty-repo-completion-contract-v2.md",
     "packages/validation/src/existingRepo/validateExistingRepoReadiness.ts",
     "apps/orchestrator-api/src/server_app.ts",
     "release-evidence/runtime/dirty_repo_runtime_proof.json",
@@ -90,7 +92,12 @@ export function validateDirtyRepoRescueReadiness(root: string): RepoValidatorRes
     Array.isArray(completionContractPayload?.recommendedCompletionPlan) &&
     completionContractPayload.recommendedCompletionPlan.length >= 2 &&
     Array.isArray(completionContractPayload?.commercialLaunchBlockers);
-  const hasRepairPlanShape =
+  const completionRunner = read(root, "packages/repo-completion/src/completionRunner.ts");
+  const hasV2Boundary =
+    completionRunner.includes("DirtyRepoCompletionContractV2") &&
+    completionRunner.includes("candidate_ready") &&
+    !completionRunner.includes("launch_ready") &&
+    !completionRunner.includes("production_ready");
     Array.isArray(repairPlan?.patchQueue) &&
     Array.isArray(repairPlan?.testQueue) &&
     Array.isArray(repairPlan?.hardeningQueue);
@@ -112,6 +119,7 @@ export function validateDirtyRepoRescueReadiness(root: string): RepoValidatorRes
     hasRepairEvidence &&
     hasDetectionEvidence &&
     hasCompletionContractShape &&
+    hasV2Boundary &&
     hasRepairPlanShape &&
     ranExistingRepoValidator &&
     ranIncrementalValidation &&
