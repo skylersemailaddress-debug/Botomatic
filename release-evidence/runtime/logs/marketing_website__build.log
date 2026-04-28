@@ -1,8 +1,8 @@
 domain=marketing_website
 commandId=build
 kind=build
-startedAt=2026-04-27T22:29:17.467Z
-finishedAt=2026-04-27T22:29:48.307Z
+startedAt=2026-04-28T07:53:07.717Z
+finishedAt=2026-04-28T07:53:28.344Z
 status=passed
 exitCode=0
 --- stdout ---
@@ -44,4 +44,4 @@ Route (app)                              Size     First Load JS
 
 --- stderr ---
 --- generatedArtifacts ---
-/workspace/Botomatic/release-evidence/generated-apps/marketing_website/.next
+/workspaces/Botomatic/release-evidence/generated-apps/marketing_website/.next

@@ -1,11 +1,11 @@
 domain=bot
 commandId=install
 kind=install
-startedAt=2026-04-27T22:30:19.891Z
-finishedAt=2026-04-27T22:30:22.320Z
+startedAt=2026-04-28T07:53:35.647Z
+finishedAt=2026-04-28T07:53:36.197Z
 status=passed
 exitCode=0
 --- stdout ---
-11.4.2
+11.9.0
 
 --- stderr ---

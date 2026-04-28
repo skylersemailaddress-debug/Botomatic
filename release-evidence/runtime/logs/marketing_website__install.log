@@ -1,11 +1,11 @@
 domain=marketing_website
 commandId=install
 kind=install
-startedAt=2026-04-27T22:29:14.968Z
-finishedAt=2026-04-27T22:29:17.467Z
+startedAt=2026-04-28T07:53:07.123Z
+finishedAt=2026-04-28T07:53:07.717Z
 status=passed
 exitCode=0
 --- stdout ---
-11.4.2
+11.9.0
 
 --- stderr ---

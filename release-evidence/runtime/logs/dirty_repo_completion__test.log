@@ -1,8 +1,8 @@
 domain=dirty_repo_completion
 commandId=test
 kind=test
-startedAt=2026-04-27T22:31:04.770Z
-finishedAt=2026-04-27T22:31:07.161Z
+startedAt=2026-04-28T07:53:46.755Z
+finishedAt=2026-04-28T07:53:47.116Z
 status=passed
 exitCode=0
 --- stdout ---

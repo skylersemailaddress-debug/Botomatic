@@ -1,11 +1,11 @@
 domain=web_saas_app
 commandId=install
 kind=install
-startedAt=2026-04-27T22:28:39.663Z
-finishedAt=2026-04-27T22:28:41.814Z
+startedAt=2026-04-28T07:52:44.948Z
+finishedAt=2026-04-28T07:52:45.440Z
 status=passed
 exitCode=0
 --- stdout ---
-11.4.2
+11.9.0
 
 --- stderr ---

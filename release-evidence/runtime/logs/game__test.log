@@ -1,8 +1,8 @@
 domain=game
 commandId=test
 kind=test
-startedAt=2026-04-27T22:30:52.660Z
-finishedAt=2026-04-27T22:30:55.352Z
+startedAt=2026-04-28T07:53:44.815Z
+finishedAt=2026-04-28T07:53:45.487Z
 status=passed
 exitCode=0
 --- stdout ---
