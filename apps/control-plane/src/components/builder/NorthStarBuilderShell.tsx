@@ -31,6 +31,331 @@ const toneLabels: Record<StatusTone, string> = {
   planned: "Planned",
 };
 
+function NorthStarGlobalStyles() {
+  return (
+    <style jsx global>{`
+      .northstar-shell {
+        width: 100vw !important;
+        height: 100dvh !important;
+        min-height: 0 !important;
+        padding: 16px !important;
+        display: grid !important;
+        grid-template-columns: 220px minmax(0, 1fr) !important;
+        gap: 16px !important;
+        overflow: hidden !important;
+        background:
+          radial-gradient(circle at 84% 8%, rgba(124, 77, 255, 0.16), transparent 34%),
+          radial-gradient(circle at 10% 0%, rgba(90, 54, 220, 0.12), transparent 30%),
+          linear-gradient(180deg, #fbfaff 0%, #f0edff 100%) !important;
+      }
+
+      .northstar-global-sidebar {
+        display: flex !important;
+        min-height: 0 !important;
+        height: 100% !important;
+        overflow: hidden !important;
+        border-radius: 24px !important;
+      }
+
+      .northstar-main {
+        height: 100% !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+        display: grid !important;
+        grid-template-rows: auto minmax(0, 1fr) !important;
+        gap: 14px !important;
+      }
+
+      .northstar-workspace-topbar {
+        min-height: 92px !important;
+        padding: 14px 18px !important;
+        border-radius: 24px !important;
+        flex-shrink: 0 !important;
+      }
+
+      .northstar-workspace-topbar h2 {
+        font-size: 28px !important;
+        line-height: 1.05 !important;
+      }
+
+      .northstar-content-grid {
+        height: 100% !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) 340px !important;
+        gap: 14px !important;
+      }
+
+      .northstar-content {
+        min-height: 0 !important;
+        overflow: hidden !important;
+        display: grid !important;
+      }
+
+      .northstar-right-rail {
+        min-height: 0 !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        display: grid !important;
+        align-content: start !important;
+        gap: 12px !important;
+        padding-right: 2px !important;
+      }
+
+      .vibe-builder-grid,
+      .pro-builder-grid {
+        height: 100% !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+      }
+
+      .northstar-shell--vibe .vibe-builder-grid {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) !important;
+      }
+
+      .vibe-chat-panel {
+        height: 100% !important;
+        min-height: 0 !important;
+        padding: 18px !important;
+        display: grid !important;
+        grid-template-rows: auto minmax(0, 1fr) auto auto !important;
+        gap: 12px !important;
+        overflow: hidden !important;
+        border-radius: 26px !important;
+      }
+
+      .vibe-message-list {
+        display: grid !important;
+        gap: 10px !important;
+        margin: 0 !important;
+        flex: none !important;
+      }
+
+      .vibe-message {
+        max-width: 74% !important;
+        padding: 12px 14px !important;
+        font-size: 13px !important;
+        line-height: 1.35 !important;
+      }
+
+      .vibe-progress-pills {
+        margin-top: 10px !important;
+        display: flex !important;
+        gap: 8px !important;
+        flex-wrap: wrap !important;
+      }
+
+      .vibe-progress-pills span {
+        border-radius: 999px !important;
+        padding: 6px 9px !important;
+        border: 1px solid rgba(116, 88, 220, 0.14) !important;
+        background: #fff !important;
+        color: #5c4d78 !important;
+        font-size: 11px !important;
+      }
+
+      .northstar-card {
+        min-height: 0 !important;
+      }
+
+      .vibe-chat-panel > .northstar-card {
+        min-height: 0 !important;
+        overflow: hidden !important;
+      }
+
+      .vibe-chat-panel > .northstar-card .northstar-card-body {
+        min-height: 0 !important;
+        overflow: hidden !important;
+        padding: 12px 14px 14px !important;
+      }
+
+      .generated-preview-card {
+        min-height: 0 !important;
+        height: 100% !important;
+        padding: 10px !important;
+        overflow: hidden !important;
+      }
+
+      .generated-preview-card--large {
+        min-height: 0 !important;
+      }
+
+      .generated-preview-hero {
+        min-height: 0 !important;
+        height: calc(100% - 34px) !important;
+        padding: 24px !important;
+        justify-content: center !important;
+        overflow: hidden !important;
+      }
+
+      .generated-preview-hero h2 {
+        font-size: clamp(34px, 4vw, 54px) !important;
+      }
+
+      .generated-booking-bar,
+      .generated-preview-actions {
+        display: flex !important;
+        gap: 10px !important;
+        flex-wrap: wrap !important;
+        margin-top: 14px !important;
+      }
+
+      .generated-booking-bar {
+        align-items: center !important;
+        border-radius: 16px !important;
+        background: rgba(255,255,255,0.94) !important;
+        color: #241a42 !important;
+        padding: 10px !important;
+        width: fit-content !important;
+        max-width: 100% !important;
+      }
+
+      .generated-booking-bar span {
+        min-width: 86px !important;
+        color: #615276 !important;
+        opacity: 1 !important;
+        text-transform: none !important;
+        letter-spacing: 0 !important;
+      }
+
+      .vibe-action-chips {
+        flex-shrink: 0 !important;
+      }
+
+      .vibe-command-bar {
+        margin-top: 0 !important;
+        flex-shrink: 0 !important;
+      }
+
+      .build-map-steps {
+        display: grid !important;
+        grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+        gap: 6px !important;
+        margin-bottom: 10px !important;
+      }
+
+      .build-map-steps span {
+        border-radius: 999px !important;
+        border: 1px solid rgba(116, 88, 220, 0.16) !important;
+        padding: 6px 7px !important;
+        text-align: center !important;
+        font-size: 10px !important;
+        color: #75698f !important;
+      }
+
+      .build-map-steps span.is-done,
+      .build-map-steps span.is-active {
+        color: #fff !important;
+        background: linear-gradient(135deg, #7c4dff, #5b2be0) !important;
+      }
+
+      .app-health-ring {
+        width: 96px !important;
+        height: 96px !important;
+        margin: 0 auto 12px !important;
+        border-radius: 999px !important;
+        display: grid !important;
+        place-items: center !important;
+        font-weight: 800 !important;
+        font-size: 28px !important;
+        color: #1b7d52 !important;
+        background:
+          radial-gradient(circle at center, #fff 58%, transparent 59%),
+          conic-gradient(#29a56f 0 92%, #efeafc 92% 100%) !important;
+      }
+
+      .app-health-ring span {
+        font-size: 13px !important;
+      }
+
+      .next-action-grid,
+      .service-list {
+        display: grid !important;
+        gap: 8px !important;
+      }
+
+      .next-action-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      }
+
+      .next-action-grid button {
+        padding: 8px !important;
+        font-size: 11px !important;
+      }
+
+      .pro-builder-grid {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 12px !important;
+        overflow-y: auto !important;
+        padding-right: 2px !important;
+      }
+
+      .northstar-stepper {
+        grid-template-columns: repeat(7, minmax(90px, 1fr)) !important;
+      }
+
+      .code-diff-shell,
+      .system-health-grid {
+        display: grid !important;
+        grid-template-columns: 170px minmax(0, 1fr) !important;
+        gap: 12px !important;
+      }
+
+      .code-diff-shell pre,
+      .terminal-preview {
+        margin: 0 !important;
+        border-radius: 14px !important;
+        background: #12101d !important;
+        color: #e9e4ff !important;
+        padding: 14px !important;
+        overflow: auto !important;
+      }
+
+      .service-list > div,
+      .test-summary,
+      .pro-preview-box,
+      .generated-preview-mini {
+        border: 1px solid rgba(116, 88, 220, 0.12) !important;
+        border-radius: 14px !important;
+        padding: 10px !important;
+        background: #fbf9ff !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        gap: 10px !important;
+      }
+
+      .northstar-nav-disabled {
+        border-radius: 12px !important;
+        padding: 9px 10px !important;
+        color: #9b90b4 !important;
+        cursor: not-allowed !important;
+        font-weight: var(--font-weight-medium) !important;
+      }
+
+      @media (max-width: 1240px) {
+        .northstar-shell {
+          grid-template-columns: 1fr !important;
+          overflow-y: auto !important;
+        }
+        .northstar-global-sidebar {
+          display: none !important;
+        }
+        .northstar-content-grid {
+          grid-template-columns: 1fr !important;
+          overflow: visible !important;
+        }
+        .northstar-content,
+        .northstar-right-rail {
+          overflow: visible !important;
+        }
+      }
+    `}</style>
+  );
+}
+
 export function DataSourceBadge({ source }: { source: PanelSource }) {
   return <span className={`northstar-source-badge is-${source}`}>{sourceLabels[source]}</span>;
 }
@@ -87,6 +412,7 @@ export function NorthStarBuilderShell({ projectId, workspace, children, rightRai
 
   return (
     <section className={`northstar-shell northstar-shell--${workspace}`}>
+      <NorthStarGlobalStyles />
       <aside className="northstar-global-sidebar" aria-label="Botomatic navigation">
         <Link href="/" className="northstar-brand" aria-label="Botomatic home">
           <span className="northstar-brand-mark">⬡</span>
