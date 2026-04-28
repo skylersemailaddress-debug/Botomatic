@@ -76,6 +76,7 @@ export type ParsedCommand =
   | "prepare-deployment"
   | "launch-capsule"
   | "generate-plan"
+  | "bind-build-contract"
   | "pause-run"
   | null;
 
