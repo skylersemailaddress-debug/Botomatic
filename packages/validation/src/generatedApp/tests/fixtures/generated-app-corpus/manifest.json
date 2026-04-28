@@ -1,0 +1,33 @@
+{
+  "manifestVersion": "1",
+  "corpusName": "generated-app-corpus-harness-test-fixtures",
+  "cases": [
+    {
+      "id": "clean-candidate",
+      "displayName": "Clean Candidate Fixture (Test-Only)",
+      "domain": "internal-test",
+      "appPath": "clean-candidate",
+      "expectedReadinessStatus": "candidate_ready",
+      "requiredChecks": ["no_placeholder_scan", "commercial_readiness"],
+      "notes": "Test fixture only; not product proof corpus."
+    },
+    {
+      "id": "placeholder-blocked",
+      "displayName": "Placeholder Blocked Fixture (Test-Only)",
+      "domain": "internal-test",
+      "appPath": "placeholder-blocked",
+      "expectedReadinessStatus": "blocked",
+      "requiredChecks": ["no_placeholder_scan", "commercial_readiness"],
+      "notes": "Contains intentional placeholders for blocked-path test coverage."
+    },
+    {
+      "id": "preview-ready",
+      "displayName": "Preview Ready Fixture (Test-Only)",
+      "domain": "internal-test",
+      "appPath": "preview-ready",
+      "expectedReadinessStatus": "preview_ready",
+      "requiredChecks": ["no_placeholder_scan", "commercial_readiness"],
+      "notes": "Intentionally omits build/test script to stay preview-only in tests."
+    }
+  ]
+}
