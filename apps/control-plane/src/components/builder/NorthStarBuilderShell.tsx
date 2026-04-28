@@ -75,6 +75,14 @@ export function WorkspaceCard({
   );
 }
 
+function DisabledNavItem({ children }: { children: ReactNode }) {
+  return (
+    <span className="northstar-nav-disabled" aria-disabled="true">
+      {children}
+    </span>
+  );
+}
+
 export function NorthStarBuilderShell({ projectId, workspace, children, rightRail }: BuilderShellProps) {
   const isVibe = workspace === "vibe";
   const primaryHref = isVibe ? `/projects/${projectId}/advanced` : `/projects/${projectId}/vibe`;
@@ -94,10 +102,10 @@ export function NorthStarBuilderShell({ projectId, workspace, children, rightRai
         <nav className="northstar-nav" aria-label="Primary builder navigation">
           <Link href={`/projects/${projectId}/vibe`} className={isVibe ? "is-active" : ""}>Build Chat</Link>
           <Link href={`/projects/${projectId}/advanced`} className={!isVibe ? "is-active" : ""}>Pro Control</Link>
-          <a aria-disabled="true">Templates</a>
-          <a aria-disabled="true">Design Studio</a>
-          <a aria-disabled="true">Launch</a>
-          <a aria-disabled="true">Learn</a>
+          <DisabledNavItem>Templates</DisabledNavItem>
+          <DisabledNavItem>Design Studio</DisabledNavItem>
+          <DisabledNavItem>Launch</DisabledNavItem>
+          <DisabledNavItem>Learn</DisabledNavItem>
         </nav>
         <div className="northstar-sidebar-note">
           <div>Chat and voice stay in control.</div>
