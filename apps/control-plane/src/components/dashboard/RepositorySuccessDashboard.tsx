@@ -2,82 +2,348 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import styles from "./RepositorySuccessDashboard.module.css";
 
-type Gate = { name: string; command: string; status: "passed" | "failed" | "not_run"; durationMs?: number; summary: string; output?: string };
-type DashboardData = { repository: any; latestCommit: any; filesChanged: any[]; totals: { additions: number; deletions: number }; gates: Gate[]; gateSummary: any; commitHistory: any[]; pullRequests?: { items?: any[] } };
+type GateStatus = "passed" | "failed" | "not_run";
+type Gate = {
+  name: string;
+  command: string;
+  status: GateStatus;
+  durationMs?: number;
+  summary?: string;
+};
 
-const bg = "radial-gradient(circle at 12% 0%, rgba(57,127,255,.18), transparent 27%), radial-gradient(circle at 90% 8%, rgba(31,197,91,.10), transparent 25%), linear-gradient(135deg,#050b15 0%,#091321 45%,#07111f 100%)";
-const card = { border: "1px solid rgba(122,163,214,.16)", background: "linear-gradient(180deg, rgba(19,33,53,.93), rgba(9,21,37,.98))", boxShadow: "inset 0 1px 0 rgba(255,255,255,.045), 0 20px 60px rgba(0,0,0,.32)", borderRadius: 12, overflow: "hidden" } as const;
-const label = { color: "#47a3ff", fontSize: 12, fontWeight: 900, letterSpacing: .7, textTransform: "uppercase" as const };
+type DashboardData = {
+  repository?: {
+    branch?: string;
+    localSha?: string;
+    remoteSha?: string;
+    upToDate?: boolean;
+    behind?: number;
+    url?: string;
+  };
+  latestCommit?: { sha?: string; message?: string; author?: string; date?: string };
+  filesChanged?: Array<{ path?: string; additions?: number; deletions?: number }>;
+  totals?: { additions?: number; deletions?: number };
+  gates?: Gate[];
+  gateSummary?: { allPassed?: boolean; stale?: boolean };
+  commitHistory?: Array<{ sha?: string; message?: string; author?: string; date?: string }>;
+  pullRequests?: { items?: Array<{ number?: number; title?: string }> };
+};
 
-function shortSha(v?: string) { return v && v !== "unknown" ? v.slice(0, 7) : "unknown"; }
-function fmtDate(v?: string) { if (!v) return "not run"; const d = new Date(v); return Number.isNaN(d.getTime()) ? v : d.toLocaleString([], { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }); }
-function getGate(gates: Gate[], name: string) { return gates.find((g) => g.name.toLowerCase() === name.toLowerCase()); }
-function gateLabel(g?: Gate | { status: string }) { if (!g) return "--"; return g.status === "passed" ? "OK" : g.status === "failed" ? "FAIL" : "--"; }
-function gateKind(g?: Gate | { status: string }) { return !g || g.status === "not_run" ? "warn" : g.status === "failed" ? "bad" : "ok"; }
+type DashboardProps = { projectId?: string };
 
-function Pill({ children, kind = "ok" }: { children: React.ReactNode; kind?: "ok" | "bad" | "warn" | "info" }) {
-  const c = { ok: ["rgba(34,197,94,.15)", "rgba(34,197,94,.38)", "#3bea79"], bad: ["rgba(239,68,68,.15)", "rgba(239,68,68,.35)", "#ff6b6b"], warn: ["rgba(245,158,11,.15)", "rgba(245,158,11,.35)", "#fbbf24"], info: ["rgba(59,130,246,.15)", "rgba(59,130,246,.35)", "#63adff"] }[kind];
-  return <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 52, padding: "5px 12px", borderRadius: 999, background: c[0], border: `1px solid ${c[1]}`, color: c[2], fontSize: 12, fontWeight: 900 }}>{children}</span>;
+const testRows = ["Unit Tests", "Integration Tests", "Contract Tests", "E2E Tests"];
+
+function shortSha(v?: string) {
+  return v && v !== "unknown" ? v.slice(0, 7) : "--";
 }
 
-function CheckLine({ title, text }: { title: string; text: string }) {
-  return <li style={{ display: "grid", gridTemplateColumns: "18px 1fr", gap: 8, margin: "7px 0", alignItems: "start" }}><span style={{ width: 16, height: 16, borderRadius: 999, background: "#35d46b", color: "white", display: "grid", placeItems: "center", fontSize: 11, fontWeight: 1000, boxShadow: "0 0 14px rgba(53,212,107,.45)" }}>✓</span><span style={{ color: "#d6e0ed", fontSize: 13, lineHeight: 1.35 }}><strong style={{ color: "#f7fbff" }}>{title}:</strong> {text}</span></li>;
+function formatDate(v?: string) {
+  if (!v) return "not available";
+  const d = new Date(v);
+  if (Number.isNaN(d.getTime())) return v;
+  return d.toLocaleString([], {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
 
-export default function RepositorySuccessDashboard() {
+function gateByName(gates: Gate[], name: string) {
+  return gates.find((g) => g.name.toLowerCase() === name.toLowerCase());
+}
+
+function gateTone(status?: GateStatus | "pending") {
+  if (status === "passed") return "ok";
+  if (status === "failed") return "bad";
+  return "warn";
+}
+
+function gateText(status?: GateStatus | "pending") {
+  if (status === "passed") return "OK";
+  if (status === "failed") return "FAIL";
+  return "--";
+}
+
+function toneClass(tone: string) {
+  if (tone === "ok") return styles.toneOk;
+  if (tone === "bad") return styles.toneBad;
+  return styles.toneWarn;
+}
+
+export default function RepositorySuccessDashboard({ projectId }: DashboardProps) {
   const [data, setData] = useState<DashboardData | null>(null);
   const [hybrid, setHybrid] = useState<any>(null);
   const [running, setRunning] = useState(false);
 
   async function load(runGates = false) {
-    const url = `/api/local-repo-dashboard${runGates ? "?runGates=1" : "?autoRunOnChange=1"}`;
-    const [d, h] = await Promise.all([fetch(url, { cache: "no-store" }), fetch("/api/hybrid-ci", { cache: "no-store" }).catch(() => null)]);
-    setData(await d.json());
-    if (h) setHybrid(await h.json().catch(() => null));
+    const dashboardUrl = `/api/local-repo-dashboard${runGates ? "?runGates=1" : "?autoRunOnChange=1"}`;
+    const [dashboardRes, hybridRes] = await Promise.all([
+      fetch(dashboardUrl, { cache: "no-store" }),
+      fetch("/api/hybrid-ci", { cache: "no-store" }).catch(() => null),
+    ]);
+
+    if (dashboardRes.ok) setData(await dashboardRes.json());
+    if (hybridRes && hybridRes.ok) setHybrid(await hybridRes.json().catch(() => null));
   }
 
-  useEffect(() => { void load(false); const t = setInterval(() => void load(false), 30000); return () => clearInterval(t); }, []);
+  useEffect(() => {
+    void load(false);
 
-  const repository = data?.repository || {};
-  const latestCommit = data?.latestCommit || {};
-  const filesChanged = data?.filesChanged || [];
-  const totals = data?.totals || { additions: 0, deletions: 0 };
-  const gates = data?.gates || [];
-  const gateSummary = data?.gateSummary || {};
-  const commitHistory = data?.commitHistory || [];
-  const prs = data?.pullRequests?.items || [];
-  const actions = hybrid?.githubActions?.runs || [];
-  const deployHooks = hybrid?.deploymentHooks || [];
-  const buildGate = getGate(gates, "Build");
-  const testGate = getGate(gates, "Tests");
-  const validateGate = getGate(gates, "Validate:All");
-  const failed = gates.some((g) => g.status === "failed");
-  const allPassed = Boolean(gateSummary.allPassed);
-  const testRows = useMemo(() => ["Unit Tests", "Integration Tests", "Contract Tests", "E2E Tests"].map((n) => [n, testGate?.status === "passed" ? "passed" : testGate?.status === "failed" ? "review" : "not run"]), [testGate?.status]);
+    const poll = setInterval(() => {
+      void load(false);
+    }, 30000);
 
-  if (!data) return <div style={{ minHeight: "100vh", background: "#08111f", color: "#e9f2ff", padding: 24 }}>Loading release dashboard...</div>;
+    let stream: EventSource | null = null;
+    try {
+      stream = new EventSource("/api/local-repo-dashboard/stream");
+      stream.onmessage = (event) => {
+        try {
+          const parsed = JSON.parse(event.data) as DashboardData;
+          setData(parsed);
+        } catch {
+          // no-op on malformed stream events
+        }
+      };
+      stream.onerror = () => {
+        stream?.close();
+      };
+    } catch {
+      // stream is optional; polling remains active
+    }
 
-  return <div style={{ height: "100vh", overflow: "hidden", padding: 14, color: "#e9f2ff", background: bg, fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" }}>
-    <div style={{ height: "100%", display: "grid", gridTemplateRows: "52px 1fr", gap: 14 }}>
-      <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}><div style={{ width: 38, height: 38, display: "grid", placeItems: "center", color: "#58a6ff", fontSize: 31, fontWeight: 1000, textShadow: "0 0 18px rgba(88,166,255,.7)" }}>⬡</div><div style={{ fontSize: 30, fontWeight: 900, letterSpacing: -1.2, color: "#f8fbff" }}>Botomatic</div><div style={{ marginLeft: 12, color: "#95a8bf", fontSize: 13, fontWeight: 700 }}>Enterprise Builder Command Center</div></div>
-        <button onClick={() => { setRunning(true); load(true).finally(() => setRunning(false)); }} disabled={running} style={{ background: "rgba(47,91,150,.28)", border: "1px solid rgba(98,166,255,.25)", color: "#cfe3ff", borderRadius: 8, padding: "9px 13px", fontWeight: 900 }}>{running ? "Running gates" : "Run live gates"}</button>
+    return () => {
+      clearInterval(poll);
+      stream?.close();
+    };
+  }, []);
+
+  const repository = data?.repository ?? {};
+  const latestCommit = data?.latestCommit ?? {};
+  const filesChanged = data?.filesChanged ?? [];
+  const totals = data?.totals ?? {};
+  const gates = data?.gates ?? [];
+  const gateSummary = data?.gateSummary ?? {};
+  const commitHistory = data?.commitHistory ?? [];
+  const pullRequests = data?.pullRequests?.items ?? [];
+  const actions = hybrid?.githubActions?.runs ?? [];
+
+  const buildGate = gateByName(gates, "Build");
+  const testsGate = gateByName(gates, "Tests");
+  const validateGate = gateByName(gates, "Validate:All");
+  const githubGateStatus: GateStatus = repository.upToDate ? "passed" : "failed";
+  const actionsStatus: GateStatus = actions.length > 0 ? "passed" : "not_run";
+
+  const anyFailed = gates.some((g) => g.status === "failed");
+  const anyRan = gates.some((g) => g.status !== "not_run");
+  const allPassed = gateSummary.allPassed || (anyRan && !anyFailed);
+
+  const heroTitle = allPassed
+    ? "Repository updated successfully"
+    : anyFailed
+      ? "Repository needs attention"
+      : "Repository status pending";
+
+  const heroSubtitle = allPassed
+    ? "All available quality gates report pass for this revision."
+    : anyFailed
+      ? "At least one quality gate failed. Review evidence before deploy."
+      : "No completed gate runs yet. Execute live gates for current status.";
+
+  const commitRows = (commitHistory.length ? commitHistory : [latestCommit]).filter((row) => row && (row.sha || row.message)).slice(0, 3);
+
+  const changedSummary = useMemo(() => {
+    if (!filesChanged.length) return ["No file changes detected in the current data snapshot."];
+    return filesChanged.slice(0, 4).map((f) => `${f.path ?? "unknown file"} (+${f.additions ?? 0} / -${f.deletions ?? 0})`);
+  }, [filesChanged]);
+
+  const validatorCounts = {
+    critical: validateGate?.status === "failed" ? 1 : 0,
+    warnings: gateSummary.stale ? 1 : 0,
+    info: gates.length,
+  };
+
+  if (!data) {
+    return <div className={styles.loading}>Loading release dashboard for {projectId ?? "project"}…</div>;
+  }
+
+  return (
+    <div className={styles.root}>
+      <header className={styles.header}>
+        <div className={styles.brandWrap}>
+          <div className={styles.hex}>⬡</div>
+          <div className={styles.brand}>Botomatic</div>
+          <div className={styles.subbrand}>Enterprise Builder Command Center</div>
+        </div>
+        <button
+          onClick={() => {
+            setRunning(true);
+            load(true).finally(() => setRunning(false));
+          }}
+          disabled={running}
+          className={styles.runBtn}
+        >
+          {running ? "Running live gates…" : "Run Live Gates"}
+        </button>
       </header>
-      <main style={{ minHeight: 0, display: "grid", gridTemplateColumns: "1fr 1fr", gridTemplateRows: "1.18fr .62fr .32fr", gap: 14 }}>
-        <section style={{ ...card, padding: 18, display: "grid", gridTemplateRows: "auto auto auto 1fr auto", gap: 10 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "48px 1fr", gap: 14, alignItems: "center" }}><div style={{ width: 48, height: 48, borderRadius: 999, background: failed ? "linear-gradient(135deg,#ef4444,#fb7185)" : "linear-gradient(135deg,#37dc70,#16a34a)", color: "white", display: "grid", placeItems: "center", fontSize: 28, fontWeight: 1000, boxShadow: failed ? "0 0 24px rgba(239,68,68,.36)" : "0 0 24px rgba(34,197,94,.42)" }}>✓</div><div><h1 style={{ margin: 0, color: failed ? "#ff7575" : "#3be176", fontSize: 20, lineHeight: 1.08 }}>{failed ? "Repository needs attention" : "Repository updated successfully"}</h1><p style={{ margin: "7px 0 0", color: "#a7b6c9", fontSize: 13 }}>{allPassed ? "All changes committed, tested, and validated" : failed ? "One or more quality gates failed. Review validator evidence." : "Live data loaded. Run gates to validate this revision."}</p></div></div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 18, marginTop: 4 }}>{[["Branch", repository.branch || "main"], ["Commit", shortSha(repository.localSha || latestCommit.sha)], ["Author", latestCommit.author || "Botomatic Builder"], ["Date", fmtDate(latestCommit.date)]].map(([k, v]) => <div key={k}><div style={{ color: "#8497ad", fontSize: 11, marginBottom: 5 }}>{k}</div><div style={{ display: "inline-flex", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", padding: "7px 12px", borderRadius: 6, background: "rgba(37,68,110,.44)", color: "#61a8ff", fontSize: 13, fontWeight: 900 }}>{v}</div></div>)}</div>
-          <div style={{ height: 1, background: "rgba(148,163,184,.14)", margin: "2px 0" }} />
-          <div style={{ minHeight: 0 }}><h2 style={{ ...label, margin: "0 0 8px" }}>Summary</h2><p style={{ color: "#a7b6c9", fontSize: 13, lineHeight: 1.43, margin: 0 }}>Hybrid CI ties local checkout state, GitHub sync, workflow visibility, validator evidence, and deployment hook posture into one release-command surface.</p><h2 style={{ ...label, margin: "16px 0 8px" }}>What was changed</h2><ul style={{ listStyle: "none", padding: 0, margin: 0 }}><CheckLine title="Intent Routing" text="Self-upgrade remains opt-in and generated-app work stays correctly classified." /><CheckLine title="Negative Overrides" text="Negated self-upgrade language cannot hijack build execution." /><CheckLine title="Contract Binding" text="Compiled output is persisted as master truth and recognized as build evidence." /><CheckLine title="Chat UX" text="Command flow is cleaner and system noise is separated from main output." /><CheckLine title="Validator" text="Regression checks protect routing and contract-binding paths." /></ul></div>
-          <div><h2 style={{ ...label, margin: "0 0 10px" }}>Quality gates</h2><div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 10 }}>{[["Build", buildGate], ["Tests", testGate], ["GitHub", repository.upToDate ? { status: "passed" } : { status: "failed" }], ["Actions", actions.length ? { status: "passed" } : { status: "not_run" }], ["Validate:All", validateGate]].map(([name, gate]: any) => <div key={name} style={{ minHeight: 76, border: "1px solid rgba(133,168,212,.12)", background: "rgba(22,35,55,.72)", borderRadius: 8, padding: 10, display: "grid", placeItems: "center", gap: 4 }}><strong style={{ fontSize: 12 }}>{name}</strong><Pill kind={gateKind(gate)}>{gateLabel(gate)}</Pill></div>)}</div></div>
+
+      <main className={styles.grid}>
+        <section className={`${styles.card} ${styles.heroCard}`}>
+          <div className={styles.heroTop}>
+            <span className={`${styles.heroIcon} ${allPassed ? styles.heroGood : anyFailed ? styles.heroBad : styles.heroWarn}`}>{allPassed ? "✓" : anyFailed ? "!" : "•"}</span>
+            <div>
+              <h1 className={`${styles.heroTitle} ${allPassed ? styles.textGood : anyFailed ? styles.textBad : styles.textWarn}`}>{heroTitle}</h1>
+              <p className={styles.heroSubtitle}>{heroSubtitle}</p>
+            </div>
+          </div>
+
+          <div className={styles.metaGrid}>
+            {[
+              ["Branch", repository.branch ?? "unknown"],
+              ["Commit", shortSha(repository.localSha ?? latestCommit.sha)],
+              ["Author", latestCommit.author ?? "unknown"],
+              ["Date", formatDate(latestCommit.date)],
+            ].map(([k, v]) => (
+              <div key={String(k)}>
+                <div className={styles.metaLabel}>{k}</div>
+                <div className={styles.metaValue}>{v}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className={styles.sectionLabel}>Summary</div>
+          <p className={styles.sectionBody}>
+            {latestCommit.message
+              ? `Latest commit: ${latestCommit.message}`
+              : "No commit metadata available from local-repo dashboard."}
+          </p>
+
+          <div className={styles.sectionLabel}>What was changed</div>
+          <ul className={styles.checkList}>
+            {changedSummary.map((row) => (
+              <li key={row} className={styles.checkRow}><span>✓</span><span>{row}</span></li>
+            ))}
+          </ul>
+
+          <div className={styles.sectionLabel}>Quality gates</div>
+          <div className={styles.gateGrid}>
+            {[
+              ["Build", buildGate?.status],
+              ["Tests", testsGate?.status],
+              ["GitHub", githubGateStatus],
+              ["Actions", actionsStatus],
+              ["Validate:All", validateGate?.status],
+            ].map(([name, status]) => {
+              const tone = gateTone(status as GateStatus | undefined);
+              return (
+                <div className={styles.gateCell} key={String(name)}>
+                  <span>{name}</span>
+                  <span className={`${styles.gatePill} ${toneClass(tone)}`}>{gateText(status as GateStatus | undefined)}</span>
+                </div>
+              );
+            })}
+          </div>
         </section>
-        <section style={{ ...card, display: "grid", gridTemplateRows: "42px 1fr 28px" }}><div style={{ padding: "14px 16px 8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}><h2 style={{ ...label, margin: 0 }}>Files changed ({filesChanged.length})</h2><div style={{ display: "flex", gap: 18, fontWeight: 1000, fontSize: 15 }}><span style={{ color: "#35e276" }}>+{totals.additions || 0}</span><span style={{ color: "#ff6262" }}>-{totals.deletions || 0}</span></div></div><div style={{ overflow: "auto", padding: "0 16px" }}>{filesChanged.length === 0 ? <div style={{ color: "#96a8be", padding: 14 }}>No working-tree changes. Latest commit is synced.</div> : filesChanged.slice(0, 18).map((file: any, i: number) => <div key={`${file.path}-${i}`} style={{ display: "grid", gridTemplateColumns: "18px 1fr 58px 58px", alignItems: "center", gap: 8, minHeight: 26, borderBottom: "1px solid rgba(148,163,184,.08)", fontSize: 12 }}><span style={{ color: "#a5b4c7" }}>▧</span><span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: "#dce6f4" }}>{file.path}</span><span style={{ color: "#35e276", textAlign: "right" }}>+{file.additions || 0}</span><span style={{ color: "#ff6262", textAlign: "right" }}>-{file.deletions || 0}</span></div>)}</div><div style={{ padding: "6px 16px 12px", color: "#8ea1b7", display: "flex", justifyContent: "space-between", fontSize: 12 }}><span>{filesChanged.length} files changed</span><span>{totals.additions || 0} additions · {totals.deletions || 0} deletions</span></div></section>
-        <section style={{ ...card, padding: 14 }}><h2 style={{ ...label, margin: "0 0 12px" }}>Commits ({commitHistory.length || 1})</h2>{(commitHistory.length ? commitHistory.slice(0, 3) : [latestCommit]).map((c: any) => <div key={c.sha || c.message} style={{ display: "grid", gridTemplateColumns: "74px 1fr 148px 86px", alignItems: "center", gap: 8, minHeight: 37, borderBottom: "1px solid rgba(148,163,184,.07)", fontSize: 12 }}><strong style={{ color: "#58a6ff" }}>{shortSha(c.sha)}</strong><span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.message}</span><span style={{ color: "#9badc3", textAlign: "right" }}>{c.author}</span><span style={{ color: "#9badc3", textAlign: "right" }}>{fmtDate(c.date).split(",")[0]}</span></div>)}</section>
-        <section style={{ ...card, padding: 14, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}><div><h2 style={{ ...label, margin: "0 0 10px" }}>Test results</h2><div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 10 }}><span style={{ width: 42, height: 42, borderRadius: 999, background: "linear-gradient(135deg,#2fc969,#178a46)", display: "grid", placeItems: "center", fontWeight: 1000 }}>✓</span><div><strong>{testGate?.status === "failed" ? "Tests failed" : testGate?.status === "passed" ? "All tests passed" : "Tests not run"}</strong><div style={{ color: "#9badc3", fontSize: 12 }}>{testGate?.summary || "No cached test result"}</div></div></div>{testRows.map(([n, v]) => <div key={n} style={{ display: "flex", justifyContent: "space-between", color: "#cdd8e6", fontSize: 13, margin: "7px 0" }}><span>{n}</span><strong style={{ color: v === "passed" ? "#35e276" : "#fbbf24" }}>{v}</strong></div>)}</div><div><h2 style={{ ...label, margin: "0 0 10px" }}>Validator results</h2><div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 10 }}><span style={{ width: 42, height: 42, borderRadius: 999, background: validateGate?.status === "failed" ? "#ef4444" : "linear-gradient(135deg,#2fc969,#178a46)", display: "grid", placeItems: "center", fontWeight: 1000 }}>✓</span><div><strong>{validateGate?.status === "failed" ? "validate:all failed" : validateGate?.status === "passed" ? "validate:all passed" : "validate:all pending"}</strong><div style={{ color: "#9badc3", fontSize: 12 }}>{validateGate?.summary || "No cached validator result"}</div></div></div>{[["Critical", failed ? 1 : 0], ["Warnings", gateSummary.stale ? 1 : 0], ["Info", gates.length]].map(([n, v]) => <div key={String(n)} style={{ display: "flex", justifyContent: "space-between", background: "rgba(10,22,38,.55)", border: "1px solid rgba(148,163,184,.08)", borderRadius: 8, padding: "7px 10px", marginBottom: 7, fontSize: 13 }}><span>{n}</span><strong style={{ color: n === "Critical" ? "#35e276" : "#58a6ff" }}>{v}</strong></div>)}</div></section>
-        <section style={{ ...card, padding: 14 }}><h2 style={{ ...label, margin: "0 0 13px" }}>Next steps</h2><div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 10 }}>{[["Plan", gateSummary.stale ? "CI stale" : "Execution plan ready"], ["Approve", "Architecture approval pending"], ["Execute", "Begin Milestone 1"], ["Validate", "After each milestone"], ["Deploy", "Blocked by default"]].map(([t, s]) => <div key={t}><strong style={{ fontSize: 14 }}>{t}</strong><div style={{ color: "#9badc3", fontSize: 11 }}>{s}</div></div>)}</div></section>
-        <section style={{ ...card, padding: 14, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}><div><h2 style={{ ...label, margin: "0 0 11px" }}>Repository</h2><div style={{ display: "grid", gap: 7, fontSize: 13 }}><Link href={repository.url || "https://github.com/skylersemailaddress-debug/Botomatic"} style={{ color: "#58a6ff" }}>github.com/skylersemailaddress-debug/Botomatic</Link><span>{repository.branch || "main"}</span><span>{shortSha(repository.localSha || latestCommit.sha)}</span><span>Pushed {fmtDate(latestCommit.date)}</span></div><div style={{ display: "inline-flex", marginTop: 12, padding: "5px 14px", borderRadius: 999, background: repository.upToDate ? "rgba(34,197,94,.16)" : "rgba(245,158,11,.16)", color: repository.upToDate ? "#35e276" : "#fbbf24", fontWeight: 900, fontSize: 12 }}>{repository.upToDate ? "Up to date" : `Behind ${repository.behind || 0}`}</div></div><div><h2 style={{ ...label, margin: "0 0 11px" }}>GitHub + deploy</h2><div style={{ display: "grid", gap: 8, fontSize: 12, color: "#cbd7e6" }}><div><strong>Actions:</strong> {actions.length ? `${actions[0].name || "workflow"} ${actions[0].status}` : "No recent runs"}</div><div><strong>Open PRs:</strong> {prs.length ? prs.slice(0, 2).map((pr: any) => `#${pr.number} ${pr.title}`).join(" / ") : "none"}</div><div><strong>Deploy:</strong> {deployHooks.map((h: any) => `${h.environment}:${h.status}`).join(" / ") || "no hooks"}</div></div></div></section>
+
+        <section className={`${styles.card} ${styles.filesCard}`}>
+          <div className={styles.cardHeaderRow}>
+            <h2>FILES CHANGED ({filesChanged.length})</h2>
+            <div className={styles.diffTotals}><span>+{totals.additions ?? 0}</span><span>-{totals.deletions ?? 0}</span></div>
+          </div>
+          <div className={styles.filesScroller}>
+            {!filesChanged.length ? (
+              <div className={styles.empty}>No changed files reported by /api/local-repo-dashboard.</div>
+            ) : (
+              filesChanged.map((file, idx) => (
+                <div key={`${file.path ?? "file"}-${idx}`} className={styles.fileRow}>
+                  <span>▧</span>
+                  <span className={styles.filePath}>{file.path ?? "unknown"}</span>
+                  <span className={styles.add}>+{file.additions ?? 0}</span>
+                  <span className={styles.del}>-{file.deletions ?? 0}</span>
+                </div>
+              ))
+            )}
+          </div>
+          <div className={styles.filesFooter}>
+            <span>{filesChanged.length} files changed</span>
+            <span>{totals.additions ?? 0} additions · {totals.deletions ?? 0} deletions</span>
+          </div>
+        </section>
+
+        <section className={`${styles.card} ${styles.commitsCard}`}>
+          <h2>COMMITS ({commitRows.length})</h2>
+          {commitRows.length === 0 ? (
+            <div className={styles.empty}>No commits available.</div>
+          ) : (
+            commitRows.map((c, idx) => (
+              <div key={`${c.sha ?? c.message ?? "commit"}-${idx}`} className={styles.commitRow}>
+                <strong>{shortSha(c.sha)}</strong>
+                <span className={styles.filePath}>{c.message ?? "no message"}</span>
+                <span>{c.author ?? "unknown"}</span>
+                <span>{formatDate(c.date).split(",")[0]}</span>
+              </div>
+            ))
+          )}
+        </section>
+
+        <section className={`${styles.card} ${styles.dualCard}`}>
+          <div>
+            <h2>TEST RESULTS</h2>
+            <div className={styles.statusLine}><span className={`${styles.dot} ${toneClass(gateTone(testsGate?.status))}`} />
+              <div>
+                <strong>{testsGate?.status === "passed" ? "passed" : testsGate?.status === "failed" ? "failed" : "not run"}</strong>
+                <div className={styles.muted}>{testsGate?.summary ?? "No test gate summary available."}</div>
+              </div>
+            </div>
+            {testRows.map((row) => (
+              <div className={styles.kvRow} key={row}><span>{row}</span><span>{testsGate?.status === "passed" ? "passed" : testsGate?.status === "failed" ? "failed" : "not run"}</span></div>
+            ))}
+          </div>
+          <div>
+            <h2>VALIDATOR RESULTS</h2>
+            <div className={styles.statusLine}><span className={`${styles.dot} ${toneClass(gateTone(validateGate?.status))}`} />
+              <div>
+                <strong>{validateGate?.status === "passed" ? "passed" : validateGate?.status === "failed" ? "failed" : "not run"}</strong>
+                <div className={styles.muted}>{validateGate?.summary ?? "No validator summary available."}</div>
+              </div>
+            </div>
+            <div className={styles.kvRow}><span>Critical</span><span>{validatorCounts.critical}</span></div>
+            <div className={styles.kvRow}><span>Warnings</span><span>{validatorCounts.warnings}</span></div>
+            <div className={styles.kvRow}><span>Info</span><span>{validatorCounts.info}</span></div>
+            <div className={styles.progressTrack}><div className={styles.progressBar} style={{ width: `${validateGate?.status === "passed" ? 100 : validateGate?.status === "failed" ? 35 : 12}%` }} /></div>
+          </div>
+        </section>
+
+        <section className={`${styles.card} ${styles.nextStepsCard}`}>
+          <h2>NEXT STEPS</h2>
+          <div className={styles.flow}>
+            {["Plan", "Approve", "Execute", "Validate", "Deploy"].map((step, i) => (
+              <div key={step} className={styles.flowNode}>
+                <strong>{step}</strong>
+                <span className={styles.muted}>{step === "Deploy" ? "blocked" : "ready"}</span>
+                {i < 4 && <em>→</em>}
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className={`${styles.card} ${styles.repoCard}`}>
+          <h2>REPOSITORY</h2>
+          <div className={styles.repoGrid}>
+            <div>
+              {repository.url ? <Link href={repository.url}>{repository.url}</Link> : <span className={styles.muted}>GitHub URL unavailable</span>}
+            </div>
+            <div>Branch: {repository.branch ?? "unknown"}</div>
+            <div>SHA: {shortSha(repository.localSha ?? latestCommit.sha)}</div>
+            <div>Pushed: {formatDate(latestCommit.date)}</div>
+            <div className={`${styles.badge} ${repository.upToDate ? styles.badgeOk : styles.badgeWarn}`}>{repository.upToDate ? "Up to date" : `Behind ${repository.behind ?? 0}`}</div>
+            <div className={styles.muted}>PRs: {pullRequests.length ? pullRequests.slice(0, 2).map((pr) => `#${pr.number} ${pr.title}`).join(" · ") : "none"}</div>
+          </div>
+        </section>
       </main>
     </div>
-  </div>;
+  );
 }
