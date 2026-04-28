@@ -1,5 +1,10 @@
 import { createCompletionPlan } from "../../repo-repair/src/completionPlanner";
-import { createDirtyRepoEvidenceSnapshot, type DirtyRepoEvidenceSnapshot } from "../../repo-intake/src/dirtyRepoEvidence";
+import {
+  createDirtyRepoEvidenceSnapshot,
+  type DirtyRepoCompletionBlocker,
+  type DirtyRepoEvidenceEntry,
+  type DirtyRepoEvidenceSnapshot,
+} from "../../repo-intake/src/dirtyRepoEvidence";
 
 export type CompletionContract = {
   detectedProduct: string;
@@ -19,21 +24,20 @@ export type CompletionContract = {
   safeAssumptions: string[];
   definitionOfDone: string[];
   evidenceSnapshot: DirtyRepoEvidenceSnapshot;
-  evidenceEntries: DirtyRepoEvidenceSnapshot["evidenceEntries"];
-  completionBlockers: string[];
+  evidenceEntries: DirtyRepoEvidenceEntry[];
+  completionBlockers: DirtyRepoCompletionBlocker[];
 };
 
 export function runCompletionContract(input: {
   detectedProduct: string;
   detectedStack: string[];
   blockers: string[];
+  evidenceSnapshot?: DirtyRepoEvidenceSnapshot;
+  completionBlockers?: DirtyRepoCompletionBlocker[];
 }): CompletionContract {
   const phases = createCompletionPlan({ blockers: input.blockers });
-  const evidenceSnapshot = createDirtyRepoEvidenceSnapshot({
-    detectedProduct: input.detectedProduct,
-    detectedStack: input.detectedStack,
-    blockers: input.blockers,
-  });
+  const evidenceSnapshot = input.evidenceSnapshot || createDirtyRepoEvidenceSnapshot({ entries: [] });
+  const completionBlockers = input.completionBlockers || [];
 
   return {
     detectedProduct: input.detectedProduct,
@@ -58,7 +62,7 @@ export function runCompletionContract(input: {
       "Proof ledger entry is recorded",
     ],
     evidenceSnapshot,
-    evidenceEntries: evidenceSnapshot.evidenceEntries,
-    completionBlockers: evidenceSnapshot.completionBlockers,
+    evidenceEntries: evidenceSnapshot.entries,
+    completionBlockers,
   };
 }
