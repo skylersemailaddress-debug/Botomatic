@@ -7,8 +7,9 @@ This repository uses required pull request checks before merge. Configure the `m
 1. **Require a pull request before merging**
    - Disallow direct pushes to `main`.
 2. **Require status checks to pass before merging**
-   - **Required now:** `Botomatic PR Gates / Baseline required checks`.
-   - **Required now:** `Botomatic PR Gates / Strict readiness audit`.
+   - **Required now (only):** `Botomatic PR Gates / Required PR Gate`.
+   - `Botomatic PR Gates / Baseline required checks` and `Botomatic PR Gates / Strict readiness audit` remain visible workflow jobs, but should **not** be directly required by the ruleset.
+   - This single stable required context prevents stale duplicate Expected/Successful required-check entries when internal workflow job wiring changes.
 3. **Require branches to be up to date before merging**
    - Enable strict status checks so PRs must rebase or merge latest `main` before merge.
 4. **Block force pushes**
@@ -37,21 +38,24 @@ This repository uses required pull request checks before merge. Configure the `m
 
 ## PR gate workflow commands
 
-### Baseline required checks (required status check)
+### Baseline required checks (workflow job, not directly required by ruleset)
 
 - `npm ci`
 - `npm run -s build`
 - `npm run -s test:universal`
 - `npm run -s doctor`
 
-### Strict readiness audit (required)
+### Strict readiness audit (workflow job, not directly required by ruleset)
 
 - `npm ci`
 - `npm run -s validate:all`
 
-## Migration rule: strict readiness promotion complete
+### Required PR Gate (only required ruleset status check)
 
-`Botomatic PR Gates / Strict readiness audit` is now configured as required after baseline cleanup made `npm run -s validate:all` pass on `main` without weakening validators.
+- `echo "All required Botomatic PR gates passed."`
+
+## Migration rule: stable required gate aggregation
+`Botomatic PR Gates / Required PR Gate` is the only required ruleset check. It depends on Baseline required checks and Strict readiness audit so both must pass, while avoiding duplicate stale required contexts in GitHub rulesets.
 
 ## Optional proof commands (not required on every PR)
 
