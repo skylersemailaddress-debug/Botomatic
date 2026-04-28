@@ -47,6 +47,19 @@ function dependenciesInstalled(): boolean {
   return fs.existsSync(path.join(ROOT, "node_modules"));
 }
 
+function resolveLaunchUrl(): string {
+  const raw = process.env.BOTOMATIC_CONTROL_PLANE_URL || "http://localhost:3000";
+  try {
+    const parsed = new URL(raw);
+    const protocol = parsed.protocol || "http:";
+    const hostname = parsed.hostname || "localhost";
+    const port = parsed.port || "3000";
+    return `${protocol}//${hostname}:${port}`;
+  } catch {
+    return "http://localhost:3000";
+  }
+}
+
 function main() {
   const dryRun = process.argv.includes("--dry-run") || process.argv.includes("--check");
 
@@ -70,8 +83,9 @@ function main() {
     shell: false,
   });
 
-  openBrowser("http://localhost:3000");
-  console.log("Botomatic opening at http://localhost:3000");
+  const launchUrl = resolveLaunchUrl();
+  openBrowser(launchUrl);
+  console.log(`Botomatic opening at ${launchUrl}`);
   console.log("Press Ctrl+C to stop the control plane.");
 
   child.on("exit", (code) => {
