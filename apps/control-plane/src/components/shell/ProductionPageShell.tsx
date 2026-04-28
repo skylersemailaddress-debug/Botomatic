@@ -17,6 +17,8 @@ export default function ProductionPageShell({
   children: React.ReactNode;
 }) {
   const baseHref = mode === "vibe" ? `/projects/${projectId}/vibe` : `/projects/${projectId}/advanced`;
+  const contextualHref = mode === "vibe" ? `/projects/${projectId}/advanced?view=${view}` : `/projects/${projectId}`;
+  const contextualLabel = mode === "vibe" ? "Advanced controls" : "Chat workspace";
 
   return (
     <section className="production-page-shell">
@@ -39,12 +41,9 @@ export default function ProductionPageShell({
             <div className="workspace-mode-label">Botomatic {mode === "vibe" ? "Vibe" : "Pro"}</div>
             <div className="workspace-subtle">Project {projectId} · {view}</div>
           </div>
-          <div className="workspace-topbar-actions" role="group" aria-label="Workspace mode switcher">
-            <Link href={`/projects/${projectId}/vibe?view=${view}`} className="workspace-pill" aria-pressed={mode === "vibe"}>
-              Vibe
-            </Link>
-            <Link href={`/projects/${projectId}/advanced?view=${view}`} className="workspace-pill" aria-pressed={mode === "pro"}>
-              Pro
+          <div className="workspace-topbar-actions" role="group" aria-label="Workspace actions">
+            <Link href={contextualHref} className="workspace-pill">
+              {contextualLabel}
             </Link>
             <Link href="/" className="workspace-pill workspace-pill--primary">
               New Project

@@ -119,6 +119,7 @@ export function validateUIReadiness(root: string): RepoValidatorResult {
     "apps/control-plane/src/app/projects/[projectId]/vibe/page.tsx",
     "apps/control-plane/src/app/projects/[projectId]/advanced/page.tsx",
     "apps/control-plane/src/components/builder/NorthStarBuilderShell.tsx",
+    "apps/control-plane/src/components/shell/ProductionPageShell.tsx",
     "apps/control-plane/src/components/vibe/VibeDashboard.tsx",
     "apps/control-plane/src/components/pro/ProDashboard.tsx",
     "apps/control-plane/src/styles/tokens.css",
@@ -135,6 +136,8 @@ export function validateUIReadiness(root: string): RepoValidatorResult {
   const advancedPage = read(root, "apps/control-plane/src/app/projects/[projectId]/advanced/page.tsx");
   const vibeDashboard = read(root, "apps/control-plane/src/components/vibe/VibeDashboard.tsx");
   const proDashboard = read(root, "apps/control-plane/src/components/pro/ProDashboard.tsx");
+  const productionShell = read(root, "apps/control-plane/src/components/shell/ProductionPageShell.tsx");
+  const northStarShell = read(root, "apps/control-plane/src/components/builder/NorthStarBuilderShell.tsx");
   const globals = read(root, "apps/control-plane/src/styles/globals.css");
   const tokenCss = read(root, "apps/control-plane/src/styles/tokens.css");
   const uiFiles = listFilesRecursive(path.join(root, "apps/control-plane/src"))
@@ -184,7 +187,23 @@ export function validateUIReadiness(root: string): RepoValidatorResult {
     proDashboard.includes("AI Copilot") &&
     proDashboard.includes("Deploy");
 
-  const ok = hasDesignSystemSignals && hasStateSignals && noPlaceholderUi && routeShellAlignment && vibeSurfaceSignals && proSurfaceSignals;
+  const shellToggleGuardText = `${productionShell}\n${northStarShell}`.toLowerCase();
+  const hasNoGlobalModeToggleLanguage =
+    !shellToggleGuardText.includes("choose mode") &&
+    !shellToggleGuardText.includes("switch to vibe") &&
+    !shellToggleGuardText.includes("switch to pro") &&
+    !shellToggleGuardText.includes("vibe/pro mode toggle") &&
+    !shellToggleGuardText.includes("dual-mode toggle") &&
+    !shellToggleGuardText.includes("workspace mode switcher");
+
+  const ok =
+    hasDesignSystemSignals &&
+    hasStateSignals &&
+    noPlaceholderUi &&
+    routeShellAlignment &&
+    vibeSurfaceSignals &&
+    proSurfaceSignals &&
+    hasNoGlobalModeToggleLanguage;
   return result(
     "Validate-Botomatic-UIReadiness",
     ok,
