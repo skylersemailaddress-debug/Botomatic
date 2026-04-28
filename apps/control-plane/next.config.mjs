@@ -6,12 +6,33 @@ const nextConfig = {
       return [];
     }
 
-    return [
-      {
-        source: "/api/:path*",
-        destination: "http://localhost:3001/api/:path*",
-      },
-    ];
+    return {
+      beforeFiles: [
+        {
+          source: "/api/local-repo-dashboard",
+          destination: "/api/local-repo-dashboard",
+        },
+        {
+          source: "/api/local-repo-dashboard/:path*",
+          destination: "/api/local-repo-dashboard/:path*",
+        },
+        {
+          source: "/api/hybrid-ci",
+          destination: "/api/hybrid-ci",
+        },
+        {
+          source: "/api/hybrid-ci/:path*",
+          destination: "/api/hybrid-ci/:path*",
+        },
+      ],
+      afterFiles: [],
+      fallback: [
+        {
+          source: "/api/:path*",
+          destination: "http://localhost:3001/api/:path*",
+        },
+      ],
+    };
   },
 };
 

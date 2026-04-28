@@ -38,14 +38,24 @@ async function githubFetch(pathname: string) {
   if (process.env.GITHUB_TOKEN) {
     headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
   }
-  const response = await fetch(`https://api.github.com/repos/skylersemailaddress-debug/Botomatic${pathname}`, {
-    headers,
-    cache: "no-store",
-  });
-  if (!response.ok) {
-    return { ok: false, status: response.status, data: null };
+  try {
+    const response = await fetch(`https://api.github.com/repos/skylersemailaddress-debug/Botomatic${pathname}`, {
+      headers,
+      cache: "no-store",
+    });
+    if (!response.ok) {
+      return { ok: false, status: response.status, reason: `upstream_http_${response.status}`, data: null };
+    }
+    return { ok: true, status: response.status, data: await response.json() };
+  } catch (err: any) {
+    return {
+      ok: false,
+      status: 0,
+      reason: "not_connected",
+      error: String(err?.message || err || "Network fetch failed"),
+      data: null,
+    };
   }
-  return { ok: true, status: response.status, data: await response.json() };
 }
 
 async function getActionsRuns() {
@@ -53,7 +63,10 @@ async function getActionsRuns() {
   if (!result.ok) {
     return {
       status: "unavailable",
-      reason: `GitHub Actions API returned ${result.status}`,
+      reason: result.reason === "not_connected" ? "GitHub Actions unavailable: not_connected" : `GitHub Actions API returned ${result.status}`,
+      notConnected: result.reason === "not_connected",
+      upstreamStatus: result.status || null,
+      error: result.error || null,
       runs: [],
     };
   }
@@ -83,7 +96,10 @@ async function getCombinedStatus(sha: string) {
   if (!result.ok) {
     return {
       status: "unavailable",
-      reason: `GitHub commit status API returned ${result.status}`,
+      reason: result.reason === "not_connected" ? "GitHub commit status unavailable: not_connected" : `GitHub commit status API returned ${result.status}`,
+      notConnected: result.reason === "not_connected",
+      upstreamStatus: result.status || null,
+      error: result.error || null,
       checks: [],
     };
   }

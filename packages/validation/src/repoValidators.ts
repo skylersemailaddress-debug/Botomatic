@@ -25,6 +25,7 @@ import { validateChatBehaviorExecution } from "./repoValidators/chatBehaviorExec
 import { validateFailureClassificationReadiness } from "./repoValidators/failureClassificationReadiness";
 import { validateAdaptiveRepairStrategyReadiness } from "./repoValidators/adaptiveRepairStrategyReadiness";
 import { validateUploadPlanHandoffReadiness } from "./repoValidators/uploadPlanHandoffReadiness";
+import { validateDashboardRouteIntegrityReadiness } from "./repoValidators/dashboardRouteIntegrityReadiness";
 
 export type RepoValidatorResult = {
   name: string;
@@ -1229,5 +1230,6 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateFailureClassificationReadiness(root),
     validateAdaptiveRepairStrategyReadiness(root),
     validateUploadPlanHandoffReadiness(root),
+    validateDashboardRouteIntegrityReadiness(root),
   ];
 }
