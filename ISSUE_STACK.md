@@ -12,7 +12,7 @@
 - UI-003 is complete: visible mode-toggle UX removed.
 - UI-004 is complete: UI route regression tests.
 - GEN-001 is complete: UI blueprint registry foundation.
-- GEN-002 is active: generated UI preview engine.
+- GEN-002 is complete: generated UI preview engine.
 
 ## Ordered Priority Stack
 1. OPS-001 freeze random merging (complete)
@@ -26,8 +26,8 @@
 9. UI-003 remove visible mode-toggle UX (complete)
 10. UI-004 UI regression tests (complete)
 11. GEN-001 UI blueprint registry (complete)
-12. GEN-002 generated UI preview engine (active)
-13. GEN-003 no-placeholder generated-app validator
+12. GEN-002 generated UI preview engine (complete)
+13. GEN-003 no-placeholder generated-app validator (complete)
 14. GEN-004 generated-app commercial readiness gate
 
 ## Stale PR Handling Guidance
