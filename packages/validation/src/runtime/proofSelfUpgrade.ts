@@ -58,9 +58,18 @@ async function run() {
       encoding: "utf8",
     });
     const validatorExitCode = Number(validatorRun.status ?? 1);
-    const regression = runRegressionGuard(spec, validatorExitCode);
     const localDrift = detectArchitectureDrift(spec);
-    const validatorWeakeningDetected = false;
+    const validatorWeakeningDetected = /lower\s+validator\s+threshold|weaken\s+validator|disable\s+validator/i.test(inputUsed.request);
+    const regression = runRegressionGuard({
+      spec,
+      validatorCommand: "npm run -s test:self-upgrade",
+      validatorExitCode,
+      targetBranch: process.env.SELF_UPGRADE_TARGET_BRANCH || "proof/self-upgrade",
+      mutationMode: "read_only_proof",
+      validatorWeakeningDetected,
+      driftDetected: localDrift.driftDetected,
+      driftReasons: localDrift.reasons,
+    });
     const branchSafeOutput = {
       mode: "non_mutating_proof",
       branchName: null,

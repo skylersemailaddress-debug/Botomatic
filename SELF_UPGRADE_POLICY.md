@@ -29,3 +29,13 @@ Self-upgrade is complete only when:
 - drift/regression checks are recorded
 - rollback steps are documented
 - proof ledger entry exists
+
+## Executable safety contract
+
+Self-upgrade runtime must enforce an executable `SelfUpgradeSafetyContract` with the following guarantees:
+- target branch must not be `main`
+- changes are PR-scoped (`pr_only`) or explicit read-only proof mode
+- direct-to-main mutation is prohibited
+- validator weakening is prohibited
+- regression state is derived from validator command metadata or marked `indeterminate` when metadata is unavailable
+- human approval is required before merge

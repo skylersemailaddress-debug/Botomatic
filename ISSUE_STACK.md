@@ -36,7 +36,7 @@
 15. GEN-005 generated app corpus harness and readiness reassessment (complete)
 16. GEN-006 representative generated app fixture batch (complete)
 17. REPO-001 dirty repo evidence contract (recommended parallel lane)
-18. SELF-001 executable self-upgrade safety contract (recommended parallel lane)
+18. SELF-001 executable self-upgrade safety contract (complete)
 19. DEPLOY-001 secret leak prevention and secret-reference policy scope (recommended parallel lane)
 
 ## Stale PR Handling Guidance
@@ -53,3 +53,5 @@
 - REPO-001 dirty repo evidence contract
 - SELF-001 executable self-upgrade safety contract
 - DEPLOY-001 secret leak prevention and secret-reference policy scope
+
+- PROOF-001 is next for self/proof lane.
