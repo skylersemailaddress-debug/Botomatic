@@ -13,6 +13,8 @@
 - UI-004 is complete: UI route regression tests.
 - GEN-001 is complete: UI blueprint registry foundation.
 - GEN-002 is complete: generated UI preview engine.
+- GEN-003 is complete: generated-app no-placeholder validator.
+- GEN-004 is complete: generated-app commercial readiness gate.
 
 ## Ordered Priority Stack
 1. OPS-001 freeze random merging (complete)
@@ -28,7 +30,8 @@
 11. GEN-001 UI blueprint registry (complete)
 12. GEN-002 generated UI preview engine (complete)
 13. GEN-003 no-placeholder generated-app validator (complete)
-14. GEN-004 generated-app commercial readiness gate
+14. GEN-004 generated-app commercial readiness gate (complete)
+15. GEN-005 generated app corpus harness and readiness reassessment (recommended next)
 
 ## Stale PR Handling Guidance
 - PR #71 merged baseline.
