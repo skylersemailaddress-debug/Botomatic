@@ -2,13 +2,13 @@
 
 This repository uses required pull request checks before merge. Configure the `main` branch in GitHub branch protection / rulesets with the following baseline.
 
-## Required protections
+## GitHub-enforceable branch/ruleset settings
 
 1. **Require a pull request before merging**
    - Disallow direct pushes to `main`.
 2. **Require status checks to pass before merging**
    - **Required now:** `Botomatic PR Gates / Baseline required checks`.
-   - **Visible but non-required for now:** `Botomatic PR Gates / Strict readiness audit (non-blocking baseline)`.
+   - **Visible but non-required:** `Botomatic PR Gates / Strict readiness audit (non-blocking baseline)`.
 3. **Require branches to be up to date before merging**
    - Enable strict status checks so PRs must rebase or merge latest `main` before merge.
 4. **Block force pushes**
@@ -17,16 +17,23 @@ This repository uses required pull request checks before merge. Configure the `m
    - Prevent deletion of `main`.
 6. **Require conversation resolution before merging**
    - All review conversations must be resolved.
-7. **Require human approval**
-   - At least 1 approving review from a human reviewer.
-8. **No auto-merge for high-risk PRs without explicit approval**
-   - High-risk PR categories (release claims, validator behavior, deployment policy, compliance changes) require explicit maintainer approval before enabling auto-merge.
-9. **UI PRs require screenshot proof**
-   - PR description must include screenshot evidence for user-visible changes.
-10. **Generated-app PRs require generated-output proof**
-    - PR description must include generated output artifacts/logs.
-11. **Self-upgrade PRs require drift/regression proof**
-    - PR description must include drift/regression evidence.
+7. **Require at least 1 approving review**
+   - Enforce one approving review before merge.
+8. **Optional: Require CODEOWNERS review (if added later)**
+   - Enable CODEOWNERS-required review when a CODEOWNERS file/policy is introduced.
+
+## Process/PR-template requirements
+
+- **No auto-merge for high-risk PRs without explicit maintainer approval**
+  - High-risk categories (release claims, validator behavior, deployment policy, compliance changes) require explicit maintainer approval before auto-merge.
+- **UI PRs require screenshot proof**
+  - PR description must include screenshot evidence for user-visible changes.
+- **Generated-app PRs require generated-output proof**
+  - PR description must include generated output artifacts/logs.
+- **Self-upgrade PRs require drift/regression proof**
+  - PR description must include drift/regression evidence.
+- **Human review policy**
+  - Bot reviews can assist, but maintainer approval is the acceptance standard. If strict bot-exclusion is required later, add a dedicated status check or CODEOWNERS/ruleset policy.
 
 ## PR gate workflow commands
 
