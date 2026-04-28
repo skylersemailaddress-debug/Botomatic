@@ -120,6 +120,7 @@ export function validateUIReadiness(root: string): RepoValidatorResult {
     "apps/control-plane/src/app/projects/[projectId]/advanced/page.tsx",
     "apps/control-plane/src/components/builder/NorthStarBuilderShell.tsx",
     "apps/control-plane/src/components/vibe/VibeDashboard.tsx",
+    "apps/control-plane/src/components/pro/ProDashboard.tsx",
     "apps/control-plane/src/styles/tokens.css",
     "apps/control-plane/src/styles/globals.css",
   ];
@@ -132,8 +133,8 @@ export function validateUIReadiness(root: string): RepoValidatorResult {
   const projectPage = read(root, "apps/control-plane/src/app/projects/[projectId]/page.tsx");
   const vibePage = read(root, "apps/control-plane/src/app/projects/[projectId]/vibe/page.tsx");
   const advancedPage = read(root, "apps/control-plane/src/app/projects/[projectId]/advanced/page.tsx");
-  const northStarShell = read(root, "apps/control-plane/src/components/builder/NorthStarBuilderShell.tsx");
   const vibeDashboard = read(root, "apps/control-plane/src/components/vibe/VibeDashboard.tsx");
+  const proDashboard = read(root, "apps/control-plane/src/components/pro/ProDashboard.tsx");
   const globals = read(root, "apps/control-plane/src/styles/globals.css");
   const tokenCss = read(root, "apps/control-plane/src/styles/tokens.css");
   const uiFiles = listFilesRecursive(path.join(root, "apps/control-plane/src"))
@@ -161,12 +162,7 @@ export function validateUIReadiness(root: string): RepoValidatorResult {
   const routeShellAlignment =
     projectPage.includes("<VibeBuilderSkeleton") &&
     vibePage.includes("<VibeDashboard") &&
-    advancedPage.includes("<ProBuilderSkeleton");
-
-  const northStarSurfaceSignals =
-    northStarShell.includes("What’s Next") &&
-    northStarShell.includes("Launch Readiness") &&
-    northStarShell.includes("ChatInputBar");
+    advancedPage.includes("<ProDashboard");
 
   const vibeSurfaceSignals =
     vibeDashboard.includes("Vibe Mode") &&
@@ -175,7 +171,20 @@ export function validateUIReadiness(root: string): RepoValidatorResult {
     vibeDashboard.includes("Improve Design") &&
     vibeDashboard.includes("Launch App");
 
-  const ok = hasDesignSystemSignals && hasStateSignals && noPlaceholderUi && routeShellAlignment && northStarSurfaceSignals && vibeSurfaceSignals;
+  const proSurfaceSignals =
+    proDashboard.includes("Pro Mode") &&
+    proDashboard.includes("Build Pipeline") &&
+    proDashboard.includes("Code Changes") &&
+    proDashboard.includes("Live Application") &&
+    proDashboard.includes("System Health") &&
+    proDashboard.includes("Services") &&
+    proDashboard.includes("Database Schema") &&
+    proDashboard.includes("Test Results") &&
+    proDashboard.includes("Terminal") &&
+    proDashboard.includes("AI Copilot") &&
+    proDashboard.includes("Deploy");
+
+  const ok = hasDesignSystemSignals && hasStateSignals && noPlaceholderUi && routeShellAlignment && vibeSurfaceSignals && proSurfaceSignals;
   return result(
     "Validate-Botomatic-UIReadiness",
     ok,
@@ -817,7 +826,7 @@ export function validateUIControlPlaneIntegration(root: string): RepoValidatorRe
   const ok =
     fileOk &&
     page.includes("<VibeBuilderSkeleton") &&
-    advancedPage.includes("<ProBuilderSkeleton") &&
+    advancedPage.includes("<ProDashboard") &&
     settingsPage.includes("<GatePanel") &&
     settingsPage.includes("<LaunchReadinessPanel") &&
     evidencePage.includes("<ProofValidationPanel") &&
