@@ -1,10 +1,10 @@
 import AppShell from "@/components/shell/AppShell";
 import ProductionPageShell from "@/components/nexus/ProductionPageShell";
 
-export default async function SettingsPage({ params }: { params: { projectId: string } }) {
+export default async function ApiPage({ params }: { params: { projectId: string } }) {
   return (
     <AppShell projectName={params.projectId} environment="development" runStatus="idle" mode="page">
-      <ProductionPageShell title="Settings" description="Settings workspace shell" />
+      <ProductionPageShell title="API" description="API workspace shell" />
     </AppShell>
   );
 }

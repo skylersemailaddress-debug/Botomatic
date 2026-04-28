@@ -6,6 +6,7 @@ export const CANONICAL_COMMAND_BY_PARSED: Record<Exclude<ParsedCommand, null>, s
   "explain-blocker": "explain blocker and propose safe default",
   "explain-state": "show current system state and next best action",
   "approve-plan": "approve current generated app build contract",
+  "bind-build-contract": "compile + bind build contract",
   "show-proof": "show latest proof and launch readiness",
   "fix-failure": "inspect failed milestone and recommend repair",
   "inspect-failure": "inspect failed milestone and recommend repair",

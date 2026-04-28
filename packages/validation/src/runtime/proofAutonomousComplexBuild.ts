@@ -47,9 +47,13 @@ function main() {
 
   const repairAttempt = runAutonomousRepairLoop({
     runState: resumed,
-    milestoneId: "testing",
-    failureCode: "runtime_failure",
-    failureDetail: "validator mismatch",
+    milestoneId: "core_workflows",
+    failureCode: "build_failed",
+    failureDetail: "TypeScript build failed: cannot find module src/workflows/router.ts",
+    failingCommand: "npm run build",
+    affectedFiles: ["release-evidence/generated-apps/proj_reference/src/workflows/router.ts"],
+    affectedSubsystem: "typescript-router",
+    validatorOrProofName: "no-placeholder",
     repairBudget: resumed.checkpoint.repairAttempts + 2,
   });
 

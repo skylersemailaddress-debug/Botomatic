@@ -1,83 +1,480 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import {
+  buildPartnerEnvelope,
+  executeCanonicalCommand,
+  fetchRuntimeContext,
+} from "@/components/chat/chatCommandExecutor";
+import NexusSidebar from "@/components/nexus/NexusSidebar";
+import NexusTopbar from "@/components/nexus/NexusTopbar";
+import { NexusPanel, StatusPill, StatusDot } from "@/components/nexus/NexusPrimitives";
+import { NexusMode } from "@/components/nexus/types";
 
-type Gate = { name: string; command: string; status: "passed" | "failed" | "not_run"; durationMs?: number; summary: string; output?: string };
-type DashboardData = { repository: any; latestCommit: any; filesChanged: any[]; totals: { additions: number; deletions: number }; gates: Gate[]; gateSummary: any; commitHistory: any[]; pullRequests?: { items?: any[] } };
+type DeviceView = "Desktop" | "Tablet" | "Mobile";
+type StageStatus = "complete" | "in_progress" | "pending" | "blocked" | "inferred" | "skipped_with_reason";
 
-const bg = "radial-gradient(circle at 12% 0%, rgba(57,127,255,.18), transparent 27%), radial-gradient(circle at 90% 8%, rgba(31,197,91,.10), transparent 25%), linear-gradient(135deg,#050b15 0%,#091321 45%,#07111f 100%)";
-const card = { border: "1px solid rgba(122,163,214,.16)", background: "linear-gradient(180deg, rgba(19,33,53,.93), rgba(9,21,37,.98))", boxShadow: "inset 0 1px 0 rgba(255,255,255,.045), 0 20px 60px rgba(0,0,0,.32)", borderRadius: 12, overflow: "hidden" } as const;
-const label = { color: "#47a3ff", fontSize: 12, fontWeight: 900, letterSpacing: .7, textTransform: "uppercase" as const };
+type Gate = { name: string; status: "passed" | "failed" | "not_run"; summary: string };
+type DashboardData = {
+  repository: { branch?: string; upToDate?: boolean; behind?: number };
+  latestCommit: { author?: string; date?: string; message?: string; sha?: string };
+  filesChanged: Array<{ path: string; additions: number; deletions: number }>;
+  totals: { additions: number; deletions: number };
+  gates: Gate[];
+  commitHistory: Array<{ author: string; date: string; message: string; sha: string }>;
+};
 
-function shortSha(v?: string) { return v && v !== "unknown" ? v.slice(0, 7) : "unknown"; }
-function fmtDate(v?: string) { if (!v) return "not run"; const d = new Date(v); return Number.isNaN(d.getTime()) ? v : d.toLocaleString([], { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }); }
-function getGate(gates: Gate[], name: string) { return gates.find((g) => g.name.toLowerCase() === name.toLowerCase()); }
-function gateLabel(g?: Gate | { status: string }) { if (!g) return "--"; return g.status === "passed" ? "OK" : g.status === "failed" ? "FAIL" : "--"; }
-function gateKind(g?: Gate | { status: string }) { return !g || g.status === "not_run" ? "warn" : g.status === "failed" ? "bad" : "ok"; }
+type ChatEntry = { role: "user" | "assistant"; content: string; at: string };
 
-function Pill({ children, kind = "ok" }: { children: React.ReactNode; kind?: "ok" | "bad" | "warn" | "info" }) {
-  const c = { ok: ["rgba(34,197,94,.15)", "rgba(34,197,94,.38)", "#3bea79"], bad: ["rgba(239,68,68,.15)", "rgba(239,68,68,.35)", "#ff6b6b"], warn: ["rgba(245,158,11,.15)", "rgba(245,158,11,.35)", "#fbbf24"], info: ["rgba(59,130,246,.15)", "rgba(59,130,246,.35)", "#63adff"] }[kind];
-  return <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 52, padding: "5px 12px", borderRadius: 999, background: c[0], border: `1px solid ${c[1]}`, color: c[2], fontSize: 12, fontWeight: 900 }}>{children}</span>;
+type RuntimeLaunchState = {
+  status: "idle" | "launching" | "running" | "stopped" | "failed";
+  process: string;
+  port: string;
+  url: string;
+  health: "unknown" | "healthy" | "degraded";
+  logs: string[];
+  failureClassification: string;
+};
+
+type SharedIntent =
+  | "build_project"
+  | "edit_ui"
+  | "add_feature"
+  | "add_page"
+  | "connect_integration"
+  | "run_tests"
+  | "run_validation"
+  | "launch_local_app"
+  | "stop_local_app"
+  | "restart_local_app"
+  | "fix_failure"
+  | "deploy"
+  | "rollback"
+  | "explain_status"
+  | "show_audit"
+  | "switch_mode";
+
+type AuditEntry = {
+  timestamp: string;
+  actor: string;
+  command: string;
+  filesChanged: number;
+  validatorResult: string;
+  proofArtifact: string;
+  approvalState: string;
+  rollbackPlan: string;
+  vibeUnderstood: string;
+  vibeAdded: string;
+  vibeNext: string;
+};
+
+const STAGES = ["Input", "Design", "Features", "Data", "Logic", "Integrations", "Tests", "Launch", "Deploy"];
+
+const SHARED_INTENTS: Record<SharedIntent, string> = {
+  build_project: "continue current generated app build",
+  edit_ui: "continue current generated app build",
+  add_feature: "continue current generated app build",
+  add_page: "continue current generated app build",
+  connect_integration: "show missing secrets and recommended setup",
+  run_tests: "run validate all and summarize proof",
+  run_validation: "run validate all and summarize proof",
+  launch_local_app: "generate launch capsule from latest generated app artifacts",
+  stop_local_app: "pause current generated app build",
+  restart_local_app: "continue current generated app build",
+  fix_failure: "inspect failed milestone and recommend repair",
+  deploy: "prepare deployment readiness, no live deployment",
+  rollback: "inspect failed milestone and recommend repair",
+  explain_status: "show current system state and next best action",
+  show_audit: "show latest proof and launch readiness",
+  switch_mode: "show current system state and next best action",
+};
+
+const VIBE_CHIPS: Array<{ label: string; intent: SharedIntent }> = [
+  { label: "Improve Design", intent: "edit_ui" },
+  { label: "Add Page", intent: "add_page" },
+  { label: "Add Feature", intent: "add_feature" },
+  { label: "Connect Payments", intent: "connect_integration" },
+  { label: "Run Tests", intent: "run_tests" },
+  { label: "Launch App", intent: "launch_local_app" },
+];
+
+const PRO_CHIPS = [
+  "run validation",
+  "explain errors",
+  "patch files",
+  "launch app",
+  "restart runtime",
+  "stop runtime",
+  "deploy staging",
+  "create PR",
+  "rollback",
+  "inspect logs",
+  "generate migration",
+  "connect service",
+];
+
+const initialRuntime: RuntimeLaunchState = {
+  status: "idle",
+  process: "botomatic-local-runtime",
+  port: "unknown",
+  url: "",
+  health: "unknown",
+  logs: [],
+  failureClassification: "none",
+};
+
+function tone(status: string): "ok" | "warn" | "bad" {
+  if (status === "passed" || status === "complete" || status === "in_progress") return "ok";
+  if (status === "failed" || status === "blocked") return "bad";
+  return "warn";
 }
 
-function CheckLine({ title, text }: { title: string; text: string }) {
-  return <li style={{ display: "grid", gridTemplateColumns: "18px 1fr", gap: 8, margin: "7px 0", alignItems: "start" }}><span style={{ width: 16, height: 16, borderRadius: 999, background: "#35d46b", color: "white", display: "grid", placeItems: "center", fontSize: 11, fontWeight: 1000, boxShadow: "0 0 14px rgba(53,212,107,.45)" }}>✓</span><span style={{ color: "#d6e0ed", fontSize: 13, lineHeight: 1.35 }}><strong style={{ color: "#f7fbff" }}>{title}:</strong> {text}</span></li>;
+function friendlyVibeReply(details: string) {
+  if (!details) return "Your app is ready. I’m organizing your project.";
+  return `I’m organizing your project. ${details.split("\n")[0]}`;
 }
 
-export default function RepositorySuccessDashboard() {
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [hybrid, setHybrid] = useState<any>(null);
-  const [running, setRunning] = useState(false);
+function parseUrl(text: string) {
+  return text.match(/https?:\/\/[^\s]+/i)?.[0] || "";
+}
 
-  async function load(runGates = false) {
-    const url = `/api/local-repo-dashboard${runGates ? "?runGates=1" : "?autoRunOnChange=1"}`;
-    const [d, h] = await Promise.all([fetch(url, { cache: "no-store" }), fetch("/api/hybrid-ci", { cache: "no-store" }).catch(() => null)]);
-    setData(await d.json());
-    if (h) setHybrid(await h.json().catch(() => null));
+function classifyFailure(logText: string) {
+  const lower = logText.toLowerCase();
+  if (lower.includes("npm err") || lower.includes("install")) return "dependency_install_failure";
+  if (lower.includes("test") && lower.includes("fail")) return "test_failure";
+  if (lower.includes("eaddrinuse") || lower.includes("port")) return "port_conflict";
+  return "unknown_failure";
+}
+
+async function fetchDashboardData(): Promise<DashboardData | null> {
+  try {
+    const res = await fetch("/api/local-repo-dashboard?autoRunOnChange=1", { cache: "no-store" });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
   }
+}
 
-  useEffect(() => { void load(false); const t = setInterval(() => void load(false), 30000); return () => clearInterval(t); }, []);
+export default function RepositorySuccessDashboard({ projectId, mode = "vibe" }: { projectId: string; mode?: NexusMode }) {
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [chat, setChat] = useState<ChatEntry[]>([]);
+  const [chatInput, setChatInput] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [showProNav, setShowProNav] = useState(mode === "pro");
+  const [deviceView, setDeviceView] = useState<DeviceView>("Desktop");
+  const [runtime, setRuntime] = useState<RuntimeLaunchState>(initialRuntime);
+  const [auditEntries, setAuditEntries] = useState<AuditEntry[]>([]);
 
-  const repository = data?.repository || {};
-  const latestCommit = data?.latestCommit || {};
-  const filesChanged = data?.filesChanged || [];
-  const totals = data?.totals || { additions: 0, deletions: 0 };
-  const gates = data?.gates || [];
-  const gateSummary = data?.gateSummary || {};
-  const commitHistory = data?.commitHistory || [];
-  const prs = data?.pullRequests?.items || [];
-  const actions = hybrid?.githubActions?.runs || [];
-  const deployHooks = hybrid?.deploymentHooks || [];
-  const buildGate = getGate(gates, "Build");
-  const testGate = getGate(gates, "Tests");
-  const validateGate = getGate(gates, "Validate:All");
-  const failed = gates.some((g) => g.status === "failed");
-  const allPassed = Boolean(gateSummary.allPassed);
-  const testRows = useMemo(() => ["Unit Tests", "Integration Tests", "Contract Tests", "E2E Tests"].map((n) => [n, testGate?.status === "passed" ? "passed" : testGate?.status === "failed" ? "review" : "not run"]), [testGate?.status]);
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      const next = await fetchDashboardData();
+      if (!active) return;
+      setLoadError(next ? null : "Live data is temporarily unavailable. Retry shortly.");
+      setData(next);
+    };
+    void load();
+    const timer = setInterval(() => void load(), 20000);
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+  }, []);
 
-  if (!data) return <div style={{ minHeight: "100vh", background: "#08111f", color: "#e9f2ff", padding: 24 }}>Loading release dashboard...</div>;
+  const gateMap = useMemo(() => {
+    const map = new Map<string, Gate>();
+    for (const gate of data?.gates || []) map.set(gate.name.toLowerCase(), gate);
+    return map;
+  }, [data?.gates]);
 
-  return <div style={{ height: "100vh", overflow: "hidden", padding: 14, color: "#e9f2ff", background: bg, fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" }}>
-    <div style={{ height: "100%", display: "grid", gridTemplateRows: "52px 1fr", gap: 14 }}>
-      <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}><div style={{ width: 38, height: 38, display: "grid", placeItems: "center", color: "#58a6ff", fontSize: 31, fontWeight: 1000, textShadow: "0 0 18px rgba(88,166,255,.7)" }}>⬡</div><div style={{ fontSize: 30, fontWeight: 900, letterSpacing: -1.2, color: "#f8fbff" }}>Botomatic</div><div style={{ marginLeft: 12, color: "#95a8bf", fontSize: 13, fontWeight: 700 }}>Enterprise Builder Command Center</div></div>
-        <button onClick={() => { setRunning(true); load(true).finally(() => setRunning(false)); }} disabled={running} style={{ background: "rgba(47,91,150,.28)", border: "1px solid rgba(98,166,255,.25)", color: "#cfe3ff", borderRadius: 8, padding: "9px 13px", fontWeight: 900 }}>{running ? "Running gates" : "Run live gates"}</button>
-      </header>
-      <main style={{ minHeight: 0, display: "grid", gridTemplateColumns: "1fr 1fr", gridTemplateRows: "1.18fr .62fr .32fr", gap: 14 }}>
-        <section style={{ ...card, padding: 18, display: "grid", gridTemplateRows: "auto auto auto 1fr auto", gap: 10 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "48px 1fr", gap: 14, alignItems: "center" }}><div style={{ width: 48, height: 48, borderRadius: 999, background: failed ? "linear-gradient(135deg,#ef4444,#fb7185)" : "linear-gradient(135deg,#37dc70,#16a34a)", color: "white", display: "grid", placeItems: "center", fontSize: 28, fontWeight: 1000, boxShadow: failed ? "0 0 24px rgba(239,68,68,.36)" : "0 0 24px rgba(34,197,94,.42)" }}>✓</div><div><h1 style={{ margin: 0, color: failed ? "#ff7575" : "#3be176", fontSize: 20, lineHeight: 1.08 }}>{failed ? "Repository needs attention" : "Repository updated successfully"}</h1><p style={{ margin: "7px 0 0", color: "#a7b6c9", fontSize: 13 }}>{allPassed ? "All changes committed, tested, and validated" : failed ? "One or more quality gates failed. Review validator evidence." : "Live data loaded. Run gates to validate this revision."}</p></div></div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 18, marginTop: 4 }}>{[["Branch", repository.branch || "main"], ["Commit", shortSha(repository.localSha || latestCommit.sha)], ["Author", latestCommit.author || "Botomatic Builder"], ["Date", fmtDate(latestCommit.date)]].map(([k, v]) => <div key={k}><div style={{ color: "#8497ad", fontSize: 11, marginBottom: 5 }}>{k}</div><div style={{ display: "inline-flex", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", padding: "7px 12px", borderRadius: 6, background: "rgba(37,68,110,.44)", color: "#61a8ff", fontSize: 13, fontWeight: 900 }}>{v}</div></div>)}</div>
-          <div style={{ height: 1, background: "rgba(148,163,184,.14)", margin: "2px 0" }} />
-          <div style={{ minHeight: 0 }}><h2 style={{ ...label, margin: "0 0 8px" }}>Summary</h2><p style={{ color: "#a7b6c9", fontSize: 13, lineHeight: 1.43, margin: 0 }}>Hybrid CI ties local checkout state, GitHub sync, workflow visibility, validator evidence, and deployment hook posture into one release-command surface.</p><h2 style={{ ...label, margin: "16px 0 8px" }}>What was changed</h2><ul style={{ listStyle: "none", padding: 0, margin: 0 }}><CheckLine title="Intent Routing" text="Self-upgrade remains opt-in and generated-app work stays correctly classified." /><CheckLine title="Negative Overrides" text="Negated self-upgrade language cannot hijack build execution." /><CheckLine title="Contract Binding" text="Compiled output is persisted as master truth and recognized as build evidence." /><CheckLine title="Chat UX" text="Command flow is cleaner and system noise is separated from main output." /><CheckLine title="Validator" text="Regression checks protect routing and contract-binding paths." /></ul></div>
-          <div><h2 style={{ ...label, margin: "0 0 10px" }}>Quality gates</h2><div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 10 }}>{[["Build", buildGate], ["Tests", testGate], ["GitHub", repository.upToDate ? { status: "passed" } : { status: "failed" }], ["Actions", actions.length ? { status: "passed" } : { status: "not_run" }], ["Validate:All", validateGate]].map(([name, gate]: any) => <div key={name} style={{ minHeight: 76, border: "1px solid rgba(133,168,212,.12)", background: "rgba(22,35,55,.72)", borderRadius: 8, padding: 10, display: "grid", placeItems: "center", gap: 4 }}><strong style={{ fontSize: 12 }}>{name}</strong><Pill kind={gateKind(gate)}>{gateLabel(gate)}</Pill></div>)}</div></div>
-        </section>
-        <section style={{ ...card, display: "grid", gridTemplateRows: "42px 1fr 28px" }}><div style={{ padding: "14px 16px 8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}><h2 style={{ ...label, margin: 0 }}>Files changed ({filesChanged.length})</h2><div style={{ display: "flex", gap: 18, fontWeight: 1000, fontSize: 15 }}><span style={{ color: "#35e276" }}>+{totals.additions || 0}</span><span style={{ color: "#ff6262" }}>-{totals.deletions || 0}</span></div></div><div style={{ overflow: "auto", padding: "0 16px" }}>{filesChanged.length === 0 ? <div style={{ color: "#96a8be", padding: 14 }}>No working-tree changes. Latest commit is synced.</div> : filesChanged.slice(0, 18).map((file: any, i: number) => <div key={`${file.path}-${i}`} style={{ display: "grid", gridTemplateColumns: "18px 1fr 58px 58px", alignItems: "center", gap: 8, minHeight: 26, borderBottom: "1px solid rgba(148,163,184,.08)", fontSize: 12 }}><span style={{ color: "#a5b4c7" }}>▧</span><span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: "#dce6f4" }}>{file.path}</span><span style={{ color: "#35e276", textAlign: "right" }}>+{file.additions || 0}</span><span style={{ color: "#ff6262", textAlign: "right" }}>-{file.deletions || 0}</span></div>)}</div><div style={{ padding: "6px 16px 12px", color: "#8ea1b7", display: "flex", justifyContent: "space-between", fontSize: 12 }}><span>{filesChanged.length} files changed</span><span>{totals.additions || 0} additions · {totals.deletions || 0} deletions</span></div></section>
-        <section style={{ ...card, padding: 14 }}><h2 style={{ ...label, margin: "0 0 12px" }}>Commits ({commitHistory.length || 1})</h2>{(commitHistory.length ? commitHistory.slice(0, 3) : [latestCommit]).map((c: any) => <div key={c.sha || c.message} style={{ display: "grid", gridTemplateColumns: "74px 1fr 148px 86px", alignItems: "center", gap: 8, minHeight: 37, borderBottom: "1px solid rgba(148,163,184,.07)", fontSize: 12 }}><strong style={{ color: "#58a6ff" }}>{shortSha(c.sha)}</strong><span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.message}</span><span style={{ color: "#9badc3", textAlign: "right" }}>{c.author}</span><span style={{ color: "#9badc3", textAlign: "right" }}>{fmtDate(c.date).split(",")[0]}</span></div>)}</section>
-        <section style={{ ...card, padding: 14, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}><div><h2 style={{ ...label, margin: "0 0 10px" }}>Test results</h2><div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 10 }}><span style={{ width: 42, height: 42, borderRadius: 999, background: "linear-gradient(135deg,#2fc969,#178a46)", display: "grid", placeItems: "center", fontWeight: 1000 }}>✓</span><div><strong>{testGate?.status === "failed" ? "Tests failed" : testGate?.status === "passed" ? "All tests passed" : "Tests not run"}</strong><div style={{ color: "#9badc3", fontSize: 12 }}>{testGate?.summary || "No cached test result"}</div></div></div>{testRows.map(([n, v]) => <div key={n} style={{ display: "flex", justifyContent: "space-between", color: "#cdd8e6", fontSize: 13, margin: "7px 0" }}><span>{n}</span><strong style={{ color: v === "passed" ? "#35e276" : "#fbbf24" }}>{v}</strong></div>)}</div><div><h2 style={{ ...label, margin: "0 0 10px" }}>Validator results</h2><div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 10 }}><span style={{ width: 42, height: 42, borderRadius: 999, background: validateGate?.status === "failed" ? "#ef4444" : "linear-gradient(135deg,#2fc969,#178a46)", display: "grid", placeItems: "center", fontWeight: 1000 }}>✓</span><div><strong>{validateGate?.status === "failed" ? "validate:all failed" : validateGate?.status === "passed" ? "validate:all passed" : "validate:all pending"}</strong><div style={{ color: "#9badc3", fontSize: 12 }}>{validateGate?.summary || "No cached validator result"}</div></div></div>{[["Critical", failed ? 1 : 0], ["Warnings", gateSummary.stale ? 1 : 0], ["Info", gates.length]].map(([n, v]) => <div key={String(n)} style={{ display: "flex", justifyContent: "space-between", background: "rgba(10,22,38,.55)", border: "1px solid rgba(148,163,184,.08)", borderRadius: 8, padding: "7px 10px", marginBottom: 7, fontSize: 13 }}><span>{n}</span><strong style={{ color: n === "Critical" ? "#35e276" : "#58a6ff" }}>{v}</strong></div>)}</div></section>
-        <section style={{ ...card, padding: 14 }}><h2 style={{ ...label, margin: "0 0 13px" }}>Next steps</h2><div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 10 }}>{[["Plan", gateSummary.stale ? "CI stale" : "Execution plan ready"], ["Approve", "Architecture approval pending"], ["Execute", "Begin Milestone 1"], ["Validate", "After each milestone"], ["Deploy", "Blocked by default"]].map(([t, s]) => <div key={t}><strong style={{ fontSize: 14 }}>{t}</strong><div style={{ color: "#9badc3", fontSize: 11 }}>{s}</div></div>)}</div></section>
-        <section style={{ ...card, padding: 14, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}><div><h2 style={{ ...label, margin: "0 0 11px" }}>Repository</h2><div style={{ display: "grid", gap: 7, fontSize: 13 }}><Link href={repository.url || "https://github.com/skylersemailaddress-debug/Botomatic"} style={{ color: "#58a6ff" }}>github.com/skylersemailaddress-debug/Botomatic</Link><span>{repository.branch || "main"}</span><span>{shortSha(repository.localSha || latestCommit.sha)}</span><span>Pushed {fmtDate(latestCommit.date)}</span></div><div style={{ display: "inline-flex", marginTop: 12, padding: "5px 14px", borderRadius: 999, background: repository.upToDate ? "rgba(34,197,94,.16)" : "rgba(245,158,11,.16)", color: repository.upToDate ? "#35e276" : "#fbbf24", fontWeight: 900, fontSize: 12 }}>{repository.upToDate ? "Up to date" : `Behind ${repository.behind || 0}`}</div></div><div><h2 style={{ ...label, margin: "0 0 11px" }}>GitHub + deploy</h2><div style={{ display: "grid", gap: 8, fontSize: 12, color: "#cbd7e6" }}><div><strong>Actions:</strong> {actions.length ? `${actions[0].name || "workflow"} ${actions[0].status}` : "No recent runs"}</div><div><strong>Open PRs:</strong> {prs.length ? prs.slice(0, 2).map((pr: any) => `#${pr.number} ${pr.title}`).join(" / ") : "none"}</div><div><strong>Deploy:</strong> {deployHooks.map((h: any) => `${h.environment}:${h.status}`).join(" / ") || "no hooks"}</div></div></div></section>
-      </main>
+  const buildMap = useMemo(() => {
+    const build = gateMap.get("build")?.status || "not_run";
+    const tests = gateMap.get("tests")?.status || "not_run";
+    const validate = gateMap.get("validate:all")?.status || "not_run";
+    const hasInput = chat.length > 0 || Boolean(data?.latestCommit?.sha);
+    const designTouched = chat.some((item) => item.content.includes("edit_ui") || item.content.includes("Improve Design"));
+    const featureTouched = chat.some((item) => item.content.includes("add_feature") || item.content.includes("Add Feature"));
+    const dataTouched = chat.some((item) => item.content.includes("connect_integration") || item.content.includes("Connect Payments"));
+
+    const map: Array<{ stage: string; status: StageStatus; detail: string }> = [];
+    map.push({ stage: "Input", status: hasInput ? "inferred" : "pending", detail: hasInput ? "Input inferred from your requests and repo context" : "Waiting for input" });
+    map.push({ stage: "Design", status: designTouched ? "complete" : "pending", detail: designTouched ? "Design edits captured" : "Pending design instructions" });
+    map.push({ stage: "Features", status: featureTouched ? "complete" : "pending", detail: featureTouched ? "Feature work queued" : "No feature request yet" });
+    map.push({ stage: "Data", status: dataTouched ? "in_progress" : "pending", detail: dataTouched ? "Integration/data planning in progress" : "No data sources connected" });
+    map.push({ stage: "Logic", status: build === "passed" ? "complete" : build === "failed" ? "blocked" : "in_progress", detail: build === "failed" ? "Build failed" : build === "passed" ? "Build passed" : "Checking everything works" });
+    map.push({ stage: "Integrations", status: dataTouched ? "in_progress" : "pending", detail: dataTouched ? "Provider setup in progress" : "No integrations requested" });
+    map.push({ stage: "Tests", status: tests === "passed" ? "complete" : tests === "failed" ? "blocked" : "pending", detail: tests === "passed" ? "All tests passed" : tests === "failed" ? "Test failures need repair" : "Tests not run" });
+    map.push({ stage: "Launch", status: runtime.status === "running" ? "in_progress" : validate === "passed" ? "in_progress" : "pending", detail: runtime.status === "running" ? "Your app is running" : "Launch pending" });
+    map.push({ stage: "Deploy", status: "skipped_with_reason", detail: "Approval required" });
+    return map;
+  }, [chat, data?.latestCommit?.sha, gateMap, runtime.status]);
+
+  const append = (role: "user" | "assistant", content: string) => {
+    setChat((prev) => [...prev, { role, content, at: new Date().toLocaleTimeString() }]);
+  };
+
+  const pushAudit = (entry: Omit<AuditEntry, "timestamp">) => {
+    setAuditEntries((prev) => [{ ...entry, timestamp: new Date().toISOString() }, ...prev].slice(0, 20));
+  };
+
+  const mapFreeTextToActions = (input: string): Array<{ intent?: SharedIntent; input?: string }> => {
+    const lower = input.toLowerCase().trim();
+    if (lower === "launch it" || lower === "run locally") return [{ intent: "launch_local_app" }];
+    if (lower === "launch and test") return [{ intent: "launch_local_app" }, { intent: "run_tests" }];
+    if (lower === "fix and relaunch") return [{ intent: "fix_failure" }, { intent: "launch_local_app" }];
+    return [{ input }];
+  };
+
+  const runTestStream = async () => {
+    const response = await fetch("/api/local-repo-dashboard/stream", { cache: "no-store" });
+    const text = await response.text();
+    const lines = text.split("\n").filter((line) => line.startsWith("data: ")).map((line) => line.slice(6));
+    const events = lines.map((line) => JSON.parse(line));
+    const streamLogs = events
+      .filter((e: any) => e.type === "stdout" || e.type === "stderr")
+      .map((e: any) => String(e.data || ""))
+      .slice(-20);
+    const complete = events.find((e: any) => e.type === "complete");
+    setRuntime((prev) => ({
+      ...prev,
+      logs: [...prev.logs, ...streamLogs].slice(-60),
+      failureClassification: complete?.ok ? "none" : classifyFailure(streamLogs.join("\n")),
+    }));
+    return complete?.ok ? "passed" : "failed";
+  };
+
+  const runOneAction = async ({ intent, input }: { intent?: SharedIntent; input?: string }) => {
+    const resolvedInput = intent ? SHARED_INTENTS[intent] : input?.trim();
+    if (!resolvedInput) return;
+
+    let runtimeContext = await fetchRuntimeContext(projectId);
+    if ((intent === "deploy" || intent === "rollback") && (runtimeContext.approvalStatus !== "approved" || runtimeContext.launchGateStatus !== "ready")) {
+      append("assistant", "Deploy is blocked right now. Do you want me to explain what approval or launch gate is missing?");
+      pushAudit({
+        actor: "botomatic",
+        command: intent,
+        filesChanged: data?.filesChanged?.length || 0,
+        validatorResult: gateMap.get("validate:all")?.status || "not_run",
+        proofArtifact: "unknown",
+        approvalState: runtimeContext.approvalStatus,
+        rollbackPlan: "Deployment blocked before execution",
+        vibeUnderstood: "You asked for a high-risk deployment action.",
+        vibeAdded: "I blocked deployment to keep things safe.",
+        vibeNext: "Approve missing gates before deploy.",
+      });
+      return;
+    }
+
+    if ((intent === "run_tests" || intent === "launch_local_app") && !runtimeContext.uploadedSpecExists) {
+      await executeCanonicalCommand({ projectId, input: SHARED_INTENTS.build_project, runtimeContext });
+      append("assistant", "I’m organizing your project first so this can run safely.");
+      runtimeContext = await fetchRuntimeContext(projectId);
+    }
+
+    const execution = await executeCanonicalCommand({ projectId, input: resolvedInput, runtimeContext });
+    const refreshed = await fetchRuntimeContext(projectId);
+
+    if (intent === "launch_local_app") {
+      const url = parseUrl(execution.details) || "http://localhost:3000";
+      setRuntime((prev) => ({ ...prev, status: "running", health: "healthy", url, port: url.split(":").pop() || "3000", logs: [...prev.logs, execution.details].slice(-60) }));
+      append("assistant", mode === "vibe" ? "Your app is running" : buildPartnerEnvelope(refreshed, execution.commandRun, execution.details));
+    } else {
+      if (intent === "stop_local_app") setRuntime((prev) => ({ ...prev, status: "stopped", health: "unknown", logs: [...prev.logs, execution.details].slice(-60) }));
+      if (intent === "restart_local_app") setRuntime((prev) => ({ ...prev, status: "running", health: "healthy", logs: [...prev.logs, execution.details].slice(-60) }));
+      if (intent === "run_tests" || intent === "run_validation") await runTestStream();
+      append("assistant", mode === "vibe" ? friendlyVibeReply(execution.details) : buildPartnerEnvelope(refreshed, execution.commandRun, execution.details));
+    }
+
+    pushAudit({
+      actor: "botomatic",
+      command: intent || resolvedInput,
+      filesChanged: data?.filesChanged?.length || 0,
+      validatorResult: gateMap.get("validate:all")?.status || "not_run",
+      proofArtifact: "runtime/dashboard-live-cache.json",
+      approvalState: refreshed.approvalStatus,
+      rollbackPlan: refreshed.failureInspection?.rollbackPlan || "Revert files touched in this attempt.",
+      vibeUnderstood: `I understood you wanted: ${intent || resolvedInput}.`,
+      vibeAdded: execution.details.split("\n")[0] || "I executed your request.",
+      vibeNext: refreshed.launchGateStatus === "ready" ? "You can launch or deploy with approval." : "I can continue with the next safe step.",
+    });
+  };
+
+  const dispatchAction = async ({ intent, input }: { intent?: SharedIntent; input?: string }) => {
+    const source = intent ? `${intent}: ${SHARED_INTENTS[intent]}` : (input || "").trim();
+    if (!source || busy) return;
+    setBusy(true);
+    append("user", source);
+    try {
+      const actions = intent ? [{ intent }] : mapFreeTextToActions(input || "");
+      for (const action of actions) await runOneAction(action);
+      setChatInput("");
+    } catch (error: any) {
+      const message = `Action blocked or unavailable: ${error?.message || "unknown error"}`;
+      append("assistant", message);
+      setRuntime((prev) => ({ ...prev, status: "failed", health: "degraded", failureClassification: classifyFailure(message) }));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const latestAudit = auditEntries[0];
+
+  return (
+    <div className="nexus-shell">
+      <NexusSidebar
+        mode={mode}
+        showProNav={showProNav}
+        onShowPro={() => dispatchAction({ intent: "switch_mode" }).then(() => setShowProNav(true))}
+        projectId={projectId}
+        onPrimaryAction={() => dispatchAction({ intent: "build_project" })}
+      />
+
+      <section className="nexus-main">
+        <NexusTopbar
+          mode={mode}
+          projectId={projectId}
+          branch={data?.repository?.branch || "main"}
+          environment={mode === "vibe" ? "Workspace" : "Development"}
+          deviceView={deviceView}
+          onSetDeviceView={setDeviceView}
+          onRunAll={() => dispatchAction({ intent: "run_validation" })}
+          onLaunch={() => dispatchAction({ intent: "launch_local_app" })}
+          onDeploy={() => dispatchAction({ intent: "deploy" })}
+        />
+
+        {loadError && <div className="nexus-state nexus-state--error">{loadError}</div>}
+        {!data && !loadError && <div className="nexus-state nexus-state--loading">Loading workspace status…</div>}
+
+        <div className={`nexus-grid nexus-grid--${mode}`}>
+          <NexusPanel title={mode === "vibe" ? "Central Workspace" : "AI Copilot"} className="nexus-chat">
+            <div className="nexus-chat-log">
+              {chat.length === 0 && (
+                <div className="nexus-state nexus-state--empty">
+                  {mode === "vibe" ? "Your app is ready. Tell me what to build or improve." : "Run validation, explain errors, patch files, or inspect runtime state."}
+                </div>
+              )}
+              {chat.map((entry, idx) => (
+                <article className={`nexus-msg nexus-msg--${entry.role}`} key={`${entry.at}-${idx}`}>
+                  <strong>{entry.role === "user" ? "You" : "Botomatic"}</strong>
+                  <p>{entry.content}</p>
+                </article>
+              ))}
+            </div>
+            <div className="nexus-chip-row">
+              {mode === "vibe"
+                ? VIBE_CHIPS.map((chip) => <button key={chip.label} onClick={() => dispatchAction({ intent: chip.intent })}>{chip.label}</button>)
+                : PRO_CHIPS.map((chip) => <button key={chip} onClick={() => dispatchAction({ input: chip })}>{chip}</button>)}
+            </div>
+          </NexusPanel>
+
+          <NexusPanel title={mode === "vibe" ? "Live Design Canvas" : "Live Application"} className="nexus-canvas">
+            <div className="nexus-row">
+              {mode === "vibe" ? <button onClick={() => dispatchAction({ intent: "edit_ui" })}>Edit</button> : <><button>Desktop</button><button>Tablet</button><button>Mobile</button></>}
+            </div>
+            <button className="nexus-preview" onClick={() => mode === "vibe" && dispatchAction({ intent: "edit_ui" })}>
+              {mode === "vibe" ? `Click any part to visually edit (${deviceView} preview).` : `Process: ${runtime.process} · Port: ${runtime.port}`}
+            </button>
+            {mode === "pro" && (
+              <div className="nexus-row">
+                <button onClick={() => dispatchAction({ intent: "restart_local_app" })}>Restart</button>
+                <button onClick={() => dispatchAction({ intent: "stop_local_app" })}>Stop</button>
+                <button onClick={() => dispatchAction({ input: "inspect logs" })}>View Logs</button>
+              </div>
+            )}
+          </NexusPanel>
+
+          <NexusPanel title={mode === "vibe" ? "Build Map" : "Build Pipeline"} className="nexus-status">
+            <ul>
+              {buildMap.map((item) => (
+                <li key={item.stage}>
+                  <span><StatusDot tone={tone(item.status)} />{item.stage}<small>{item.detail}</small></span>
+                  <StatusPill tone={tone(item.status)} value={item.status.replaceAll("_", " ")} />
+                </li>
+              ))}
+            </ul>
+          </NexusPanel>
+
+          <NexusPanel title={mode === "vibe" ? "App Health" : "System Health"} className="nexus-health">
+            <p>Build: {gateMap.get("build")?.status || "pending"}</p>
+            <p>Tests: {gateMap.get("tests")?.status || "pending"}</p>
+            <p>Validate: {gateMap.get("validate:all")?.status || "pending"}</p>
+            <p>Deploy: blocked</p>
+          </NexusPanel>
+
+          {mode === "vibe" && (
+            <>
+              <NexusPanel title="Live Preview">
+                <p>{runtime.status === "running" ? "Your app is running" : "Latest local preview is shown after each approved build step."}</p>
+                {runtime.url && <a href={runtime.url} target="_blank" rel="noreferrer">Open App</a>}
+              </NexusPanel>
+              <NexusPanel title="What’s Next"><p>Connect domain, add logo, configure notifications.</p></NexusPanel>
+              <NexusPanel title="Recent Activity"><p>{data?.latestCommit?.message || "Waiting for first tracked activity."}</p></NexusPanel>
+              <NexusPanel title="One-Click Launch" className="nexus-launch">
+                <p>Putting your app live stays approval-gated.</p>
+                <div className="nexus-row">
+                  <button className="nexus-primary" onClick={() => dispatchAction({ intent: "launch_local_app" })}>Open App</button>
+                  <button onClick={() => dispatchAction({ intent: "run_tests" })}>Test</button>
+                  <button onClick={() => dispatchAction({ intent: "deploy" })}>Deploy</button>
+                </div>
+              </NexusPanel>
+              <NexusPanel title="Audit">
+                <p><strong>What I understood:</strong> {latestAudit?.vibeUnderstood || "Waiting for your first command."}</p>
+                <p><strong>What I added:</strong> {latestAudit?.vibeAdded || "No changes yet."}</p>
+                <p><strong>What’s next:</strong> {latestAudit?.vibeNext || "I can keep building when you’re ready."}</p>
+              </NexusPanel>
+            </>
+          )}
+
+          {mode === "pro" && (
+            <>
+              <NexusPanel title="Code Changes"><p>{data?.filesChanged?.length || 0} files · +{data?.totals?.additions || 0} / -{data?.totals?.deletions || 0}</p><p>{data?.filesChanged?.[0]?.path || "No working tree changes."}</p></NexusPanel>
+              <NexusPanel title="Services"><ul className="nexus-list"><li>API: unknown</li><li>Database: unknown</li><li>Storage: unknown</li></ul></NexusPanel>
+              <NexusPanel title="Database Schema"><p>unknown (schema endpoint not available in current payload)</p></NexusPanel>
+              <NexusPanel title="Test Results"><p>{gateMap.get("tests")?.status === "passed" ? "passed" : gateMap.get("tests")?.status === "failed" ? "failed" : "not run"}</p></NexusPanel>
+              <NexusPanel title="Terminal / Logs"><pre className="nexus-log">{runtime.logs.slice(-8).join("\n") || "No logs yet."}</pre></NexusPanel>
+              <NexusPanel title="Recent Commits"><p>{data?.commitHistory?.[0]?.message || data?.latestCommit?.message || "No commit data available."}</p><p>Failure classification: {runtime.failureClassification}</p><p>Health: {runtime.health}</p></NexusPanel>
+              <NexusPanel title="Audit">
+                <div className="nexus-audit-table">
+                  <div>timestamp</div><div>actor</div><div>command</div><div>files changed</div><div>validator result</div><div>proof artifact</div><div>approval state</div><div>rollback plan</div>
+                  {auditEntries.slice(0, 3).map((entry, idx) => (
+                    <>
+                      <div key={`ts-${idx}`}>{entry.timestamp}</div>
+                      <div key={`ac-${idx}`}>{entry.actor}</div>
+                      <div key={`cm-${idx}`}>{entry.command}</div>
+                      <div key={`fc-${idx}`}>{entry.filesChanged}</div>
+                      <div key={`vr-${idx}`}>{entry.validatorResult}</div>
+                      <div key={`pa-${idx}`}>{entry.proofArtifact}</div>
+                      <div key={`ap-${idx}`}>{entry.approvalState}</div>
+                      <div key={`rp-${idx}`}>{entry.rollbackPlan}</div>
+                    </>
+                  ))}
+                </div>
+              </NexusPanel>
+            </>
+          )}
+        </div>
+
+        <footer className="nexus-chatbar">
+          <input value={chatInput} onChange={(e) => setChatInput(e.target.value)} placeholder={mode === "vibe" ? "Ask anything..." : "Ask AI Copilot..."} />
+          <button className="nexus-primary" disabled={busy} onClick={() => dispatchAction({ input: chatInput })}>{busy ? "Running..." : "Send"}</button>
+        </footer>
+
+        {mode === "pro" && (
+          <div className="nexus-status-strip">
+            <span>Status: {runtime.status}</span>
+            <span>Environment: Development</span>
+            <span>Process: {runtime.process}</span>
+            <span>Port: {runtime.port}</span>
+            <div className="nexus-quick-actions">
+              <button onClick={() => dispatchAction({ intent: "run_validation" })}>Quick: Validate</button>
+              <button onClick={() => dispatchAction({ input: "inspect logs" })}>Quick: Logs</button>
+              <button onClick={() => dispatchAction({ intent: "restart_local_app" })}>Quick: Restart</button>
+            </div>
+          </div>
+        )}
+      </section>
     </div>
-  </div>;
+  );
 }

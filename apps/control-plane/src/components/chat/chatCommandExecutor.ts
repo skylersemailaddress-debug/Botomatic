@@ -104,6 +104,7 @@ export function formatPartnerMessage(input: {
   rollback: string;
   command: string;
   needDecision: boolean;
+  needApproval?: boolean;
   userQuestion?: string;
   details?: string;
 }): string {
@@ -124,6 +125,7 @@ export function formatPartnerMessage(input: {
     `Rollback:\n${input.rollback}`,
     `Command I will run:\n${input.command}`,
     `Need your decision?\n${input.needDecision ? "Yes" : "No"}.`,
+    `Need approval?\n${(input.needApproval ?? input.needDecision) ? "Yes" : "No"}.`,
   ];
   if (input.userQuestion) {
     lines.push(`Decision needed:\n${input.userQuestion}`);
@@ -488,6 +490,7 @@ export function buildPartnerEnvelope(context: RuntimeContext, command: string, d
     rollback: failure?.rollbackPlan || "Revert files touched in this repair attempt.",
     command,
     needDecision,
+    needApproval: needDecision,
     userQuestion: failure?.userQuestion,
     details,
   });

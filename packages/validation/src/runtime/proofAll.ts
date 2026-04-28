@@ -22,6 +22,9 @@ const proofs = [
 
 function run() {
   for (const script of proofs) {
+    const startedAt = Date.now();
+    console.log(`[proof:all] running ${script}...`);
+
     const result = spawnSync("npm", ["run", "-s", script], {
       cwd: process.cwd(),
       stdio: "inherit",
@@ -29,8 +32,13 @@ function run() {
     });
 
     if ((result.status ?? 1) !== 0) {
+      const elapsedMs = Date.now() - startedAt;
+      console.error(`[proof:all] failed ${script} after ${elapsedMs}ms.`);
       process.exit(result.status ?? 1);
     }
+
+    const elapsedMs = Date.now() - startedAt;
+    console.log(`[proof:all] passed ${script} in ${elapsedMs}ms.`);
   }
 
   console.log("All runtime proof harnesses passed.");

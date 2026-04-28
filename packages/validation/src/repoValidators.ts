@@ -25,6 +25,7 @@ import { validateChatBehaviorExecution } from "./repoValidators/chatBehaviorExec
 import { validateFailureClassificationReadiness } from "./repoValidators/failureClassificationReadiness";
 import { validateAdaptiveRepairStrategyReadiness } from "./repoValidators/adaptiveRepairStrategyReadiness";
 import { validateUploadPlanHandoffReadiness } from "./repoValidators/uploadPlanHandoffReadiness";
+import { validateNexusDualModeReadiness } from "./repoValidators/nexusDualModeReadiness";
 
 export type RepoValidatorResult = {
   name: string;
@@ -1205,6 +1206,7 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateFileIngestion(root),
     validateChatFirstOperatorRouting(root),
     validateChatBehaviorExecution(root),
+    validateNexusDualModeReadiness(root),
     validateUniversalBuilderReadiness(root),
     validateSelfUpgradingFactoryReadiness(root),
     validateDirtyRepoRescueReadiness(root),
