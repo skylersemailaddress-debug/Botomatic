@@ -67,6 +67,19 @@ function DisabledNavItem({ children }: { children: ReactNode }) {
   return <span className="northstar-nav-disabled" aria-disabled="true">{children}</span>;
 }
 
+function ChatInputBar({ placeholder = "Ask Botomatic anything…", compact = false }: { placeholder?: string; compact?: boolean }) {
+  return (
+    <div className={compact ? "vibe-command-bar vibe-command-bar--compact" : "vibe-command-bar"}>
+      <span>{placeholder}</span>
+      <div>
+        <button type="button">Attach</button>
+        <button type="button" aria-label="Switch chat input to voice">Voice</button>
+        <button type="button" className="northstar-primary-button">Send</button>
+      </div>
+    </div>
+  );
+}
+
 export function NorthStarBuilderShell({ projectId, workspace, children, rightRail }: BuilderShellProps) {
   const isVibe = workspace === "vibe";
   const primaryHref = isVibe ? `/projects/${projectId}/advanced` : `/projects/${projectId}/vibe`;
@@ -92,7 +105,7 @@ export function NorthStarBuilderShell({ projectId, workspace, children, rightRai
         </nav>
         <div className="northstar-sidebar-note">
           <div>Chat and voice stay in control.</div>
-          <small>No launch claim is shown without proof.</small>
+          <small>Voice only changes input capture. Commands follow the same chat path.</small>
         </div>
       </aside>
       <div className="northstar-main">
@@ -104,7 +117,6 @@ export function NorthStarBuilderShell({ projectId, workspace, children, rightRai
           </div>
           <div className="northstar-topbar-actions" aria-label="Workspace actions">
             <Link href={primaryHref} className="northstar-ghost-action">{primaryLabel}</Link>
-            <button type="button" className="northstar-voice-action" aria-label="Voice command placeholder">Voice</button>
             <Link href="/" className="northstar-primary-action">Start New Build</Link>
           </div>
         </header>
@@ -135,10 +147,7 @@ export function VibeBuilderSkeleton({ projectId }: { projectId: string }) {
           <div className="vibe-action-chips" aria-label="Natural language actions">
             {['Make it more premium', 'Add booking flow', 'Improve mobile view', 'Add testimonials', 'Run proof'].map((item) => <button type="button" key={item}>{item}</button>)}
           </div>
-          <div className="vibe-command-bar">
-            <span>Ask anything… e.g. add a pricing section, improve the hero, connect payments</span>
-            <div><button type="button">Attach</button><button type="button">Voice</button><button type="button" className="northstar-primary-button">Send</button></div>
-          </div>
+          <ChatInputBar placeholder="Ask anything… e.g. add a pricing section, improve the hero, connect payments" />
         </section>
       </div>
     </NorthStarBuilderShell>
@@ -195,6 +204,7 @@ export function ProBuilderSkeleton({ projectId }: { projectId: string }) {
         <WorkspaceCard title="Live Application" eyebrow="Runtime preview" source="not-implemented"><div className="pro-preview-box"><GeneratedPreviewMini /></div></WorkspaceCard>
         <WorkspaceCard title="Test Results" eyebrow="Validators" source="validator"><div className="test-summary"><strong>Pending wiring</strong><span>Unit · Integration · E2E · API · Security · No-placeholder</span></div></WorkspaceCard>
         <WorkspaceCard title="Terminal + Logs" eyebrow="Runtime" source="not-implemented"><pre className="terminal-preview">$ npm run build\n$ npm run validate:all\n$ proof pending...</pre></WorkspaceCard>
+        <WorkspaceCard title="AI Copilot" eyebrow="Same chat command path" source="static-preview"><p className="northstar-muted">Use keyboard or voice input below. Both become the same canonical command request.</p><ChatInputBar compact placeholder="Ask Botomatic to repair, test, explain, harden, or deploy…" /></WorkspaceCard>
       </div>
     </NorthStarBuilderShell>
   );
@@ -209,7 +219,7 @@ function ProControlRail() {
     <>
       <WorkspaceCard title="Services" eyebrow="Runtime" source="not-implemented"><div className="service-list">{['Next.js App', 'API Server', 'PostgreSQL', 'Redis', 'Storage', 'Stripe'].map((service) => <div key={service}><span>{service}</span><strong>Pending</strong></div>)}</div></WorkspaceCard>
       <WorkspaceCard title="Database Schema" eyebrow="Data" source="not-implemented"><div className="service-list"><div><span>users</span><strong>planned</strong></div><div><span>bookings</span><strong>planned</strong></div><div><span>payments</span><strong>blocked</strong></div></div></WorkspaceCard>
-      <WorkspaceCard title="AI Copilot" eyebrow="Chat control" source="static-preview"><p className="northstar-muted">Ask for repairs, tests, architecture review, or proof explanation.</p><div className="next-action-grid"><button type="button">Explain failing test</button><button type="button">Review security</button></div></WorkspaceCard>
+      <WorkspaceCard title="Proof Status" eyebrow="Audit" source="not-implemented"><p className="northstar-muted">Validator, proof, and launch evidence will be wired here.</p></WorkspaceCard>
     </>
   );
 }
