@@ -1,7 +1,7 @@
 {
   "domainId": "api_service",
-  "generatedAt": "2026-04-28T23:19:19.769Z",
-  "emittedPath": "/workspace/Botomatic/release-evidence/generated-apps/api_service",
+  "generatedAt": "2026-04-28T07:54:29.366Z",
+  "emittedPath": "/workspaces/Botomatic/release-evidence/generated-apps/api_service",
   "emittedFileCount": 20,
   "emittedFiles": [
     ".env.example",
