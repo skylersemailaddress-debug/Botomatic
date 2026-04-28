@@ -28,6 +28,8 @@ export function validateDirtyRepoRescueReadiness(root: string): RepoValidatorRes
     "packages/repo-audit/src/index.ts",
     "packages/repo-repair/src/index.ts",
     "packages/repo-completion/src/index.ts",
+    "packages/validation/src/tests/dirtyRepoCompletionContractV2.test.ts",
+    "docs/dirty-repo-completion-contract-v2.md",
     "packages/validation/src/existingRepo/validateExistingRepoReadiness.ts",
     "apps/orchestrator-api/src/server_app.ts",
     "release-evidence/runtime/dirty_repo_runtime_proof.json",
@@ -90,6 +92,17 @@ export function validateDirtyRepoRescueReadiness(root: string): RepoValidatorRes
     Array.isArray(completionContractPayload?.recommendedCompletionPlan) &&
     completionContractPayload.recommendedCompletionPlan.length >= 2 &&
     Array.isArray(completionContractPayload?.commercialLaunchBlockers);
+  const completionRunner = read(root, "packages/repo-completion/src/completionRunner.ts");
+  const statusTypeMatch = completionRunner.match(/export type DirtyRepoCompletionStatus\s*=\s*([^;]+);/);
+  const statusLiteralBody = statusTypeMatch ? statusTypeMatch[1] : "";
+  const statusLiterals = Array.from(statusLiteralBody.matchAll(/"([a-z_]+)"/g)).map((m) => m[1]);
+  const allowedStatuses = ["blocked", "repair_ready", "validation_ready", "candidate_ready"];
+  const hasStrictStatusUnion =
+    statusLiterals.length === allowedStatuses.length &&
+    allowedStatuses.every((status) => statusLiterals.includes(status)) &&
+    !statusLiterals.includes("launch_ready") &&
+    !statusLiterals.includes("production_ready");
+  const hasV2Boundary = completionRunner.includes("DirtyRepoCompletionContractV2") && hasStrictStatusUnion;
   const hasRepairPlanShape =
     Array.isArray(repairPlan?.patchQueue) &&
     Array.isArray(repairPlan?.testQueue) &&
@@ -112,6 +125,7 @@ export function validateDirtyRepoRescueReadiness(root: string): RepoValidatorRes
     hasRepairEvidence &&
     hasDetectionEvidence &&
     hasCompletionContractShape &&
+    hasV2Boundary &&
     hasRepairPlanShape &&
     ranExistingRepoValidator &&
     ranIncrementalValidation &&

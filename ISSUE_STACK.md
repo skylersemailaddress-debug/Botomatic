@@ -36,9 +36,10 @@
 15. GEN-005 generated app corpus harness and readiness reassessment (complete)
 16. GEN-006 representative generated app fixture batch (complete)
 17. REPO-001 dirty repo evidence contract (complete)
-18. SELF-001 executable self-upgrade safety contract (complete)
-19. DEPLOY-001 secret leak prevention and secret-reference policy scope (complete)
-20. DEPLOY-002 deployment runtime hardening follow-up (next)
+18. REPO-002 dirty repo completion contract v2 (complete)
+19. SELF-001 executable self-upgrade safety contract (complete)
+20. DEPLOY-001 secret leak prevention and secret-reference policy scope (complete)
+21. REPO-003 dirty repo repair-loop proof (next)
 
 ## Stale PR Handling Guidance
 - PR #71 merged baseline.
@@ -52,8 +53,9 @@
 
 ## Next Recommended Parallel Lane Execution
 - REPO-001 dirty repo evidence contract (complete)
+- REPO-002 dirty repo completion contract v2 (complete)
+- REPO-003 dirty repo repair-loop proof (next)
 - SELF-001 executable self-upgrade safety contract (complete)
 - DEPLOY-001 secret leak prevention and secret-reference policy scope (complete)
-- DEPLOY-002 deployment runtime hardening follow-up (next)
 
 - PROOF-001 is next for self/proof lane.
