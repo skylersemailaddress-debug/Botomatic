@@ -18,7 +18,7 @@ import {
 } from "../../../packages/spec-engine/src";
 import { matchBlueprintFromText } from "../../../packages/blueprints/src/registry";
 import { planSelfUpgrade, detectArchitectureDrift, runRegressionGuard, SelfUpgradeSpec } from "../../../packages/self-upgrade-engine/src";
-import { classifyRepo, detectFrameworks, detectLanguages, mapArchitecture, inferDomain, scanRepoRisk } from "../../../packages/repo-intake/src";
+import { addDirtyRepoEvidenceEntry, classifyRepo, createDirtyRepoEvidenceSnapshot, deriveDirtyRepoCompletionBlockers, detectFrameworks, detectLanguages, mapArchitecture, inferDomain, scanRepoRisk } from "../../../packages/repo-intake/src";
 import {
   repoHealthAudit,
   buildFailureAudit,
@@ -999,11 +999,66 @@ function buildExistingRepoCompletionContract(project: StoredProjectRecord, opera
   ];
 
   const commercialAudit = commercialReadinessAudit(audits);
-  const blockers = Array.from(new Set([...(commercialAudit.issues || []), ...risk.fakeIntegrationSignals.map((s) => `Fake integration signal: ${s}`)]));
+  let evidenceSnapshot = createDirtyRepoEvidenceSnapshot({
+    sources: ["intake_artifact", "audit", "validator", "operator_summary"],
+  });
+
+  for (const issue of commercialAudit.issues || []) {
+    evidenceSnapshot = addDirtyRepoEvidenceEntry(evidenceSnapshot, {
+      id: `audit_issue_${evidenceSnapshot.entries.length + 1}` ,
+      source: "audit",
+      severity: "critical",
+      category: "validator",
+      message: issue,
+      remediationHint: "Resolve failed readiness criterion before launch.",
+      completionArea: "workflow",
+    });
+  }
+
+  for (const signal of risk.fakeIntegrationSignals) {
+    evidenceSnapshot = addDirtyRepoEvidenceEntry(evidenceSnapshot, {
+      id: `fake_signal_${evidenceSnapshot.entries.length + 1}`,
+      source: "validator",
+      severity: "critical",
+      category: "policy",
+      message: `Fake integration signal: ${signal}`,
+      remediationHint: "Replace placeholder integrations with real providers.",
+      completionArea: "integrations",
+    });
+  }
+
+  for (const signal of risk.securityRiskSignals) {
+    evidenceSnapshot = addDirtyRepoEvidenceEntry(evidenceSnapshot, {
+      id: `security_signal_${evidenceSnapshot.entries.length + 1}`,
+      source: "validator",
+      severity: "warning",
+      category: "security",
+      message: signal,
+      remediationHint: "Address security issue with validated remediation and tests.",
+      completionArea: "security",
+    });
+  }
+
+  for (const signal of risk.placeholderSignals) {
+    evidenceSnapshot = addDirtyRepoEvidenceEntry(evidenceSnapshot, {
+      id: `placeholder_signal_${evidenceSnapshot.entries.length + 1}`,
+      source: "operator_summary",
+      severity: "warning",
+      category: "placeholder",
+      message: signal,
+      remediationHint: "Remove placeholder logic and implement production behavior.",
+      completionArea: "placeholder",
+    });
+  }
+
+  const derivedBlockers = deriveDirtyRepoCompletionBlockers(evidenceSnapshot);
+  const blockers = Array.from(new Set(derivedBlockers.map((b) => b.message)));
   const completionContract = runCompletionContract({
     detectedProduct: inferredDomain,
     detectedStack: Array.from(new Set([...frameworkHints, ...languageHints])),
     blockers,
+    evidenceSnapshot,
+    completionBlockers: derivedBlockers,
   });
 
   const existingRepoValidation = validateExistingRepoReadiness({

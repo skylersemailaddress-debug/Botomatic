@@ -1,3 +1,4 @@
+import type { DirtyRepoCompletionBlocker, DirtyRepoEvidenceSnapshot } from "../../repo-intake/src/dirtyRepoEvidence";
 import { createCompletionPlan } from "../../repo-repair/src/completionPlanner";
 
 export type CompletionContract = {
@@ -17,12 +18,17 @@ export type CompletionContract = {
   mustAnswerQuestions: string[];
   safeAssumptions: string[];
   definitionOfDone: string[];
+  evidenceSnapshot?: DirtyRepoEvidenceSnapshot;
+  evidenceEntries?: DirtyRepoEvidenceSnapshot["entries"];
+  completionBlockers?: DirtyRepoCompletionBlocker[];
 };
 
 export function runCompletionContract(input: {
   detectedProduct: string;
   detectedStack: string[];
   blockers: string[];
+  evidenceSnapshot?: DirtyRepoEvidenceSnapshot;
+  completionBlockers?: DirtyRepoCompletionBlocker[];
 }): CompletionContract {
   const phases = createCompletionPlan({ blockers: input.blockers });
   return {
@@ -41,6 +47,9 @@ export function runCompletionContract(input: {
     recommendedCompletionPlan: phases.map((phase) => `${phase.title}: ${phase.goals.join(", ")}`),
     mustAnswerQuestions: ["Which launch workflows are non-negotiable?"],
     safeAssumptions: ["Preserve working user code unless replacement is approved"],
+    evidenceSnapshot: input.evidenceSnapshot,
+    evidenceEntries: input.evidenceSnapshot?.entries || [],
+    completionBlockers: input.completionBlockers || [],
     definitionOfDone: [
       "Install/build/test path is stable",
       "No placeholders in production paths",

@@ -17,6 +17,7 @@
 - GEN-004 is complete: generated-app commercial readiness gate.
 - GEN-005 is complete: generated app corpus harness and readiness reassessment.
 - GEN-006 is complete: representative generated app fixture batch.
+- REPO-001 is complete: dirty repo evidence contract.
 
 ## Ordered Priority Stack
 1. OPS-001 freeze random merging (complete)
@@ -35,7 +36,7 @@
 14. GEN-004 generated-app commercial readiness gate (complete)
 15. GEN-005 generated app corpus harness and readiness reassessment (complete)
 16. GEN-006 representative generated app fixture batch (complete)
-17. REPO-001 dirty repo evidence contract (recommended parallel lane)
+17. REPO-001 dirty repo evidence contract (complete)
 18. SELF-001 executable self-upgrade safety contract (recommended parallel lane)
 19. DEPLOY-001 secret leak prevention and secret-reference policy scope (recommended parallel lane)
 
@@ -50,6 +51,6 @@
 
 
 ## Next Recommended Parallel Lane Execution
-- REPO-001 dirty repo evidence contract
+- REPO-002 dirty repo completion contract v2 (next)
 - SELF-001 executable self-upgrade safety contract
 - DEPLOY-001 secret leak prevention and secret-reference policy scope
