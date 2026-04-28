@@ -7,3 +7,5 @@ export * from "./scriptDetector";
 export * from "./architectureMapper";
 export * from "./domainInferencer";
 export * from "./riskScanner";
+
+export * from "./dirtyRepoEvidence";

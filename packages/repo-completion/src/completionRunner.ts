@@ -1,4 +1,5 @@
 import { createCompletionPlan } from "../../repo-repair/src/completionPlanner";
+import { createDirtyRepoEvidenceSnapshot, type DirtyRepoEvidenceSnapshot } from "../../repo-intake/src/dirtyRepoEvidence";
 
 export type CompletionContract = {
   detectedProduct: string;
@@ -17,6 +18,9 @@ export type CompletionContract = {
   mustAnswerQuestions: string[];
   safeAssumptions: string[];
   definitionOfDone: string[];
+  evidenceSnapshot: DirtyRepoEvidenceSnapshot;
+  evidenceEntries: DirtyRepoEvidenceSnapshot["evidenceEntries"];
+  completionBlockers: string[];
 };
 
 export function runCompletionContract(input: {
@@ -25,6 +29,12 @@ export function runCompletionContract(input: {
   blockers: string[];
 }): CompletionContract {
   const phases = createCompletionPlan({ blockers: input.blockers });
+  const evidenceSnapshot = createDirtyRepoEvidenceSnapshot({
+    detectedProduct: input.detectedProduct,
+    detectedStack: input.detectedStack,
+    blockers: input.blockers,
+  });
+
   return {
     detectedProduct: input.detectedProduct,
     detectedStack: input.detectedStack,
@@ -47,5 +57,8 @@ export function runCompletionContract(input: {
       "Security/deployment validators pass",
       "Proof ledger entry is recorded",
     ],
+    evidenceSnapshot,
+    evidenceEntries: evidenceSnapshot.evidenceEntries,
+    completionBlockers: evidenceSnapshot.completionBlockers,
   };
 }
