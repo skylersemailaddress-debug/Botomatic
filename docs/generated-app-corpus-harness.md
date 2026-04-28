@@ -96,6 +96,6 @@ are intentionally tiny internal test fixtures used to verify harness behavior:
 
 They are test-only artifacts and not representative commercial proof corpus.
 
-## GEN-006 next scope
+## GEN-006 follow-through
 
-GEN-006 should add a broader, representative generated app fixture batch and associated governance for fixture curation, while preserving evidence boundaries and non-claim protections.
+GEN-006 now adds a broader representative fixture corpus under `fixtures/generated-app-corpus/representative/` and validates it via `test:generated-app-representative-corpus`, while preserving evidence boundaries and non-claim protections.

@@ -1,0 +1,9 @@
+{
+  "name": "representative-ecommerce-store",
+  "private": true,
+  "version": "0.0.1",
+  "scripts": {
+    "build": "next build",
+    "test": "vitest run"
+  }
+}
