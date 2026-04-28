@@ -4,7 +4,7 @@ import {
   createDirtyRepoEvidenceSnapshot,
   deriveDirtyRepoCompletionBlockers,
 } from "../../../repo-intake/src/dirtyRepoEvidence";
-import { runCompletionContract } from "../../../repo-completion/src/completionRunner";
+import { runCompletionContract } from "../../../repo-completion/src";
 
 function testEvidenceSnapshotCreation() {
   const snapshot = createDirtyRepoEvidenceSnapshot({ entries: [] });
@@ -61,6 +61,8 @@ function testBackwardCompatibleCompletionShape() {
   assert.ok(Array.isArray(contract.recommendedCompletionPlan));
   assert.ok(contract.evidenceSnapshot);
   assert.ok(Array.isArray(contract.completionBlockers));
+  assert.deepStrictEqual(contract.evidenceEntries, contract.evidenceSnapshot.entries);
+  assert.deepStrictEqual(contract.completionBlockers, completionBlockers);
 }
 
 function run() {

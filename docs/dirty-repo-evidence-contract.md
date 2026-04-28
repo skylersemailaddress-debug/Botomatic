@@ -4,9 +4,11 @@ REPO-001 adds structured dirty-repo evidence to the completion contract while pr
 
 ## Additive fields
 
-- `evidenceSnapshot`: machine-readable evidence capture with `capturedAt`, `evidenceEntries`, and `completionBlockers`.
-- `evidenceEntries`: flattened evidence list for clients that consume top-level arrays.
-- `completionBlockers`: additive alias that mirrors completion blockers used for execution gating.
+- `completionContract.evidenceSnapshot` includes:
+  - `evidenceSnapshot.entries`
+  - `evidenceSnapshot.summary` (with `totalEntries`, `bySeverity`, `byCategory`)
+- `completionContract.evidenceEntries` mirrors `completionContract.evidenceSnapshot.entries`.
+- `completionContract.completionBlockers` mirrors derived `completionBlockers` generated from evidence entries.
 
 ## Backward compatibility
 
