@@ -1553,3 +1553,385 @@ a:hover {
     font-size: 28px;
   }
 }
+
+.vibe-dashboard {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  min-height: 100vh;
+  background: #f8f8ff;
+  color: #1f2430;
+}
+
+.vibe-dashboard-sidebar {
+  border-right: 1px solid #e8e7f5;
+  background: #ffffff;
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.vibe-dashboard-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.vibe-dashboard-brand-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.6rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  background: linear-gradient(135deg, #8352ff, #5d2ce3);
+}
+
+.vibe-dashboard-brand strong,
+.vibe-dashboard-brand small {
+  display: block;
+}
+
+.vibe-dashboard-brand small {
+  color: #6f6a8a;
+  letter-spacing: 0.04em;
+}
+
+.vibe-dashboard-new-project,
+.vibe-dashboard-launch,
+.vibe-dashboard-upgrade button {
+  border: none;
+  border-radius: 0.7rem;
+  background: linear-gradient(90deg, #7a4cf5, #5929da);
+  color: #ffffff;
+  font-weight: 700;
+  padding: 0.7rem 0.9rem;
+}
+
+.vibe-dashboard-nav {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.vibe-dashboard-nav button {
+  padding: 0.55rem 0.65rem;
+  border-radius: 0.55rem;
+  color: #3e3b52;
+}
+
+.vibe-dashboard-nav button.is-active {
+  color: #5b2be0;
+  background: #f0ebff;
+  font-weight: 600;
+}
+
+
+.vibe-dashboard-nav button {
+  text-align: left;
+  border: none;
+  background: transparent;
+}
+
+.vibe-link-button {
+  border: none;
+  background: transparent;
+  color: #5b2be0;
+  font-weight: 600;
+}
+.vibe-dashboard-card,
+.vibe-dashboard-upgrade,
+.vibe-rail-card,
+.vibe-live-preview,
+.vibe-input-shell,
+.vibe-chat-timeline {
+  background: #ffffff;
+  border: 1px solid #eceaf8;
+  border-radius: 1rem;
+}
+
+.vibe-dashboard-card,
+.vibe-dashboard-upgrade {
+  padding: 0.9rem;
+}
+
+.vibe-dashboard-card h3,
+.vibe-dashboard-upgrade h3,
+.vibe-rail-card h3 {
+  margin: 0 0 0.55rem;
+  font-size: 0.95rem;
+}
+
+.vibe-dashboard-row,
+.vibe-rail-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.35rem 0;
+  color: #3f3a55;
+}
+
+.vibe-dashboard-main {
+  padding: 1.4rem;
+}
+
+.vibe-dashboard-header {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.vibe-dashboard-header h1 {
+  margin: 0;
+}
+
+.vibe-dashboard-header p {
+  margin: 0.2rem 0 0;
+  color: #67627f;
+}
+
+.vibe-dashboard-device-switcher {
+  display: inline-flex;
+  border: 1px solid #ebe9f8;
+  border-radius: 999px;
+  padding: 0.2rem;
+  background: #ffffff;
+}
+
+.vibe-dashboard-device-switcher button,
+.vibe-dashboard-share,
+.vibe-input-row button,
+.vibe-msg-pills span,
+.vibe-suggestion-chips button,
+.vibe-action-row button,
+.vibe-next-grid button {
+  border: 1px solid #e5e2f4;
+  background: #ffffff;
+  border-radius: 0.7rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.vibe-dashboard-device-switcher .is-active {
+  background: #f1edff;
+  color: #5b2be0;
+}
+
+.vibe-dashboard-cta-group {
+  display: inline-flex;
+  gap: 0.6rem;
+}
+
+.vibe-dashboard-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 420px;
+  gap: 1rem;
+}
+
+.vibe-chat-timeline {
+  padding: 1rem;
+}
+
+.vibe-msg {
+  max-width: 86%;
+  border-radius: 0.9rem;
+  padding: 0.9rem;
+  margin-bottom: 0.7rem;
+}
+
+.vibe-msg-user {
+  margin-left: auto;
+  color: #ffffff;
+  background: linear-gradient(135deg, #6f41f0, #4e1ecd);
+}
+
+.vibe-msg-agent {
+  background: #ffffff;
+  border: 1px solid #e8e6f7;
+}
+
+.vibe-msg-pills {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  margin-top: 0.7rem;
+}
+
+.vibe-msg-pills span {
+  font-size: 0.82rem;
+  background: #f8f7fc;
+}
+
+.vibe-live-preview {
+  padding: 0.9rem;
+}
+
+.vibe-live-preview header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.8rem;
+}
+
+.vibe-hotel-preview {
+  border-radius: 0.85rem;
+  padding: 1.15rem;
+  background: linear-gradient(145deg, #021433, #36245d 55%, #8d5a46);
+  color: #ffffff;
+}
+
+.vibe-hotel-nav,
+.vibe-hotel-actions,
+.vibe-hotel-booking-bar,
+.vibe-suggestion-chips,
+.vibe-action-row,
+.vibe-next-grid,
+.vibe-rail-two-up {
+  display: flex;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.vibe-hotel-nav {
+  justify-content: space-between;
+  font-size: 0.76rem;
+}
+
+.vibe-hotel-nav button,
+.vibe-hotel-actions button,
+.vibe-hotel-booking-bar button,
+.vibe-launch-card button {
+  border: none;
+  border-radius: 0.6rem;
+  padding: 0.5rem 0.7rem;
+  font-weight: 600;
+}
+
+.vibe-hotel-actions button,
+.vibe-hotel-booking-bar button {
+  background: #dcaa47;
+  color: #1d152d;
+}
+
+.vibe-hotel-booking-bar {
+  margin-top: 1.1rem;
+  background: #ffffff;
+  border-radius: 0.7rem;
+  color: #2b2a37;
+  padding: 0.55rem;
+  justify-content: space-between;
+}
+
+.vibe-suggestion-chips {
+  margin-top: 0.8rem;
+}
+
+.vibe-input-shell {
+  margin-top: 0.8rem;
+  padding: 0.75rem;
+}
+
+.vibe-input-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.vibe-input-row span {
+  color: #6d6789;
+}
+
+.vibe-action-row {
+  margin-top: 0.6rem;
+}
+
+.vibe-right-rail {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.vibe-rail-card {
+  padding: 0.85rem;
+}
+
+.vibe-rail-card header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.vibe-step-line {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  font-size: 0.78rem;
+  gap: 0.4rem;
+  margin: 0.75rem 0;
+}
+
+.vibe-step-line .is-done {
+  color: #1d9a5f;
+}
+
+.vibe-step-line .is-active {
+  color: #5b2be0;
+  font-weight: 700;
+}
+
+.vibe-mini-preview {
+  border-radius: 0.7rem;
+  min-height: 130px;
+  padding: 0.85rem;
+  color: #ffffff;
+  background: linear-gradient(145deg, #03122f, #3f2f72 60%, #9d704f);
+}
+
+.vibe-health {
+  width: 116px;
+  height: 116px;
+  border-radius: 50%;
+  border: 6px solid #78c88d;
+  margin: 0.45rem auto;
+  display: grid;
+  place-content: center;
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.vibe-health small {
+  display: block;
+  text-align: center;
+  font-size: 0.72rem;
+  color: #697081;
+}
+
+.vibe-launch-card {
+  background: linear-gradient(145deg, #7646f0, #4d20cb);
+  color: #ffffff;
+}
+
+.vibe-launch-card button {
+  width: 100%;
+  margin-top: 0.65rem;
+  background: #ffffff;
+  color: #4e22cb;
+}
+
+@media (max-width: 1240px) {
+  .vibe-dashboard {
+    grid-template-columns: 1fr;
+  }
+
+  .vibe-dashboard-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 860px) {
+  .vibe-dashboard-header {
+    grid-template-columns: 1fr;
+  }
+}
