@@ -45,19 +45,7 @@ export function ProofBackedStatus({ tone, label, source }: { tone: StatusTone; l
   );
 }
 
-export function WorkspaceCard({
-  title,
-  eyebrow,
-  source,
-  children,
-  action,
-}: {
-  title: string;
-  eyebrow?: string;
-  source: PanelSource;
-  children: ReactNode;
-  action?: ReactNode;
-}) {
+export function WorkspaceCard({ title, eyebrow, source, children, action }: { title: string; eyebrow?: string; source: PanelSource; children: ReactNode; action?: ReactNode }) {
   return (
     <section className="northstar-card">
       <header className="northstar-card-header">
@@ -76,11 +64,7 @@ export function WorkspaceCard({
 }
 
 function DisabledNavItem({ children }: { children: ReactNode }) {
-  return (
-    <span className="northstar-nav-disabled" aria-disabled="true">
-      {children}
-    </span>
-  );
+  return <span className="northstar-nav-disabled" aria-disabled="true">{children}</span>;
 }
 
 export function NorthStarBuilderShell({ projectId, workspace, children, rightRail }: BuilderShellProps) {
@@ -93,17 +77,16 @@ export function NorthStarBuilderShell({ projectId, workspace, children, rightRai
       <aside className="northstar-global-sidebar" aria-label="Botomatic navigation">
         <Link href="/" className="northstar-brand" aria-label="Botomatic home">
           <span className="northstar-brand-mark">⬡</span>
-          <span>
-            <strong>Botomatic</strong>
-            <small>Universal Builder</small>
-          </span>
+          <span><strong>Botomatic</strong><small>Universal Builder</small></span>
         </Link>
         <Link href="/" className="northstar-new-project">+ New Project</Link>
         <nav className="northstar-nav" aria-label="Primary builder navigation">
-          <Link href={`/projects/${projectId}/vibe`} className={isVibe ? "is-active" : ""}>Build Chat</Link>
+          <Link href={`/projects/${projectId}/vibe`} className={isVibe ? "is-active" : ""}>Home</Link>
           <Link href={`/projects/${projectId}/advanced`} className={!isVibe ? "is-active" : ""}>Pro Control</Link>
+          <DisabledNavItem>Projects</DisabledNavItem>
           <DisabledNavItem>Templates</DisabledNavItem>
           <DisabledNavItem>Design Studio</DisabledNavItem>
+          <DisabledNavItem>Brand Kit</DisabledNavItem>
           <DisabledNavItem>Launch</DisabledNavItem>
           <DisabledNavItem>Learn</DisabledNavItem>
         </nav>
@@ -112,13 +95,12 @@ export function NorthStarBuilderShell({ projectId, workspace, children, rightRai
           <small>No launch claim is shown without proof.</small>
         </div>
       </aside>
-
       <div className="northstar-main">
         <header className="northstar-workspace-topbar">
           <div>
-            <div className="northstar-eyebrow">{isVibe ? "Creation cockpit" : "Technical command center"}</div>
-            <h2>{isVibe ? "Vibe Builder" : "Pro Builder"}</h2>
-            <p>{isVibe ? "Chat, voice, preview, spec, and launch readiness." : "Inspect, validate, repair, deploy, and control the full build."}</p>
+            <div className="northstar-eyebrow">{isVibe ? "Vibe Builder" : "Pro Builder"}</div>
+            <h2>{isVibe ? "Chat. Design. Build. Launch." : "Technical. Powerful. Complete control."}</h2>
+            <p>{isVibe ? "Describe the app, refine the preview, approve proof-backed next steps." : "Inspect repo state, validators, runtime, services, proofs, and deployment gates."}</p>
           </div>
           <div className="northstar-topbar-actions" aria-label="Workspace actions">
             <Link href={primaryHref} className="northstar-ghost-action">{primaryLabel}</Link>
@@ -126,7 +108,6 @@ export function NorthStarBuilderShell({ projectId, workspace, children, rightRai
             <Link href="/" className="northstar-primary-action">Start New Build</Link>
           </div>
         </header>
-
         <div className="northstar-content-grid">
           <main className="northstar-content">{children}</main>
           {rightRail ? <aside className="northstar-right-rail">{rightRail}</aside> : null}
@@ -139,56 +120,63 @@ export function NorthStarBuilderShell({ projectId, workspace, children, rightRai
 export function VibeBuilderSkeleton({ projectId }: { projectId: string }) {
   return (
     <NorthStarBuilderShell projectId={projectId} workspace="vibe" rightRail={<VibeBuildRail />}>
-      <div className="vibe-builder-grid">
-        <section className="vibe-chat-panel">
-          <div className="northstar-eyebrow">Chat-driven builder</div>
-          <h1>Tell Botomatic what to build.</h1>
-          <p className="northstar-muted">Describe the product, upload a repo or PDF, or ask Botomatic to decide safe gaps. Critical choices remain explicit.</p>
+      <div className="vibe-builder-grid vibe-builder-grid--hero">
+        <section className="vibe-chat-panel vibe-chat-panel--conversation">
           <div className="vibe-message-list" aria-label="Static preview chat transcript">
-            <div className="vibe-message is-user">Build a polished booking platform for a premium service business.</div>
-            <div className="vibe-message is-bot">I can shape that into a commercial build contract. I need to verify payments, cancellation policy, and admin roles before execution.</div>
+            <div className="vibe-message is-user">Build me a modern booking website for a luxury hotel with a beautiful landing page.</div>
+            <div className="vibe-message is-bot">
+              I can build the commercial contract and preview. I need proof-backed decisions for payments, cancellation policy, and admin roles before launch.
+              <div className="vibe-progress-pills" aria-label="Build progress preview">
+                <span>Idea understood</span><span>Design direction</span><span>Critical gaps</span><span>Build contract</span>
+              </div>
+            </div>
+          </div>
+          <GeneratedPreviewCard />
+          <div className="vibe-action-chips" aria-label="Natural language actions">
+            {['Make it more premium', 'Add booking flow', 'Improve mobile view', 'Add testimonials', 'Run proof'].map((item) => <button type="button" key={item}>{item}</button>)}
           </div>
           <div className="vibe-command-bar">
-            <span>Ask Botomatic anything…</span>
-            <div>
-              <button type="button">Attach</button>
-              <button type="button">Voice</button>
-              <button type="button" className="northstar-primary-button">Send</button>
-            </div>
-          </div>
-          <div className="vibe-action-chips" aria-label="Natural language actions">
-            {['Improve design', 'Add feature', 'Fix this repo', 'Decide safe gaps', 'Run proof'].map((item) => <button type="button" key={item}>{item}</button>)}
+            <span>Ask anything… e.g. add a pricing section, improve the hero, connect payments</span>
+            <div><button type="button">Attach</button><button type="button">Voice</button><button type="button" className="northstar-primary-button">Send</button></div>
           </div>
         </section>
-
-        <WorkspaceCard title="Generated app preview" eyebrow="Visual target" source="static-preview">
-          <div className="generated-preview-card">
-            <div className="generated-preview-toolbar">
-              <span>Desktop preview</span>
-              <ProofBackedStatus tone="unverified" source="static-preview" label="Preview only" />
-            </div>
-            <div className="generated-preview-hero">
-              <span>Luxury booking site</span>
-              <h2>Premium, responsive, launch-gated experience</h2>
-              <p>Design surface reserved for generated app output. Future passes wire this to real preview artifacts.</p>
-            </div>
-          </div>
-        </WorkspaceCard>
       </div>
     </NorthStarBuilderShell>
+  );
+}
+
+function GeneratedPreviewCard() {
+  return (
+    <WorkspaceCard title="Live generated app preview" eyebrow="Static visual target" source="static-preview" action={<ProofBackedStatus tone="unverified" source="static-preview" label="Preview only" />}>
+      <div className="generated-preview-card generated-preview-card--large">
+        <div className="generated-preview-toolbar"><span>Edit</span><span>Desktop · Tablet · Mobile</span><span>Version 3</span></div>
+        <div className="generated-preview-hero">
+          <span>LUXORA</span>
+          <h2>Your Escape Awaits</h2>
+          <p>Experience unparalleled luxury and unforgettable moments.</p>
+          <div className="generated-preview-actions"><button type="button">Book Your Stay</button><button type="button">Explore Rooms</button></div>
+          <div className="generated-booking-bar"><span>Check In<br />May 24</span><span>Check Out<br />May 27</span><span>Guests<br />2 Adults</span><span>Room<br />1 Suite</span><button type="button">Check Availability</button></div>
+        </div>
+      </div>
+    </WorkspaceCard>
   );
 }
 
 function VibeBuildRail() {
   return (
     <>
-      <WorkspaceCard title="Build Contract" eyebrow="Spec gate" source="not-implemented">
-        <div className="northstar-metric-row"><span>Critical completeness</span><strong>Pending</strong></div>
-        <div className="northstar-metric-row"><span>Open critical questions</span><strong>Not wired</strong></div>
-        <ProofBackedStatus tone="planned" source="not-implemented" label="Contract panel planned" />
+      <WorkspaceCard title="Build Map" eyebrow="Auto-updates as proof lands" source="not-implemented">
+        <div className="build-map-steps"><span className="is-done">Design</span><span className="is-active">Features</span><span>Data</span><span>Testing</span><span>Launch</span></div>
+        <div className="northstar-metric-row"><span>Create homepage</span><strong>Preview</strong></div>
+        <div className="northstar-metric-row"><span>Add booking flow</span><strong>Pending proof</strong></div>
+        <div className="northstar-metric-row"><span>Payment setup</span><strong>Blocked</strong></div>
       </WorkspaceCard>
-      <WorkspaceCard title="Assumptions + recommendations" eyebrow="Product brain" source="not-implemented">
-        <p className="northstar-muted">Will show safe assumptions, approval-required assumptions, and commercial recommendations.</p>
+      <WorkspaceCard title="App Health" eyebrow="Truthful readiness" source="not-implemented">
+        <div className="app-health-ring">92<span>%</span></div>
+        <ProofBackedStatus tone="planned" source="not-implemented" label="Health wiring planned" />
+      </WorkspaceCard>
+      <WorkspaceCard title="What’s Next" eyebrow="Recommended actions" source="not-implemented">
+        <div className="next-action-grid"><button type="button">Answer blockers</button><button type="button">Approve contract</button><button type="button">Connect payments</button><button type="button">Run tests</button></div>
       </WorkspaceCard>
       <WorkspaceCard title="Launch Readiness" eyebrow="Proof gate" source="not-implemented">
         <ProofBackedStatus tone="blocked" source="not-implemented" label="Launch proof not wired" />
@@ -200,47 +188,28 @@ function VibeBuildRail() {
 export function ProBuilderSkeleton({ projectId }: { projectId: string }) {
   return (
     <NorthStarBuilderShell projectId={projectId} workspace="pro" rightRail={<ProControlRail />}>
-      <div className="pro-builder-grid">
-        <WorkspaceCard title="Build pipeline" eyebrow="Execution" source="static-preview">
-          <div className="northstar-stepper">
-            {['Spec', 'Design', 'Data', 'Logic', 'Tests', 'Launch'].map((step, index) => (
-              <div className="northstar-step" key={step}>
-                <span>{index + 1}</span>
-                <strong>{step}</strong>
-                <small>{index < 2 ? 'Preview' : 'Pending wiring'}</small>
-              </div>
-            ))}
-          </div>
-        </WorkspaceCard>
-        <WorkspaceCard title="Code changes" eyebrow="Repository" source="not-implemented">
-          <div className="northstar-code-card">
-            <div>File tree and diff viewer will connect to Git state in the data-wiring pass.</div>
-            <ProofBackedStatus tone="planned" source="not-implemented" />
-          </div>
-        </WorkspaceCard>
-        <WorkspaceCard title="Live application" eyebrow="Preview/runtime" source="not-implemented">
-          <p className="northstar-muted">Runtime preview status will be wired to local dashboard and route smoke proof.</p>
-        </WorkspaceCard>
-        <WorkspaceCard title="Tests + validators" eyebrow="Proof" source="validator">
-          <p className="northstar-muted">Validator-backed status will replace static shell indicators in a later PR.</p>
-        </WorkspaceCard>
+      <div className="pro-builder-grid pro-builder-grid--command">
+        <WorkspaceCard title="Build Pipeline" eyebrow="Execution" source="static-preview"><div className="northstar-stepper">{['Spec', 'Design', 'Data', 'Logic', 'Tests', 'Launch', 'Deploy'].map((step, index) => <div className="northstar-step" key={step}><span>{index + 1}</span><strong>{step}</strong><small>{index < 3 ? 'Preview' : 'Waiting'}</small></div>)}</div></WorkspaceCard>
+        <WorkspaceCard title="System Health" eyebrow="Proof-aware" source="not-implemented"><div className="system-health-grid"><div className="app-health-ring">92<span>%</span></div><div><div className="northstar-metric-row"><span>Performance</span><strong>Pending</strong></div><div className="northstar-metric-row"><span>Security</span><strong>Pending</strong></div><div className="northstar-metric-row"><span>Code Quality</span><strong>Pending</strong></div></div></div></WorkspaceCard>
+        <WorkspaceCard title="Code Changes" eyebrow="Repository" source="not-implemented"><div className="code-diff-shell"><div className="code-tree"><strong>apps/web</strong><span>app/page.tsx</span><span>components/Hero.tsx</span><span>lib/api.ts</span></div><pre>{`- <Hero title="Luxury stays" />\n+ <Hero title="Your Escape Awaits" />`}</pre></div></WorkspaceCard>
+        <WorkspaceCard title="Live Application" eyebrow="Runtime preview" source="not-implemented"><div className="pro-preview-box"><GeneratedPreviewMini /></div></WorkspaceCard>
+        <WorkspaceCard title="Test Results" eyebrow="Validators" source="validator"><div className="test-summary"><strong>Pending wiring</strong><span>Unit · Integration · E2E · API · Security · No-placeholder</span></div></WorkspaceCard>
+        <WorkspaceCard title="Terminal + Logs" eyebrow="Runtime" source="not-implemented"><pre className="terminal-preview">$ npm run build\n$ npm run validate:all\n$ proof pending...</pre></WorkspaceCard>
       </div>
     </NorthStarBuilderShell>
   );
 }
 
+function GeneratedPreviewMini() {
+  return <div className="generated-preview-mini"><span>LUXORA</span><strong>Your Escape Awaits</strong><small>Preview reserved for generated artifacts.</small></div>;
+}
+
 function ProControlRail() {
   return (
     <>
-      <WorkspaceCard title="System health" eyebrow="Proof-aware" source="not-implemented">
-        <ProofBackedStatus tone="planned" source="not-implemented" label="Health wiring planned" />
-      </WorkspaceCard>
-      <WorkspaceCard title="Services" eyebrow="Runtime" source="not-implemented">
-        <p className="northstar-muted">API, UI, database, workers, and domain services will render here.</p>
-      </WorkspaceCard>
-      <WorkspaceCard title="AI Copilot" eyebrow="Chat control" source="static-preview">
-        <p className="northstar-muted">Ask for repairs, tests, architecture review, or proof explanation.</p>
-      </WorkspaceCard>
+      <WorkspaceCard title="Services" eyebrow="Runtime" source="not-implemented"><div className="service-list">{['Next.js App', 'API Server', 'PostgreSQL', 'Redis', 'Storage', 'Stripe'].map((service) => <div key={service}><span>{service}</span><strong>Pending</strong></div>)}</div></WorkspaceCard>
+      <WorkspaceCard title="Database Schema" eyebrow="Data" source="not-implemented"><div className="service-list"><div><span>users</span><strong>planned</strong></div><div><span>bookings</span><strong>planned</strong></div><div><span>payments</span><strong>blocked</strong></div></div></WorkspaceCard>
+      <WorkspaceCard title="AI Copilot" eyebrow="Chat control" source="static-preview"><p className="northstar-muted">Ask for repairs, tests, architecture review, or proof explanation.</p><div className="next-action-grid"><button type="button">Explain failing test</button><button type="button">Review security</button></div></WorkspaceCard>
     </>
   );
 }
