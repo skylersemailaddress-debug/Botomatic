@@ -33,7 +33,7 @@ const toneLabels: Record<StatusTone, string> = {
 
 function NorthStarGlobalStyles() {
   return (
-    <style jsx global>{`
+    <style>{`
       .northstar-shell {
         width: 100vw !important;
         height: 100dvh !important;
