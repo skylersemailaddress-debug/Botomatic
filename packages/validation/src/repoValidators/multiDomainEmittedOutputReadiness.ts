@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import type { RepoValidatorResult } from "../repoValidators";
+import { resolveEvidencePath } from "./evidencePath";
 
 const REQUIRED_DOMAINS = [
   "web_saas_app",
@@ -71,15 +72,16 @@ export function validateMultiDomainEmittedOutputReadiness(root: string): RepoVal
 
     const outputRoot = String(domain?.outputRoot || "");
     if (!outputRoot) return false;
-    if (!fs.existsSync(outputRoot)) return false;
+    const resolvedOutputRoot = resolveEvidencePath(root, outputRoot);
+    if (!fs.existsSync(resolvedOutputRoot)) return false;
 
-    const files = listFilesRecursive(outputRoot);
+    const files = listFilesRecursive(resolvedOutputRoot);
     if (files.length < 6) return false;
 
     const nonEmpty = files.every((filePath) => fs.readFileSync(filePath, "utf8").trim().length > 0);
-    const readinessPath = path.join(outputRoot, "domain_readiness.json");
-    const scanPath = path.join(outputRoot, "no_placeholder_scan.json");
-    const launchPath = path.join(outputRoot, "launch", "launch_packet.json");
+    const readinessPath = path.join(resolvedOutputRoot, "domain_readiness.json");
+    const scanPath = path.join(resolvedOutputRoot, "no_placeholder_scan.json");
+    const launchPath = path.join(resolvedOutputRoot, "launch", "launch_packet.json");
     if (!fs.existsSync(readinessPath) || !fs.existsSync(scanPath) || !fs.existsSync(launchPath)) return false;
 
     let readiness: any;

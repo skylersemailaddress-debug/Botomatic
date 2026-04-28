@@ -36,10 +36,9 @@ jobs:
         run: npm run -s doctor
 
   strict-readiness-audit:
-    name: Strict readiness audit (non-blocking baseline)
+    name: Strict readiness audit
     runs-on: ubuntu-latest
     needs: baseline-required-checks
-    continue-on-error: true
 
     steps:
       - name: Checkout

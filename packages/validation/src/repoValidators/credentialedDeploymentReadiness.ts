@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import type { RepoValidatorResult } from "../repoValidators";
+import { resolveEvidencePath } from "./evidencePath";
 
 const REQUIRED_DOMAINS = [
   "web_saas_app",
@@ -196,7 +197,7 @@ export function validateCredentialedDeploymentReadiness(root: string): RepoValid
 
     // Per-domain manifest file must exist
     const manifestPath = d?.manifestPath;
-    if (typeof manifestPath === "string" && manifestPath && !fs.existsSync(manifestPath)) {
+    if (typeof manifestPath === "string" && manifestPath && !fs.existsSync(resolveEvidencePath(root, manifestPath))) {
       return result(false, `Domain ${domainId}: manifest file not found at ${manifestPath}.`, checks);
     }
   }

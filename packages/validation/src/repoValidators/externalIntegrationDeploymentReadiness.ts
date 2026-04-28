@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import type { RepoValidatorResult } from "../repoValidators";
+import { resolveEvidencePath } from "./evidencePath";
 
 const REQUIRED_DOMAINS = [
   "web_saas_app",
@@ -57,7 +58,9 @@ export function validateExternalIntegrationDeploymentReadiness(root: string): Re
     const d = domainResults.find((item: any) => item?.domainId === id);
     if (!d) return false;
 
-    if (typeof d?.emittedPath !== "string" || !d.emittedPath || !fs.existsSync(d.emittedPath)) return false;
+    if (typeof d?.emittedPath !== "string" || !d.emittedPath) return false;
+    const emittedPath = resolveEvidencePath(root, d.emittedPath);
+    if (!fs.existsSync(emittedPath)) return false;
     if (!Array.isArray(d?.externalServicesRequired)) return false;
     if (!Array.isArray(d?.optionalServices)) return false;
     if (!Array.isArray(d?.environmentVariablesRequired)) return false;
@@ -66,9 +69,9 @@ export function validateExternalIntegrationDeploymentReadiness(root: string): Re
     if (typeof d?.integrationContractPath !== "string" || !d.integrationContractPath) return false;
     if (typeof d?.deploymentReadinessPath !== "string" || !d.deploymentReadinessPath) return false;
 
-    const deployPath = path.join(d.emittedPath, d.deploymentInstructionsPath);
-    const contractPath = path.join(d.emittedPath, d.integrationContractPath);
-    const readinessPath = path.join(d.emittedPath, d.deploymentReadinessPath);
+    const deployPath = path.join(emittedPath, d.deploymentInstructionsPath);
+    const contractPath = path.join(emittedPath, d.integrationContractPath);
+    const readinessPath = path.join(emittedPath, d.deploymentReadinessPath);
     if (!fs.existsSync(deployPath) || !fs.existsSync(contractPath) || !fs.existsSync(readinessPath)) return false;
 
     if (d?.deploymentInstructionsPresent !== true) return false;

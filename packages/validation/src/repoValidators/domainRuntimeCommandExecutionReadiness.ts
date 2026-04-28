@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import type { RepoValidatorResult } from "../repoValidators";
+import { resolveEvidencePath } from "./evidencePath";
 
 const REQUIRED_DOMAINS = [
   "web_saas_app",
@@ -59,9 +60,10 @@ export function validateDomainRuntimeCommandExecutionReadiness(root: string): Re
     if (!domain) return false;
 
     if (typeof domain?.emittedPath !== "string" || !domain.emittedPath) return false;
-    if (!fs.existsSync(domain.emittedPath)) return false;
+    const emittedPath = resolveEvidencePath(root, domain.emittedPath);
+    if (!fs.existsSync(emittedPath)) return false;
     if (typeof domain?.packageProjectManifest !== "string" || !domain.packageProjectManifest) return false;
-    if (!fs.existsSync(path.join(domain.emittedPath, domain.packageProjectManifest))) return false;
+    if (!fs.existsSync(path.join(emittedPath, domain.packageProjectManifest))) return false;
 
     const commandResults = Array.isArray(domain?.commandResults) ? domain.commandResults : [];
     if (commandResults.length === 0) return false;
@@ -76,8 +78,9 @@ export function validateDomainRuntimeCommandExecutionReadiness(root: string): Re
       if (!cmd?.commandId || !cmd?.kind || !cmd?.command) return false;
       if (!["passed", "failed", "skipped"].includes(String(cmd?.status))) return false;
       if (typeof cmd?.logArtifactPath !== "string" || !cmd.logArtifactPath) return false;
-      if (!fs.existsSync(cmd.logArtifactPath)) return false;
-      const logContent = fs.readFileSync(cmd.logArtifactPath, "utf8");
+      const logArtifactPath = resolveEvidencePath(root, cmd.logArtifactPath);
+      if (!fs.existsSync(logArtifactPath)) return false;
+      const logContent = fs.readFileSync(logArtifactPath, "utf8");
       if (String(cmd?.status) !== "skipped" && !logContent.trim()) return false;
 
       if (String(cmd?.status) === "skipped") {

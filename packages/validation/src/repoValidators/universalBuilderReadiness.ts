@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import type { RepoValidatorResult } from "../repoValidators";
 import { validateEmittedOutput } from "../generatedApp/validateEmittedOutput";
+import { resolveEvidencePath } from "./evidencePath";
 
 function has(root: string, rel: string): boolean {
   return fs.existsSync(path.join(root, rel));
@@ -121,7 +122,7 @@ export function validateUniversalBuilderReadiness(root: string): RepoValidatorRe
     greenfieldOutput?.launchPacketPresent === true &&
     greenfieldOutput?.noPlaceholderScanPresent === true;
 
-  const emittedOutputDir = String(greenfieldOutput?.emittedOutputDir || "");
+  const emittedOutputDir = resolveEvidencePath(root, String(greenfieldOutput?.emittedOutputDir || ""));
   const claimsEmittedOutput = greenfieldOutput?.emittedFileTreeProof === true;
   const emittedProofValidation = claimsEmittedOutput
     ? validateEmittedOutput(emittedOutputDir)

@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import type { RepoValidatorResult } from "../repoValidators";
+import { resolveEvidencePath } from "./evidencePath";
 
 const REQUIRED_DOMAINS = [
   "web_saas_app",
@@ -110,7 +111,8 @@ export function validateDeploymentDryRunReadiness(root: string): RepoValidatorRe
     if (typeof d?.smokeTestPlanPath !== "string" || !d.smokeTestPlanPath) {
       return result(false, `Domain ${domainId}: smokeTestPlanPath is missing.`, checks);
     }
-    if (!fs.existsSync(d.smokeTestPlanPath)) {
+    const smokeTestPlanPath = resolveEvidencePath(root, d.smokeTestPlanPath);
+    if (!fs.existsSync(smokeTestPlanPath)) {
       return result(false, `Domain ${domainId}: smokeTestPlanPath does not exist at ${d.smokeTestPlanPath}.`, checks);
     }
 
@@ -118,7 +120,8 @@ export function validateDeploymentDryRunReadiness(root: string): RepoValidatorRe
     if (typeof d?.rollbackPlanPath !== "string" || !d.rollbackPlanPath) {
       return result(false, `Domain ${domainId}: rollbackPlanPath is missing.`, checks);
     }
-    if (!fs.existsSync(d.rollbackPlanPath)) {
+    const rollbackPlanPath = resolveEvidencePath(root, d.rollbackPlanPath);
+    if (!fs.existsSync(rollbackPlanPath)) {
       return result(false, `Domain ${domainId}: rollbackPlanPath does not exist at ${d.rollbackPlanPath}.`, checks);
     }
 

@@ -8,7 +8,7 @@ This repository uses required pull request checks before merge. Configure the `m
    - Disallow direct pushes to `main`.
 2. **Require status checks to pass before merging**
    - **Required now:** `Botomatic PR Gates / Baseline required checks`.
-   - **Visible but non-required:** `Botomatic PR Gates / Strict readiness audit (non-blocking baseline)`.
+   - **Required now:** `Botomatic PR Gates / Strict readiness audit`.
 3. **Require branches to be up to date before merging**
    - Enable strict status checks so PRs must rebase or merge latest `main` before merge.
 4. **Block force pushes**
@@ -44,16 +44,14 @@ This repository uses required pull request checks before merge. Configure the `m
 - `npm run -s test:universal`
 - `npm run -s doctor`
 
-### Strict readiness audit (non-blocking until promoted)
+### Strict readiness audit (required)
 
 - `npm ci`
 - `npm run -s validate:all`
 
-This audit job is non-blocking for now so failures remain visible in logs without blocking every merge while current LEGAL/UI/GEN readiness gaps are still open.
+## Migration rule: strict readiness promotion complete
 
-## Migration rule: promote strict readiness to required
-
-Promote `Botomatic PR Gates / Strict readiness audit (non-blocking baseline)` to a required status check once `npm run -s validate:all` is passing on `main` consistently across normal PR activity (no recurring baseline failures).
+`Botomatic PR Gates / Strict readiness audit` is now configured as required after baseline cleanup made `npm run -s validate:all` pass on `main` without weakening validators.
 
 ## Optional proof commands (not required on every PR)
 
