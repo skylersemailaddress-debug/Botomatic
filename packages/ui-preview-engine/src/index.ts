@@ -344,3 +344,6 @@ export * from "./uiDocumentModel";
 export * from "./uiAppStructureModel";
 export * from "./uiAppStructureCommands";
 export * from "./uiAppStructureMutation";
+
+export * from "./uiDirectManipulationModel";
+export * from "./uiDirectManipulationMutation";

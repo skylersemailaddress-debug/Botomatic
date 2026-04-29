@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { applyUIEditWorkflow, applyUIAppStructureCommand, applyUISourcePatch, confirmUIPreviewPendingEdit, createUIAppStructureFromDocument, createUIPreviewInteractionFixture, createUIPreviewInteractionState, createUISourceFileMapping, createUISourcePatchFromSyncPlan, handleUIPreviewChatEdit, parseUIAppStructureCommand, rejectUIPreviewPendingEdit, validateUISourceRoundTrip } from "../../../../../packages/ui-preview-engine/src";
+import { applyUIEditWorkflow, applyUIAppStructureCommand, applyUISourcePatch, applyUIDirectManipulation, confirmUIPreviewPendingEdit, createUIAppStructureFromDocument, createUIPreviewInteractionFixture, createUIPreviewInteractionState, createUISourceFileMapping, createUISourcePatchFromSyncPlan, handleUIPreviewChatEdit, parseUIAppStructureCommand, rejectUIPreviewPendingEdit, validateUISourceRoundTrip, type UIDirectManipulationAction } from "../../../../../packages/ui-preview-engine/src";
 
 export function createVibeInteractionHarness() {
   const fixture = createUIPreviewInteractionFixture();
@@ -113,11 +113,19 @@ export function useLiveUIBuilderVibe() {
   const updateNavigation = (entry: string) => runAppStructureCommand(`add ${entry} to the nav`);
   const extractReusableComponent = (nodeId: string) => { const res = applyUIAppStructureCommand(interactionState.editableDocument, { type: "extractComponent", nodeRef: nodeId }, { selectedNodeId: nodeId, idSeed: "vibe" } as any); if (res.status === "applied") setInteractionState((c)=>({ ...c, editableDocument: res.document })); return res; };
   const reuseComponent = (componentId: string, pageId: string) => { const res = applyUIAppStructureCommand(interactionState.editableDocument, { type: "reuseComponent", componentRef: componentId, pageRef: pageId } as any, { idSeed: "vibe" }); if (res.status === "applied") setInteractionState((c)=>({ ...c, editableDocument: res.document })); return res; };
+
+  const runDirectManipulationAction = (action: UIDirectManipulationAction) => {
+    const result = applyUIDirectManipulation(interactionState.editableDocument, action, { now: fixture.now });
+    if (result.status === "applied") {
+      setInteractionState((c)=>({ ...c, editableDocument: result.nextDocument, selection: { ...c.selection, selectedNodeId: result.selectedNodeId ?? c.selection.selectedNodeId } }));
+    }
+    return result;
+  };
   const userFacingSummary = latestResult?.userFacingSummary ?? latestResult?.workflowResult?.summary ?? "No edits applied yet.";
   const confirmationPending = Boolean(interactionState.pendingReview?.required);
   const changedNodeIds = latestResult?.previewPatch?.operations?.map((op: any) => op.nodeId).filter(Boolean) ?? [];
 
   const sourceRollbackDryRun = { ok: false, status: "simulated", reason: "Rollback requires server-side local adapter." };
 
-  return { latestResult, latestReviewPayload, userFacingSummary, confirmationPending, runSampleEdit, runDestructiveEdit, runCommandText, retryLastCommand, resolveTarget, pendingResolution, confirmPending, rejectPending, interactionState, editableDocument: interactionState.editableDocument, selectedNodeId: interactionState.selection.selectedNodeId, selectNode, lastPreviewPatch: interactionState.lastPreviewPatch, changedNodeIds, preConfirmDiff, pendingReview: interactionState.pendingReview, sourceSyncDryRun, sourceSyncApply, sourceSyncApplyConfirmed, sourceSyncResult, sourceSyncStatus, fileAdapter, hasRealFileAdapter, lastSourceApplyProof, rollbackAvailable, rollbackStatus, sourceRollbackDryRun, configureLocalSourceAdapter, adapterDisabledReason, appStructure, lastAppStructureResult, appStructureNeedsResolution, appStructureCandidates, runAppStructureCommand, selectPage, duplicatePage, renamePage, addPage, updateNavigation, extractReusableComponent, reuseComponent };
+  return { latestResult, latestReviewPayload, userFacingSummary, confirmationPending, runSampleEdit, runDestructiveEdit, runCommandText, retryLastCommand, resolveTarget, pendingResolution, confirmPending, rejectPending, interactionState, editableDocument: interactionState.editableDocument, selectedNodeId: interactionState.selection.selectedNodeId, selectedPageId: interactionState.selection.selectedPageId ?? interactionState.editableDocument.pages[0]?.id, selectNode, runDirectManipulationAction, lastPreviewPatch: interactionState.lastPreviewPatch, changedNodeIds, preConfirmDiff, pendingReview: interactionState.pendingReview, sourceSyncDryRun, sourceSyncApply, sourceSyncApplyConfirmed, sourceSyncResult, sourceSyncStatus, fileAdapter, hasRealFileAdapter, lastSourceApplyProof, rollbackAvailable, rollbackStatus, sourceRollbackDryRun, configureLocalSourceAdapter, adapterDisabledReason, appStructure, lastAppStructureResult, appStructureNeedsResolution, appStructureCandidates, runAppStructureCommand, selectPage, duplicatePage, renamePage, addPage, updateNavigation, extractReusableComponent, reuseComponent };
 }
