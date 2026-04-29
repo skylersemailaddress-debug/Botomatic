@@ -17,3 +17,4 @@ assert(panel.includes("Source kinds:"));
 assert(panel.includes("Blocked quality reason"));
 assert(panel.includes("Route files to create"));
 console.log("liveUIBuilderSourceSyncPanel.test.ts passed");
+assert(panel.includes("Rollback requires server-side local adapter."));

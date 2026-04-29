@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { applyUIEditWorkflow, applyUIAppStructureCommand, applyUISourcePatch, confirmUIPreviewPendingEdit, createUIAppStructureFromDocument, createUIPreviewInteractionFixture, createUIPreviewInteractionState, createUISourceFileMapping, createUISourcePatchFromSyncPlan, handleUIPreviewChatEdit, parseUIAppStructureCommand, rejectUIPreviewPendingEdit, validateUISourceRoundTrip } from "../../../../../packages/ui-preview-engine/src";
+import { applyUIEditWorkflow, applyUIAppStructureCommand, applyUISourcePatch, confirmUIPreviewPendingEdit, createUIAppStructureFromDocument, createUIPreviewInteractionFixture, createUIPreviewInteractionState, createUISourceFileMapping, createUISourcePatchFromSyncPlan, createUISourceApplyProof, handleUIPreviewChatEdit, parseUIAppStructureCommand, rejectUIPreviewPendingEdit, validateUISourceRoundTrip } from "../../../../../packages/ui-preview-engine/src";
 
 export function createVibeInteractionHarness() {
   const fixture = createUIPreviewInteractionFixture();
@@ -36,6 +36,8 @@ export function useLiveUIBuilderVibe() {
   const [sourceSyncResult, setSourceSyncResult] = useState<any>();
   const [sourceSyncStatus, setSourceSyncStatus] = useState<"idle"|"dryRunReady"|"applyBlocked"|"simulated">("idle");
   const [fileAdapter, setFileAdapter] = useState<any>();
+  const [lastSourceApplyProof, setLastSourceApplyProof] = useState<any>();
+  const [rollbackStatus, setRollbackStatus] = useState<string>("Rollback requires server-side local adapter.");
   const [adapterDisabledReason, setAdapterDisabledReason] = useState<string>("Real local adapter unavailable in browser-safe mode.");
   const [lastAppStructureResult, setLastAppStructureResult] = useState<any>();
   const [appStructureNeedsResolution, setAppStructureNeedsResolution] = useState<any>();
@@ -69,6 +71,8 @@ export function useLiveUIBuilderVibe() {
     return { ok: false };
   };
 
+  const rollbackAvailable = Boolean(lastSourceApplyProof?.rollbackAvailable);
+
   const sourceSyncApplyConfirmed = (confirmationMarker?: boolean) => {
     if (!sourceSyncResult?.patch || !fileAdapter) {
       const blockedReasons = [fileAdapter ? "No source sync patch available" : "Apply requires real file adapter"];
@@ -77,6 +81,8 @@ export function useLiveUIBuilderVibe() {
     }
     const applyResult = applyUISourcePatch(sourceSyncResult.patch, fileAdapter, { mode: "confirmedApply", projectRoot: fileAdapter.projectRoot ?? ".", confirmationMarker });
     setSourceSyncStatus(applyResult.ok ? "simulated" : "applyBlocked");
+    setLastSourceApplyProof(createUISourceApplyProof({ id: `browser-${Date.now()}`, beforeSnapshot: sourceSyncResult.patch.operations.map((o:any)=>({filePath:o.targetFilePath,existedBefore:true})), mode: "confirmedApply" } as any, applyResult));
+    setRollbackStatus(hasRealFileAdapter ? "rollback available with server adapter" : "Rollback requires server-side local adapter.");
     setSourceSyncResult((current: any) => ({ ...(current ?? {}), applyResult, blockedReasons: applyResult.blockedReasons }));
     return applyResult;
   };
@@ -109,5 +115,7 @@ export function useLiveUIBuilderVibe() {
   const confirmationPending = Boolean(interactionState.pendingReview?.required);
   const changedNodeIds = latestResult?.previewPatch?.operations?.map((op: any) => op.nodeId).filter(Boolean) ?? [];
 
-  return { latestResult, latestReviewPayload, userFacingSummary, confirmationPending, runSampleEdit, runDestructiveEdit, runCommandText, retryLastCommand, resolveTarget, pendingResolution, confirmPending, rejectPending, interactionState, editableDocument: interactionState.editableDocument, selectedNodeId: interactionState.selection.selectedNodeId, selectNode, lastPreviewPatch: interactionState.lastPreviewPatch, changedNodeIds, preConfirmDiff, pendingReview: interactionState.pendingReview, sourceSyncDryRun, sourceSyncApply, sourceSyncApplyConfirmed, sourceSyncResult, sourceSyncStatus, fileAdapter, hasRealFileAdapter, configureLocalSourceAdapter, adapterDisabledReason, appStructure, lastAppStructureResult, appStructureNeedsResolution, appStructureCandidates, runAppStructureCommand, selectPage, duplicatePage, renamePage, addPage, updateNavigation, extractReusableComponent, reuseComponent };
+  const sourceRollbackDryRun = { ok: false, status: "simulated", reason: "Rollback requires server-side local adapter." };
+
+  return { latestResult, latestReviewPayload, userFacingSummary, confirmationPending, runSampleEdit, runDestructiveEdit, runCommandText, retryLastCommand, resolveTarget, pendingResolution, confirmPending, rejectPending, interactionState, editableDocument: interactionState.editableDocument, selectedNodeId: interactionState.selection.selectedNodeId, selectNode, lastPreviewPatch: interactionState.lastPreviewPatch, changedNodeIds, preConfirmDiff, pendingReview: interactionState.pendingReview, sourceSyncDryRun, sourceSyncApply, sourceSyncApplyConfirmed, sourceSyncResult, sourceSyncStatus, fileAdapter, hasRealFileAdapter, lastSourceApplyProof, rollbackAvailable, rollbackStatus, sourceRollbackDryRun, configureLocalSourceAdapter, adapterDisabledReason, appStructure, lastAppStructureResult, appStructureNeedsResolution, appStructureCandidates, runAppStructureCommand, selectPage, duplicatePage, renamePage, addPage, updateNavigation, extractReusableComponent, reuseComponent };
 }
