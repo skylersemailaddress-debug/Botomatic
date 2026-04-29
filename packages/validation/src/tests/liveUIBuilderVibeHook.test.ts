@@ -11,6 +11,18 @@ assert.ok(h.getState().lastPreviewPatch);
 const changed = (h.getState().lastPreviewPatch?.operations ?? []).map((op: any) => op.nodeId).filter(Boolean);
 assert.ok(Array.isArray(changed));
 
+const pages = h.getState().editableDocument.pages;
+const pageA = pages[0];
+const pageB = pages.find((p: any) => p.id !== pageA.id);
+if (pageB) {
+  const nodeOnA = Object.keys(pageA.nodes)[0];
+  h.selectNode(nodeOnA);
+  h.selectPage(pageA.id);
+  assert.strictEqual(h.getState().selection.selectedNodeId, nodeOnA);
+  h.selectPage(pageB.id);
+  assert.strictEqual(h.getState().selection.selectedNodeId, undefined);
+}
+
 const destructive = h.runDestructiveEdit();
 assert.strictEqual(destructive.status, "needsConfirmation");
 const nodeA = destructive.nextState.pendingReview?.selectedNodeId;
