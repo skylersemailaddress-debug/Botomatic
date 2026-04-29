@@ -1255,6 +1255,44 @@ export function validateChatFirstOperatorRouting(root: string): RepoValidatorRes
   );
 }
 
+
+export function validateLiveUIBuilderDataStateApiWiringReadiness(root: string): RepoValidatorResult {
+  const checks = ["packages/ui-preview-engine/src/uiDataStateApiWiringModel.ts","packages/ui-preview-engine/src/uiDataStateApiWiringNormalizer.ts","packages/ui-preview-engine/src/uiDataStateApiWiringPlanner.ts","packages/ui-preview-engine/src/tests/uiDataStateApiWiringModel.test.ts","packages/ui-preview-engine/src/tests/uiDataStateApiWiringNormalizer.test.ts","packages/ui-preview-engine/src/tests/uiDataStateApiWiringPlanner.test.ts","apps/control-plane/src/components/live-ui-builder/LiveUIBuilderSourceSyncPanel.tsx","package.json"];
+  const filesOk = checks.every((c) => has(root, c));
+  const model = filesOk ? read(root, checks[0]) : "";
+  const normalizer = filesOk ? read(root, checks[1]) : "";
+  const planner = filesOk ? read(root, checks[2]) : "";
+  const panel = filesOk ? read(root, checks[6]) : "";
+  const tNorm = filesOk ? read(root, checks[4]) : "";
+  const tPlan = filesOk ? read(root, checks[5]) : "";
+  const pkg = filesOk ? read(root, "package.json") : "";
+  const forbidden = ["import fs", "from \"fs\"", "from \"http\"", "from \"https\"", "fetch(", "axios", "XMLHttpRequest"];
+  const safe = forbidden.every((f) => !normalizer.includes(f) && !planner.includes(f));
+  const ok = filesOk
+    && model.includes("wiringPlanId")
+    && normalizer.includes("unsafe-scheme")
+    && normalizer.includes("secret-looking header literal rejected")
+    && normalizer.includes("unsupported action")
+    && planner.includes("createHash")
+    && planner.includes("declare state")
+    && panel.includes("Data/state/API wiring planning is dry-run only")
+    && tNorm.includes("http:// rejected")
+    && tNorm.includes("javascript:/data:/file: rejected")
+    && tNorm.includes("localhost/127.0.0.1 rejected by default")
+    && tNorm.includes("secret-looking header literal rejected")
+    && tNorm.includes("unsupported-action")
+    && tPlan.includes("unknown outputMode")
+    && tPlan.includes("DELETE")
+    && tPlan.includes("wiringPlanId")
+    && tPlan.includes("affectedFilePaths.length")
+    && tPlan.includes("affectedNodeIds.length")
+    && pkg.includes("test:ui-data-state-api-wiring-model")
+    && pkg.includes("test:ui-data-state-api-wiring-normalizer")
+    && pkg.includes("test:ui-data-state-api-wiring-planner")
+    && pkg.includes("test:universal")
+    && safe;
+  return result("Validate-Botomatic-LiveUIBuilderDataStateApiWiringReadiness", ok, ok ? "Data/state/API wiring dry-run planning and strict readiness checks are wired." : "Data/state/API wiring readiness is incomplete or shallow.", checks);
+}
 export function runAllRepoValidators(root: string): RepoValidatorResult[] {
   return [
     validateArchitecture(root),
@@ -1277,6 +1315,7 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateFileIngestion(root),
     validateChatFirstOperatorRouting(root),
     validateChatBehaviorExecution(root),
+    validateLiveUIBuilderDataStateApiWiringReadiness(root),
     validateUniversalBuilderReadiness(root),
     validateSelfUpgradingFactoryReadiness(root),
     validateDirtyRepoRescueReadiness(root),

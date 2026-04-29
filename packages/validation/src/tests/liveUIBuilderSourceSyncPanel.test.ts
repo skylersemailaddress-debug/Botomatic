@@ -40,3 +40,15 @@ assert(panel.includes("Style plan id:"));
 assert(panel.includes("Style token count:"));
 assert(panel.includes("Style variables preview:"));
 assert(panel.includes("Design token planning is dry-run only and does not apply styles, write files, or prove visual/runtime correctness."));
+
+assert(panel.includes("Data/State/API wiring plan id:"));
+assert(panel.includes("Data binding count:"));
+assert(panel.includes("State binding count:"));
+assert(panel.includes("State action count:"));
+assert(panel.includes("API endpoint count:"));
+assert(panel.includes("API request binding count:"));
+assert(panel.includes("Affected node count:"));
+assert(panel.includes("Affected file count:"));
+assert(panel.includes("Wiring risk level:"));
+assert(panel.includes("Wiring blocked reason count:"));
+assert(panel.includes("Data/state/API wiring planning is dry-run only and does not execute requests, write files, deploy, or prove runtime correctness."));
