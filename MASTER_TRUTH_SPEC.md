@@ -39,7 +39,42 @@ Pro truth is a light technical command center with:
 - status bar
 
 ## Input/control parity
+Voice is speech-to-chat input, not a separate product capability.
+Voice does not create a separate voice mode or separate voice-only command router.
 Voice and keyboard commands must map through the same command/action system so intent, authorization, and execution semantics stay aligned.
+For visual UI building, spoken edit requests route through the same live UI edit command parser and pipeline as typed chat requests.
+
+## Live visual UI builder truth
+The live visual UI builder is a core Botomatic requirement.
+Every visible UI element in a generated app must be editable by chat command.
+Typed and spoken edit requests must use the same chat/edit pipeline.
+The preview must update live in real time when edits are applied.
+Edits must apply to an actual generated UI model, not a fake static mock.
+Visual edits must sync back to generated source files before export or launch claims.
+
+Supported edit classes include:
+- add
+- remove
+- move
+- resize
+- duplicate
+- replace
+- rewrite text
+- restyle
+- retheme
+- add page
+- remove page
+- change layout
+- change responsive behavior
+- bind data
+- bind actions
+- connect forms
+
+The system must support selection/inspect mode.
+The system must resolve natural references like "this", "that card", "the hero", and "the booking form".
+Undo/redo and diff preview are required for safe editing.
+Invalid edits must fail safely.
+Visual edits must preserve accessibility, responsiveness, and no-placeholder/fake-path requirements.
 
 ## Canonical workflow
 The canonical flow is:

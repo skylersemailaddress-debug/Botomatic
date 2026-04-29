@@ -48,6 +48,26 @@ function run() {
   setup(badBoundary, goodSpec.replace(/release-candidate foundation/ig, "rc-foundation"));
   assert.strictEqual(validateMasterTruthSpecReadiness(badBoundary).status, "failed");
 
+  const missingLiveSection = mkRoot();
+  setup(missingLiveSection, goodSpec.replace(/## Live visual UI builder truth[\s\S]*?## Canonical workflow/i, "## Canonical workflow"));
+  assert.strictEqual(validateMasterTruthSpecReadiness(missingLiveSection).status, "failed");
+
+  const missingRealtimePreview = mkRoot();
+  setup(missingRealtimePreview, goodSpec.replace(/The preview must update live in real time when edits are applied\.\n/i, ""));
+  assert.strictEqual(validateMasterTruthSpecReadiness(missingRealtimePreview).status, "failed");
+
+  const missingSourceSync = mkRoot();
+  setup(missingSourceSync, goodSpec.replace(/Visual edits must sync back to generated source files before export or launch claims\.\n/i, ""));
+  assert.strictEqual(validateMasterTruthSpecReadiness(missingSourceSync).status, "failed");
+
+  const missingActualModel = mkRoot();
+  setup(missingActualModel, goodSpec.replace(/Edits must apply to an actual generated UI model, not a fake static mock\.\n/i, ""));
+  assert.strictEqual(validateMasterTruthSpecReadiness(missingActualModel).status, "failed");
+
+  const missingVoiceSpeechToChat = mkRoot();
+  setup(missingVoiceSpeechToChat, goodSpec.replace(/Voice is speech-to-chat input, not a separate product capability\.\n/i, ""));
+  assert.strictEqual(validateMasterTruthSpecReadiness(missingVoiceSpeechToChat).status, "failed");
+
   console.log("masterTruthSpecReadiness.test.ts passed");
 }
 

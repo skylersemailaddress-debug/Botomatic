@@ -68,4 +68,5 @@
 
 - [x] MASTER-TRUTH-AUDIT-001 — complete
 - [x] MASTER-TRUTH-001 — add canonical max-power master spec and validator bridge
+- [x] MASTER-TRUTH-002 — clarify live visual UI builder truth (complete)
 - [ ] BUILDER-GAP-AUDIT-001: audit implementation against canonical master truth
