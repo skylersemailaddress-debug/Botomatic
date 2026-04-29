@@ -347,3 +347,7 @@ export * from "./uiAppStructureMutation";
 
 export * from "./uiDirectManipulationModel";
 export * from "./uiDirectManipulationMutation";
+
+export * from "./uiFullProjectGenerationPlan";
+export * from "./uiProjectPathNormalizer";
+export * from "./uiFullProjectGenerator";

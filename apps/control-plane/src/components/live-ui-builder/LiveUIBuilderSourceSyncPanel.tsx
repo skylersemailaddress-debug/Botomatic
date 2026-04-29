@@ -2,7 +2,7 @@
 
 type SourceSyncPanelProps = {
   sourceSyncStatus: "idle" | "dryRunReady" | "applyBlocked" | "simulated";
-  sourceSyncResult?: { patchSummary?: { changedFiles: string[]; operationCount: number; manualReviewCount: number; confidenceCounts?: Record<string, number>; sourceKinds?: string[]; routeFilesToCreate?: string[]; manualReviewReasons?: string[]; identitySummary?: { coverageCount: number; high: number; medium: number; low: number; stale: number; manualReviewRequired: number; selectedNodeIdentitySummary?: string }; multiFilePlanId?: string; dependencyCount?: number; riskLevel?: "low"|"medium"|"high"; requiresManualReview?: boolean; orderedFiles?: string[] }; blockedReasons?: string[]; caveat?: string };
+  sourceSyncResult?: { patchSummary?: { changedFiles: string[]; operationCount: number; manualReviewCount: number; confidenceCounts?: Record<string, number>; sourceKinds?: string[]; routeFilesToCreate?: string[]; manualReviewReasons?: string[]; identitySummary?: { coverageCount: number; high: number; medium: number; low: number; stale: number; manualReviewRequired: number; selectedNodeIdentitySummary?: string }; multiFilePlanId?: string; dependencyCount?: number; riskLevel?: "low"|"medium"|"high"; requiresManualReview?: boolean; orderedFiles?: string[]; fullProjectGeneration?: { planId: string; normalizedProjectSlug: string; framework: "next"|"vite-react"|"node-api"|"unknown"; generatedFileCount: number; directoryCount: number; conflictCount: number; normalizationIssueCount: number; riskLevel: "low"|"medium"|"high"; requiresManualReview: boolean; orderedFilePathsPreview: string[]; caveat: string } }; blockedReasons?: string[]; caveat?: string };
   onDryRun: () => void;
   onApply: () => void;
   canApply: boolean;
@@ -48,6 +48,18 @@ export function LiveUIBuilderSourceSyncPanel({ sourceSyncStatus, sourceSyncResul
       <p>Manual review required: {String(sourceSyncResult?.patchSummary?.requiresManualReview ?? false)}</p>
       <p>Ordered files: {(sourceSyncResult?.patchSummary?.orderedFiles ?? changedFiles).join(", ") || "none"}</p>
       <p>Multi-file planning is dry-run only and does not write files or prove runtime correctness.</p>
+      {!!sourceSyncResult?.patchSummary?.fullProjectGeneration && <><p>Full project plan id: {sourceSyncResult.patchSummary.fullProjectGeneration.planId}</p>
+      <p>Project slug: {sourceSyncResult.patchSummary.fullProjectGeneration.normalizedProjectSlug}</p>
+      <p>Project framework: {sourceSyncResult.patchSummary.fullProjectGeneration.framework}</p>
+      <p>Generated file count: {sourceSyncResult.patchSummary.fullProjectGeneration.generatedFileCount}</p>
+      <p>Directory count: {sourceSyncResult.patchSummary.fullProjectGeneration.directoryCount}</p>
+      <p>Conflict count: {sourceSyncResult.patchSummary.fullProjectGeneration.conflictCount}</p>
+      <p>Normalization issue count: {sourceSyncResult.patchSummary.fullProjectGeneration.normalizationIssueCount}</p>
+      <p>Project risk level: {sourceSyncResult.patchSummary.fullProjectGeneration.riskLevel}</p>
+      <p>Project manual review required: {String(sourceSyncResult.patchSummary.fullProjectGeneration.requiresManualReview)}</p>
+      <p>Project ordered files preview: {sourceSyncResult.patchSummary.fullProjectGeneration.orderedFilePathsPreview.slice(0,10).join(", ") || "none"}</p>
+      <p>Full project generation is dry-run only and does not write files, install dependencies, deploy, or prove runtime correctness.</p></>}
+
       <ul>{changedFiles.map((f) => <li key={f}>{f}</li>)}</ul>
       {!!manualReasons.length && <ul>{manualReasons.map((r) => <li key={r}>Manual review: {r}</li>)}</ul>}
       {blockedReasons.length ? <ul>{blockedReasons.map((reason) => <li key={reason}>Blocked quality reason: {reason}</li>)}</ul> : <p>Dry-run safety: {cleanDryRun ? "clean" : "not-ready"}</p>}

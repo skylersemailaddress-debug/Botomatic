@@ -1,0 +1,21 @@
+import assert from "assert";
+import { generateUIFullProjectPlan } from "../uiFullProjectGenerator";
+
+const input = { projectName: "Demo Project", files: [{ path: "src\\feature\\One.tsx" }, { path: "src/feature/One.tsx" }], editableDocument: { id: "doc-1" }, appStructure: { rootName: "app" }, multiFilePlanResult: { plan: { planId: "mf-1", operations: [{ operationId: "op-a", target: { filePath: "src/App.tsx" } }] } } };
+const a = generateUIFullProjectPlan(input, { framework: "next", sourcePatchOperationIds: ["op-1"] });
+const b = generateUIFullProjectPlan({ ...input, files: [...(input.files ?? [])].reverse() }, { framework: "next", sourcePatchOperationIds: ["op-1"] });
+assert.strictEqual(a.plan.planId, b.plan.planId);
+assert.deepStrictEqual(a.plan.orderedFilePaths, b.plan.orderedFilePaths);
+assert(a.plan.orderedFilePaths.includes("app/page.tsx"));
+assert(a.plan.orderedFilePaths.includes("app/layout.tsx"));
+assert(a.plan.orderedFilePaths.includes("tsconfig.json"));
+assert(a.plan.multiFilePlanId === "mf-1");
+assert(a.plan.files.some((f) => f.path.includes(".ui-document.json")));
+assert(a.plan.files.some((f) => f.path.includes(".app-structure.json")));
+assert(a.plan.requiresManualReview);
+assert(a.plan.riskLevel === "high");
+const vite = generateUIFullProjectPlan({ projectName: "Vite" }, { framework: "vite-react" });
+assert(vite.plan.orderedFilePaths.includes("src/App.tsx") && vite.plan.orderedFilePaths.includes("index.html"));
+const api = generateUIFullProjectPlan({ projectName: "API" }, { framework: "node-api" });
+assert(api.plan.orderedFilePaths.includes("src/server.ts"));
+console.log("uiFullProjectGenerator.test.ts passed");
