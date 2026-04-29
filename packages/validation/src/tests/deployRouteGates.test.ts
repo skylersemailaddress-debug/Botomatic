@@ -1,21 +1,76 @@
 import assert from "assert";
-import fs from "fs";
-import path from "path";
+import { assertProviderPromoteGate, assertProviderRollbackGate } from "../../../../apps/orchestrator-api/src/deployProviderGates";
 
-const root = process.cwd();
-const serverApp = fs.readFileSync(path.join(root, "apps/orchestrator-api/src/server_app.ts"), "utf8");
+function baseHandoff(overrides: Record<string, unknown> = {}) {
+  return {
+    environment: "prod",
+    status: "complete",
+    approvalRequired: true,
+    rollbackPlanPresent: true,
+    smokePlanPresent: true,
+    deployCommandTemplatePresent: true,
+    ...overrides,
+  };
+}
+
+function baseSecretLinkage(overrides: Record<string, unknown> = {}) {
+  return {
+    environment: "prod",
+    plaintextSecretsStored: false,
+    preflightRequiredBeforeDeploy: true,
+    ...overrides,
+  };
+}
+
+function baseRollback(overrides: Record<string, unknown> = {}) {
+  return {
+    environment: "prod",
+    status: "complete",
+    approvalRequired: true,
+    rollbackCommandTemplatePresent: true,
+    previousVersionReferenceRequired: true,
+    dataRollbackBoundaryDocumented: true,
+    ...overrides,
+  };
+}
 
 function run() {
-  assert(serverApp.includes("assertProviderPromoteGate"), "promote route must use assertProviderPromoteGate");
-  assert(serverApp.includes("assertProviderRollbackGate"), "rollback route must use assertProviderRollbackGate");
-  assert(serverApp.includes("provider_handoff_approval_required_false"), "promote gate must block when approvalRequired is false");
-  assert(serverApp.includes("provider_secret_linkage_plaintext_secrets_forbidden"), "promote gate must block plaintext secret linkage");
-  assert(serverApp.includes("provider_handoff_missing_deploy_command_template"), "promote gate must enforce deploy command template");
-  assert(serverApp.includes("provider_rollback_previous_version_reference_required_false"), "rollback gate must enforce previous version reference");
-  assert(serverApp.includes("provider_rollback_approval_required_false"), "rollback gate must enforce approval required");
-  assert(serverApp.includes("liveExecutionClaimed: false"), "promote response must avoid live deployment success claims");
-  assert(serverApp.includes("liveRollbackExecutionClaimed: false"), "rollback response must avoid live rollback success claims");
-  assert(serverApp.includes("missing_provider_contract"), "gates must fail closed on missing evidence");
+  let promote = assertProviderPromoteGate({ handoff: [], rollback: [], secretLinkage: [], source: "missing" });
+  assert.equal(promote.allowed, false);
+  assert(promote.reasons.some((r) => r.includes("provider handoff")));
+
+  promote = assertProviderPromoteGate({ handoff: [baseHandoff({ approvalRequired: false })], rollback: [], secretLinkage: [baseSecretLinkage()], source: "x" });
+  assert.equal(promote.allowed, false);
+  assert(promote.reasons.includes("provider_handoff_approval_required_false"));
+
+  promote = assertProviderPromoteGate({ handoff: [baseHandoff()], rollback: [], secretLinkage: [], source: "x" });
+  assert.equal(promote.allowed, false);
+  assert(promote.reasons.some((r) => r.includes("secret preflight linkage")));
+
+  promote = assertProviderPromoteGate({ handoff: [baseHandoff()], rollback: [], secretLinkage: [baseSecretLinkage({ plaintextSecretsStored: true })], source: "x" });
+  assert.equal(promote.allowed, false);
+  assert(promote.reasons.includes("provider_secret_linkage_plaintext_secrets_forbidden"));
+
+  promote = assertProviderPromoteGate({ handoff: [baseHandoff({ status: "blocked" })], rollback: [], secretLinkage: [baseSecretLinkage()], source: "x" });
+  assert.equal(promote.allowed, true);
+  assert.equal(promote.mode, "planning_only");
+
+  let rollback = assertProviderRollbackGate({ handoff: [], rollback: [], secretLinkage: [], source: "missing" });
+  assert.equal(rollback.allowed, false);
+  assert(rollback.reasons.some((r) => r.includes("rollback completeness evidence")));
+
+  rollback = assertProviderRollbackGate({ handoff: [], rollback: [baseRollback({ approvalRequired: false })], secretLinkage: [], source: "x" });
+  assert.equal(rollback.allowed, false);
+  assert(rollback.reasons.includes("provider_rollback_approval_required_false"));
+
+  rollback = assertProviderRollbackGate({ handoff: [], rollback: [baseRollback({ previousVersionReferenceRequired: false })], secretLinkage: [], source: "x" });
+  assert.equal(rollback.allowed, false);
+  assert(rollback.reasons.includes("provider_rollback_previous_version_reference_required_false"));
+
+  rollback = assertProviderRollbackGate({ handoff: [], rollback: [baseRollback({ status: "blocked" })], secretLinkage: [], source: "x" });
+  assert.equal(rollback.allowed, true);
+  assert.equal(rollback.mode, "planning_only");
+
   console.log("deployRouteGates.test.ts passed");
 }
 
