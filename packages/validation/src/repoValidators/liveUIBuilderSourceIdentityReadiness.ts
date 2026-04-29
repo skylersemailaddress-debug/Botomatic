@@ -7,10 +7,14 @@ export function validateLiveUIBuilderSourceIdentityReadiness(root: string): Repo
   const read=(r:string)=>fs.existsSync(path.join(root,r))?fs.readFileSync(path.join(root,r),"utf8"):"";
   const all = checks.map(read).join("\n");
   const pkg = read("package.json");
+  const reactPatch = read("packages/ui-preview-engine/src/uiReactSourcePatch.ts");
   const ok = checks.every((c)=>fs.existsSync(path.join(root,c)))
     && read("packages/ui-preview-engine/src/uiSourceIdentityTracker.ts").includes("typescript")
     && read("packages/ui-preview-engine/src/uiSourcePatch.ts").includes("sourceIdentityId")
     && read("packages/ui-preview-engine/src/uiSourceRoundTrip.ts").includes("staleIdentity")
+    && reactPatch.includes("options.identityResult")
+    && reactPatch.includes("options.sourceFiles ? trackUISourceIdentities(options.sourceFiles)")
+    && !reactPatch.includes("trackUISourceIdentities(Object.fromEntries(analysis.map((a) => [a.filePath, \"\"])))")
     && read("apps/control-plane/src/components/live-ui-builder/LiveUIBuilderSourceSyncPanel.tsx").includes("Parser-backed source identity is best-effort")
     && pkg.includes("test:ui-source-identity-model")
     && pkg.includes("test:ui-source-identity-tracker")
