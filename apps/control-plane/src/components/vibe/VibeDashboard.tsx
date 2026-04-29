@@ -3,11 +3,16 @@
 import Link from "next/link";
 
 import { actionChips, buildMapItems, recentActivity, recentProjects, suggestionChips, vibeSidebarNav } from "./vibeSeedData";
+import { LiveUIBuilderCommandInput } from "../live-ui-builder/LiveUIBuilderCommandInput";
+import { LiveUIBuilderDiffPreview } from "../live-ui-builder/LiveUIBuilderDiffPreview";
+import { LiveUIBuilderResolutionPanel, type ResolutionTarget } from "../live-ui-builder/LiveUIBuilderResolutionPanel";
 import { LiveUIBuilderPreviewSurface } from "./LiveUIBuilderPreviewSurface";
 import { useLiveUIBuilderVibe } from "./useLiveUIBuilderVibe";
 
 export function VibeDashboard({ projectId }: { projectId: string }) {
-  const { userFacingSummary, latestReviewPayload, confirmationPending, runSampleEdit, runDestructiveEdit, confirmPending, rejectPending, editableDocument, selectedNodeId, changedNodeIds, lastPreviewPatch, selectNode } = useLiveUIBuilderVibe();
+  const { latestResult, userFacingSummary, latestReviewPayload, confirmationPending, runSampleEdit, runDestructiveEdit, runCommandText, retryLastCommand, resolveTarget, pendingResolution, confirmPending, rejectPending, editableDocument, selectedNodeId, changedNodeIds, lastPreviewPatch, selectNode, preConfirmDiff } = useLiveUIBuilderVibe();
+  const fallbackTargets: ResolutionTarget[] = Object.values(editableDocument.pages?.[0]?.nodes ?? {}).slice(0, 8).map((node: any) => ({ nodeId: node.id, label: node.identity?.semanticLabel ?? node.id, type: node.kind ?? "node", page: editableDocument.pages?.[0]?.id ?? "page", location: node.parentId ? `child of ${node.parentId}` : "root" }));
+  const resolverTargets: ResolutionTarget[] = (pendingResolution?.candidates ?? []).map((nodeId: string) => ({ nodeId, label: nodeId, type: "resolver candidate", page: editableDocument.pages.find((page: any) => page.nodes[nodeId])?.id ?? "unknown", location: "resolver" }));
   return (
     <section className="vibe-dashboard" aria-label="Vibe dashboard" data-project-id={projectId}>
       <aside className="vibe-dashboard-sidebar" aria-label="Botomatic sidebar">
@@ -72,6 +77,18 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
                   <span>Building it all together</span>
                 </div>
               </div>
+
+              <LiveUIBuilderCommandInput onSubmit={runCommandText} />
+
+              {latestResult?.status === "needsResolution" ? (
+                <LiveUIBuilderResolutionPanel
+                  targets={resolverTargets.length > 0 ? resolverTargets : fallbackTargets}
+                  isFallback={resolverTargets.length === 0}
+                  onResolve={resolveTarget}
+                />
+              ) : null}
+
+              {confirmationPending ? <LiveUIBuilderDiffPreview diff={preConfirmDiff?.diff} /> : null}
 
               <LiveUIBuilderPreviewSurface editableDocument={editableDocument} selectedNodeId={selectedNodeId} changedNodeIds={changedNodeIds} previewPatch={lastPreviewPatch} onSelectNode={selectNode} />
 
