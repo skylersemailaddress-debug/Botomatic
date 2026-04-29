@@ -1,0 +1,27 @@
+import assert from "assert";
+import { getUiBlueprint } from "../../../ui-blueprint-registry/src";
+import { cloneEditableUIDocument, createEditableUIDocumentFromBlueprint, validateEditableUIDocument } from "../uiDocumentModel";
+import { parseUIEditCommand } from "../uiEditCommand";
+import { applyUIEditCommand } from "../uiMutationEngine";
+
+const base = createEditableUIDocumentFromBlueprint(getUiBlueprint("saasDashboard")!, { now: "2026-01-01T00:00:00.000Z" });
+const firstNodeId = base.pages[0].nodes[base.pages[0].rootNodeIds[0]].childIds[0];
+const first = base.pages[0].nodes[firstNodeId];
+const run = (text: string, confirmed = true, selectedNodeId = firstNodeId) => applyUIEditCommand(base, parseUIEditCommand({ text, source: "typedChat", selectedNodeId }).command!, { confirmed, selection: { selectedNodeId } as any });
+assert.strictEqual(run("remove this", false).status, "blocked");
+assert.strictEqual(run("remove this", true).status, "applied");
+const dup = run("duplicate this", true); assert.strictEqual(dup.status, "applied"); assert.ok(dup.changedNodeIds[0] !== firstNodeId);
+const moved = run("move this under hero", true); assert.strictEqual(moved.status, "applied"); assert.deepStrictEqual(base.pages[0].nodes[firstNodeId], first);
+assert.strictEqual(run('rewrite this headline to "Hello"').afterDocument!.pages[0].nodes[firstNodeId].props.text, "Hello");
+assert.strictEqual(run("make this background blue").status, "applied");
+assert.strictEqual(run("retheme the app to dark").status, "applied");
+assert.strictEqual(run("add a page called Pricing").afterDocument!.pages.some((p) => p.id === "pricing"), true);
+assert.ok(["blocked","needsResolution"].includes(run("remove the testimonials page", false).status));
+assert.strictEqual(run("replace this with card", false).status, "blocked");
+assert.ok(["blocked","needsResolution"].includes(run("bind this chart to revenue data", false).status));
+assert.strictEqual(run("remove this", true, "" as any).status, "needsResolution");
+const invalid = cloneEditableUIDocument(base); (invalid as any).pages = undefined; const r = applyUIEditCommand(invalid as any, parseUIEditCommand({ text: "remove this", source: "typedChat" }).command!, { confirmed: true }); assert.strictEqual(r.status, "invalid");
+const ok = run("connect this form to leads", true); assert.ok(ok.previewPatch.operations.length >= 1); assert.ok(validateEditableUIDocument(ok.afterDocument!).valid);
+assert.strictEqual(base.pages[0].nodes[firstNodeId].identity.nodeId, first.identity.nodeId);
+const c = ok.claimBoundary.toLowerCase(); assert.ok(c.includes("no source-file sync") && c.includes("no browser rendering integration") && c.includes("no full live builder completion claim"));
+console.log("uiMutationEngine tests passed");

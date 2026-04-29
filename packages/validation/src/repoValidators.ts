@@ -35,6 +35,7 @@ import { validateGeneratedAppRepresentativeCorpusReadiness } from "./repoValidat
 import { validateMasterTruthSpecReadiness } from "./repoValidators/masterTruthSpecReadiness";
 import { validateEditableUIDocumentModelReadiness } from "./repoValidators/editableUIDocumentModelReadiness";
 import { validateUIEditCommandParserReadiness } from "./repoValidators/uiEditCommandParserReadiness";
+import { validateLiveUIBuilderCoreReadiness } from "./repoValidators/liveUIBuilderCoreReadiness";
 
 export type RepoValidatorResult = {
   name: string;
@@ -1296,5 +1297,6 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateGeneratedAppRepresentativeCorpusReadiness(root),
     validateEditableUIDocumentModelReadiness(root),
     validateUIEditCommandParserReadiness(root),
+    validateLiveUIBuilderCoreReadiness(root),
   ];
 }
