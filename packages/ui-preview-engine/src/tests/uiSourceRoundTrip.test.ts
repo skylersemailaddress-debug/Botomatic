@@ -11,3 +11,6 @@ assert.ok(!bad.valid);
 const stale=validateUISourceRoundTrip(doc,{operations:[{kind:"replaceText",targetFilePath:"src/a.ts",pageIds:[doc.pages[0].id],nodeIds:[nodeId],staleIdentity:true}],changedFiles:["src/a.ts"],caveat:"x"} as any,{readFile:()=>"",writeFile:()=>{},exists:()=>false});
 assert.ok(!stale.valid);
 console.log("uiSourceRoundTrip tests passed");
+
+const mfBad=validateUISourceRoundTrip(doc,{multiFilePlanId:"p1",operations:[{kind:"replaceText",targetFilePath:"src/a.ts",pageIds:[doc.pages[0].id],nodeIds:[nodeId]}],changedFiles:["src/a.ts"],dependencies:[{dependencyEdgeId:"d1",fromFile:"src/a.ts",toFile:"src/missing.ts"}],multiFileRiskLevel:"high",requiresManualReview:false,caveat:"x"} as any,{readFile:()=>"",writeFile:()=>{},exists:()=>false});
+assert.ok(!mfBad.valid);

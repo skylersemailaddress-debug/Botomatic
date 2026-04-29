@@ -20,3 +20,8 @@ assert(panel.includes("Blocked quality reason"));
 assert(panel.includes("Route files to create"));
 console.log("liveUIBuilderSourceSyncPanel.test.ts passed");
 assert(panel.includes("Rollback requires server-side local adapter."));
+assert(panel.includes("Multi-file plan id"));
+assert(panel.includes("Changed file count"));
+assert(panel.includes("Dependency count"));
+assert(panel.includes("Risk level"));
+assert(panel.includes("Multi-file planning is dry-run only and does not write files or prove runtime correctness."));

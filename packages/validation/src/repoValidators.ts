@@ -47,6 +47,7 @@ import { validateLiveUIBuilderReactSourcePatchReadiness } from "./repoValidators
 import { validateLiveUIBuilderLocalApplyRollbackReadiness } from "./repoValidators/liveUIBuilderLocalApplyRollbackReadiness";
 import { validateLiveUIBuilderDirectManipulationReadiness } from "./repoValidators/liveUIBuilderDirectManipulationReadiness";
 import { validateLiveUIBuilderSourceIdentityReadiness } from "./repoValidators/liveUIBuilderSourceIdentityReadiness";
+import { validateLiveUIBuilderMultiFilePlanningReadiness } from "./repoValidators/liveUIBuilderMultiFilePlanningReadiness";
 
 export type RepoValidatorResult = {
   name: string;
@@ -1320,5 +1321,6 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateLiveUIBuilderLocalApplyRollbackReadiness(root),
     validateLiveUIBuilderDirectManipulationReadiness(root),
     validateLiveUIBuilderSourceIdentityReadiness(root),
+    validateLiveUIBuilderMultiFilePlanningReadiness(root),
   ];
 }
