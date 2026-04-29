@@ -16,7 +16,7 @@ function read(root: string, rel: string): string {
   return fs.readFileSync(path.join(root, rel), "utf8");
 }
 
-function includesAll(content: string, required: string[]) {
+function findIncludedPhrases(content: string, required: string[]) {
   return required.filter((item) => content.includes(item));
 }
 
@@ -27,12 +27,7 @@ export function validateFinalReleaseEvidenceLock(root: string): RepoValidatorRes
   const rel = "docs/final-release-evidence-lock.md";
   const abs = path.join(root, rel);
   if (!fs.existsSync(abs)) {
-    return result(
-      "Validate-Botomatic-FinalReleaseEvidenceLock",
-      false,
-      "Final release evidence lock document is missing.",
-      checks
-    );
+    return result("Validate-Botomatic-FinalReleaseEvidenceLock", false, "Final release evidence lock document is missing.", checks);
   }
   checks.push(`${rel} exists`);
 
@@ -40,6 +35,8 @@ export function validateFinalReleaseEvidenceLock(root: string): RepoValidatorRes
 
   const requiredPhrases = [
     "release-candidate ready",
+    "release-candidate foundation evidence only",
+    "does not mark the max-power autonomous builder product complete",
     "npm run -s build",
     "npm run -s test:universal",
     "npm run -s validate:all",
@@ -58,44 +55,45 @@ export function validateFinalReleaseEvidenceLock(root: string): RepoValidatorRes
     "live deployment execution boundary",
     "route-level deploy gates",
     "proof-engine claim verification",
-    "no known p0/p1/p2 release-candidate blockers"
+    "no known p0/p1/p2 release-candidate blockers",
+    "not a live deployment claim",
+    "not a production-ready claim",
+    "not a zero leaks proven claim",
+    "not a claim that all generated apps are production-ready without validation"
   ];
 
-  const foundRequired = includesAll(content, requiredPhrases);
+  const foundRequired = findIncludedPhrases(content, requiredPhrases);
   for (const phrase of foundRequired) checks.push(`contains: ${phrase}`);
   if (foundRequired.length !== requiredPhrases.length) {
     const missing = requiredPhrases.filter((p) => !foundRequired.includes(p));
     issues.push(`missing required release-lock phrases: ${missing.join(", ")}`);
   }
 
-  if (!(content.includes("not") && content.includes("live deployment claim"))) {
-    issues.push("missing bounded wording for live deployment claim");
-  } else {
-    checks.push("contains bounded wording for live deployment claim");
-  }
+  const lines = content.split(/\r?\n/).map((line) => line.trim());
 
-  if (!(content.includes("not") && content.includes("production-ready claim"))) {
-    issues.push("missing bounded wording for production-ready claim");
-  } else {
-    checks.push("contains bounded wording for production-ready claim");
-  }
-
-  const forbiddenOverclaims = [
-    "live deployed",
-    "guaranteed enterprise app output"
+  const forbiddenLineClaims: Array<{ claim: string; allowedNegation: string }> = [
+    { claim: "this is a live deployment claim", allowedNegation: "not a live deployment claim" },
+    { claim: "zero leaks proven", allowedNegation: "not a zero leaks proven claim" },
+    { claim: "all generated apps are production-ready without validation", allowedNegation: "not a claim that all generated apps are production-ready without validation" },
+    { claim: "guaranteed enterprise app output", allowedNegation: "" }
   ];
-  for (const forbidden of forbiddenOverclaims) {
-    if (content.includes(forbidden)) {
-      issues.push(`forbidden overclaim present: ${forbidden}`);
+
+  for (const rule of forbiddenLineClaims) {
+    const violatingLine = lines.find((line) => line.includes(rule.claim) && (rule.allowedNegation === "" || !line.includes(rule.allowedNegation)));
+    if (violatingLine) {
+      issues.push(`forbidden positive claim present: ${rule.claim}`);
     } else {
-      checks.push(`forbidden overclaim absent: ${forbidden}`);
+      checks.push(`forbidden positive claim absent or explicitly bounded: ${rule.claim}`);
     }
   }
 
-  if (content.includes("zero leaks proven") && !content.includes("not") ) {
-    issues.push("forbidden overclaim present: zero leaks proven");
+  const violatingProductionReadyLine = lines.find(
+    (line) => line.includes("production-ready") && !line.includes("not a production-ready claim") && !line.includes("not a claim that all generated apps are production-ready without validation")
+  );
+  if (violatingProductionReadyLine) {
+    issues.push("forbidden positive claim present: production-ready");
   } else {
-    checks.push("forbidden overclaim absent (or explicitly negated): zero leaks proven");
+    checks.push("forbidden positive claim absent or explicitly bounded: production-ready");
   }
 
   if (issues.length > 0) {
@@ -107,10 +105,5 @@ export function validateFinalReleaseEvidenceLock(root: string): RepoValidatorRes
     );
   }
 
-  return result(
-    "Validate-Botomatic-FinalReleaseEvidenceLock",
-    true,
-    "Final release evidence lock document is present and claim-bounded.",
-    checks
-  );
+  return result("Validate-Botomatic-FinalReleaseEvidenceLock", true, "Final release evidence lock document is present and claim-bounded.", checks);
 }

@@ -60,7 +60,7 @@
 - REPO-003 dirty repo repair-loop proof (complete)
 - RELEASE-AUDIT-001 release audit proof-pack completeness (complete)
 - RELEASE-002 final release evidence lock (active/complete)
-- Next state: release-candidate lock; no further system-building unless a blocker is found
+- Next state: release-candidate foundation locked; future max-power builder work requires master-truth audit and scoped tickets
 - SELF-001 executable self-upgrade safety contract (complete)
 - DEPLOY-001 secret leak prevention and secret-reference policy scope (complete)
 
