@@ -30,3 +30,23 @@ console.log("uiMutationEngine tests passed");
 const d1 = run("duplicate this", true, firstNodeId, "same-seed");
 const d2 = run("duplicate this", true, firstNodeId, "same-seed");
 assert.deepStrictEqual(d1, d2);
+
+const appliedA = applyUIEditCommand(base, parseUIEditCommand({ text: "duplicate this", source: "typedChat", selectedNodeId: firstNodeId, createdAt: fixedNow }).command!, { confirmed: true, selection: { selectedNodeId: firstNodeId } as any, idSeed: "seed-applied" });
+const appliedB = applyUIEditCommand(base, parseUIEditCommand({ text: "duplicate this", source: "typedChat", selectedNodeId: firstNodeId, createdAt: fixedNow }).command!, { confirmed: true, selection: { selectedNodeId: firstNodeId } as any, idSeed: "seed-applied" });
+assert.deepStrictEqual(appliedA, appliedB);
+
+const blockedCmd = parseUIEditCommand({ text: "remove this", source: "typedChat", selectedNodeId: firstNodeId, createdAt: fixedNow }).command!;
+const blockedA = applyUIEditCommand(base, blockedCmd, { confirmed: false, selection: { selectedNodeId: firstNodeId } as any });
+const blockedB = applyUIEditCommand(base, blockedCmd, { confirmed: false, selection: { selectedNodeId: firstNodeId } as any });
+assert.deepStrictEqual(blockedA, blockedB);
+
+const unresolvedCmd = parseUIEditCommand({ text: "remove this", source: "typedChat", createdAt: fixedNow }).command!;
+const needsA = applyUIEditCommand(base, unresolvedCmd, { confirmed: true, selection: { selectedNodeId: "" } as any });
+const needsB = applyUIEditCommand(base, unresolvedCmd, { confirmed: true, selection: { selectedNodeId: "" } as any });
+assert.deepStrictEqual(needsA, needsB);
+
+const invalidDocA = cloneEditableUIDocument(base); (invalidDocA as any).pages = undefined;
+const invalidCmd = parseUIEditCommand({ text: "remove this", source: "typedChat", createdAt: fixedNow }).command!;
+const invalidA = applyUIEditCommand(invalidDocA as any, invalidCmd, { confirmed: true });
+const invalidB = applyUIEditCommand(invalidDocA as any, invalidCmd, { confirmed: true });
+assert.deepStrictEqual(invalidA, invalidB);
