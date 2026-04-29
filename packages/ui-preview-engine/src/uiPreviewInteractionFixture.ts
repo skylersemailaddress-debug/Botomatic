@@ -18,7 +18,7 @@ export function runSampleUIPreviewEditSequence() {
   const fx = createUIPreviewInteractionFixture();
   let state = createUIPreviewInteractionState(fx.doc);
   const applied = handleUIPreviewChatEdit({ text: 'rewrite this headline to "Updated"', source: "typedChat", selectedNodeId: fx.node, now: fx.now }, state);
-  state = createUIPreviewInteractionState(applied.editableDocument, { history: applied.history, status: applied.status as any });
+  state = applied.nextState;
   const needsConfirmation = handleUIPreviewChatEdit({ text: "remove this", source: "spokenChat", selectedNodeId: fx.node, now: fx.now }, state);
   return { applied, needsConfirmation };
 }

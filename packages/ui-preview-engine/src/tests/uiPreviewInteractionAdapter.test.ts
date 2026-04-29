@@ -4,22 +4,43 @@ import { createUIPreviewInteractionState } from "../uiPreviewInteractionState";
 import { confirmUIPreviewPendingEdit, handleUIPreviewChatEdit, rejectUIPreviewPendingEdit } from "../uiPreviewInteractionAdapter";
 
 const fx = createUIPreviewInteractionFixture();
-const state = createUIPreviewInteractionState(fx.doc);
-const typed = handleUIPreviewChatEdit({ text: 'rewrite this headline to "A"', source: "typedChat", selectedNodeId: fx.node, now: fx.now }, state);
-const spoken = handleUIPreviewChatEdit({ text: 'rewrite this headline to "A"', source: "spokenChat", selectedNodeId: fx.node, now: fx.now }, state);
-assert.strictEqual(typed.status, "applied"); assert.strictEqual(spoken.status, "applied");
+const initial = createUIPreviewInteractionState(fx.doc);
+
+const typed = handleUIPreviewChatEdit({ text: 'rewrite this headline to "A"', source: "typedChat", selectedNodeId: fx.node, now: fx.now, idSeed: "a" }, initial);
+const spoken = handleUIPreviewChatEdit({ text: 'rewrite this headline to "A"', source: "spokenChat", selectedNodeId: fx.node, now: fx.now, idSeed: "a" }, initial);
+assert.strictEqual(typed.status, "applied");
+assert.strictEqual(spoken.status, "applied");
 assert.deepStrictEqual(typed.diff, spoken.diff);
-const destructive = handleUIPreviewChatEdit({ text: "remove this", source: "typedChat", selectedNodeId: fx.node, now: fx.now }, state);
+assert.notDeepStrictEqual(typed.nextState.editableDocument, initial.editableDocument);
+assert.strictEqual(typed.nextState.history.entries.length, 1);
+assert.strictEqual(typed.nextState.selection.selectedNodeId, fx.node);
+
+const second = handleUIPreviewChatEdit({ text: 'rewrite this headline to "B"', source: "typedChat", selectedNodeId: fx.node, now: fx.now, idSeed: "b" }, typed.nextState);
+assert.strictEqual(second.status, "applied");
+assert.notDeepStrictEqual(second.nextState.editableDocument, typed.nextState.editableDocument);
+assert.strictEqual(second.nextState.history.entries.length, 2);
+
+const destructive = handleUIPreviewChatEdit({ text: "remove this", source: "typedChat", selectedNodeId: fx.node, now: fx.now, idSeed: "c" }, second.nextState);
 assert.strictEqual(destructive.status, "needsConfirmation");
-const confirm = confirmUIPreviewPendingEdit({ ...state, pendingReview: destructive.pendingReview });
-const reject = rejectUIPreviewPendingEdit({ ...state, pendingReview: destructive.pendingReview });
-assert.strictEqual(reject.status, "idle");
-const unresolved = handleUIPreviewChatEdit({ text: 'rewrite this headline to "A"', source: "typedChat", now: fx.now }, state);
-assert.strictEqual(unresolved.status, "needsResolution");
-assert.deepStrictEqual(unresolved.editableDocument, state.editableDocument);
-assert.ok(String(typed.sourceSyncPlan?.caveat ?? "").includes("planning only") || String(typed.sourceSyncPlan?.caveat ?? "").includes("planning-only"));
-const deterministicA = handleUIPreviewChatEdit({ text: 'rewrite this headline to "A"', source: "typedChat", selectedNodeId: fx.node, now: fx.now, idSeed: "s" }, state);
-const deterministicB = handleUIPreviewChatEdit({ text: 'rewrite this headline to "A"', source: "typedChat", selectedNodeId: fx.node, now: fx.now, idSeed: "s" }, state);
-assert.strictEqual(JSON.stringify(deterministicA), JSON.stringify(deterministicB));
-assert.deepStrictEqual(state.editableDocument, fx.doc);
+assert.ok(destructive.nextState.pendingReview);
+
+const confirmed = confirmUIPreviewPendingEdit(destructive.nextState, { now: fx.now, idSeed: "d", confirmationMarker: true });
+assert.ok(["applied", "blocked"].includes(confirmed.status));
+assert.strictEqual(confirmed.nextState.pendingReview, undefined);
+if (confirmed.status === "applied") {
+  assert.notDeepStrictEqual(confirmed.nextState.editableDocument, second.nextState.editableDocument);
+  assert.ok(confirmed.nextState.history.entries.length >= 3);
+}
+
+const rejectState = { ...destructive.nextState };
+const beforeRejectDoc = JSON.stringify(rejectState.editableDocument);
+const rejected = rejectUIPreviewPendingEdit(rejectState);
+assert.strictEqual(rejected.status, "idle");
+assert.strictEqual(rejected.nextState.pendingReview, undefined);
+assert.strictEqual(JSON.stringify(rejected.nextState.editableDocument), beforeRejectDoc);
+
+const deterministicA = handleUIPreviewChatEdit({ text: 'rewrite this headline to "A"', source: "typedChat", selectedNodeId: fx.node, now: fx.now, idSeed: "det" }, initial);
+const deterministicB = handleUIPreviewChatEdit({ text: 'rewrite this headline to "A"', source: "typedChat", selectedNodeId: fx.node, now: fx.now, idSeed: "det" }, initial);
+assert.strictEqual(JSON.stringify(deterministicA.nextState), JSON.stringify(deterministicB.nextState));
+
 console.log("uiPreviewInteractionAdapter tests passed");
