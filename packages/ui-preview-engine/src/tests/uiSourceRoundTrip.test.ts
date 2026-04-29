@@ -8,4 +8,6 @@ const ok=validateUISourceRoundTrip(doc,{operations:[{kind:"replaceText",targetFi
 assert.ok(ok.valid);
 const bad=validateUISourceRoundTrip(doc,{operations:[{kind:"replaceText",targetFilePath:"src/a.ts",pageIds:["missing"],nodeIds:["stale"]}],changedFiles:["src/a.ts"],caveat:"x"} as any,{readFile:()=>"",writeFile:()=>{},exists:()=>false});
 assert.ok(!bad.valid);
+const stale=validateUISourceRoundTrip(doc,{operations:[{kind:"replaceText",targetFilePath:"src/a.ts",pageIds:[doc.pages[0].id],nodeIds:[nodeId],staleIdentity:true}],changedFiles:["src/a.ts"],caveat:"x"} as any,{readFile:()=>"",writeFile:()=>{},exists:()=>false});
+assert.ok(!stale.valid);
 console.log("uiSourceRoundTrip tests passed");

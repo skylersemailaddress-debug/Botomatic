@@ -14,6 +14,7 @@ export function validateUISourceRoundTrip(document: EditableUIDocument, patch: U
     for (const pid of op.pageIds) if (!pageIds.has(pid)) missingMappings.push(`${op.targetFilePath}:${pid}`);
     for (const nid of op.nodeIds) if (!nodeIds.has(nid)) staleNodeIds.push(`${op.targetFilePath}:${nid}`);
     if (op.kind === "manualReviewRequired") manualReviewGaps.push(op.targetFilePath);
+    if (op.staleIdentity) manualReviewGaps.push(`${op.targetFilePath}:stale-identity`);
     if (!op.pageIds.length && !op.nodeIds.length && op.kind !== "manualReviewRequired") missingMappings.push(`${op.targetFilePath}:unmapped`);
   }
   const issues = [...missingMappings, ...staleNodeIds, ...manualReviewGaps];
