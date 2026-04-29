@@ -1,0 +1,12 @@
+import assert from "assert";
+import { getUiBlueprint } from "../../../ui-blueprint-registry/src";
+import { cloneEditableUIDocument, createEditableUIDocumentFromBlueprint } from "../uiDocumentModel";
+import { parseUIEditCommand } from "../uiEditCommand";
+import { applyUIEditWorkflow } from "../uiEditWorkflow";
+const doc=createEditableUIDocumentFromBlueprint(getUiBlueprint("saasDashboard")!,{now:"2026-01-01T00:00:00.000Z"}); const node=doc.pages[0].nodes[doc.pages[0].rootNodeIds[0]].childIds[0];
+const cmd=parseUIEditCommand({text:'rewrite this headline to "Z"',source:"typedChat",selectedNodeId:node,createdAt:"2026-01-01T00:00:00.000Z"}).command!;
+const ok=applyUIEditWorkflow(doc,cmd,{confirmed:true,selection:{selectedNodeId:node} as any,now:"2026-01-01T00:00:00.000Z",idSeed:"x"} as any); assert.strictEqual(ok.status,"applied"); assert.ok(ok.sourceSyncPlan.success); assert.strictEqual(ok.history.entries.length,1);
+const blocked=applyUIEditWorkflow(doc,parseUIEditCommand({text:"remove this",source:"typedChat",selectedNodeId:node,createdAt:"2026-01-01T00:00:00.000Z"}).command!,{confirmed:false,selection:{selectedNodeId:node} as any} as any); assert.strictEqual(blocked.sourceSyncPlan.success,false);
+const needs=applyUIEditWorkflow(doc,parseUIEditCommand({text:"remove this",source:"typedChat",createdAt:"2026-01-01T00:00:00.000Z"}).command!,{confirmed:true,selection:{selectedNodeId:""} as any} as any); assert.strictEqual(needs.status,"needsResolution");
+assert.deepStrictEqual(doc,cloneEditableUIDocument(doc));
+console.log("uiEditWorkflow tests passed");

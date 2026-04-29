@@ -1,0 +1,11 @@
+import assert from "assert";
+import { getUiBlueprint } from "../../../ui-blueprint-registry/src";
+import { createEditableUIDocumentFromBlueprint } from "../uiDocumentModel";
+import { parseUIEditCommand } from "../uiEditCommand";
+import { applyUIEditCommand } from "../uiMutationEngine";
+import { appendUIEditHistoryEntry, createUIEditHistoryState, redoUIEditHistory, undoUIEditHistory, validateUIEditHistoryState } from "../uiEditHistory";
+const doc=createEditableUIDocumentFromBlueprint(getUiBlueprint("saasDashboard")!,{now:"2026-01-01T00:00:00.000Z"}); const node=doc.pages[0].nodes[doc.pages[0].rootNodeIds[0]].childIds[0];
+const cmd=parseUIEditCommand({text:'rewrite this headline to "X"',source:"typedChat",selectedNodeId:node,createdAt:"2026-01-01T00:00:00.000Z"}).command!; const m=applyUIEditCommand(doc,cmd,{confirmed:true,selection:{selectedNodeId:node} as any,now:"2026-01-01T00:00:00.000Z"});
+let h=createUIEditHistoryState(); h=appendUIEditHistoryEntry(h,{command:cmd,beforeDocument:doc,afterDocument:m.afterDocument!,mutationResult:m,previewPatch:m.previewPatch},{now:"2026-01-01T00:00:00.000Z",idSeed:"s"});
+assert.strictEqual(h.entries.length,1); const undone=undoUIEditHistory(h); assert.strictEqual(undone.document?.pages[0].nodes[node].props.text,undefined); assert.strictEqual(redoUIEditHistory({...h,pointer:-1}).document?.pages[0].nodes[node].props.text,"X"); assert.strictEqual(createUIEditHistoryState().entries.length,0); assert.ok(validateUIEditHistoryState(h).valid); assert.ok(h.claimBoundary.toLowerCase().includes("does not sync source files"));
+console.log("uiEditHistory tests passed");

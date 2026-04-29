@@ -1,0 +1,11 @@
+import assert from "assert";
+import { getUiBlueprint } from "../../../ui-blueprint-registry/src";
+import { cloneEditableUIDocument, createEditableUIDocumentFromBlueprint } from "../uiDocumentModel";
+import { parseUIEditCommand } from "../uiEditCommand";
+import { applyUIEditCommand } from "../uiMutationEngine";
+import { runUIEditGuardrails } from "../uiEditGuardrails";
+const doc=createEditableUIDocumentFromBlueprint(getUiBlueprint("saasDashboard")!,{now:"2026-01-01T00:00:00.000Z"}); const node=doc.pages[0].nodes[doc.pages[0].rootNodeIds[0]].childIds[0];
+const cmd=parseUIEditCommand({text:'rewrite this headline to "Hello"',source:"typedChat",selectedNodeId:node,createdAt:"2026-01-01T00:00:00.000Z"}).command!; const m=applyUIEditCommand(doc,cmd,{confirmed:true,selection:{selectedNodeId:node} as any}); assert.strictEqual(runUIEditGuardrails(doc,m.afterDocument!,m).status,"ok");
+const bad=cloneEditableUIDocument(m.afterDocument!); bad.pages[0].nodes[node].props.text="lorem ipsum"; assert.ok(runUIEditGuardrails(m.afterDocument!,bad,m).issues.some(i=>i.code==="placeholder_text"));
+const removed=cloneEditableUIDocument(doc); delete removed.pages[0].nodes[removed.pages[0].rootNodeIds[0]]; assert.strictEqual(runUIEditGuardrails(doc,removed,m).status,"blocked");
+console.log("uiEditGuardrails tests passed");

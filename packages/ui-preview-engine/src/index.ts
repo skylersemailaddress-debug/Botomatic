@@ -324,3 +324,9 @@ export * from "./uiSelectionState";
 export * from "./uiTargetResolver";
 export * from "./livePreviewPatch";
 export * from "./uiMutationEngine";
+
+export * from "./uiEditHistory";
+export * from "./uiDocumentDiff";
+export * from "./uiEditGuardrails";
+export * from "./uiSourceSyncPlan";
+export * from "./uiEditWorkflow";
