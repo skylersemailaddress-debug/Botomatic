@@ -85,7 +85,9 @@
     "test:ui-preview-interaction-state": "tsx packages/ui-preview-engine/src/tests/uiPreviewInteractionState.test.ts",
     "test:ui-preview-interaction-adapter": "tsx packages/ui-preview-engine/src/tests/uiPreviewInteractionAdapter.test.ts",
     "test:ui-preview-review-payload": "tsx packages/ui-preview-engine/src/tests/uiPreviewReviewPayload.test.ts",
-    "test:ui-preview-interaction-fixture": "tsx packages/ui-preview-engine/src/tests/uiPreviewInteractionFixture.test.ts"
+    "test:ui-preview-interaction-fixture": "tsx packages/ui-preview-engine/src/tests/uiPreviewInteractionFixture.test.ts",
+    "test:live-ui-builder-vibe-panel": "tsx apps/control-plane/src/components/live-ui-builder/LiveUIBuilderReviewPanel.test.tsx",
+    "test:live-ui-builder-vibe-hook": "tsx apps/control-plane/src/components/live-ui-builder/useLiveUIBuilderInteraction.test.tsx"
   },
   "dependencies": {
     "@trigger.dev/sdk": "^4.4.4"

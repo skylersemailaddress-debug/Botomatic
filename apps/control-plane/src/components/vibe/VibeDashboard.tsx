@@ -1,8 +1,14 @@
+"use client";
+
 import Link from "next/link";
+import { LiveUIBuilderReviewPanel } from "../live-ui-builder/LiveUIBuilderReviewPanel";
+import { useLiveUIBuilderInteraction } from "../live-ui-builder/useLiveUIBuilderInteraction";
 
 import { actionChips, buildMapItems, recentActivity, recentProjects, suggestionChips, vibeSidebarNav } from "./vibeSeedData";
 
 export function VibeDashboard({ projectId }: { projectId: string }) {
+  const liveUi = useLiveUIBuilderInteraction();
+
   return (
     <section className="vibe-dashboard" aria-label="Vibe dashboard" data-project-id={projectId}>
       <aside className="vibe-dashboard-sidebar" aria-label="Botomatic sidebar">
@@ -139,6 +145,14 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
               ))}
             </section>
 
+            <section className="vibe-rail-card" aria-label="Live UI Builder Preview">
+              <LiveUIBuilderReviewPanel
+                state={liveUi.state}
+                reviewPayload={liveUi.state.pendingReview?.payload}
+                onConfirm={liveUi.confirmPendingEdit}
+                onReject={liveUi.rejectPendingEdit}
+              />
+            </section>
             <section className="vibe-rail-card vibe-launch-card">
               <h3>One-Click Launch</h3>
               <p>Everything looks good! Your app is ready to launch locally.</p>
