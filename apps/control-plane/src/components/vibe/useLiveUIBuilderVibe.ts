@@ -12,13 +12,19 @@ export function createVibeInteractionHarness() {
   const confirmPending = () => applyResult(confirmUIPreviewPendingEdit(state, { now: fixture.now, confirmationMarker: true }));
   const rejectPending = () => applyResult(rejectUIPreviewPendingEdit(state));
   const selectNode = (nodeId: string) => { state = { ...state, selection: { ...state.selection, selectedNodeId: nodeId } }; };
+  const selectPage = (pageId: string) => {
+    const page = state.editableDocument.pages.find((p) => p.id === pageId);
+    const currentSelectedNodeId = state.selection.selectedNodeId;
+    const selectedNodeId = page && currentSelectedNodeId && page.nodes[currentSelectedNodeId] ? currentSelectedNodeId : undefined;
+    state = { ...state, selection: { ...state.selection, selectedPageId: pageId, selectedNodeId } } as any;
+  };
   const getPreConfirmDiff = () => {
     const pendingCommand = state.pendingReview?.command;
     if (!pendingCommand || !state.pendingReview?.required) return undefined;
     const replaySelection = state.pendingReview?.selectionSnapshot ?? state.selection;
     return applyUIEditWorkflow(state.editableDocument, pendingCommand, { confirmed: true, selection: replaySelection, history: state.history, now: fixture.now })?.diff;
   };
-  return { getState: () => state, getLatestResult: () => latestResult, getLatestReviewPayload: () => latestReviewPayload, runSampleEdit, runDestructiveEdit, confirmPending, rejectPending, selectNode, getPreConfirmDiff };
+  return { getState: () => state, getLatestResult: () => latestResult, getLatestReviewPayload: () => latestReviewPayload, runSampleEdit, runDestructiveEdit, confirmPending, rejectPending, selectNode, selectPage, getPreConfirmDiff };
 }
 
 export function useLiveUIBuilderVibe() {
@@ -88,8 +94,8 @@ export function useLiveUIBuilderVibe() {
 
 
   const appStructure = useMemo(() => createUIAppStructureFromDocument(interactionState.editableDocument), [interactionState.editableDocument]);
-  const runAppStructureCommand = (text: string) => { const parsed = parseUIAppStructureCommand(text); if (parsed.status !== "ok") return parsed; const result = applyUIAppStructureCommand(interactionState.editableDocument, parsed.command as any, { idSeed: "vibe", selectedNodeId: interactionState.selection.selectedNodeId }); if (result.status === "applied") setInteractionState((c) => ({ ...c, editableDocument: result.document, selection: { ...c.selection, selectedPageId: result.changedPageIds[0] ?? c.selection.selectedPageId } } as any)); return result; };
-  const selectPage = (pageId: string) => setInteractionState((current:any) => ({ ...current, selection: { ...current.selection, selectedPageId: pageId } }));
+  const runAppStructureCommand = (text: string) => { const parsed = parseUIAppStructureCommand(text); if (parsed.status !== "ok") return parsed; const result = applyUIAppStructureCommand(interactionState.editableDocument, parsed.command as any, { idSeed: "vibe", selectedNodeId: interactionState.selection.selectedNodeId, now: fixture.now }); setLastAppStructureResult(result); setAppStructureNeedsResolution(result.status === "needsResolution" ? result.issues?.[0] : undefined); setAppStructureCandidates((result as any).candidates ?? []); if (result.status === "applied") setInteractionState((c) => ({ ...c, editableDocument: result.document, selection: { ...c.selection, selectedPageId: result.changedPageIds[0] ?? c.selection.selectedPageId } } as any)); return result; };
+  const selectPage = (pageId: string) => setInteractionState((current:any) => { const page = current.editableDocument.pages.find((p:any)=>p.id===pageId); const currentSelectedNodeId = current.selection.selectedNodeId; const selectedNodeId = page && currentSelectedNodeId && page.nodes[currentSelectedNodeId] ? currentSelectedNodeId : undefined; return { ...current, selection: { ...current.selection, selectedPageId: pageId, selectedNodeId } }; });
   const duplicatePage = (pageId: string) => runAppStructureCommand(`duplicate the ${pageId} page`);
   const renamePage = (pageId: string, title: string) => runAppStructureCommand(`rename ${pageId} to ${title}`);
   const addPage = (title: string) => runAppStructureCommand(`add a ${title} page`);
