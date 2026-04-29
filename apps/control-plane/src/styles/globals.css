@@ -2032,3 +2032,37 @@ a:hover {
   .pro-dashboard-sidebar { order: 2; }
   .pro-panel,.pro-panel--wide { grid-column: span 12; }
 }
+
+.vibe-command-input {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.55rem;
+  margin: 0.8rem 0;
+}
+
+.vibe-command-input input {
+  border: 1px solid #d8d3ec;
+  border-radius: 0.6rem;
+  padding: 0.6rem 0.7rem;
+}
+
+.vibe-command-input-error {
+  grid-column: 1 / -1;
+  color: #b12a4e;
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+.vibe-resolution-card {
+  border: 1px solid #e6e3f5;
+  border-radius: 0.8rem;
+  padding: 0.75rem;
+  background: #fff;
+  margin: 0.7rem 0;
+}
+
+.vibe-resolution-targets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}

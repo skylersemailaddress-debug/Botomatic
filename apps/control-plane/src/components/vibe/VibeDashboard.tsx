@@ -3,11 +3,12 @@
 import Link from "next/link";
 
 import { actionChips, buildMapItems, recentActivity, recentProjects, suggestionChips, vibeSidebarNav } from "./vibeSeedData";
+import { LiveUIBuilderCommandInput } from "../live-ui-builder/LiveUIBuilderCommandInput";
 import { LiveUIBuilderPreviewSurface } from "./LiveUIBuilderPreviewSurface";
 import { useLiveUIBuilderVibe } from "./useLiveUIBuilderVibe";
 
 export function VibeDashboard({ projectId }: { projectId: string }) {
-  const { userFacingSummary, latestReviewPayload, confirmationPending, runSampleEdit, runDestructiveEdit, confirmPending, rejectPending, editableDocument, selectedNodeId, changedNodeIds, lastPreviewPatch, selectNode } = useLiveUIBuilderVibe();
+  const { latestResult, userFacingSummary, latestReviewPayload, confirmationPending, runSampleEdit, runDestructiveEdit, runCommandText, retryLastCommand, confirmPending, rejectPending, editableDocument, selectedNodeId, changedNodeIds, lastPreviewPatch, selectNode, preConfirmDiff, pendingReview } = useLiveUIBuilderVibe();
   return (
     <section className="vibe-dashboard" aria-label="Vibe dashboard" data-project-id={projectId}>
       <aside className="vibe-dashboard-sidebar" aria-label="Botomatic sidebar">
@@ -72,6 +73,31 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
                   <span>Building it all together</span>
                 </div>
               </div>
+
+              <LiveUIBuilderCommandInput onSubmit={runCommandText} />
+
+              {latestResult?.status === "needsResolution" ? (
+                <section className="vibe-resolution-card" aria-label="Resolve ambiguous target">
+                  <h3>Choose target before applying</h3>
+                  <p>This command needs a clear target. Select an element, then retry.</p>
+                  <div className="vibe-resolution-targets">
+                    {Object.values(editableDocument.pages?.[0]?.nodes ?? {}).slice(0, 8).map((node: any) => (
+                      <button type="button" key={node.id} onClick={() => selectNode(node.id)}>
+                        {node.identity?.semanticLabel ?? node.id}
+                      </button>
+                    ))}
+                    <button type="button" onClick={retryLastCommand}>Retry command</button>
+                  </div>
+                </section>
+              ) : null}
+
+              {confirmationPending ? (
+                <section className="vibe-resolution-card" aria-label="Pre-confirm diff">
+                  <h3>Review before confirm</h3>
+                  <p>{pendingReview?.command?.kind} is waiting for confirmation.</p>
+                  <pre>{JSON.stringify(preConfirmDiff?.diff ?? { operations: [] }, null, 2)}</pre>
+                </section>
+              ) : null}
 
               <LiveUIBuilderPreviewSurface editableDocument={editableDocument} selectedNodeId={selectedNodeId} changedNodeIds={changedNodeIds} previewPatch={lastPreviewPatch} onSelectNode={selectNode} />
 

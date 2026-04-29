@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { confirmUIPreviewPendingEdit, createUIPreviewInteractionFixture, createUIPreviewInteractionState, handleUIPreviewChatEdit, rejectUIPreviewPendingEdit } from "../../../../../packages/ui-preview-engine/src";
+import { useMemo, useState } from "react";
+import { applyUIEditWorkflow, confirmUIPreviewPendingEdit, createUIPreviewInteractionFixture, createUIPreviewInteractionState, handleUIPreviewChatEdit, rejectUIPreviewPendingEdit } from "../../../../../packages/ui-preview-engine/src";
 
 export function createVibeInteractionHarness() {
   const fixture = createUIPreviewInteractionFixture();
@@ -20,6 +20,7 @@ export function useLiveUIBuilderVibe() {
   const [interactionState, setInteractionState] = useState(() => createUIPreviewInteractionState(fixture.doc));
   const [latestResult, setLatestResult] = useState<any>();
   const [latestReviewPayload, setLatestReviewPayload] = useState<any>();
+  const [lastCommandText, setLastCommandText] = useState<string>("");
 
   const applyResult = (result: any) => {
     setLatestResult(result);
@@ -29,13 +30,31 @@ export function useLiveUIBuilderVibe() {
 
   const runSampleEdit = () => applyResult(handleUIPreviewChatEdit({ text: 'rewrite this headline to "Elevated Luxury Stays"', source: "typedChat", selectedNodeId: interactionState.selection.selectedNodeId ?? fixture.node, now: fixture.now }, interactionState));
   const runDestructiveEdit = () => applyResult(handleUIPreviewChatEdit({ text: "remove this", source: "spokenChat", selectedNodeId: interactionState.selection.selectedNodeId ?? fixture.node, now: fixture.now }, interactionState));
+
+  const runCommandText = (text: string) => {
+    setLastCommandText(text);
+    const result = handleUIPreviewChatEdit({ text, source: "typedChat", selectedNodeId: interactionState.selection.selectedNodeId ?? fixture.node, now: fixture.now }, interactionState);
+    applyResult(result);
+    if (result.status === "invalid") return { ok: false, error: "Could not parse command." };
+    return { ok: true };
+  };
+
+  const retryLastCommand = () => runCommandText(lastCommandText);
+
   const confirmPending = () => applyResult(confirmUIPreviewPendingEdit(interactionState, { now: fixture.now, confirmationMarker: true }));
   const rejectPending = () => applyResult(rejectUIPreviewPendingEdit(interactionState));
   const selectNode = (nodeId: string) => setInteractionState((current) => ({ ...current, selection: { ...current.selection, selectedNodeId: nodeId } }));
+
+
+  const pendingCommand = interactionState.pendingReview?.command;
+  const preConfirmDiff = useMemo(() => {
+    if (!pendingCommand || !interactionState.pendingReview?.required) return undefined;
+    return applyUIEditWorkflow(interactionState.editableDocument, pendingCommand, { confirmed: true, selection: interactionState.selection, history: interactionState.history, now: fixture.now });
+  }, [fixture.now, interactionState.editableDocument, interactionState.history, interactionState.pendingReview?.required, interactionState.selection, pendingCommand]);
 
   const userFacingSummary = latestResult?.userFacingSummary ?? latestResult?.workflowResult?.summary ?? "No edits applied yet.";
   const confirmationPending = Boolean(interactionState.pendingReview?.required);
   const changedNodeIds = latestResult?.previewPatch?.operations?.map((op: any) => op.nodeId).filter(Boolean) ?? [];
 
-  return { latestResult, latestReviewPayload, userFacingSummary, confirmationPending, runSampleEdit, runDestructiveEdit, confirmPending, rejectPending, interactionState, editableDocument: interactionState.editableDocument, selectedNodeId: interactionState.selection.selectedNodeId, selectNode, lastPreviewPatch: interactionState.lastPreviewPatch, changedNodeIds };
+  return { latestResult, latestReviewPayload, userFacingSummary, confirmationPending, runSampleEdit, runDestructiveEdit, runCommandText, retryLastCommand, confirmPending, rejectPending, interactionState, editableDocument: interactionState.editableDocument, selectedNodeId: interactionState.selection.selectedNodeId, selectNode, lastPreviewPatch: interactionState.lastPreviewPatch, changedNodeIds, preConfirmDiff, pendingReview: interactionState.pendingReview };
 }
