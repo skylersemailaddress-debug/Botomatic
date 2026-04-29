@@ -4,6 +4,10 @@ import { createEditableUIDocumentFromBlueprint, validateEditableUIDocument } fro
 import { applyUIDirectManipulation } from "../uiDirectManipulationMutation";
 
 const doc = createEditableUIDocumentFromBlueprint(getUiBlueprint("saasDashboard")!, { now: "2026-01-01T00:00:00.000Z" });
+
+assert.strictEqual(applyUIDirectManipulation(doc, undefined as any).status, "invalid");
+assert.strictEqual(applyUIDirectManipulation(doc, null as any).status, "invalid");
+assert.strictEqual(applyUIDirectManipulation(doc, "bad" as any).status, "invalid");
 const page = doc.pages[0]; const rootId = page.rootNodeIds[0]!; const [first, second] = page.nodes[rootId].childIds;
 
 const select = applyUIDirectManipulation(doc, { type: "selectNode", pageId: page.id, nodeId: first });
