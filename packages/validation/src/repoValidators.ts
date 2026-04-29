@@ -40,6 +40,7 @@ import { validateLiveUIBuilderSafetyReadiness } from "./repoValidators/liveUIBui
 import { validateLiveUIBuilderInteractionReadiness } from "./repoValidators/liveUIBuilderInteractionReadiness";
 import { validateLiveUIBuilderVisualReadiness } from "./repoValidators/liveUIBuilderVisualReadiness";
 import { validateLiveUIBuilderInteractionUXReadiness } from "./repoValidators/liveUIBuilderInteractionUXReadiness";
+import { validateLiveUIBuilderSourceSyncReadiness } from "./repoValidators/liveUIBuilderSourceSyncReadiness";
 
 export type RepoValidatorResult = {
   name: string;
@@ -1306,5 +1307,6 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateLiveUIBuilderInteractionReadiness(root),
     validateLiveUIBuilderVisualReadiness(root),
     validateLiveUIBuilderInteractionUXReadiness(root),
+    validateLiveUIBuilderSourceSyncReadiness(root),
   ];
 }

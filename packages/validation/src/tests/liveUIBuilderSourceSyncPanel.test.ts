@@ -1,0 +1,12 @@
+import assert from "assert";
+import fs from "fs";
+const panel = fs.readFileSync("apps/control-plane/src/components/live-ui-builder/LiveUIBuilderSourceSyncPanel.tsx", "utf8");
+const hook = fs.readFileSync("apps/control-plane/src/components/vibe/useLiveUIBuilderVibe.ts", "utf8");
+assert(panel.includes("Dry Run Source Sync"));
+assert(panel.includes("Apply requires real file adapter"));
+assert(panel.includes("does not deploy, export, or prove runtime correctness"));
+assert(hook.includes("const hasRealFileAdapter = false"));
+assert(!hook.includes('if (result.status === "applied") sourceSyncDryRun'));
+assert(hook.includes('const sourceSyncApply = (_confirmationMarker?: boolean)'));
+assert(hook.includes('writesPerformed: 0'));
+console.log("liveUIBuilderSourceSyncPanel.test.ts passed");

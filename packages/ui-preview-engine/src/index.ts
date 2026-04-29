@@ -334,3 +334,8 @@ export * from "./uiPreviewInteractionState";
 export * from "./uiPreviewInteractionAdapter";
 export * from "./uiPreviewReviewPayload";
 export * from "./uiPreviewInteractionFixture";
+
+export * from "./uiSourceFileMapping";
+export * from "./uiSourcePatch";
+export * from "./uiSourceApply";
+export * from "./uiSourceRoundTrip";
