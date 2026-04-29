@@ -1,10 +1,11 @@
 import assert from "assert";
-import fs from "fs";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { LiveUIBuilderInspectOverlay } from "../../../../apps/control-plane/src/components/live-ui-builder/LiveUIBuilderInspectOverlay";
 
-const c = fs.readFileSync("apps/control-plane/src/components/live-ui-builder/LiveUIBuilderInspectOverlay.tsx", "utf8");
-assert(c.includes("data-live-ui-node-id"));
-assert(c.includes("data-selected"));
-assert(c.includes("data-changed"));
-assert(c.includes("data-selectable"));
-assert(c.includes("onSelectNode(nodeId)"));
+const html = renderToStaticMarkup(React.createElement(LiveUIBuilderInspectOverlay, { selectedNodeId: "node-a", changedNodeIds: ["node-b"], onSelectNode: () => undefined }));
+assert(html.includes("data-selected=\"true\""));
+assert(html.includes("data-live-ui-node-id=\"node-b\""));
+assert(html.includes("data-changed=\"true\""));
+assert(html.includes("data-selectable=\"true\""));
 console.log("liveUIBuilderInspectOverlay.test.ts passed");

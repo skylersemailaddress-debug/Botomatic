@@ -1,3 +1,4 @@
+import React from "react";
 import type { EditableUIDocument } from "../../../../../packages/ui-preview-engine/src/uiDocumentModel";
 import { LiveUIBuilderDocumentRenderer } from "../live-ui-builder/LiveUIBuilderDocumentRenderer";
 import { LiveUIBuilderInspectOverlay } from "../live-ui-builder/LiveUIBuilderInspectOverlay";
@@ -13,7 +14,7 @@ export function LiveUIBuilderPreviewSurface({ editableDocument, selectedNodeId, 
         <p>Document-driven preview, not final production rendering.</p>
         <p>Structural bridge caveat: preview model only; no source rewrite/export/deploy claims.</p>
       </header>
-      <LiveUIBuilderDocumentRenderer editableDocument={editableDocument} />
+      <LiveUIBuilderDocumentRenderer editableDocument={editableDocument} selectedNodeId={selectedNodeId} changedNodeIds={changedNodeIds} onSelectNode={onSelectNode} />
       <LiveUIBuilderInspectOverlay selectedNodeId={selectedNodeId} changedNodeIds={changedNodeIds} onSelectNode={onSelectNode} />
       <pre>{JSON.stringify(previewPatch ?? {}, null, 2)}</pre>
     </article>

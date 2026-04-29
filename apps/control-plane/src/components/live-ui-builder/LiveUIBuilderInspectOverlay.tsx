@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 
 export function LiveUIBuilderInspectOverlay({ selectedNodeId, changedNodeIds, onSelectNode }: { selectedNodeId?: string; changedNodeIds?: string[]; onSelectNode: (nodeId: string) => void }) {
   const changed = useMemo(() => new Set(changedNodeIds ?? []), [changedNodeIds]);
