@@ -2,7 +2,7 @@
 
 type SourceSyncPanelProps = {
   sourceSyncStatus: "idle" | "dryRunReady" | "applyBlocked" | "simulated";
-  sourceSyncResult?: { patchSummary?: { changedFiles: string[]; operationCount: number; manualReviewCount: number; confidenceCounts?: Record<string, number>; sourceKinds?: string[]; routeFilesToCreate?: string[]; manualReviewReasons?: string[]; identitySummary?: { coverageCount: number; high: number; medium: number; low: number; stale: number; manualReviewRequired: number; selectedNodeIdentitySummary?: string }; multiFilePlanId?: string; dependencyCount?: number; riskLevel?: "low"|"medium"|"high"; requiresManualReview?: boolean; orderedFiles?: string[]; fullProjectGeneration?: { planId: string; normalizedProjectSlug: string; framework: "next"|"vite-react"|"node-api"|"unknown"; generatedFileCount: number; directoryCount: number; conflictCount: number; normalizationIssueCount: number; riskLevel: "low"|"medium"|"high"; requiresManualReview: boolean; orderedFilePathsPreview: string[]; caveat: string }; stylePlan?: { stylePlanId: string; tokenCount: number; categoriesPresent: string[]; outputMode: "cssVariables"|"tailwindTheme"|"inlinePreview"|"unknown"; targetFilePath?: string; riskLevel: "low"|"medium"|"high"; requiresManualReview: boolean; issueCount: number; cssVariableNames: string[]; caveat: string } }; blockedReasons?: string[]; caveat?: string };
+  sourceSyncResult?: { patchSummary?: { changedFiles: string[]; operationCount: number; manualReviewCount: number; confidenceCounts?: Record<string, number>; sourceKinds?: string[]; routeFilesToCreate?: string[]; manualReviewReasons?: string[]; identitySummary?: { coverageCount: number; high: number; medium: number; low: number; stale: number; manualReviewRequired: number; selectedNodeIdentitySummary?: string }; multiFilePlanId?: string; dependencyCount?: number; riskLevel?: "low"|"medium"|"high"; requiresManualReview?: boolean; orderedFiles?: string[]; fullProjectGeneration?: { planId: string; normalizedProjectSlug: string; framework: "next"|"vite-react"|"node-api"|"unknown"; generatedFileCount: number; directoryCount: number; conflictCount: number; normalizationIssueCount: number; riskLevel: "low"|"medium"|"high"; requiresManualReview: boolean; orderedFilePathsPreview: string[]; caveat: string }; stylePlan?: { stylePlanId: string; tokenCount: number; categoriesPresent: string[]; outputMode: "cssVariables"|"tailwindTheme"|"inlinePreview"|"unknown"; targetFilePath?: string; riskLevel: "low"|"medium"|"high"; requiresManualReview: boolean; issueCount: number; cssVariableNames: string[]; caveat: string }; dataStateApiWiring?: { wiringPlanId: string; dataBindingCount: number; stateBindingCount: number; stateActionCount: number; apiEndpointCount: number; apiRequestBindingCount: number; affectedNodeCount: number; affectedFileCount: number; riskLevel: "low"|"medium"|"high"; requiresManualReview: boolean; blockedReasonCount: number; orderedOperationLabels: string[]; caveat: string } }; blockedReasons?: string[]; caveat?: string };
   onDryRun: () => void;
   onApply: () => void;
   canApply: boolean;
@@ -58,6 +58,20 @@ export function LiveUIBuilderSourceSyncPanel({ sourceSyncStatus, sourceSyncResul
       <p>Style issue count: {sourceSyncResult.patchSummary.stylePlan.issueCount}</p>
       <p>Style variables preview: {sourceSyncResult.patchSummary.stylePlan.cssVariableNames.slice(0,10).join(", ") || "none"}</p>
       <p>Design token planning is dry-run only and does not apply styles, write files, or prove visual/runtime correctness.</p></>}
+
+      {!!sourceSyncResult?.patchSummary?.dataStateApiWiring && <><p>Data/State/API wiring plan id: {sourceSyncResult.patchSummary.dataStateApiWiring.wiringPlanId}</p>
+      <p>Data binding count: {sourceSyncResult.patchSummary.dataStateApiWiring.dataBindingCount}</p>
+      <p>State binding count: {sourceSyncResult.patchSummary.dataStateApiWiring.stateBindingCount}</p>
+      <p>State action count: {sourceSyncResult.patchSummary.dataStateApiWiring.stateActionCount}</p>
+      <p>API endpoint count: {sourceSyncResult.patchSummary.dataStateApiWiring.apiEndpointCount}</p>
+      <p>API request binding count: {sourceSyncResult.patchSummary.dataStateApiWiring.apiRequestBindingCount}</p>
+      <p>Affected node count: {sourceSyncResult.patchSummary.dataStateApiWiring.affectedNodeCount}</p>
+      <p>Affected file count: {sourceSyncResult.patchSummary.dataStateApiWiring.affectedFileCount}</p>
+      <p>Wiring risk level: {sourceSyncResult.patchSummary.dataStateApiWiring.riskLevel}</p>
+      <p>Wiring manual review required: {String(sourceSyncResult.patchSummary.dataStateApiWiring.requiresManualReview)}</p>
+      <p>Wiring blocked reason count: {sourceSyncResult.patchSummary.dataStateApiWiring.blockedReasonCount}</p>
+      <p>Wiring operations preview: {sourceSyncResult.patchSummary.dataStateApiWiring.orderedOperationLabels.slice(0,10).join(", ") || "none"}</p>
+      <p>Data/state/API wiring planning is dry-run only and does not execute requests, write files, deploy, or prove runtime correctness.</p></>}
 
       {!!sourceSyncResult?.patchSummary?.fullProjectGeneration && <><p>Full project plan id: {sourceSyncResult.patchSummary.fullProjectGeneration.planId}</p>
       <p>Project slug: {sourceSyncResult.patchSummary.fullProjectGeneration.normalizedProjectSlug}</p>

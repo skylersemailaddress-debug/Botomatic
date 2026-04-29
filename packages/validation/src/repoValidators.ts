@@ -50,6 +50,7 @@ import { validateLiveUIBuilderSourceIdentityReadiness } from "./repoValidators/l
 import { validateLiveUIBuilderMultiFilePlanningReadiness } from "./repoValidators/liveUIBuilderMultiFilePlanningReadiness";
 import { validateLiveUIBuilderFullProjectGenerationReadiness } from "./repoValidators/liveUIBuilderFullProjectGenerationReadiness";
 import { validateLiveUIBuilderDesignSystemReadiness } from "./repoValidators/liveUIBuilderDesignSystemReadiness";
+import { validateLiveUIBuilderDataStateApiWiringReadiness } from "./repoValidators/liveUIBuilderDataStateApiWiringReadiness";
 
 export type RepoValidatorResult = {
   name: string;
@@ -1255,6 +1256,7 @@ export function validateChatFirstOperatorRouting(root: string): RepoValidatorRes
   );
 }
 
+
 export function runAllRepoValidators(root: string): RepoValidatorResult[] {
   return [
     validateArchitecture(root),
@@ -1277,6 +1279,7 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateFileIngestion(root),
     validateChatFirstOperatorRouting(root),
     validateChatBehaviorExecution(root),
+    validateLiveUIBuilderDataStateApiWiringReadiness(root),
     validateUniversalBuilderReadiness(root),
     validateSelfUpgradingFactoryReadiness(root),
     validateDirtyRepoRescueReadiness(root),
