@@ -1,20 +1,21 @@
-export function LiveUIBuilderPreviewSurface({ headline }: { headline?: string }) {
+import type { EditableUIDocument } from "../../../../../packages/ui-preview-engine/src/uiDocumentModel";
+import { LiveUIBuilderDocumentRenderer } from "../live-ui-builder/LiveUIBuilderDocumentRenderer";
+import { LiveUIBuilderInspectOverlay } from "../live-ui-builder/LiveUIBuilderInspectOverlay";
+
+export function LiveUIBuilderPreviewSurface({ editableDocument, selectedNodeId, changedNodeIds, previewPatch, onSelectNode }: { editableDocument?: EditableUIDocument; selectedNodeId?: string; changedNodeIds?: string[]; previewPatch?: unknown; onSelectNode: (nodeId: string) => void }) {
+  if (!editableDocument) {
+    return <article data-testid="live-ui-builder-preview-surface" data-preview-status="fallback"><p>Document-driven preview unavailable; using structural fallback only.</p></article>;
+  }
+
   return (
-    <article className="vibe-live-preview" aria-label="Live editable luxury hotel preview" data-testid="live-ui-builder-preview-surface" data-preview-status="structural-bridge">
+    <article className="vibe-live-preview" aria-label="Live editable preview" data-testid="live-ui-builder-preview-surface" data-preview-status="document-driven">
       <header>
-        <p>Structural bridge preview only (not final rendered UI). Click actions to simulate editable-state updates.</p>
-        <div>
-          <button type="button">Edit</button>
-          <button type="button">Version 3</button>
-        </div>
+        <p>Document-driven preview, not final production rendering.</p>
+        <p>Structural bridge caveat: preview model only; no source rewrite/export/deploy claims.</p>
       </header>
-      <div className="vibe-hotel-preview">
-        <div className="vibe-hotel-nav"><span>LUXORA</span><span>Home · Rooms · Experiences · About · Contact</span><button type="button">Book Now</button></div>
-        <h2>{headline ?? "Your Escape Awaits"}</h2>
-        <p>Experience unparalleled luxury and unforgettable moments.</p>
-        <div className="vibe-hotel-actions"><button type="button">Book Your Stay</button><button type="button">Explore Rooms</button></div>
-        <div className="vibe-hotel-booking-bar"><span>Check In</span><span>Check Out</span><span>Guests</span><span>Room</span><button type="button">Check Availability</button></div>
-      </div>
+      <LiveUIBuilderDocumentRenderer editableDocument={editableDocument} />
+      <LiveUIBuilderInspectOverlay selectedNodeId={selectedNodeId} changedNodeIds={changedNodeIds} onSelectNode={onSelectNode} />
+      <pre>{JSON.stringify(previewPatch ?? {}, null, 2)}</pre>
     </article>
   );
 }
