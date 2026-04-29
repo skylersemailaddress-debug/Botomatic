@@ -44,3 +44,8 @@
 ## Scope boundary
 - This release lock does not mark the max-power autonomous builder product complete.
 - Future system-building is allowed only under a new master-truth/max-power worklist with scoped tickets, not random scope drift.
+
+
+Canonical cross-link: see [`MASTER_TRUTH_SPEC.md`](../MASTER_TRUTH_SPEC.md) for the consolidated max-power master truth.
+
+Boundary reminder: RELEASE-002 locks release-candidate foundation evidence only and does not assert max-power universal builder completion.

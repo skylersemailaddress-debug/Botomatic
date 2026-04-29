@@ -111,3 +111,8 @@ For evidence-bound claim language and marketing constraints, see:
 ## Audit rule
 
 Future audits should score Botomatic against the in-repo launch contract rather than against shifting or implied standards.
+
+## Master Truth Boundary
+
+- Canonical master truth spec: [`MASTER_TRUTH_SPEC.md`](./MASTER_TRUTH_SPEC.md).
+- RELEASE-002 locks release-candidate foundation evidence only. It does not assert max-power universal builder completion, exhaustive domain proof, or universal production-launchability.

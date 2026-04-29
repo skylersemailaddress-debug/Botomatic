@@ -32,6 +32,7 @@ import { validateGeneratedAppNoPlaceholderValidatorReadiness } from "./repoValid
 import { validateGeneratedAppCommercialReadinessGateReadiness } from "./repoValidators/generatedAppCommercialReadinessGateReadiness";
 import { validateGeneratedAppCorpusHarnessReadiness } from "./repoValidators/generatedAppCorpusHarnessReadiness";
 import { validateGeneratedAppRepresentativeCorpusReadiness } from "./repoValidators/generatedAppRepresentativeCorpusReadiness";
+import { validateMasterTruthSpecReadiness } from "./repoValidators/masterTruthSpecReadiness";
 
 export type RepoValidatorResult = {
   name: string;
@@ -1286,6 +1287,7 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateUploadPlanHandoffReadiness(root),
     validateDashboardRouteIntegrityReadiness(root),
     validateClaimBoundaryReadiness(root),
+    validateMasterTruthSpecReadiness(root),
     validateGeneratedAppNoPlaceholderValidatorReadiness(root),
     validateGeneratedAppCommercialReadinessGateReadiness(root),
     validateGeneratedAppCorpusHarnessReadiness(root),
