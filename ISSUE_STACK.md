@@ -41,7 +41,8 @@
 20. DEPLOY-001 secret leak prevention and secret-reference policy scope (complete)
 21. DEPLOY-003 route-level provider promote/rollback enforcement (complete)
 22. REPO-003 dirty repo repair-loop proof (complete)
-23. RELEASE-AUDIT-001 release audit proof-pack completeness (next)
+23. RELEASE-AUDIT-001 release audit proof-pack completeness (complete)
+24. RELEASE-002 final release evidence lock (complete)
 
 ## Stale PR Handling Guidance
 - PR #71 merged baseline.
@@ -57,7 +58,9 @@
 - REPO-001 dirty repo evidence contract (complete)
 - REPO-002 dirty repo completion contract v2 (complete)
 - REPO-003 dirty repo repair-loop proof (complete)
-- RELEASE-AUDIT-001 release audit proof-pack completeness (next)
+- RELEASE-AUDIT-001 release audit proof-pack completeness (complete)
+- RELEASE-002 final release evidence lock (active/complete)
+- Next state: release-candidate lock; no further system-building unless a blocker is found
 - SELF-001 executable self-upgrade safety contract (complete)
 - DEPLOY-001 secret leak prevention and secret-reference policy scope (complete)
 

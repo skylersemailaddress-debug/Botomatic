@@ -55,7 +55,7 @@
     "test:failure-classification-policy": "tsx packages/validation/src/tests/failureClassificationPolicy.test.ts",
     "test:adaptive-repair-strategy": "tsx packages/validation/src/tests/adaptiveRepairStrategy.test.ts",
     "test:upload-plan-handoff": "tsx packages/validation/src/tests/uploadPlanHandoff.test.ts",
-    "test:universal": "npm run -s test:spec-engine && npm run -s test:build-contract && npm run -s test:blueprints && npm run -s test:domain-builders && npm run -s test:proof-engine && npm run -s test:self-upgrade && npm run -s test:no-placeholder && npm run -s test:generated-app-no-placeholders && npm run -s test:generated-app-commercial-readiness && npm run -s test:generated-app-corpus && npm run -s test:generated-app-representative-corpus && npm run -s test:large-file-intake && npm run -s test:multi-source-intake && npm run -s test:chat-driven-control && npm run -s test:chat-routing-validator && npm run -s test:chat-behavior-execution-validator && npm run -s test:failure-classification-policy && npm run -s test:adaptive-repair-strategy && npm run -s test:upload-plan-handoff && npm run -s test:claim-boundary-readiness && npm run -s test:ui-routes && npm run -s test:ui-blueprints && npm run -s test:ui-preview-engine && npm run -s test:secret-leak-prevention && npm run -s test:dirty-repo-evidence && npm run -s test:dirty-repo-completion-v2 && npm run -s test:deploy-route-gates && npm run -s test:dirty-repo-repair-loop-proof",
+    "test:universal": "npm run -s test:spec-engine && npm run -s test:build-contract && npm run -s test:blueprints && npm run -s test:domain-builders && npm run -s test:proof-engine && npm run -s test:self-upgrade && npm run -s test:no-placeholder && npm run -s test:generated-app-no-placeholders && npm run -s test:generated-app-commercial-readiness && npm run -s test:generated-app-corpus && npm run -s test:generated-app-representative-corpus && npm run -s test:large-file-intake && npm run -s test:multi-source-intake && npm run -s test:chat-driven-control && npm run -s test:chat-routing-validator && npm run -s test:chat-behavior-execution-validator && npm run -s test:failure-classification-policy && npm run -s test:adaptive-repair-strategy && npm run -s test:upload-plan-handoff && npm run -s test:claim-boundary-readiness && npm run -s test:ui-routes && npm run -s test:ui-blueprints && npm run -s test:ui-preview-engine && npm run -s test:secret-leak-prevention && npm run -s test:dirty-repo-evidence && npm run -s test:dirty-repo-completion-v2 && npm run -s test:deploy-route-gates && npm run -s test:dirty-repo-repair-loop-proof && npm run -s test:final-release-evidence-lock",
     "test:claim-boundary-readiness": "tsx packages/validation/src/tests/claimBoundaryReadiness.test.ts",
     "test:ui-routes": "tsx packages/validation/src/tests/uiRouteRegression.test.ts",
     "test:ui-blueprints": "tsx packages/ui-blueprint-registry/src/tests/registry.test.ts",
@@ -68,7 +68,8 @@
     "test:dirty-repo-evidence": "tsx packages/validation/src/tests/dirtyRepoEvidence.test.ts",
     "test:dirty-repo-completion-v2": "tsx packages/validation/src/tests/dirtyRepoCompletionContractV2.test.ts",
     "test:deploy-route-gates": "tsx packages/validation/src/tests/deployRouteGates.test.ts",
-    "test:dirty-repo-repair-loop-proof": "tsx packages/validation/src/tests/dirtyRepoRepairLoopProof.test.ts"
+    "test:dirty-repo-repair-loop-proof": "tsx packages/validation/src/tests/dirtyRepoRepairLoopProof.test.ts",
+    "test:final-release-evidence-lock": "tsx packages/validation/src/tests/finalReleaseEvidenceLock.test.ts"
   },
   "dependencies": {
     "@trigger.dev/sdk": "^4.4.4"

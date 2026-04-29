@@ -11,6 +11,7 @@ import { validateDeploymentDryRunReadiness } from "./repoValidators/deploymentDr
 import { validateCredentialedDeploymentReadiness } from "./repoValidators/credentialedDeploymentReadiness";
 import { validateLiveDeploymentExecutionReadiness } from "./repoValidators/liveDeploymentExecutionReadiness";
 import { validateFinalCommercialReleaseEvidence } from "./repoValidators/finalCommercialReleaseEvidence";
+import { validateFinalReleaseEvidenceLock } from "./repoValidators/finalReleaseEvidenceLock";
 import { validateSecretsCredentialManagementReadiness } from "./repoValidators/secretsCredentialManagementReadiness";
 import { validateAutonomousComplexBuildReadiness } from "./repoValidators/autonomousComplexBuildReadiness";
 import { validateDomainQualityScorecardsReadiness } from "./repoValidators/domainQualityScorecardsReadiness";
@@ -1269,6 +1270,7 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateCredentialedDeploymentReadiness(root),
     validateLiveDeploymentExecutionReadiness(root),
     validateFinalCommercialReleaseEvidence(root),
+    validateFinalReleaseEvidenceLock(root),
     validateSecretsCredentialManagementReadiness(root),
     validateAutonomousComplexBuildReadiness(root),
     validateDomainQualityScorecardsReadiness(root),
