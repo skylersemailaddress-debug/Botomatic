@@ -1,0 +1,25 @@
+import assert from "assert";
+import { createUIPreviewInteractionFixture } from "../uiPreviewInteractionFixture";
+import { createUIPreviewInteractionState } from "../uiPreviewInteractionState";
+import { confirmUIPreviewPendingEdit, handleUIPreviewChatEdit, rejectUIPreviewPendingEdit } from "../uiPreviewInteractionAdapter";
+
+const fx = createUIPreviewInteractionFixture();
+const state = createUIPreviewInteractionState(fx.doc);
+const typed = handleUIPreviewChatEdit({ text: 'rewrite this headline to "A"', source: "typedChat", selectedNodeId: fx.node, now: fx.now }, state);
+const spoken = handleUIPreviewChatEdit({ text: 'rewrite this headline to "A"', source: "spokenChat", selectedNodeId: fx.node, now: fx.now }, state);
+assert.strictEqual(typed.status, "applied"); assert.strictEqual(spoken.status, "applied");
+assert.deepStrictEqual(typed.diff, spoken.diff);
+const destructive = handleUIPreviewChatEdit({ text: "remove this", source: "typedChat", selectedNodeId: fx.node, now: fx.now }, state);
+assert.strictEqual(destructive.status, "needsConfirmation");
+const confirm = confirmUIPreviewPendingEdit({ ...state, pendingReview: destructive.pendingReview });
+const reject = rejectUIPreviewPendingEdit({ ...state, pendingReview: destructive.pendingReview });
+assert.strictEqual(reject.status, "idle");
+const unresolved = handleUIPreviewChatEdit({ text: 'rewrite this headline to "A"', source: "typedChat", now: fx.now }, state);
+assert.strictEqual(unresolved.status, "needsResolution");
+assert.deepStrictEqual(unresolved.editableDocument, state.editableDocument);
+assert.ok(String(typed.sourceSyncPlan?.caveat ?? "").includes("planning only") || String(typed.sourceSyncPlan?.caveat ?? "").includes("planning-only"));
+const deterministicA = handleUIPreviewChatEdit({ text: 'rewrite this headline to "A"', source: "typedChat", selectedNodeId: fx.node, now: fx.now, idSeed: "s" }, state);
+const deterministicB = handleUIPreviewChatEdit({ text: 'rewrite this headline to "A"', source: "typedChat", selectedNodeId: fx.node, now: fx.now, idSeed: "s" }, state);
+assert.strictEqual(JSON.stringify(deterministicA), JSON.stringify(deterministicB));
+assert.deepStrictEqual(state.editableDocument, fx.doc);
+console.log("uiPreviewInteractionAdapter tests passed");

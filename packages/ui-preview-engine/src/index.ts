@@ -330,3 +330,7 @@ export * from "./uiDocumentDiff";
 export * from "./uiEditGuardrails";
 export * from "./uiSourceSyncPlan";
 export * from "./uiEditWorkflow";
+export * from "./uiPreviewInteractionState";
+export * from "./uiPreviewInteractionAdapter";
+export * from "./uiPreviewReviewPayload";
+export * from "./uiPreviewInteractionFixture";
