@@ -7,8 +7,7 @@ import { LiveUIBuilderPreviewSurface } from "./LiveUIBuilderPreviewSurface";
 import { useLiveUIBuilderVibe } from "./useLiveUIBuilderVibe";
 
 export function VibeDashboard({ projectId }: { projectId: string }) {
-  const { userFacingSummary, latestReviewPayload, confirmationPending, runSampleEdit, runDestructiveEdit, confirmPending, rejectPending } = useLiveUIBuilderVibe();
-  const previewHeadline = userFacingSummary.includes("Elevated Luxury Stays") ? "Elevated Luxury Stays" : undefined;
+  const { userFacingSummary, latestReviewPayload, confirmationPending, runSampleEdit, runDestructiveEdit, confirmPending, rejectPending, editableDocument, selectedNodeId, changedNodeIds, lastPreviewPatch, selectNode } = useLiveUIBuilderVibe();
   return (
     <section className="vibe-dashboard" aria-label="Vibe dashboard" data-project-id={projectId}>
       <aside className="vibe-dashboard-sidebar" aria-label="Botomatic sidebar">
@@ -74,7 +73,7 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
                 </div>
               </div>
 
-              <LiveUIBuilderPreviewSurface headline={previewHeadline} />
+              <LiveUIBuilderPreviewSurface editableDocument={editableDocument} selectedNodeId={selectedNodeId} changedNodeIds={changedNodeIds} previewPatch={lastPreviewPatch} onSelectNode={selectNode} />
 
               <div className="vibe-suggestion-chips" aria-label="Suggestions">
                 {suggestionChips.map((chip) => <button type="button" key={chip}>{chip}</button>)}

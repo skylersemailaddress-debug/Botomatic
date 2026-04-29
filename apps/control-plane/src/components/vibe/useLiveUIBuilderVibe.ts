@@ -1,43 +1,41 @@
 import { useState } from "react";
-
-type VibeInteractionState = { pendingReview?: { required: boolean } };
-type VibeInteractionResult = { status: string; userFacingSummary: string; reviewPayload: any; pendingReview?: { required: boolean }; nextState: VibeInteractionState; workflowResult?: { summary?: string } };
-
-function makeResult(status: string, summary: string, pendingReview?: { required: boolean }): VibeInteractionResult {
-  const reviewPayload = { mode: "informational", status, summary, timestamp: "2026-01-01T00:00:00.000Z" };
-  return { status, userFacingSummary: summary, reviewPayload, pendingReview, nextState: { pendingReview }, workflowResult: { summary } };
-}
-
+import { confirmUIPreviewPendingEdit, createUIPreviewInteractionFixture, createUIPreviewInteractionState, handleUIPreviewChatEdit, rejectUIPreviewPendingEdit } from "../../../../../packages/ui-preview-engine/src";
 
 export function createVibeInteractionHarness() {
-  let state: VibeInteractionState = {};
-  let latestResult: VibeInteractionResult | undefined;
+  const fixture = createUIPreviewInteractionFixture();
+  let state = createUIPreviewInteractionState(fixture.doc);
+  let latestResult: any;
   let latestReviewPayload: any;
-  const applyResult = (result: VibeInteractionResult) => { latestResult = result; latestReviewPayload = result.reviewPayload; state = result.nextState; return result; };
-  const runSampleEdit = () => applyResult(makeResult("applied", "Updated preview headline to Elevated Luxury Stays."));
-  const runDestructiveEdit = () => applyResult(makeResult("needsConfirmation", "Destructive edit requires confirmation.", { required: true }));
-  const confirmPending = () => applyResult(makeResult("applied", "Pending edit confirmed and applied."));
-  const rejectPending = () => applyResult(makeResult("idle", "Pending edit rejected."));
-  return { getState:()=>state, getLatestResult:()=>latestResult, getLatestReviewPayload:()=>latestReviewPayload, applyResult, runSampleEdit, runDestructiveEdit, confirmPending, rejectPending };
+  const applyResult = (result: any) => { latestResult = result; latestReviewPayload = result.reviewPayload; state = result.nextState; return result; };
+  const runSampleEdit = () => applyResult(handleUIPreviewChatEdit({ text: 'rewrite this headline to "Elevated Luxury Stays"', source: "typedChat", selectedNodeId: fixture.node, now: fixture.now }, state));
+  const runDestructiveEdit = () => applyResult(handleUIPreviewChatEdit({ text: "remove this", source: "spokenChat", selectedNodeId: fixture.node, now: fixture.now }, state));
+  const confirmPending = () => applyResult(confirmUIPreviewPendingEdit(state, { now: fixture.now, confirmationMarker: true }));
+  const rejectPending = () => applyResult(rejectUIPreviewPendingEdit(state));
+  const selectNode = (nodeId: string) => { state = { ...state, selection: { ...state.selection, selectedNodeId: nodeId } }; };
+  return { getState: () => state, getLatestResult: () => latestResult, getLatestReviewPayload: () => latestReviewPayload, runSampleEdit, runDestructiveEdit, confirmPending, rejectPending, selectNode };
 }
+
 export function useLiveUIBuilderVibe() {
-  const [interactionState, setInteractionState] = useState<VibeInteractionState>({});
-  const [latestResult, setLatestResult] = useState<VibeInteractionResult | undefined>();
+  const fixture = createUIPreviewInteractionFixture();
+  const [interactionState, setInteractionState] = useState(() => createUIPreviewInteractionState(fixture.doc));
+  const [latestResult, setLatestResult] = useState<any>();
   const [latestReviewPayload, setLatestReviewPayload] = useState<any>();
 
-  const applyResult = (result: VibeInteractionResult) => {
+  const applyResult = (result: any) => {
     setLatestResult(result);
     setLatestReviewPayload(result.reviewPayload);
     setInteractionState(result.nextState);
   };
 
-  const runSampleEdit = () => applyResult(makeResult("applied", "Updated preview headline to Elevated Luxury Stays."));
-  const runDestructiveEdit = () => applyResult(makeResult("needsConfirmation", "Destructive edit requires confirmation.", { required: true }));
-  const confirmPending = () => applyResult(makeResult("applied", "Pending edit confirmed and applied."));
-  const rejectPending = () => applyResult(makeResult("idle", "Pending edit rejected."));
+  const runSampleEdit = () => applyResult(handleUIPreviewChatEdit({ text: 'rewrite this headline to "Elevated Luxury Stays"', source: "typedChat", selectedNodeId: interactionState.selection.selectedNodeId ?? fixture.node, now: fixture.now }, interactionState));
+  const runDestructiveEdit = () => applyResult(handleUIPreviewChatEdit({ text: "remove this", source: "spokenChat", selectedNodeId: interactionState.selection.selectedNodeId ?? fixture.node, now: fixture.now }, interactionState));
+  const confirmPending = () => applyResult(confirmUIPreviewPendingEdit(interactionState, { now: fixture.now, confirmationMarker: true }));
+  const rejectPending = () => applyResult(rejectUIPreviewPendingEdit(interactionState));
+  const selectNode = (nodeId: string) => setInteractionState((current) => ({ ...current, selection: { ...current.selection, selectedNodeId: nodeId } }));
 
   const userFacingSummary = latestResult?.userFacingSummary ?? latestResult?.workflowResult?.summary ?? "No edits applied yet.";
   const confirmationPending = Boolean(interactionState.pendingReview?.required);
+  const changedNodeIds = latestResult?.previewPatch?.operations?.map((op: any) => op.nodeId).filter(Boolean) ?? [];
 
-  return { latestResult, latestReviewPayload, userFacingSummary, confirmationPending, applyResult, runSampleEdit, runDestructiveEdit, confirmPending, rejectPending, interactionState };
+  return { latestResult, latestReviewPayload, userFacingSummary, confirmationPending, runSampleEdit, runDestructiveEdit, confirmPending, rejectPending, interactionState, editableDocument: interactionState.editableDocument, selectedNodeId: interactionState.selection.selectedNodeId, selectNode, lastPreviewPatch: interactionState.lastPreviewPatch, changedNodeIds };
 }
