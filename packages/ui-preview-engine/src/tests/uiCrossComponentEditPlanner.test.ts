@@ -1,0 +1,16 @@
+import assert from "assert";
+import { planUICrossComponentEdits } from "../uiCrossComponentEditPlanner";
+const mapping:any={targets:[{filePath:"src/Parent.tsx"}]};
+const identity:any={identities:[{sourceFilePath:"src/Parent.tsx",identityId:"i",confidence:"high"}]};
+const intent:any={rootIntent:"edit",sharedComponentFiles:["src/Child.tsx"],routeFile:"app/page.tsx",styleFile:"src/app.css"};
+const sourceFiles:any={"src/Parent.tsx":"","src/Child.tsx":"","app/page.tsx":"","src/app.css":""};
+const r=planUICrossComponentEdits({},mapping,identity,intent,sourceFiles);
+assert.strictEqual(r.plan.changedFiles.length,4);
+assert.ok(r.plan.dependencies.find((d)=>d.relation==="route-imports-component"));
+assert.ok(r.plan.dependencies.find((d)=>d.relation==="component-imports-style"));
+assert.deepStrictEqual(r.plan.operations.map(o=>o.operationOrder),[1,2,3,4]);
+const missId=planUICrossComponentEdits({},mapping,undefined,intent,sourceFiles); assert.strictEqual(missId.plan.requiresManualReview,true);
+const missFile=planUICrossComponentEdits({},mapping,identity,intent,{"src/Parent.tsx":""}); assert.strictEqual(missFile.plan.requiresManualReview,true);
+const circ=planUICrossComponentEdits({},mapping,identity,{...intent,circularDependency:true},sourceFiles); assert.strictEqual(circ.plan.riskLevel,"high");
+const gt5=planUICrossComponentEdits({},mapping,identity,{...intent,sharedComponentFiles:["a","b","c","d","e"]},{"src/Parent.tsx":"",a:"",b:"",c:"",d:"",e:"",}); assert.strictEqual(gt5.plan.riskLevel,"high");
+console.log("uiCrossComponentEditPlanner.test.ts passed");

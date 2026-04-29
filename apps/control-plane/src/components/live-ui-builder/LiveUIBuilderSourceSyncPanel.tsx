@@ -2,7 +2,7 @@
 
 type SourceSyncPanelProps = {
   sourceSyncStatus: "idle" | "dryRunReady" | "applyBlocked" | "simulated";
-  sourceSyncResult?: { patchSummary?: { changedFiles: string[]; operationCount: number; manualReviewCount: number; confidenceCounts?: Record<string, number>; sourceKinds?: string[]; routeFilesToCreate?: string[]; manualReviewReasons?: string[]; identitySummary?: { coverageCount: number; high: number; medium: number; low: number; stale: number; manualReviewRequired: number; selectedNodeIdentitySummary?: string } }; blockedReasons?: string[]; caveat?: string };
+  sourceSyncResult?: { patchSummary?: { changedFiles: string[]; operationCount: number; manualReviewCount: number; confidenceCounts?: Record<string, number>; sourceKinds?: string[]; routeFilesToCreate?: string[]; manualReviewReasons?: string[]; identitySummary?: { coverageCount: number; high: number; medium: number; low: number; stale: number; manualReviewRequired: number; selectedNodeIdentitySummary?: string }; multiFilePlanId?: string; dependencyCount?: number; riskLevel?: "low"|"medium"|"high"; requiresManualReview?: boolean; orderedFiles?: string[] }; blockedReasons?: string[]; caveat?: string };
   onDryRun: () => void;
   onApply: () => void;
   canApply: boolean;
@@ -40,6 +40,14 @@ export function LiveUIBuilderSourceSyncPanel({ sourceSyncStatus, sourceSyncResul
       <p>Parser-backed source identity is best-effort and does not guarantee semantic runtime equivalence.</p>
       <p>Source kinds: {sourceKinds.join(", ") || "none"}</p>
       {!!routeFiles.length && <p>Route files to create: {routeFiles.join(", ")}</p>}
+
+      <p>Multi-file plan id: {sourceSyncResult?.patchSummary?.multiFilePlanId ?? "none"}</p>
+      <p>Changed file count: {changedFiles.length}</p>
+      <p>Dependency count: {sourceSyncResult?.patchSummary?.dependencyCount ?? 0}</p>
+      <p>Risk level: {sourceSyncResult?.patchSummary?.riskLevel ?? "low"}</p>
+      <p>Manual review required: {String(sourceSyncResult?.patchSummary?.requiresManualReview ?? false)}</p>
+      <p>Ordered files: {(sourceSyncResult?.patchSummary?.orderedFiles ?? changedFiles).join(", ") || "none"}</p>
+      <p>Multi-file planning is dry-run only and does not write files or prove runtime correctness.</p>
       <ul>{changedFiles.map((f) => <li key={f}>{f}</li>)}</ul>
       {!!manualReasons.length && <ul>{manualReasons.map((r) => <li key={r}>Manual review: {r}</li>)}</ul>}
       {blockedReasons.length ? <ul>{blockedReasons.map((reason) => <li key={reason}>Blocked quality reason: {reason}</li>)}</ul> : <p>Dry-run safety: {cleanDryRun ? "clean" : "not-ready"}</p>}

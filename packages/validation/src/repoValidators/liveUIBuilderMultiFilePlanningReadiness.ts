@@ -1,0 +1,11 @@
+import fs from "fs";
+import path from "path";
+import { type RepoValidatorResult } from "../repoValidators";
+
+export function validateLiveUIBuilderMultiFilePlanningReadiness(root: string): RepoValidatorResult {
+  const read=(p:string)=>fs.readFileSync(path.join(root,p),"utf8");
+  const pkg=read("package.json"); const uni=(pkg.match(/"test:universal"\s*:\s*"([^"]+)"/)?.[1]??"");
+  const checks=["packages/ui-preview-engine/src/uiMultiFileEditPlan.ts","packages/ui-preview-engine/src/uiCrossComponentEditPlanner.ts","packages/ui-preview-engine/src/uiSourcePatch.ts","packages/ui-preview-engine/src/uiSourceRoundTrip.ts","apps/control-plane/src/components/live-ui-builder/LiveUIBuilderSourceSyncPanel.tsx","packages/ui-preview-engine/src/tests/uiMultiFileEditPlan.test.ts","packages/ui-preview-engine/src/tests/uiCrossComponentEditPlanner.test.ts"];
+  const ok=checks.every((c)=>fs.existsSync(path.join(root,c)))&&read(checks[0]).includes("createDeterministicMultiFilePlanId")&&read(checks[1]).includes("route-imports-component")&&read(checks[1]).includes("component-imports-style")&&read(checks[1]).includes("operationOrder")&&read(checks[1]).includes("more than 5 files changed")&&read(checks[2]).includes("multiFilePlanId")&&read(checks[3]).includes("missing-operation-order")&&read(checks[3]).includes("changedFiles-mismatch-operation-targets")&&read(checks[4]).includes("Multi-file planning is dry-run only")&&pkg.includes("test:ui-multi-file-edit-plan")&&pkg.includes("test:ui-cross-component-edit-planner")&&uni.includes("test:ui-multi-file-edit-plan")&&uni.includes("test:ui-cross-component-edit-planner");
+  return {name:"Validate-Botomatic-LiveUIBuilderMultiFilePlanningReadiness",status:ok?"passed":"failed",summary:ok?"Multi-file planning readiness wired.":"Multi-file planning readiness incomplete.",checks};
+}
