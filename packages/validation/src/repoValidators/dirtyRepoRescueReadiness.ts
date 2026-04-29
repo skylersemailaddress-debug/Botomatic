@@ -28,6 +28,9 @@ export function validateDirtyRepoRescueReadiness(root: string): RepoValidatorRes
     "packages/repo-audit/src/index.ts",
     "packages/repo-repair/src/index.ts",
     "packages/repo-completion/src/index.ts",
+    "packages/repo-completion/src/dirtyRepoRepairLoop.ts",
+    "packages/validation/src/tests/dirtyRepoRepairLoopProof.test.ts",
+    "docs/dirty-repo-repair-loop-proof.md",
     "packages/validation/src/tests/dirtyRepoCompletionContractV2.test.ts",
     "docs/dirty-repo-completion-contract-v2.md",
     "packages/validation/src/existingRepo/validateExistingRepoReadiness.ts",
@@ -103,6 +106,14 @@ export function validateDirtyRepoRescueReadiness(root: string): RepoValidatorRes
     !statusLiterals.includes("launch_ready") &&
     !statusLiterals.includes("production_ready");
   const hasV2Boundary = completionRunner.includes("DirtyRepoCompletionContractV2") && hasStrictStatusUnion;
+  const repairLoopSource = read(root, "packages/repo-completion/src/dirtyRepoRepairLoop.ts");
+  const repairStatusMatch = repairLoopSource.match(/export type DirtyRepoRepairLoopStatus\s*=\s*([^;]+);/);
+  const repairStatusLiterals = Array.from((repairStatusMatch ? repairStatusMatch[1] : "").matchAll(/"([a-z_]+)"/g)).map((m) => m[1]);
+  const repairAllowedStatuses = ["blocked", "plan_ready", "validation_ready", "candidate_ready"];
+  const hasStrictRepairStatusUnion = repairStatusLiterals.length === repairAllowedStatuses.length && repairAllowedStatuses.every((status) => repairStatusLiterals.includes(status));
+  const hasRepairNoLaunchBoundary = !repairStatusLiterals.includes("launch_ready") && !repairStatusLiterals.includes("production_ready");
+  const hasNoCodeExecutionPosture = repairLoopSource.includes("noUntrustedExecution: true") && repairLoopSource.includes("executesUntrustedCode: false");
+  const hasEvidenceLinkValidation = repairLoopSource.includes("missing evidenceEntryIds");
   const hasRepairPlanShape =
     Array.isArray(repairPlan?.patchQueue) &&
     Array.isArray(repairPlan?.testQueue) &&
@@ -126,6 +137,10 @@ export function validateDirtyRepoRescueReadiness(root: string): RepoValidatorRes
     hasDetectionEvidence &&
     hasCompletionContractShape &&
     hasV2Boundary &&
+    hasStrictRepairStatusUnion &&
+    hasRepairNoLaunchBoundary &&
+    hasNoCodeExecutionPosture &&
+    hasEvidenceLinkValidation &&
     hasRepairPlanShape &&
     ranExistingRepoValidator &&
     ranIncrementalValidation &&

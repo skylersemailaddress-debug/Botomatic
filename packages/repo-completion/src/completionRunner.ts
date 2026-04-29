@@ -1,5 +1,9 @@
 import { createCompletionPlan } from "../../repo-repair/src/completionPlanner";
 import {
+  buildDirtyRepoRepairLoopProof,
+  type DirtyRepoRepairLoopProof,
+} from "./dirtyRepoRepairLoop";
+import {
   createDirtyRepoEvidenceSnapshot,
   deriveDirtyRepoCompletionBlockers,
   summarizeDirtyRepoEvidence,
@@ -30,6 +34,7 @@ export type CompletionContract = {
   evidenceEntries: DirtyRepoEvidenceEntry[];
   completionBlockers: DirtyRepoCompletionBlocker[];
   completionContractV2?: DirtyRepoCompletionContractV2;
+  repairLoopProof?: DirtyRepoRepairLoopProof;
 };
 
 export type DirtyRepoCompletionStatus = "blocked" | "repair_ready" | "validation_ready" | "candidate_ready";
@@ -231,6 +236,13 @@ export function runCompletionContract(input: {
       })
     : undefined;
 
+  const repairLoopProof = completionContractV2
+    ? buildDirtyRepoRepairLoopProof({
+        evidenceSnapshot,
+        completionContractV2,
+      })
+    : undefined;
+
   return {
     detectedProduct: input.detectedProduct,
     detectedStack: input.detectedStack,
@@ -257,5 +269,6 @@ export function runCompletionContract(input: {
     evidenceEntries: evidenceSnapshot.entries,
     completionBlockers,
     completionContractV2,
+    repairLoopProof,
   };
 }
