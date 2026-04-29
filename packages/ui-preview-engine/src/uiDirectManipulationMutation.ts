@@ -4,6 +4,7 @@ import { createUIDocumentDiff, summarizeUIDocumentDiff } from "./uiDocumentDiff"
 import { type UIDirectManipulationAction, type UIDirectManipulationResult, validateUIDirectManipulationAction } from "./uiDirectManipulationModel";
 
 export function applyUIDirectManipulation(document: EditableUIDocument, action: UIDirectManipulationAction, context?: { now?: string }): UIDirectManipulationResult {
+  if (action.type === "deleteNode" && action.confirm !== true) return { status: "needsConfirmation", nextDocument: document, changedNodeIds: [], diff: { operations: [] }, previewPatch: { operations: [] }, summary: "Delete requires confirmation" };
   const actionValidation = validateUIDirectManipulationAction(action);
   if (!actionValidation.valid) return invalid(document, actionValidation.issues);
   const next = cloneEditableUIDocument(document);

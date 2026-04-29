@@ -28,7 +28,6 @@ export type UIDirectManipulationResult = {
   issues?: string[];
 };
 
-const DESTRUCTIVE = new Set<UIDirectManipulationActionType>(["deleteNode"]);
 
 export function validateUIDirectManipulationAction(action: UIDirectManipulationAction): { valid: boolean; issues: string[] } {
   const issues: string[] = [];
@@ -46,6 +45,5 @@ export function validateUIDirectManipulationAction(action: UIDirectManipulationA
     if (!allowed.has(action.propName)) issues.push("editProp.propName not allowed");
   }
   if (action.type === "duplicateNode" && !action.idSeed) issues.push("duplicateNode.idSeed missing");
-  if (DESTRUCTIVE.has(action.type) && action.confirm !== true) issues.push("destructive action requires confirmation");
   return { valid: issues.length === 0, issues };
 }

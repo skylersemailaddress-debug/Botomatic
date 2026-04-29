@@ -26,6 +26,10 @@ const reordered = applyUIDirectManipulation(moved.nextDocument, { type: "reorder
 assert.strictEqual(reordered.nextDocument.pages[0].nodes[first].childIds.includes(second), false);
 assert.strictEqual(validateEditableUIDocument(reordered.nextDocument).valid, true);
 
+const needsConfirm = applyUIDirectManipulation(doc, { type: "deleteNode", pageId: page.id, nodeId: first });
+assert.strictEqual(needsConfirm.status, "needsConfirmation");
+assert.deepStrictEqual(needsConfirm.nextDocument, doc);
+
 const deleted = applyUIDirectManipulation(doc, { type: "deleteNode", pageId: page.id, nodeId: first, confirm: true });
 for (const n of Object.values(deleted.nextDocument.pages[0].nodes)) { assert.notStrictEqual(n.parentId, first); assert.strictEqual(n.childIds.includes(first), false); }
 assert.strictEqual(validateEditableUIDocument(deleted.nextDocument).valid, true);

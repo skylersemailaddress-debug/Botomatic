@@ -20,3 +20,12 @@ assert.deepStrictEqual(actions[1], { type: "deleteNode", pageId: "p", nodeId: "n
 assert.deepStrictEqual(actions[2], { type: "resizeNode", pageId: "p", nodeId: "n", width: "320px" });
 assert.deepStrictEqual(actions[3], { type: "editProp", pageId: "p", nodeId: "n", propName: "className", value: "liveui-selected" });
 console.log("liveUIBuilderDirectManipulationOverlay test passed");
+
+
+import { createEditableUIDocumentFromBlueprint } from "../../../../packages/ui-preview-engine/src/uiDocumentModel";
+import { getUiBlueprint } from "../../../../packages/ui-blueprint-registry/src";
+import { applyUIDirectManipulation } from "../../../../packages/ui-preview-engine/src/uiDirectManipulationMutation";
+const d = createEditableUIDocumentFromBlueprint(getUiBlueprint("saasDashboard")!);
+const p = d.pages[0]; const r = p.rootNodeIds[0]; const n = p.nodes[r].childIds[0];
+const pending = applyUIDirectManipulation(d, { type: "deleteNode", pageId: p.id, nodeId: n });
+assert.strictEqual(pending.status, "needsConfirmation");
