@@ -7,7 +7,8 @@ import { LiveUIBuilderPreviewSurface } from "./LiveUIBuilderPreviewSurface";
 import { useLiveUIBuilderVibe } from "./useLiveUIBuilderVibe";
 
 export function VibeDashboard({ projectId }: { projectId: string }) {
-  const { userFacingSummary, latestReviewPayload, confirmationPending } = useLiveUIBuilderVibe();
+  const { userFacingSummary, latestReviewPayload, confirmationPending, runSampleEdit, runDestructiveEdit, confirmPending, rejectPending } = useLiveUIBuilderVibe();
+  const previewHeadline = userFacingSummary.includes("Elevated Luxury Stays") ? "Elevated Luxury Stays" : undefined;
   return (
     <section className="vibe-dashboard" aria-label="Vibe dashboard" data-project-id={projectId}>
       <aside className="vibe-dashboard-sidebar" aria-label="Botomatic sidebar">
@@ -73,7 +74,7 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
                 </div>
               </div>
 
-              <LiveUIBuilderPreviewSurface />
+              <LiveUIBuilderPreviewSurface headline={previewHeadline} />
 
               <div className="vibe-suggestion-chips" aria-label="Suggestions">
                 {suggestionChips.map((chip) => <button type="button" key={chip}>{chip}</button>)}
@@ -86,9 +87,10 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
                 <button type="button">Send</button>
               </div>
               <div className="vibe-action-row">
-                <button type="button">Improve Design</button>
-                <button type="button" disabled={!confirmationPending}>Confirm</button>
-                <button type="button" disabled={!confirmationPending}>Reject</button>
+                <button type="button" onClick={runSampleEdit}>Improve Design</button>
+                <button type="button" onClick={runDestructiveEdit}>Apply destructive sample</button>
+                <button type="button" onClick={confirmPending} disabled={!confirmationPending}>Confirm</button>
+                <button type="button" onClick={rejectPending} disabled={!confirmationPending}>Reject</button>
                 {actionChips.filter((chip) => chip !== "Improve Design").map((chip) => <button type="button" key={chip}>{chip}</button>)}
               </div>
             </section>
