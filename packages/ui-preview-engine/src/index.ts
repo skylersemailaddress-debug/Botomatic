@@ -320,8 +320,6 @@ export * from "./uiDocumentModel";
 
 export * from "./uiEditCommand";
 
-export * from "./uiDocumentModel";
-export * from "./uiEditCommand";
 export * from "./uiSelectionState";
 export * from "./uiTargetResolver";
 export * from "./livePreviewPatch";

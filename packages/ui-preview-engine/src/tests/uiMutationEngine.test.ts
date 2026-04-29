@@ -7,7 +7,8 @@ import { applyUIEditCommand } from "../uiMutationEngine";
 const base = createEditableUIDocumentFromBlueprint(getUiBlueprint("saasDashboard")!, { now: "2026-01-01T00:00:00.000Z" });
 const firstNodeId = base.pages[0].nodes[base.pages[0].rootNodeIds[0]].childIds[0];
 const first = base.pages[0].nodes[firstNodeId];
-const run = (text: string, confirmed = true, selectedNodeId = firstNodeId) => applyUIEditCommand(base, parseUIEditCommand({ text, source: "typedChat", selectedNodeId }).command!, { confirmed, selection: { selectedNodeId } as any });
+const fixedNow = "2026-01-02T00:00:00.000Z";
+const run = (text: string, confirmed = true, selectedNodeId = firstNodeId, idSeed = "seed-1") => applyUIEditCommand(base, parseUIEditCommand({ text, source: "typedChat", selectedNodeId, createdAt: fixedNow }).command!, { confirmed, selection: { selectedNodeId } as any, now: fixedNow, idSeed });
 assert.strictEqual(run("remove this", false).status, "blocked");
 assert.strictEqual(run("remove this", true).status, "applied");
 const dup = run("duplicate this", true); assert.strictEqual(dup.status, "applied"); assert.ok(dup.changedNodeIds[0] !== firstNodeId);
@@ -25,3 +26,7 @@ const ok = run("connect this form to leads", true); assert.ok(ok.previewPatch.op
 assert.strictEqual(base.pages[0].nodes[firstNodeId].identity.nodeId, first.identity.nodeId);
 const c = ok.claimBoundary.toLowerCase(); assert.ok(c.includes("no source-file sync") && c.includes("no browser rendering integration") && c.includes("no full live builder completion claim"));
 console.log("uiMutationEngine tests passed");
+
+const d1 = run("duplicate this", true, firstNodeId, "same-seed");
+const d2 = run("duplicate this", true, firstNodeId, "same-seed");
+assert.deepStrictEqual(d1, d2);
