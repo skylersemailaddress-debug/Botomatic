@@ -65,3 +65,7 @@
 - DEPLOY-001 secret leak prevention and secret-reference policy scope (complete)
 
 - PROOF-001 is next for self/proof lane.
+
+- [x] MASTER-TRUTH-AUDIT-001 — complete
+- [x] MASTER-TRUTH-001 — add canonical max-power master spec and validator bridge
+- [ ] BUILDER-GAP-AUDIT-001: audit implementation against canonical master truth
