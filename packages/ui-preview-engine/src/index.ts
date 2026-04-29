@@ -319,3 +319,8 @@ export { PREVIEW_CAVEAT };
 export * from "./uiDocumentModel";
 
 export * from "./uiEditCommand";
+
+export * from "./uiSelectionState";
+export * from "./uiTargetResolver";
+export * from "./livePreviewPatch";
+export * from "./uiMutationEngine";
