@@ -31,7 +31,7 @@ export function planUICrossComponentEdits(_doc: any, mapping: UISourceFileMappin
   if (routeFile && sourceFiles[routeFile]) {
     const resolved = listImports(sourceFiles[routeFile]).flatMap((s) => resolveRelativeImport(routeFile, s, sourceFiles));
     if (resolved.includes(primary)) pushEdge(routeFile, primary, "route-imports-component");
-    else blockedReasons.push("route-to-component dependency unresolved from imports");
+    else blockedReasons.push("unresolved dependency import: route-imports-component");
   }
 
   if (sourceFiles[primary]) {
@@ -39,11 +39,11 @@ export function planUICrossComponentEdits(_doc: any, mapping: UISourceFileMappin
     const resolved = imports.flatMap((s) => resolveRelativeImport(primary, s, sourceFiles));
     for (const child of [...(requestedEditIntent?.sharedComponentFiles ?? [])].sort()) {
       if (resolved.includes(child)) pushEdge(primary, child, "component-imports-child");
-      else blockedReasons.push(`component-to-child dependency unresolved from imports: ${child}`);
+      else blockedReasons.push(`unresolved dependency import: component-imports-child:${child}`);
     }
     const styleResolved = imports.filter((s) => STYLE_EXT.some((ext) => s.endsWith(ext))).flatMap((s) => resolveRelativeImport(primary, s, sourceFiles));
     for (const style of styleResolved.sort()) pushEdge(primary, style, "component-imports-style");
-    if ((requestedEditIntent?.styleFile || "") && !styleResolved.includes(requestedEditIntent.styleFile)) blockedReasons.push("component-to-style dependency unresolved from imports");
+    if ((requestedEditIntent?.styleFile || "") && !styleResolved.includes(requestedEditIntent.styleFile)) blockedReasons.push("unresolved dependency import: component-imports-style");
     for (const f of [...styleResolved, ...resolved]) files.add(f);
   }
 

@@ -17,6 +17,10 @@ assert.deepStrictEqual(r.plan.operations.map(o=>o.operationOrder),[1,2,3,4]);
 const unresolved=planUICrossComponentEdits({},mapping,identity,intent,{...sourceFiles,"src/Parent.tsx":"import Missing from './Missing'; export default function Parent(){ return <Missing/>; }"});
 assert.strictEqual(unresolved.plan.requiresManualReview,true);
 assert.ok(unresolved.plan.blockedReasons.some((r)=>r.includes("unresolved")));
+
+const shallowIntentOnly=planUICrossComponentEdits({},mapping,identity,{...intent,sharedComponentFiles:["src/Unimported.tsx"]},{...sourceFiles,"src/Unimported.tsx":"export default function U(){return null;}"});
+assert.strictEqual(shallowIntentOnly.plan.requiresManualReview,true);
+assert.ok(shallowIntentOnly.plan.blockedReasons.some((r)=>r.includes("unresolved dependency import")));
 const missId=planUICrossComponentEdits({},mapping,undefined,intent,sourceFiles); assert.strictEqual(missId.plan.requiresManualReview,true);
 const circ=planUICrossComponentEdits({},mapping,identity,{...intent,circularDependency:true},sourceFiles); assert.strictEqual(circ.plan.riskLevel,"high");
 const gt5=planUICrossComponentEdits({},mapping,identity,{...intent,sharedComponentFiles:["a","b","c","d","e"]},{...sourceFiles,a:"",b:"",c:"",d:"",e:"",}); assert.strictEqual(gt5.plan.riskLevel,"high");
