@@ -14,6 +14,8 @@ assert(!hook.includes('if (result.status === "applied") sourceSyncDryRun'));
 assert(panel.includes("AST-aware dry run caveat"));
 assert(panel.includes("Confidence:"));
 assert(panel.includes("Source kinds:"));
+assert(panel.includes("Identity coverage:"));
+assert(panel.includes("Parser-backed source identity is best-effort and does not guarantee semantic runtime equivalence."));
 assert(panel.includes("Blocked quality reason"));
 assert(panel.includes("Route files to create"));
 console.log("liveUIBuilderSourceSyncPanel.test.ts passed");

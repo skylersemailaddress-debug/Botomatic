@@ -4,6 +4,8 @@ const mapping:any={targets:[{sourceId:"p",filePath:"app/page.tsx"}],manualReview
 const analysis:any=[{filePath:"app/page.tsx",isRouteFile:true}];
 const safe=createReactSourcePatchFromUIDiff({changeType:"replaceTextLiteral",beforeSnippet:"a",afterSnippet:"b"},mapping,analysis,{});
 assert.strictEqual(safe.operations[0].confidence,"high");
+assert.ok("identityConfidence" in safe.operations[0]);
 const unsafe=createReactSourcePatchFromUIDiff({changeType:"removeJsxNode"},mapping,analysis,{});
 assert.ok(unsafe.operations[0].requiresManualReview);
+assert.strictEqual(unsafe.operations[0].identityConfidence,"low");
 console.log("uiReactSourcePatch tests passed");
