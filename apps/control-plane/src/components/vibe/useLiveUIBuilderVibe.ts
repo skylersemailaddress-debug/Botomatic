@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { applyUIEditWorkflow, applyUIAppStructureCommand, applyUISourcePatch, confirmUIPreviewPendingEdit, createUIAppStructureFromDocument, createUIPreviewInteractionFixture, createUIPreviewInteractionState, createUISourceFileMapping, createUISourcePatchFromSyncPlan, createUISourceApplyProof, handleUIPreviewChatEdit, parseUIAppStructureCommand, rejectUIPreviewPendingEdit, validateUISourceRoundTrip } from "../../../../../packages/ui-preview-engine/src";
+import { applyUIEditWorkflow, applyUIAppStructureCommand, applyUISourcePatch, confirmUIPreviewPendingEdit, createUIAppStructureFromDocument, createUIPreviewInteractionFixture, createUIPreviewInteractionState, createUISourceFileMapping, createUISourcePatchFromSyncPlan, handleUIPreviewChatEdit, parseUIAppStructureCommand, rejectUIPreviewPendingEdit, validateUISourceRoundTrip } from "../../../../../packages/ui-preview-engine/src";
 
 export function createVibeInteractionHarness() {
   const fixture = createUIPreviewInteractionFixture();
@@ -77,12 +77,14 @@ export function useLiveUIBuilderVibe() {
     if (!sourceSyncResult?.patch || !fileAdapter) {
       const blockedReasons = [fileAdapter ? "No source sync patch available" : "Apply requires real file adapter"];
       setSourceSyncStatus("applyBlocked");
+      setLastSourceApplyProof(undefined);
+      setRollbackStatus("rollback unavailable: no server-side transaction");
       return { ok: false, blockedReasons, writesPerformed: 0 };
     }
     const applyResult = applyUISourcePatch(sourceSyncResult.patch, fileAdapter, { mode: "confirmedApply", projectRoot: fileAdapter.projectRoot ?? ".", confirmationMarker });
     setSourceSyncStatus(applyResult.ok ? "simulated" : "applyBlocked");
-    setLastSourceApplyProof(createUISourceApplyProof({ id: `browser-${Date.now()}`, beforeSnapshot: sourceSyncResult.patch.operations.map((o:any)=>({filePath:o.targetFilePath,existedBefore:true})), mode: "confirmedApply" } as any, applyResult));
-    setRollbackStatus(hasRealFileAdapter ? "rollback available with server adapter" : "Rollback requires server-side local adapter.");
+    setLastSourceApplyProof(undefined);
+    setRollbackStatus(hasRealFileAdapter ? "rollback available only with server-side transaction" : "Rollback requires server-side local adapter.");
     setSourceSyncResult((current: any) => ({ ...(current ?? {}), applyResult, blockedReasons: applyResult.blockedReasons }));
     return applyResult;
   };

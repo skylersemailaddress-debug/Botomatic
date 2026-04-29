@@ -45,3 +45,7 @@ console.log("liveUIBuilderVibeHook.test.ts passed");
 
 const hookSource = require("fs").readFileSync("apps/control-plane/src/components/vibe/useLiveUIBuilderVibe.ts", "utf8");
 assert(!hookSource.includes("if (result.status === \"applied\") sourceSyncDryRun"), "source sync should remain explicit-only");
+assert(!hookSource.includes("Date.now()"), "browser source-sync path must not use Date.now for fake proof IDs");
+assert(hookSource.includes("setLastSourceApplyProof(undefined)"), "no-adapter browser path must not fabricate apply proof");
+assert(hookSource.includes("rollback unavailable: no server-side transaction"), "must expose simulated rollback-disabled status");
+assert(hookSource.includes("const rollbackAvailable = Boolean(lastSourceApplyProof?.rollbackAvailable)"), "rollbackAvailable must remain false without real proof");
