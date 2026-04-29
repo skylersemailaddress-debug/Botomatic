@@ -1,7 +1,7 @@
 {
   "domainId": "ai_agent",
-  "generatedAt": "2026-04-28T23:52:18.733Z",
-  "emittedPath": "/workspace/Botomatic/release-evidence/generated-apps/ai_agent",
+  "generatedAt": "2026-04-28T07:54:29.377Z",
+  "emittedPath": "/workspaces/Botomatic/release-evidence/generated-apps/ai_agent",
   "emittedFileCount": 25,
   "emittedFiles": [
     ".env.example",
