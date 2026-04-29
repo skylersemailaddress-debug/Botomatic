@@ -35,10 +35,9 @@ export function useLiveUIBuilderVibe() {
   const [lastCommandText, setLastCommandText] = useState<string>("");
   const [sourceSyncResult, setSourceSyncResult] = useState<any>();
   const [sourceSyncStatus, setSourceSyncStatus] = useState<"idle"|"dryRunReady"|"applyBlocked"|"simulated">("idle");
-  const hasRealFileAdapter = false;
-  const [lastAppStructureResult, setLastAppStructureResult] = useState<any>();
-  const [appStructureNeedsResolution, setAppStructureNeedsResolution] = useState<string>();
-  const [appStructureCandidates, setAppStructureCandidates] = useState<any[]>([]);
+  const [fileAdapter, setFileAdapter] = useState<any>();
+  const [adapterDisabledReason, setAdapterDisabledReason] = useState<string>("Real local adapter unavailable in browser-safe mode.");
+  const hasRealFileAdapter = Boolean(fileAdapter?.kind === "local");
 
   const applyResult = (result: any) => {
     setLatestResult(result);
@@ -59,12 +58,27 @@ export function useLiveUIBuilderVibe() {
     return { ok: true, result };
   };
 
-  const sourceSyncApply = (_confirmationMarker?: boolean) => {
-    const blockedReasons = ["Apply requires real file adapter"];
-    setSourceSyncStatus("applyBlocked");
-    setSourceSyncResult((current: any) => ({ ...(current ?? {}), applyResult: { ok: false, mode: "dryRun", writesPerformed: 0, changedFiles: current?.patch?.changedFiles ?? [], blockedReasons }, blockedReasons }));
-    return { ok: false, blockedReasons, writesPerformed: 0 };
+  const configureLocalSourceAdapter = (options: any) => {
+    if (typeof window !== "undefined") { setAdapterDisabledReason("Real local file adapter must be configured in a server-safe environment."); setFileAdapter(undefined); return { ok: false }; }
+    void options;
+    setAdapterDisabledReason("Real local file adapter must be created server-side; browser hook remains guarded-disabled.");
+    setFileAdapter(undefined);
+    return { ok: false };
   };
+
+  const sourceSyncApplyConfirmed = (confirmationMarker?: boolean) => {
+    if (!sourceSyncResult?.patch || !fileAdapter) {
+      const blockedReasons = [fileAdapter ? "No source sync patch available" : "Apply requires real file adapter"];
+      setSourceSyncStatus("applyBlocked");
+      return { ok: false, blockedReasons, writesPerformed: 0 };
+    }
+    const applyResult = applyUISourcePatch(sourceSyncResult.patch, fileAdapter, { mode: "confirmedApply", projectRoot: fileAdapter.projectRoot ?? ".", confirmationMarker });
+    setSourceSyncStatus(applyResult.ok ? "simulated" : "applyBlocked");
+    setSourceSyncResult((current: any) => ({ ...(current ?? {}), applyResult, blockedReasons: applyResult.blockedReasons }));
+    return applyResult;
+  };
+
+  const sourceSyncApply = sourceSyncApplyConfirmed;
 
   const runSampleEdit = () => applyResult(handleUIPreviewChatEdit({ text: 'rewrite this headline to "Elevated Luxury Stays"', source: "typedChat", selectedNodeId: interactionState.selection.selectedNodeId ?? fixture.node, now: fixture.now }, interactionState));
   const runDestructiveEdit = () => applyResult(handleUIPreviewChatEdit({ text: "remove this", source: "spokenChat", selectedNodeId: interactionState.selection.selectedNodeId ?? fixture.node, now: fixture.now }, interactionState));
@@ -92,5 +106,5 @@ export function useLiveUIBuilderVibe() {
   const confirmationPending = Boolean(interactionState.pendingReview?.required);
   const changedNodeIds = latestResult?.previewPatch?.operations?.map((op: any) => op.nodeId).filter(Boolean) ?? [];
 
-  return { latestResult, latestReviewPayload, userFacingSummary, confirmationPending, runSampleEdit, runDestructiveEdit, runCommandText, retryLastCommand, resolveTarget, pendingResolution, confirmPending, rejectPending, interactionState, editableDocument: interactionState.editableDocument, selectedNodeId: interactionState.selection.selectedNodeId, selectNode, lastPreviewPatch: interactionState.lastPreviewPatch, changedNodeIds, preConfirmDiff, pendingReview: interactionState.pendingReview, sourceSyncDryRun, sourceSyncApply, sourceSyncResult, sourceSyncStatus, hasRealFileAdapter, appStructure, runAppStructureCommand, lastAppStructureResult, appStructureNeedsResolution, appStructureCandidates, selectPage, duplicatePage, renamePage, addPage, updateNavigation, extractReusableComponent, reuseComponent };
+  return { latestResult, latestReviewPayload, userFacingSummary, confirmationPending, runSampleEdit, runDestructiveEdit, runCommandText, retryLastCommand, resolveTarget, pendingResolution, confirmPending, rejectPending, interactionState, editableDocument: interactionState.editableDocument, selectedNodeId: interactionState.selection.selectedNodeId, selectNode, lastPreviewPatch: interactionState.lastPreviewPatch, changedNodeIds, preConfirmDiff, pendingReview: interactionState.pendingReview, sourceSyncDryRun, sourceSyncApply, sourceSyncApplyConfirmed, sourceSyncResult, sourceSyncStatus, hasRealFileAdapter, configureLocalSourceAdapter, adapterDisabledReason, appStructure, runAppStructureCommand, selectPage, duplicatePage, renamePage, addPage, updateNavigation, extractReusableComponent, reuseComponent };
 }

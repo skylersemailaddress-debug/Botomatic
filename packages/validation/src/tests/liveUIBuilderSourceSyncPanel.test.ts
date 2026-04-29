@@ -4,9 +4,11 @@ const panel = fs.readFileSync("apps/control-plane/src/components/live-ui-builder
 const hook = fs.readFileSync("apps/control-plane/src/components/vibe/useLiveUIBuilderVibe.ts", "utf8");
 assert(panel.includes("Dry Run Source Sync"));
 assert(panel.includes("Apply requires real file adapter"));
-assert(panel.includes("does not deploy, export, or prove runtime correctness"));
-assert(hook.includes("const hasRealFileAdapter = false"));
+assert(panel.includes("project-root scoped"));
+assert(panel.includes("Confirm guarded local write apply"));
+assert(panel.includes("hasRealFileAdapter"));
+assert(hook.includes("const [fileAdapter, setFileAdapter]"));
+assert(hook.includes("configureLocalSourceAdapter"));
+assert(hook.includes("sourceSyncApplyConfirmed"));
 assert(!hook.includes('if (result.status === "applied") sourceSyncDryRun'));
-assert(hook.includes('const sourceSyncApply = (_confirmationMarker?: boolean)'));
-assert(hook.includes('writesPerformed: 0'));
 console.log("liveUIBuilderSourceSyncPanel.test.ts passed");
