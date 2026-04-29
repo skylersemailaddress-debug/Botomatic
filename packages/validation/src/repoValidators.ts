@@ -34,6 +34,7 @@ import { validateGeneratedAppCorpusHarnessReadiness } from "./repoValidators/gen
 import { validateGeneratedAppRepresentativeCorpusReadiness } from "./repoValidators/generatedAppRepresentativeCorpusReadiness";
 import { validateMasterTruthSpecReadiness } from "./repoValidators/masterTruthSpecReadiness";
 import { validateEditableUIDocumentModelReadiness } from "./repoValidators/editableUIDocumentModelReadiness";
+import { validateUIEditCommandParserReadiness } from "./repoValidators/uiEditCommandParserReadiness";
 
 export type RepoValidatorResult = {
   name: string;
@@ -1294,5 +1295,6 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateGeneratedAppCorpusHarnessReadiness(root),
     validateGeneratedAppRepresentativeCorpusReadiness(root),
     validateEditableUIDocumentModelReadiness(root),
+    validateUIEditCommandParserReadiness(root),
   ];
 }
