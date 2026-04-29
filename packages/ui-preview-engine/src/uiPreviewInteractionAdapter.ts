@@ -24,7 +24,7 @@ export function handleUIPreviewChatEdit(input: UIPreviewInteractionInput, state:
   }
   if (command.safety.requiresConfirmation) {
     const reviewPayload = createUIPreviewReviewPayload({ command, history: selected.history });
-    return withState({ ...baseResult("needsConfirmation", selected, command, summarizeUIPreviewReviewPayload(reviewPayload)), reviewPayload, pendingReview: { required: true, command, payload: reviewPayload } }, selected);
+    return withState({ ...baseResult("needsConfirmation", selected, command, summarizeUIPreviewReviewPayload(reviewPayload)), reviewPayload, pendingReview: { required: true, command, payload: reviewPayload, selectionSnapshot: selected.selection, selectedNodeId: selected.selection.selectedNodeId, selectedPageId: selected.selection.selectedPageId } }, selected);
   }
   const workflow = applyUIEditWorkflow(selected.editableDocument, command, { confirmed: true, selection: selected.selection, history: selected.history, now: context?.now ?? input.now, idSeed: context?.idSeed ?? input.idSeed, confirmationMarker: context?.confirmationMarker ?? input.confirmationMarker });
   return fromWorkflow(workflow.status, selected, command, workflow);
@@ -33,7 +33,8 @@ export function handleUIPreviewChatEdit(input: UIPreviewInteractionInput, state:
 export function confirmUIPreviewPendingEdit(state: UIPreviewInteractionState, context?: UIPreviewInteractionAdapterContext): UIPreviewInteractionResult {
   const pending = state.pendingReview;
   if (!pending?.command) return baseResult("invalid", state, undefined, "No pending command");
-  const workflow = applyUIEditWorkflow(state.editableDocument, pending.command, { confirmed: true, selection: state.selection, history: state.history, now: context?.now, idSeed: context?.idSeed, confirmationMarker: context?.confirmationMarker ?? true });
+  const replaySelection = pending.selectionSnapshot ?? state.selection;
+  const workflow = applyUIEditWorkflow(state.editableDocument, pending.command, { confirmed: true, selection: replaySelection, history: state.history, now: context?.now, idSeed: context?.idSeed, confirmationMarker: context?.confirmationMarker ?? true });
   const out = fromWorkflow(workflow.status, state, pending.command, workflow);
   return withState({ ...out, pendingReview: undefined }, out.nextState);
 }

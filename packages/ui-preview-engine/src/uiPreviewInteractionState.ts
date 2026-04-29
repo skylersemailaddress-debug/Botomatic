@@ -4,7 +4,7 @@ import { createUISelectionState, type UISelectionState, validateUISelectionState
 
 export type UIPreviewInteractionStatus = "idle" | "needsResolution" | "needsConfirmation" | "applied" | "blocked" | "invalid";
 export type UIPreviewInteractionMode = "typedChat" | "spokenChat" | "selectionOnly";
-export type UIPreviewInteractionReviewState = { required: boolean; payload?: any; command?: any };
+export type UIPreviewInteractionReviewState = { required: boolean; payload?: any; command?: any; selectionSnapshot?: UISelectionState; selectedNodeId?: string; selectedPageId?: string };
 export type UIPreviewInteractionValidationResult = { valid: boolean; issues: string[] };
 export type UIPreviewInteractionState = {
   editableDocument: EditableUIDocument;
