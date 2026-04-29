@@ -339,3 +339,7 @@ export * from "./uiSourceFileMapping";
 export * from "./uiSourcePatch";
 export * from "./uiSourceApply";
 export * from "./uiSourceRoundTrip";
+export * from "./uiDocumentModel";
+export * from "./uiAppStructureModel";
+export * from "./uiAppStructureCommands";
+export * from "./uiAppStructureMutation";
