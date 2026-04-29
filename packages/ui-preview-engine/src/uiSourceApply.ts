@@ -10,7 +10,9 @@ export function applyUISourcePatch(patch: UISourcePatch, fileSystemAdapter: File
   const blockedReasons: string[] = [];
   const validation = validateUISourcePatch(patch);
   if (!validation.valid) blockedReasons.push(...validation.issues);
-  if (patch.operations.some((o) => o.kind === "manualReviewRequired")) blockedReasons.push("manualReviewRequired operations present");
+  if (patch.operations.some((o) => o.kind === "manualReviewRequired" || o.requiresManualReview)) blockedReasons.push("manualReviewRequired operations present");
+  if (patch.operations.some((o) => o.confidence === "low")) blockedReasons.push("low-confidence patch operations present");
+  for (const o of patch.operations) { if ((o.kind === "replaceText" || o.kind === "removeText") && !o.beforeSnippet) blockedReasons.push(`beforeSnippet required for ${o.kind}: ${o.targetFilePath}`); }
   const root = path.resolve(options.projectRoot);
   for (const p of changedFiles) {
     const resolved = path.resolve(root, p);
