@@ -1,8 +1,14 @@
+"use client";
+
 import Link from "next/link";
 
 import { actionChips, buildMapItems, recentActivity, recentProjects, suggestionChips, vibeSidebarNav } from "./vibeSeedData";
+import { LiveUIBuilderPreviewSurface } from "./LiveUIBuilderPreviewSurface";
+import { useLiveUIBuilderVibe } from "./useLiveUIBuilderVibe";
 
 export function VibeDashboard({ projectId }: { projectId: string }) {
+  const { userFacingSummary, latestReviewPayload, confirmationPending, runSampleEdit, runDestructiveEdit, confirmPending, rejectPending } = useLiveUIBuilderVibe();
+  const previewHeadline = userFacingSummary.includes("Elevated Luxury Stays") ? "Elevated Luxury Stays" : undefined;
   return (
     <section className="vibe-dashboard" aria-label="Vibe dashboard" data-project-id={projectId}>
       <aside className="vibe-dashboard-sidebar" aria-label="Botomatic sidebar">
@@ -68,22 +74,7 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
                 </div>
               </div>
 
-              <article className="vibe-live-preview" aria-label="Live editable luxury hotel preview">
-                <header>
-                  <p>Here&apos;s your live design. You can edit anything by clicking on it.</p>
-                  <div>
-                    <button type="button">Edit</button>
-                    <button type="button">Version 3</button>
-                  </div>
-                </header>
-                <div className="vibe-hotel-preview">
-                  <div className="vibe-hotel-nav"><span>LUXORA</span><span>Home · Rooms · Experiences · About · Contact</span><button type="button">Book Now</button></div>
-                  <h2>Your Escape Awaits</h2>
-                  <p>Experience unparalleled luxury and unforgettable moments.</p>
-                  <div className="vibe-hotel-actions"><button type="button">Book Your Stay</button><button type="button">Explore Rooms</button></div>
-                  <div className="vibe-hotel-booking-bar"><span>Check In</span><span>Check Out</span><span>Guests</span><span>Room</span><button type="button">Check Availability</button></div>
-                </div>
-              </article>
+              <LiveUIBuilderPreviewSurface headline={previewHeadline} />
 
               <div className="vibe-suggestion-chips" aria-label="Suggestions">
                 {suggestionChips.map((chip) => <button type="button" key={chip}>{chip}</button>)}
@@ -96,7 +87,10 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
                 <button type="button">Send</button>
               </div>
               <div className="vibe-action-row">
-                <button type="button">Improve Design</button>
+                <button type="button" onClick={runSampleEdit}>Improve Design</button>
+                <button type="button" onClick={runDestructiveEdit}>Apply destructive sample</button>
+                <button type="button" onClick={confirmPending} disabled={!confirmationPending}>Confirm</button>
+                <button type="button" onClick={rejectPending} disabled={!confirmationPending}>Reject</button>
                 {actionChips.filter((chip) => chip !== "Improve Design").map((chip) => <button type="button" key={chip}>{chip}</button>)}
               </div>
             </section>
@@ -132,6 +126,12 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
               </div>
             </section>
 
+
+            <section className="vibe-rail-card" aria-label="Latest interaction summary">
+              <h3>Latest Summary</h3>
+              <p>{userFacingSummary}</p>
+              <pre>{JSON.stringify(latestReviewPayload ?? {}, null, 2)}</pre>
+            </section>
             <section className="vibe-rail-card">
               <h3>Recent Activity</h3>
               {recentActivity.map((event) => (
