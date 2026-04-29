@@ -41,6 +41,16 @@ export function useLiveUIBuilderVibe() {
 
   const retryLastCommand = () => runCommandText(lastCommandText);
 
+
+  const resolveTarget = (nodeId: string) => {
+    selectNode(nodeId);
+    return retryLastCommand();
+  };
+
+  const pendingResolution = latestResult?.status === "needsResolution" ? {
+    candidates: ((latestResult?.workflowResult?.mutationResult?.issues ?? []).flatMap((issue: any) => issue?.candidateNodeIds ?? []) as string[]),
+  } : undefined;
+
   const confirmPending = () => applyResult(confirmUIPreviewPendingEdit(interactionState, { now: fixture.now, confirmationMarker: true }));
   const rejectPending = () => applyResult(rejectUIPreviewPendingEdit(interactionState));
   const selectNode = (nodeId: string) => setInteractionState((current) => ({ ...current, selection: { ...current.selection, selectedNodeId: nodeId } }));
@@ -56,5 +66,5 @@ export function useLiveUIBuilderVibe() {
   const confirmationPending = Boolean(interactionState.pendingReview?.required);
   const changedNodeIds = latestResult?.previewPatch?.operations?.map((op: any) => op.nodeId).filter(Boolean) ?? [];
 
-  return { latestResult, latestReviewPayload, userFacingSummary, confirmationPending, runSampleEdit, runDestructiveEdit, runCommandText, retryLastCommand, confirmPending, rejectPending, interactionState, editableDocument: interactionState.editableDocument, selectedNodeId: interactionState.selection.selectedNodeId, selectNode, lastPreviewPatch: interactionState.lastPreviewPatch, changedNodeIds, preConfirmDiff, pendingReview: interactionState.pendingReview };
+  return { latestResult, latestReviewPayload, userFacingSummary, confirmationPending, runSampleEdit, runDestructiveEdit, runCommandText, retryLastCommand, resolveTarget, pendingResolution, confirmPending, rejectPending, interactionState, editableDocument: interactionState.editableDocument, selectedNodeId: interactionState.selection.selectedNodeId, selectNode, lastPreviewPatch: interactionState.lastPreviewPatch, changedNodeIds, preConfirmDiff, pendingReview: interactionState.pendingReview };
 }

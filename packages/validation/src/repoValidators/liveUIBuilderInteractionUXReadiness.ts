@@ -1,0 +1,10 @@
+import fs from "fs"; import path from "path"; import type { RepoValidatorResult } from "../repoValidators";
+const has=(r:string,p:string)=>fs.existsSync(path.join(r,p)); const read=(r:string,p:string)=>fs.readFileSync(path.join(r,p),"utf8");
+export function validateLiveUIBuilderInteractionUXReadiness(root:string): RepoValidatorResult {
+  const checks=["apps/control-plane/src/components/live-ui-builder/LiveUIBuilderCommandInput.tsx","apps/control-plane/src/components/live-ui-builder/LiveUIBuilderResolutionPanel.tsx","apps/control-plane/src/components/live-ui-builder/LiveUIBuilderDiffPreview.tsx","packages/validation/src/tests/liveUIBuilderCommandInput.test.ts","packages/validation/src/tests/liveUIBuilderResolutionPanel.test.ts","packages/validation/src/tests/liveUIBuilderDiffPreview.test.ts","package.json","packages/validation/src/repoValidators.ts"];
+  if(!checks.every(c=>has(root,c))) return {name:"Validate-Botomatic-LiveUIBuilderInteractionUXReadiness",status:"failed",summary:"Required interaction UX files are missing.",checks};
+  const pkg=JSON.parse(read(root,"package.json")) as {scripts?:Record<string,string>}; const scripts=pkg.scripts??{}; const universal=scripts["test:universal"]??""; const validators=read(root,"packages/validation/src/repoValidators.ts");
+  const ui=[read(root,checks[0]),read(root,checks[1]),read(root,checks[2])].join("\n").toLowerCase();
+  const ok=Boolean(scripts["test:live-ui-builder-command-input"]&&scripts["test:live-ui-builder-resolution-panel"]&&scripts["test:live-ui-builder-diff-preview"]&&universal.includes("test:live-ui-builder-command-input")&&universal.includes("test:live-ui-builder-resolution-panel")&&universal.includes("test:live-ui-builder-diff-preview")&&validators.includes("validateLiveUIBuilderInteractionUXReadiness")&&!ui.includes("source file writing")&&!ui.includes("export readiness")&&!ui.includes("deploy now"));
+  return {name:"Validate-Botomatic-LiveUIBuilderInteractionUXReadiness",status:ok?"passed":"failed",summary:ok?"Live UI builder interaction UX readiness checks passed.":"Live UI builder interaction UX readiness checks failed.",checks};
+}
