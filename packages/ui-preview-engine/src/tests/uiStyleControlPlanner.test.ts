@@ -1,0 +1,15 @@
+import assert from "assert";
+import { normalizeUIDesignTokens } from "../uiDesignTokenNormalizer";
+import { createUIStyleControlPlan } from "../uiStyleControlPlanner";
+const tokenResult=normalizeUIDesignTokens([{tokenId:"1",name:"Primary",category:"color",value:"rgb(0,0,0)"},{tokenId:"2",name:"Space",category:"spacing",value:"8px"}]);
+const a=createUIStyleControlPlan({tokenResult,options:{outputMode:"cssVariables"}});
+const b=createUIStyleControlPlan({tokenResult,options:{outputMode:"cssVariables"}});
+assert.strictEqual(a.stylePlanId,b.stylePlanId);
+assert(a.cssVariableBlock?.includes(":root"));
+const t=createUIStyleControlPlan({tokenResult,options:{outputMode:"tailwindTheme"}});
+assert.strictEqual(t.styleTargetFilePath,"tailwind.config.ts");
+const i=createUIStyleControlPlan({tokenResult,options:{outputMode:"inlinePreview"}});
+assert.strictEqual(i.styleTargetFilePath,undefined);
+const c=createUIStyleControlPlan({tokenResult,options:{outputMode:"cssVariables"},fullProjectOrderedFiles:["src/styles/tokens.css"]});
+assert(c.requiresManualReview);
+console.log("uiStyleControlPlanner.test.ts passed");

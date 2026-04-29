@@ -36,3 +36,7 @@ assert(panel.includes("Normalization issue count:"));
 assert(panel.includes("Project risk level:"));
 assert(panel.includes("Project ordered files preview:"));
 assert(panel.includes("Full project generation is dry-run only and does not write files, install dependencies, deploy, or prove runtime correctness."));
+assert(panel.includes("Style plan id:"));
+assert(panel.includes("Style token count:"));
+assert(panel.includes("Style variables preview:"));
+assert(panel.includes("Design token planning is dry-run only and does not apply styles, write files, or prove visual/runtime correctness."));
