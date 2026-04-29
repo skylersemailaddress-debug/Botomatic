@@ -30,6 +30,9 @@ export function useLiveUIBuilderVibe() {
   const [sourceSyncResult, setSourceSyncResult] = useState<any>();
   const [sourceSyncStatus, setSourceSyncStatus] = useState<"idle"|"dryRunReady"|"applyBlocked"|"simulated">("idle");
   const hasRealFileAdapter = false;
+  const [lastAppStructureResult, setLastAppStructureResult] = useState<any>();
+  const [appStructureNeedsResolution, setAppStructureNeedsResolution] = useState<string>();
+  const [appStructureCandidates, setAppStructureCandidates] = useState<any[]>([]);
 
   const applyResult = (result: any) => {
     setLatestResult(result);
@@ -71,8 +74,8 @@ export function useLiveUIBuilderVibe() {
 
 
   const appStructure = useMemo(() => createUIAppStructureFromDocument(interactionState.editableDocument), [interactionState.editableDocument]);
-  const runAppStructureCommand = (text: string) => { const parsed = parseUIAppStructureCommand(text); if (parsed.status !== "ok") return parsed; const result = applyUIAppStructureCommand(interactionState.editableDocument, parsed.command as any, { idSeed: "vibe", selectedNodeId: interactionState.selection.selectedNodeId }); if (result.status === "applied") setInteractionState((c) => ({ ...c, editableDocument: result.document, selection: { ...c.selection, selectedPageId: result.changedPageIds[0] ?? c.selection.selectedPageId } } as any)); return result; };
-  const selectPage = (pageId: string) => setInteractionState((current:any) => ({ ...current, selection: { ...current.selection, selectedPageId: pageId } }));
+  const runAppStructureCommand = (text: string) => { const parsed = parseUIAppStructureCommand(text); if (parsed.status !== "ok") return parsed; const result = applyUIAppStructureCommand(interactionState.editableDocument, parsed.command as any, { idSeed: "vibe", selectedNodeId: interactionState.selection.selectedNodeId, now: fixture.now }); setLastAppStructureResult(result); setAppStructureNeedsResolution(result.status === "needsResolution" ? result.issues?.[0] : undefined); setAppStructureCandidates((result as any).candidates ?? []); if (result.status === "applied") setInteractionState((c) => ({ ...c, editableDocument: result.document, selection: { ...c.selection, selectedPageId: result.changedPageIds[0] ?? c.selection.selectedPageId } } as any)); return result; };
+  const selectPage = (pageId: string) => setInteractionState((current:any) => { const page = current.editableDocument.pages.find((p:any)=>p.id===pageId); const selectedNodeId = page && current.selection.selectedNodeId && page.nodes[current.selection.selectedNodeId] ? current.selection.selectedNodeId : current.selection.selectedNodeId; return { ...current, selection: { ...current.selection, selectedPageId: pageId, selectedNodeId } }; });
   const duplicatePage = (pageId: string) => runAppStructureCommand(`duplicate the ${pageId} page`);
   const renamePage = (pageId: string, title: string) => runAppStructureCommand(`rename ${pageId} to ${title}`);
   const addPage = (title: string) => runAppStructureCommand(`add a ${title} page`);
@@ -83,5 +86,5 @@ export function useLiveUIBuilderVibe() {
   const confirmationPending = Boolean(interactionState.pendingReview?.required);
   const changedNodeIds = latestResult?.previewPatch?.operations?.map((op: any) => op.nodeId).filter(Boolean) ?? [];
 
-  return { latestResult, latestReviewPayload, userFacingSummary, confirmationPending, runSampleEdit, runDestructiveEdit, runCommandText, retryLastCommand, resolveTarget, pendingResolution, confirmPending, rejectPending, interactionState, editableDocument: interactionState.editableDocument, selectedNodeId: interactionState.selection.selectedNodeId, selectNode, lastPreviewPatch: interactionState.lastPreviewPatch, changedNodeIds, preConfirmDiff, pendingReview: interactionState.pendingReview, sourceSyncDryRun, sourceSyncApply, sourceSyncResult, sourceSyncStatus, hasRealFileAdapter, appStructure, runAppStructureCommand, selectPage, duplicatePage, renamePage, addPage, updateNavigation, extractReusableComponent, reuseComponent };
+  return { latestResult, latestReviewPayload, userFacingSummary, confirmationPending, runSampleEdit, runDestructiveEdit, runCommandText, retryLastCommand, resolveTarget, pendingResolution, confirmPending, rejectPending, interactionState, editableDocument: interactionState.editableDocument, selectedNodeId: interactionState.selection.selectedNodeId, selectNode, lastPreviewPatch: interactionState.lastPreviewPatch, changedNodeIds, preConfirmDiff, pendingReview: interactionState.pendingReview, sourceSyncDryRun, sourceSyncApply, sourceSyncResult, sourceSyncStatus, hasRealFileAdapter, appStructure, runAppStructureCommand, lastAppStructureResult, appStructureNeedsResolution, appStructureCandidates, selectPage, duplicatePage, renamePage, addPage, updateNavigation, extractReusableComponent, reuseComponent };
 }
