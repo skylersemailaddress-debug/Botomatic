@@ -12,7 +12,13 @@ export function createVibeInteractionHarness() {
   const confirmPending = () => applyResult(confirmUIPreviewPendingEdit(state, { now: fixture.now, confirmationMarker: true }));
   const rejectPending = () => applyResult(rejectUIPreviewPendingEdit(state));
   const selectNode = (nodeId: string) => { state = { ...state, selection: { ...state.selection, selectedNodeId: nodeId } }; };
-  return { getState: () => state, getLatestResult: () => latestResult, getLatestReviewPayload: () => latestReviewPayload, runSampleEdit, runDestructiveEdit, confirmPending, rejectPending, selectNode };
+  const getPreConfirmDiff = () => {
+    const pendingCommand = state.pendingReview?.command;
+    if (!pendingCommand || !state.pendingReview?.required) return undefined;
+    const replaySelection = state.pendingReview?.selectionSnapshot ?? state.selection;
+    return applyUIEditWorkflow(state.editableDocument, pendingCommand, { confirmed: true, selection: replaySelection, history: state.history, now: fixture.now })?.diff;
+  };
+  return { getState: () => state, getLatestResult: () => latestResult, getLatestReviewPayload: () => latestReviewPayload, runSampleEdit, runDestructiveEdit, confirmPending, rejectPending, selectNode, getPreConfirmDiff };
 }
 
 export function useLiveUIBuilderVibe() {
@@ -59,7 +65,8 @@ export function useLiveUIBuilderVibe() {
   const pendingCommand = interactionState.pendingReview?.command;
   const preConfirmDiff = useMemo(() => {
     if (!pendingCommand || !interactionState.pendingReview?.required) return undefined;
-    return applyUIEditWorkflow(interactionState.editableDocument, pendingCommand, { confirmed: true, selection: interactionState.selection, history: interactionState.history, now: fixture.now });
+    const replaySelection = interactionState.pendingReview?.selectionSnapshot ?? interactionState.selection;
+    return applyUIEditWorkflow(interactionState.editableDocument, pendingCommand, { confirmed: true, selection: replaySelection, history: interactionState.history, now: fixture.now });
   }, [fixture.now, interactionState.editableDocument, interactionState.history, interactionState.pendingReview?.required, interactionState.selection, pendingCommand]);
 
   const userFacingSummary = latestResult?.userFacingSummary ?? latestResult?.workflowResult?.summary ?? "No edits applied yet.";
