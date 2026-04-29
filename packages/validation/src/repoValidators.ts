@@ -36,6 +36,7 @@ import { validateMasterTruthSpecReadiness } from "./repoValidators/masterTruthSp
 import { validateEditableUIDocumentModelReadiness } from "./repoValidators/editableUIDocumentModelReadiness";
 import { validateUIEditCommandParserReadiness } from "./repoValidators/uiEditCommandParserReadiness";
 import { validateLiveUIBuilderCoreReadiness } from "./repoValidators/liveUIBuilderCoreReadiness";
+import { validateLiveUIBuilderSafetyReadiness } from "./repoValidators/liveUIBuilderSafetyReadiness";
 
 export type RepoValidatorResult = {
   name: string;
@@ -1298,5 +1299,6 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateEditableUIDocumentModelReadiness(root),
     validateUIEditCommandParserReadiness(root),
     validateLiveUIBuilderCoreReadiness(root),
+    validateLiveUIBuilderSafetyReadiness(root),
   ];
 }

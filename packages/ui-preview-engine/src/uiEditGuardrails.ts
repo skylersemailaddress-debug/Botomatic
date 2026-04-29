@@ -1,0 +1,18 @@
+import { flattenEditableNodes, validateEditableUIDocument, type EditableUIDocument } from "./uiDocumentModel";
+import { type UIEditMutationResult } from "./uiMutationEngine";
+export type UIEditGuardrailSeverity = "info"|"warning"|"error"|"blocker";
+export type UIEditGuardrailIssue = { code:string; severity:UIEditGuardrailSeverity; message:string };
+export type UIEditGuardrailResult = { valid:boolean; status:"ok"|"blocked"; issues:UIEditGuardrailIssue[]; claimBoundary:string };
+const CLAIM="Guardrail validation checks editable UI safety only. No source sync or full live UI builder/export-readiness claim.";
+const bad=["lorem ipsum","todo","placeholder","coming soon","dummy","sample data"];
+export function runUIEditGuardrails(before: EditableUIDocument, after: EditableUIDocument, mutationResult: UIEditMutationResult, options?:{responsiveIntent?:string; confirmationMarker?:boolean}): UIEditGuardrailResult { const issues:UIEditGuardrailIssue[]=[]; const out=validateEditableUIDocument(after); if(!out.valid) issues.push({code:"invalid_output",severity:"blocker",message:out.issues.join("; ")});
+ for(const p of after.pages){ for(const n of Object.values(p.nodes)){ for(const c of n.childIds) if(!p.nodes[c]) issues.push({code:"dangling_child",severity:"blocker",message:`${n.id}->${c}`}); if(n.parentId && !p.nodes[n.parentId]) issues.push({code:"missing_parent",severity:"blocker",message:n.id}); }}
+ if(after.pages.length===0 || after.pages.some(p=>Object.keys(p.nodes).length===0)) issues.push({code:"empty_document",severity:"blocker",message:"empty page/document"});
+ for(const bp of before.pages){ const ap=after.pages.find(p=>p.id===bp.id); if(!ap) continue; for(const rid of bp.rootNodeIds){ if(bp.nodes[rid] && !ap.nodes[rid]) issues.push({code:"removed_root",severity:"blocker",message:rid}); }}
+ const beforeText=flattenEditableNodes(before).map(n=>JSON.stringify(n.props).toLowerCase()).join(" "); const afterText=flattenEditableNodes(after).map(n=>JSON.stringify(n.props).toLowerCase()).join(" "); for(const t of bad) if(!beforeText.includes(t)&&afterText.includes(t)) issues.push({code:"placeholder_text",severity:"error",message:t});
+ for(const n of flattenEditableNodes(after)){ if((n.kind==="action"||n.kind==="component") && n.actionBindings.length>0 && !String(n.identity.semanticLabel||"").trim()) issues.push({code:"a11y_semantic_label",severity:"warning",message:n.id}); }
+ if(mutationResult.status==="applied" && mutationResult.previewPatch.operations.some(o=>o.kind==="layoutUpdated") && mutationResult.changedNodeIds.length && !options?.responsiveIntent) issues.push({code:"responsive_intent_missing",severity:"warning",message:"responsive intent missing"});
+ if(["remove","removePage","replace"].includes((mutationResult as any).command?.kind ?? "") && options?.confirmationMarker!==true) issues.push({code:"high_impact_unconfirmed",severity:"blocker",message:"confirmation marker required"});
+ if((mutationResult as any).command?.kind==="connectForm"){ for(const n of flattenEditableNodes(after).filter(n=>n.kind==="form")) if(n.formBindings.length===0) issues.push({code:"empty_form_bindings",severity:"error",message:n.id}); }
+ const blocked=issues.some(i=>i.severity==="blocker"); return {valid:issues.length===0,status:blocked?"blocked":"ok",issues,claimBoundary:CLAIM}; }
+export function validateUIEditGuardrailResult(r: Partial<UIEditGuardrailResult>): {valid:boolean;issues:string[]} { const issues:string[]=[]; if(!r.claimBoundary?.includes("No source sync")) issues.push("claimBoundary missing"); if(!Array.isArray(r.issues)) issues.push("issues missing"); return {valid:issues.length===0,issues}; }
