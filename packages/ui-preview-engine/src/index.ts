@@ -355,3 +355,7 @@ export * from "./uiFullProjectGenerator";
 export * from "./uiDataStateApiWiringModel";
 export * from "./uiDataStateApiWiringNormalizer";
 export * from "./uiDataStateApiWiringPlanner";
+
+export * from "./uiReliabilityRepairModel";
+export * from "./uiReliabilityFailureClassifier";
+export * from "./uiReliabilityRepairPlanner";

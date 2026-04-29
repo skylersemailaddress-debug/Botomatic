@@ -1,0 +1,10 @@
+export type UIRepairFailureKind = "parse-error" | "type-error" | "build-error" | "test-error" | "lint-error" | "source-identity-stale" | "patch-conflict" | "missing-file" | "unsafe-operation" | "unknown";
+export type UIRepairRisk = "low" | "medium" | "high";
+export type UIRepairIssue = { code: string; message: string; blocked: boolean };
+export type UIRepairFailureInput = { command?: string; exitCode?: number; stderr?: string; stdout?: string; filePath?: string; nodeId?: string; operationId?: string; sourcePatchMetadata?: Record<string, unknown>; roundTripValidationResult?: Record<string, unknown> };
+export type UIRepairFailureClassification = { kind: UIRepairFailureKind; confidence: "high"|"medium"|"low"; normalizedMessage: string; evidenceSnippets: string[]; affectedFilePath?: string; affectedNodeId?: string; operationId?: string };
+export type UIRepairStrategy = { strategyId: string; label: string; failureKind: UIRepairFailureKind; risky?: boolean; rollbackOnly?: boolean; requiresSourcePatchPlan?: boolean };
+export type UIRepairAttempt = { attemptId: string; index: number; strategyId: string; blockedReasons: string[] };
+export type UIRepairPlan = { repairPlanId: string; failureClassifications: UIRepairFailureClassification[]; selectedStrategies: UIRepairStrategy[]; attempts: UIRepairAttempt[]; maxAttempts: number; nextAttemptIndex: number; rollbackRequired: boolean; rollbackProofRequired: boolean; affectedFiles: string[]; affectedNodeIds: string[]; blockedReasons: string[]; riskLevel: UIRepairRisk; requiresManualReview: boolean; caveat: "Reliability repair planning is deterministic dry-run planning and does not write files, execute builds, deploy, or prove runtime correctness."; operationIds?: string[]; transactionIds?: string[] };
+export type UIRepairPlanResult = { ok: boolean; plan: UIRepairPlan; issues: UIRepairIssue[] };
+export const UI_REPAIR_PLAN_CAVEAT: UIRepairPlan["caveat"] = "Reliability repair planning is deterministic dry-run planning and does not write files, execute builds, deploy, or prove runtime correctness.";
