@@ -315,3 +315,5 @@ export function summarizeUiPreviewManifest(manifest: UiPreviewManifest): string 
 }
 
 export { PREVIEW_CAVEAT };
+
+export * from "./uiDocumentModel";
