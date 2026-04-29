@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { applyUIEditWorkflow, applyUISourcePatch, confirmUIPreviewPendingEdit, createUIPreviewInteractionFixture, createUIPreviewInteractionState, createUISourceFileMapping, createUISourcePatchFromSyncPlan, handleUIPreviewChatEdit, rejectUIPreviewPendingEdit, validateUISourceRoundTrip } from "../../../../../packages/ui-preview-engine/src";
+import { applyUIEditWorkflow, applyUIAppStructureCommand, applyUISourcePatch, confirmUIPreviewPendingEdit, createUIAppStructureFromDocument, createUIPreviewInteractionFixture, createUIPreviewInteractionState, createUISourceFileMapping, createUISourcePatchFromSyncPlan, handleUIPreviewChatEdit, parseUIAppStructureCommand, rejectUIPreviewPendingEdit, validateUISourceRoundTrip } from "../../../../../packages/ui-preview-engine/src";
 
 export function createVibeInteractionHarness() {
   const fixture = createUIPreviewInteractionFixture();
@@ -69,9 +69,19 @@ export function useLiveUIBuilderVibe() {
   const pendingCommand = interactionState.pendingReview?.command;
   const preConfirmDiff = useMemo(() => { if (!pendingCommand || !interactionState.pendingReview?.required) return undefined; const replaySelection = interactionState.pendingReview?.selectionSnapshot ?? interactionState.selection; return applyUIEditWorkflow(interactionState.editableDocument, pendingCommand, { confirmed: true, selection: replaySelection, history: interactionState.history, now: fixture.now }); }, [fixture.now, interactionState.editableDocument, interactionState.history, interactionState.pendingReview?.required, interactionState.selection, pendingCommand]);
 
+
+  const appStructure = useMemo(() => createUIAppStructureFromDocument(interactionState.editableDocument), [interactionState.editableDocument]);
+  const runAppStructureCommand = (text: string) => { const parsed = parseUIAppStructureCommand(text); if (parsed.status !== "ok") return parsed; const result = applyUIAppStructureCommand(interactionState.editableDocument, parsed.command as any, { idSeed: "vibe", selectedNodeId: interactionState.selection.selectedNodeId }); if (result.status === "applied") setInteractionState((c) => ({ ...c, editableDocument: result.document, selection: { ...c.selection, selectedPageId: result.changedPageIds[0] ?? c.selection.selectedPageId } } as any)); return result; };
+  const selectPage = (pageId: string) => setInteractionState((current:any) => ({ ...current, selection: { ...current.selection, selectedPageId: pageId } }));
+  const duplicatePage = (pageId: string) => runAppStructureCommand(`duplicate the ${pageId} page`);
+  const renamePage = (pageId: string, title: string) => runAppStructureCommand(`rename ${pageId} to ${title}`);
+  const addPage = (title: string) => runAppStructureCommand(`add a ${title} page`);
+  const updateNavigation = (entry: string) => runAppStructureCommand(`add ${entry} to the nav`);
+  const extractReusableComponent = (nodeId: string) => { const res = applyUIAppStructureCommand(interactionState.editableDocument, { type: "extractComponent", nodeRef: nodeId }, { selectedNodeId: nodeId, idSeed: "vibe" } as any); if (res.status === "applied") setInteractionState((c)=>({ ...c, editableDocument: res.document })); return res; };
+  const reuseComponent = (componentId: string, pageId: string) => { const res = applyUIAppStructureCommand(interactionState.editableDocument, { type: "reuseComponent", componentRef: componentId, pageRef: pageId } as any, { idSeed: "vibe" }); if (res.status === "applied") setInteractionState((c)=>({ ...c, editableDocument: res.document })); return res; };
   const userFacingSummary = latestResult?.userFacingSummary ?? latestResult?.workflowResult?.summary ?? "No edits applied yet.";
   const confirmationPending = Boolean(interactionState.pendingReview?.required);
   const changedNodeIds = latestResult?.previewPatch?.operations?.map((op: any) => op.nodeId).filter(Boolean) ?? [];
 
-  return { latestResult, latestReviewPayload, userFacingSummary, confirmationPending, runSampleEdit, runDestructiveEdit, runCommandText, retryLastCommand, resolveTarget, pendingResolution, confirmPending, rejectPending, interactionState, editableDocument: interactionState.editableDocument, selectedNodeId: interactionState.selection.selectedNodeId, selectNode, lastPreviewPatch: interactionState.lastPreviewPatch, changedNodeIds, preConfirmDiff, pendingReview: interactionState.pendingReview, sourceSyncDryRun, sourceSyncApply, sourceSyncResult, sourceSyncStatus, hasRealFileAdapter };
+  return { latestResult, latestReviewPayload, userFacingSummary, confirmationPending, runSampleEdit, runDestructiveEdit, runCommandText, retryLastCommand, resolveTarget, pendingResolution, confirmPending, rejectPending, interactionState, editableDocument: interactionState.editableDocument, selectedNodeId: interactionState.selection.selectedNodeId, selectNode, lastPreviewPatch: interactionState.lastPreviewPatch, changedNodeIds, preConfirmDiff, pendingReview: interactionState.pendingReview, sourceSyncDryRun, sourceSyncApply, sourceSyncResult, sourceSyncStatus, hasRealFileAdapter, appStructure, runAppStructureCommand, selectPage, duplicatePage, renamePage, addPage, updateNavigation, extractReusableComponent, reuseComponent };
 }

@@ -8,10 +8,11 @@ import { LiveUIBuilderDiffPreview } from "../live-ui-builder/LiveUIBuilderDiffPr
 import { LiveUIBuilderResolutionPanel, type ResolutionTarget } from "../live-ui-builder/LiveUIBuilderResolutionPanel";
 import { LiveUIBuilderPreviewSurface } from "./LiveUIBuilderPreviewSurface";
 import { LiveUIBuilderSourceSyncPanel } from "../live-ui-builder/LiveUIBuilderSourceSyncPanel";
+import { LiveUIBuilderAppStructurePanel } from "../live-ui-builder/LiveUIBuilderAppStructurePanel";
 import { useLiveUIBuilderVibe } from "./useLiveUIBuilderVibe";
 
 export function VibeDashboard({ projectId }: { projectId: string }) {
-  const { latestResult, userFacingSummary, latestReviewPayload, confirmationPending, runSampleEdit, runDestructiveEdit, runCommandText, retryLastCommand, resolveTarget, pendingResolution, confirmPending, rejectPending, editableDocument, selectedNodeId, changedNodeIds, lastPreviewPatch, selectNode, preConfirmDiff, sourceSyncDryRun, sourceSyncApply, sourceSyncResult, sourceSyncStatus, hasRealFileAdapter } = useLiveUIBuilderVibe();
+  const { latestResult, userFacingSummary, latestReviewPayload, confirmationPending, runSampleEdit, runDestructiveEdit, runCommandText, retryLastCommand, resolveTarget, pendingResolution, confirmPending, rejectPending, editableDocument, selectedNodeId, changedNodeIds, lastPreviewPatch, selectNode, preConfirmDiff, sourceSyncDryRun, sourceSyncApply, sourceSyncResult, sourceSyncStatus, hasRealFileAdapter, appStructure, selectPage, duplicatePage, renamePage, updateNavigation, extractReusableComponent, reuseComponent } = useLiveUIBuilderVibe();
   const fallbackTargets: ResolutionTarget[] = Object.values(editableDocument.pages?.[0]?.nodes ?? {}).slice(0, 8).map((node: any) => ({ nodeId: node.id, label: node.identity?.semanticLabel ?? node.id, type: node.kind ?? "node", page: editableDocument.pages?.[0]?.id ?? "page", location: node.parentId ? `child of ${node.parentId}` : "root" }));
   const resolverTargets: ResolutionTarget[] = (pendingResolution?.candidates ?? []).map((nodeId: string) => ({ nodeId, label: nodeId, type: "resolver candidate", page: editableDocument.pages.find((page: any) => page.nodes[nodeId])?.id ?? "unknown", location: "resolver" }));
   return (
@@ -143,6 +144,8 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
               </div>
             </section>
 
+
+            <LiveUIBuilderAppStructurePanel appStructure={appStructure} onSelectPage={selectPage} onDuplicatePage={duplicatePage} onRenamePage={renamePage} onAddToNav={updateNavigation} onExtractReusable={extractReusableComponent} onReuseComponent={reuseComponent} />
 
             {latestResult?.status === "applied" ? (<LiveUIBuilderSourceSyncPanel sourceSyncStatus={sourceSyncStatus} sourceSyncResult={sourceSyncResult} onDryRun={sourceSyncDryRun} onApply={() => sourceSyncApply(true)} canApply={hasRealFileAdapter && sourceSyncStatus === "dryRunReady"} hasRealFileAdapter={hasRealFileAdapter} />) : null}
 
