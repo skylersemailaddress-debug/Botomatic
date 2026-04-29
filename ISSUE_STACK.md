@@ -40,7 +40,8 @@
 19. SELF-001 executable self-upgrade safety contract (complete)
 20. DEPLOY-001 secret leak prevention and secret-reference policy scope (complete)
 21. DEPLOY-003 route-level provider promote/rollback enforcement (complete)
-22. REPO-003 dirty repo repair-loop proof (next)
+22. REPO-003 dirty repo repair-loop proof (complete)
+23. RELEASE-AUDIT-001 release audit proof-pack completeness (next)
 
 ## Stale PR Handling Guidance
 - PR #71 merged baseline.
@@ -55,7 +56,8 @@
 ## Next Recommended Parallel Lane Execution
 - REPO-001 dirty repo evidence contract (complete)
 - REPO-002 dirty repo completion contract v2 (complete)
-- REPO-003 dirty repo repair-loop proof (next)
+- REPO-003 dirty repo repair-loop proof (complete)
+- RELEASE-AUDIT-001 release audit proof-pack completeness (next)
 - SELF-001 executable self-upgrade safety contract (complete)
 - DEPLOY-001 secret leak prevention and secret-reference policy scope (complete)
 
