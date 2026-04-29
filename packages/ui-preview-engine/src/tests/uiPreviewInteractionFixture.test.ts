@@ -1,0 +1,11 @@
+import assert from "assert";
+import { createUIPreviewInteractionFixture, createSampleUIPreviewInteractionState, runSampleUIPreviewEditSequence } from "../uiPreviewInteractionFixture";
+const a = createUIPreviewInteractionFixture(); const b = createUIPreviewInteractionFixture();
+assert.deepStrictEqual(a, b);
+const state = createSampleUIPreviewInteractionState();
+assert.ok(state.claimBoundary.includes("planning-only"));
+const seq = runSampleUIPreviewEditSequence();
+assert.strictEqual(seq.applied.status, "applied");
+assert.strictEqual(seq.needsConfirmation.status, "needsConfirmation");
+assert.ok(!state.claimBoundary.toLowerCase().includes("export-ready"));
+console.log("uiPreviewInteractionFixture tests passed");

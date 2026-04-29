@@ -1,0 +1,10 @@
+import assert from "assert";
+import { createUIPreviewReviewPayload, validateUIPreviewReviewPayload, summarizeUIPreviewReviewPayload } from "../uiPreviewReviewPayload";
+import { parseUIEditCommand } from "../uiEditCommand";
+const cmd = parseUIEditCommand({ text: "remove this", source: "typedChat" }).command!;
+const payload = createUIPreviewReviewPayload({ command: cmd, history: { pointer: -1, entries: [] } as any });
+assert.ok(payload.confirmationRequired);
+assert.ok(summarizeUIPreviewReviewPayload(payload).includes("target="));
+assert.ok(validateUIPreviewReviewPayload(payload).valid);
+assert.ok(payload.claimBoundary.includes("does not prove"));
+console.log("uiPreviewReviewPayload tests passed");
