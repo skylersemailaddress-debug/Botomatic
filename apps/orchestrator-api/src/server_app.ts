@@ -71,6 +71,7 @@ import { intakeGithubSource } from "./intake/githubIntake";
 import { intakeCloudLink } from "./intake/cloudIntake";
 import { validateLocalFolderManifest } from "./intake/localManifest";
 import { isBlockedFileExtension, suspiciousBinaryHook } from "./intake/intakeSafety";
+import { assertProviderPromoteGate, assertProviderRollbackGate, loadProviderDeploymentContracts } from "./deployProviderGates";
 
 type VerifiedRequestAuth = AuthContext & { issuer?: string };
 
@@ -226,6 +227,8 @@ function validateGovernanceForAction(governanceApproval: GovernanceApprovalState
   }
   return missing;
 }
+
+
 
 function ensureGovernanceApprovalState(project: StoredProjectRecord, actorId = "system") {
   const runs = ((project.runs || {}) as Record<string, unknown>);
@@ -3709,11 +3712,21 @@ export function buildApp(config: RuntimeConfig) {
       if (gate.launchStatus !== "ready") {
         return res.status(409).json({ error: "Cannot promote: gate not ready", issues: gate.issues });
       }
+      const providerContracts = loadProviderDeploymentContracts(process.cwd());
+      const providerGate = assertProviderPromoteGate(providerContracts);
+      if (!providerGate.allowed) {
+        return res.status(409).json({
+          error: "Cannot promote: provider deployment contract requirements not satisfied",
+          blocked: true,
+          providerGate,
+          deploymentGate: { status: "blocked", reasons: providerGate.reasons },
+        });
+      }
       ensureDeploymentState(project as any);
       (project as any).deployments[environment] = { environment, status: "promoted", promotedAt: now(), promotedBy: actor.actorId };
       emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "promote", actorId: actor.actorId, role: "admin", timestamp: now(), metadata: { environment } });
       await persistProject(config, project);
-      return res.json({ success: true, environment, governanceApprovalStatus: governanceApproval.approvalStatus, actorId: actor.actorId });
+      return res.json({ success: true, environment, governanceApprovalStatus: governanceApproval.approvalStatus, actorId: actor.actorId, providerGate: { ...providerGate, liveExecutionClaimed: false } });
     } catch (error) {
       return handleRouteError(res, config, error, "POST deploy/promote", actor);
     }
@@ -3733,6 +3746,16 @@ export function buildApp(config: RuntimeConfig) {
       if (!current || !current.promotedAt) {
         return res.status(409).json({ error: "Cannot rollback: environment has not been promoted", environment });
       }
+      const providerContracts = loadProviderDeploymentContracts(process.cwd());
+      const providerGate = assertProviderRollbackGate(providerContracts);
+      if (!providerGate.allowed) {
+        return res.status(409).json({
+          error: "Cannot rollback: provider rollback contract requirements not satisfied",
+          blocked: true,
+          providerGate,
+          deploymentGate: { status: "blocked", reasons: providerGate.reasons },
+        });
+      }
       (project as any).deployments[environment] = {
         ...current,
         status: "rolled_back",
@@ -3749,7 +3772,7 @@ export function buildApp(config: RuntimeConfig) {
         metadata: { environment },
       });
       await persistProject(config, project);
-      return res.json({ success: true, environment, status: "rolled_back", actorId: actor.actorId });
+      return res.json({ success: true, environment, status: "rolled_back", actorId: actor.actorId, providerGate: { ...providerGate, liveRollbackExecutionClaimed: false } });
     } catch (error) {
       return handleRouteError(res, config, error, "POST /api/projects/:projectId/deploy/rollback", actor);
     }
