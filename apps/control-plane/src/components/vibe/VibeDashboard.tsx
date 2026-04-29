@@ -7,10 +7,11 @@ import { LiveUIBuilderCommandInput } from "../live-ui-builder/LiveUIBuilderComma
 import { LiveUIBuilderDiffPreview } from "../live-ui-builder/LiveUIBuilderDiffPreview";
 import { LiveUIBuilderResolutionPanel, type ResolutionTarget } from "../live-ui-builder/LiveUIBuilderResolutionPanel";
 import { LiveUIBuilderPreviewSurface } from "./LiveUIBuilderPreviewSurface";
+import { LiveUIBuilderSourceSyncPanel } from "../live-ui-builder/LiveUIBuilderSourceSyncPanel";
 import { useLiveUIBuilderVibe } from "./useLiveUIBuilderVibe";
 
 export function VibeDashboard({ projectId }: { projectId: string }) {
-  const { latestResult, userFacingSummary, latestReviewPayload, confirmationPending, runSampleEdit, runDestructiveEdit, runCommandText, retryLastCommand, resolveTarget, pendingResolution, confirmPending, rejectPending, editableDocument, selectedNodeId, changedNodeIds, lastPreviewPatch, selectNode, preConfirmDiff } = useLiveUIBuilderVibe();
+  const { latestResult, userFacingSummary, latestReviewPayload, confirmationPending, runSampleEdit, runDestructiveEdit, runCommandText, retryLastCommand, resolveTarget, pendingResolution, confirmPending, rejectPending, editableDocument, selectedNodeId, changedNodeIds, lastPreviewPatch, selectNode, preConfirmDiff, sourceSyncDryRun, sourceSyncApply, sourceSyncResult, sourceSyncStatus } = useLiveUIBuilderVibe();
   const fallbackTargets: ResolutionTarget[] = Object.values(editableDocument.pages?.[0]?.nodes ?? {}).slice(0, 8).map((node: any) => ({ nodeId: node.id, label: node.identity?.semanticLabel ?? node.id, type: node.kind ?? "node", page: editableDocument.pages?.[0]?.id ?? "page", location: node.parentId ? `child of ${node.parentId}` : "root" }));
   const resolverTargets: ResolutionTarget[] = (pendingResolution?.candidates ?? []).map((nodeId: string) => ({ nodeId, label: nodeId, type: "resolver candidate", page: editableDocument.pages.find((page: any) => page.nodes[nodeId])?.id ?? "unknown", location: "resolver" }));
   return (
@@ -142,6 +143,8 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
               </div>
             </section>
 
+
+            {latestResult?.status === "applied" ? (<LiveUIBuilderSourceSyncPanel sourceSyncStatus={sourceSyncStatus} sourceSyncResult={sourceSyncResult} onDryRun={sourceSyncDryRun} onApply={() => sourceSyncApply(true)} canApply={sourceSyncStatus === "dryRunReady"} />) : null}
 
             <section className="vibe-rail-card" aria-label="Latest interaction summary">
               <h3>Latest Summary</h3>

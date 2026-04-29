@@ -1,0 +1,10 @@
+import assert from "assert";
+import { getUiBlueprint } from "../../../ui-blueprint-registry/src";
+import { createEditableUIDocumentFromBlueprint } from "../uiDocumentModel";
+import { createUISourceFileMapping } from "../uiSourceFileMapping";
+const doc = createEditableUIDocumentFromBlueprint(getUiBlueprint("saasDashboard")!, { now: "2026-01-01T00:00:00.000Z" });
+const a = createUISourceFileMapping(doc);
+const b = createUISourceFileMapping(doc);
+assert.deepStrictEqual(a, b);
+assert.ok(a.manualReviewRequired.length > 0);
+console.log("uiSourceFileMapping tests passed");
