@@ -67,6 +67,28 @@ const HIGH_IMPACT_KINDS = new Set<UIEditCommandKind>(["remove", "removePage", "r
 const SEMANTIC_LABELS = ["hero", "hero image", "booking form", "pricing section", "testimonials", "navbar", "footer", "button", "card"];
 const SEMANTIC_ROLES = ["button", "card", "form", "navbar", "footer"];
 
+function toPageId(value: string): string {
+  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+}
+
+function extractPageReference(normalized: string): { rawReference: string; normalizedReference: string; pageId: string } | undefined {
+  const patterns: RegExp[] = [
+    /\b(?:add|create|insert)\s+(?:a\s+)?page\s+called\s+([a-z0-9- ]+)$/,
+    /\b(?:add|create|insert)\s+page\s+([a-z0-9- ]+)$/,
+    /\b(?:add|create|insert)\s+([a-z0-9- ]+)\s+page$/,
+    /\b(?:remove|delete)\s+(?:the\s+)?([a-z0-9- ]+)\s+page$/,
+  ];
+  for (const pattern of patterns) {
+    const match = normalized.match(pattern);
+    if (!match) continue;
+    const name = match[1].trim();
+    const pageId = toPageId(name);
+    if (!pageId) continue;
+    return { rawReference: match[0], normalizedReference: name, pageId };
+  }
+  return undefined;
+}
+
 export function normalizeUIEditRequest(text: string): string {
   return text.trim().toLowerCase().replace(/\s+/g, " ");
 }
@@ -101,10 +123,10 @@ export function parseUIEditTarget(text: string, options?: { selectedNodeId?: str
   const nodeId = normalized.match(/\bnode:[a-z0-9:_-]+\b/)?.[0]?.replace("node:", "");
   if (nodeId) return { reference: { rawReference: `node:${nodeId}`, normalizedReference: nodeId, referenceKind: "nodeId", nodeId, confidence: 0.99, requiresResolution: false } };
   if (options?.kind === "retheme") return { reference: { rawReference: "global theme", normalizedReference: "global theme", referenceKind: "globalTheme", confidence: 0.99, requiresResolution: false } };
+  const page = extractPageReference(normalized);
+  if (page) return { reference: { rawReference: page.rawReference, normalizedReference: page.normalizedReference, referenceKind: "page", pageId: page.pageId, confidence: 0.9, requiresResolution: false } };
   for (const role of SEMANTIC_ROLES) if (normalized.includes(role)) return { reference: { rawReference: role, normalizedReference: role, referenceKind: "semanticRole", confidence: 0.85, requiresResolution: false } };
   for (const label of SEMANTIC_LABELS) if (normalized.includes(label)) return { reference: { rawReference: label, normalizedReference: label, referenceKind: "semanticLabel", confidence: 0.87, requiresResolution: false } };
-  const page = normalized.match(/\b(?:called\s+)?([a-z0-9- ]+)\s+page\b/);
-  if (page) return { reference: { rawReference: page[0], normalizedReference: page[1].trim(), referenceKind: "page", pageId: page[1].trim().replace(/\s+/g, "-"), confidence: 0.8, requiresResolution: false } };
   return { reference: { rawReference: normalized, normalizedReference: normalized, referenceKind: "unknown", confidence: 0.2, requiresResolution: true } };
 }
 

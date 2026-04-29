@@ -36,6 +36,23 @@ for (const [kind, text] of samples) {
   assert.strictEqual(parsed.command!.kind, kind);
 }
 
+
+const pageExamples: Array<[string, string, string]> = [
+  ["removePage", "remove the testimonials page", "testimonials"],
+  ["removePage", "delete the pricing page", "pricing"],
+  ["addPage", "add a page called Pricing", "pricing"],
+  ["addPage", "create page Settings", "settings"],
+  ["addPage", "add settings page", "settings"],
+];
+for (const [kind, text, expectedPageId] of pageExamples) {
+  const parsed = parseUIEditCommand({ text, source: "typedChat" });
+  assert.ok(parsed.ok);
+  assert.strictEqual(parsed.command!.kind, kind);
+  assert.strictEqual(parsed.command!.target.reference.referenceKind, "page");
+  assert.strictEqual(parsed.command!.target.reference.pageId, expectedPageId);
+  assert.strictEqual(parsed.command!.target.reference.requiresResolution, false);
+}
+
 const typed = parseUIEditCommand({ text: "delete the hero image", source: "typedChat", createdAt: "2026-02-01T00:00:00.000Z" });
 const spoken = parseUIEditCommand({ text: "delete the hero image", source: "spokenChat", createdAt: "2026-02-01T00:00:00.000Z" });
 assert.ok(typed.ok && spoken.ok);
