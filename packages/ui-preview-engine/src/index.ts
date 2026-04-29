@@ -338,6 +338,7 @@ export * from "./uiPreviewInteractionFixture";
 export * from "./uiSourceFileMapping";
 export * from "./uiSourcePatch";
 export * from "./uiSourceApply";
+export * from "./uiSourceApplyProof";
 export * from "./uiSourceRoundTrip";
 export * from "./uiDocumentModel";
 export * from "./uiAppStructureModel";

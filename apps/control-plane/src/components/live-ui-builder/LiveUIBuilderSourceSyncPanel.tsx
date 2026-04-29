@@ -9,10 +9,14 @@ type SourceSyncPanelProps = {
   hasRealFileAdapter?: boolean;
   writeSafetyStatus?: string;
   explicitConfirmed?: boolean;
+  lastSourceApplyProof?: { caveat?: string; rollbackAvailable?: boolean; rollbackVerified?: boolean };
+  rollbackAvailable?: boolean;
+  rollbackStatus?: string;
+  sourceRollbackDryRun?: { status?: string; reason?: string };
   onExplicitConfirmChange?: (checked: boolean) => void;
 };
 
-export function LiveUIBuilderSourceSyncPanel({ sourceSyncStatus, sourceSyncResult, onDryRun, onApply, canApply, hasRealFileAdapter = false, writeSafetyStatus = "writes disabled", explicitConfirmed = false, onExplicitConfirmChange }: SourceSyncPanelProps) {
+export function LiveUIBuilderSourceSyncPanel({ sourceSyncStatus, sourceSyncResult, onDryRun, onApply, canApply, hasRealFileAdapter = false, writeSafetyStatus = "writes disabled", explicitConfirmed = false, onExplicitConfirmChange, lastSourceApplyProof, rollbackAvailable = false, rollbackStatus = "Rollback requires server-side local adapter.", sourceRollbackDryRun }: SourceSyncPanelProps) {
   const changedFiles = sourceSyncResult?.patchSummary?.changedFiles ?? [];
   const manualReviewCount = sourceSyncResult?.patchSummary?.manualReviewCount ?? 0;
   const blockedReasons = sourceSyncResult?.blockedReasons ?? [];
@@ -37,6 +41,9 @@ export function LiveUIBuilderSourceSyncPanel({ sourceSyncStatus, sourceSyncResul
       <label><input type="checkbox" checked={explicitConfirmed} onChange={(e) => onExplicitConfirmChange?.(e.target.checked)} /> Confirm guarded local write apply</label>
       <button type="button" onClick={onDryRun}>Dry Run Source Sync</button>
       <button type="button" onClick={onApply} disabled={!applyEnabled}>{hasRealFileAdapter ? "Apply Source Patch" : "Apply requires real file adapter"}</button>
-      <small>{sourceSyncResult?.caveat ?? "Patch is a proposed source edit plan and does not prove runtime correctness or deployment readiness."}</small>
+      <p>Rollback available: {rollbackAvailable ? "yes" : "no"}</p>
+      <p>Rollback status: {hasRealFileAdapter ? rollbackStatus : "Rollback requires server-side local adapter."}</p>
+      <p>Rollback simulation: {sourceRollbackDryRun?.status ?? "none"}</p>
+      <small>{lastSourceApplyProof?.caveat ?? sourceSyncResult?.caveat ?? "Patch is a proposed source edit plan and does not prove runtime correctness or deployment readiness."}</small>
     </section>);
 }
