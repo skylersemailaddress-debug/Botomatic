@@ -28,13 +28,13 @@ export function useLiveUIBuilderVibe() {
   const [latestReviewPayload, setLatestReviewPayload] = useState<any>();
   const [lastCommandText, setLastCommandText] = useState<string>("");
   const [sourceSyncResult, setSourceSyncResult] = useState<any>();
-  const [sourceSyncStatus, setSourceSyncStatus] = useState<"idle"|"dryRunReady"|"applyBlocked"|"applied">("idle");
+  const [sourceSyncStatus, setSourceSyncStatus] = useState<"idle"|"dryRunReady"|"applyBlocked"|"simulated">("idle");
+  const hasRealFileAdapter = false;
 
   const applyResult = (result: any) => {
     setLatestResult(result);
     setLatestReviewPayload(result.reviewPayload);
     setInteractionState(result.nextState);
-    if (result.status === "applied") sourceSyncDryRun(result.nextState, result);
   };
 
   const sourceSyncDryRun = (stateOverride = interactionState, resultOverride = latestResult) => {
@@ -50,12 +50,11 @@ export function useLiveUIBuilderVibe() {
     return { ok: true, result };
   };
 
-  const sourceSyncApply = (confirmationMarker?: boolean) => {
-    if (!sourceSyncResult?.patch) return { ok: false };
-    const applyResult = applyUISourcePatch(sourceSyncResult.patch, { readFile: () => "", writeFile: () => undefined, exists: () => false }, { mode: "confirmedApply", projectRoot: ".", confirmationMarker });
-    setSourceSyncStatus(applyResult.ok ? "applied" : "applyBlocked");
-    setSourceSyncResult((current: any) => ({ ...(current ?? {}), applyResult, blockedReasons: applyResult.blockedReasons }));
-    return applyResult;
+  const sourceSyncApply = (_confirmationMarker?: boolean) => {
+    const blockedReasons = ["Apply requires real file adapter"];
+    setSourceSyncStatus("applyBlocked");
+    setSourceSyncResult((current: any) => ({ ...(current ?? {}), applyResult: { ok: false, mode: "dryRun", writesPerformed: 0, changedFiles: current?.patch?.changedFiles ?? [], blockedReasons }, blockedReasons }));
+    return { ok: false, blockedReasons, writesPerformed: 0 };
   };
 
   const runSampleEdit = () => applyResult(handleUIPreviewChatEdit({ text: 'rewrite this headline to "Elevated Luxury Stays"', source: "typedChat", selectedNodeId: interactionState.selection.selectedNodeId ?? fixture.node, now: fixture.now }, interactionState));
@@ -74,5 +73,5 @@ export function useLiveUIBuilderVibe() {
   const confirmationPending = Boolean(interactionState.pendingReview?.required);
   const changedNodeIds = latestResult?.previewPatch?.operations?.map((op: any) => op.nodeId).filter(Boolean) ?? [];
 
-  return { latestResult, latestReviewPayload, userFacingSummary, confirmationPending, runSampleEdit, runDestructiveEdit, runCommandText, retryLastCommand, resolveTarget, pendingResolution, confirmPending, rejectPending, interactionState, editableDocument: interactionState.editableDocument, selectedNodeId: interactionState.selection.selectedNodeId, selectNode, lastPreviewPatch: interactionState.lastPreviewPatch, changedNodeIds, preConfirmDiff, pendingReview: interactionState.pendingReview, sourceSyncDryRun, sourceSyncApply, sourceSyncResult, sourceSyncStatus };
+  return { latestResult, latestReviewPayload, userFacingSummary, confirmationPending, runSampleEdit, runDestructiveEdit, runCommandText, retryLastCommand, resolveTarget, pendingResolution, confirmPending, rejectPending, interactionState, editableDocument: interactionState.editableDocument, selectedNodeId: interactionState.selection.selectedNodeId, selectNode, lastPreviewPatch: interactionState.lastPreviewPatch, changedNodeIds, preConfirmDiff, pendingReview: interactionState.pendingReview, sourceSyncDryRun, sourceSyncApply, sourceSyncResult, sourceSyncStatus, hasRealFileAdapter };
 }

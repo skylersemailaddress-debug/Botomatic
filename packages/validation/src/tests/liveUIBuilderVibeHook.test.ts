@@ -30,3 +30,6 @@ const rejected = h.rejectPending();
 assert.strictEqual(rejected.status, "idle");
 
 console.log("liveUIBuilderVibeHook.test.ts passed");
+
+const hookSource = require("fs").readFileSync("apps/control-plane/src/components/vibe/useLiveUIBuilderVibe.ts", "utf8");
+assert(!hookSource.includes("if (result.status === \"applied\") sourceSyncDryRun"), "source sync should remain explicit-only");
