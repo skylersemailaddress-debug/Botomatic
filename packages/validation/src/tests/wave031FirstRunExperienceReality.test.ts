@@ -22,6 +22,11 @@ assert(vibe.includes("No first-run state yet"));
 assert(vibe.includes("Launch proof missing"));
 assert(vibe.includes("Review launch requirements") || firstRun.includes("Review launch requirements"));
 assert(vibe.includes("disabled={!firstRunState.canLaunch}"));
+assert(!firstRun.includes("const canLaunch = hasRuntimePreview && !executionBlocked"));
+assert(firstRun.includes("hasExplicitLaunchProof"));
+assert(firstRun.includes("launchProof") && firstRun.includes("launchReady") && firstRun.includes("launchReadiness"));
+assert(firstRun.includes("deployment?.ready") && firstRun.includes("proof?.launch") && firstRun.includes("releaseEvidence?.launchReady"));
+assert(firstRun.includes("launch?.proof") && firstRun.includes("launch?.ready"));
 assert(!vibe.includes("Ask anything…") || vibe.match(/Ask anything…/g)?.length === 1);
 
 const home = read("apps/control-plane/src/app/page.tsx");
