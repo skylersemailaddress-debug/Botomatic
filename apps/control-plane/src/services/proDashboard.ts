@@ -16,6 +16,8 @@ type ProjectStatus = {
   tests?: { total?: number; passed?: number; failed?: number; skipped?: number };
   logs?: string[];
   commits?: Array<{ message: string; author?: string; time?: string }>;
+  codeChanges?: Array<{ path?: string; summary?: string }>;
+  copilotActivity?: Array<{ message?: string; timestamp?: string }>;
 };
 
 type HealthStatus = { status?: string };
