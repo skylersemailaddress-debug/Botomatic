@@ -31,6 +31,7 @@ export function LiveUIBuilderSourceSyncPanel({ sourceSyncStatus, sourceSyncResul
   const disabledControlCount = uxControlPlan ? uxControlPlan.controls.length - enabledControlCount : 0;
   const scalabilityPerformance = sourceSyncResult?.patchSummary?.scalabilityPerformance;
   const orchestration = sourceSyncResult?.patchSummary?.orchestration;
+  const runtimeSmoke = (sourceSyncResult as any)?.patchSummary?.runtimeSmoke;
   const applyEnabled = canApply && hasRealFileAdapter && cleanDryRun && explicitConfirmed;
   return (<section className="vibe-rail-card" aria-label="Live UI source sync panel">
       <h3>Source Sync</h3>
@@ -182,6 +183,9 @@ export function LiveUIBuilderSourceSyncPanel({ sourceSyncStatus, sourceSyncResul
       <p>Project manual review required: {String(sourceSyncResult.patchSummary.fullProjectGeneration.requiresManualReview)}</p>
       <p>Project ordered files preview: {sourceSyncResult.patchSummary.fullProjectGeneration.orderedFilePathsPreview.slice(0,10).join(", ") || "none"}</p>
       <p>Full project generation is dry-run only and does not write files, install dependencies, deploy, or prove runtime correctness.</p></>}
+
+
+      {!!runtimeSmoke && <><p>Runtime smoke run id: {runtimeSmoke.smokeRunId}</p><p>Runtime smoke target: {runtimeSmoke.target}</p><p>Runtime smoke started: {String(runtimeSmoke.started)}</p><p>Runtime smoke reachable: {String(runtimeSmoke.reachable)}</p><p>Runtime smoke HTTP status: {runtimeSmoke.httpStatus ?? "none"}</p><p>Runtime smoke checked URL count: {runtimeSmoke.checkedUrls?.length ?? 0}</p><p>Runtime smoke issue count: {runtimeSmoke.issues?.length ?? 0}</p><p>Runtime smoke blocked reason count: {runtimeSmoke.blockedReasons?.length ?? 0}</p><p>Runtime smoke risk level: {runtimeSmoke.riskLevel}</p><p>Runtime smoke manual review: {String(runtimeSmoke.requiresManualReview)}</p><p>Runtime smoke proof available: {String(runtimeSmoke.runtimeProofAvailable)}</p><p>Runtime smoke caveat: {runtimeSmoke.caveat}</p></>}
 
       <ul>{changedFiles.map((f) => <li key={f}>{f}</li>)}</ul>
       {!!manualReasons.length && <ul>{manualReasons.map((r) => <li key={r}>Manual review: {r}</li>)}</ul>}

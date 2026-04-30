@@ -1,0 +1,1 @@
+const http=require('http');const i=process.argv.indexOf('--port');const port=Number(i> -1?process.argv[i+1]:4173);http.createServer((_,res)=>{res.statusCode=200;res.end('ok')}).listen(port,'127.0.0.1')

@@ -57,6 +57,7 @@ import { validateLiveUIBuilderExportDeployReadiness } from "./repoValidators/liv
 import { validateLiveUIBuilderPlatformBuilderReadiness } from "./repoValidators/liveUIBuilderPlatformBuilderReadiness";
 import { validateLocalCrossPlatformLaunchReadiness } from "./repoValidators/localCrossPlatformLaunchReadiness";
 import { validateLiveUIBuilderOrchestrationReadiness } from "./repoValidators/liveUIBuilderOrchestrationReadiness";
+import { validateGeneratedAppRuntimeSmokeReadiness } from "./repoValidators/generatedAppRuntimeSmokeReadiness";
 
 export type RepoValidatorResult = {
   name: string;
@@ -1340,5 +1341,6 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateLiveUIBuilderMultiFilePlanningReadiness(root),
     validateLiveUIBuilderFullProjectGenerationReadiness(root),
     validateLiveUIBuilderDesignSystemReadiness(root),
+    validateGeneratedAppRuntimeSmokeReadiness(root),
   ];
 }
