@@ -29,6 +29,7 @@ export function LiveUIBuilderSourceSyncPanel({ sourceSyncStatus, sourceSyncResul
   const uxControlPlan = sourceSyncResult?.patchSummary?.uxControlPlan;
   const enabledControlCount = uxControlPlan?.controls.filter((c) => c.enabled).length ?? 0;
   const disabledControlCount = uxControlPlan ? uxControlPlan.controls.length - enabledControlCount : 0;
+  const scalabilityPerformance = sourceSyncResult?.patchSummary?.scalabilityPerformance;
   const applyEnabled = canApply && hasRealFileAdapter && cleanDryRun && explicitConfirmed;
   return (<section className="vibe-rail-card" aria-label="Live UI source sync panel">
       <h3>Source Sync</h3>
@@ -51,6 +52,19 @@ export function LiveUIBuilderSourceSyncPanel({ sourceSyncStatus, sourceSyncResul
       <p>Manual review required: {String(sourceSyncResult?.patchSummary?.requiresManualReview ?? false)}</p>
       <p>Ordered files: {(sourceSyncResult?.patchSummary?.orderedFiles ?? changedFiles).join(", ") || "none"}</p>
       <p>Multi-file planning is dry-run only and does not write files or prove runtime correctness.</p>
+
+      {!!scalabilityPerformance && <>
+      <p>Scalability plan id: {scalabilityPerformance.scalabilityPlanId}</p>
+      <p>Scalability changed file count: {scalabilityPerformance.changedFileCount}</p>
+      <p>Scalability operation count: {scalabilityPerformance.operationCount}</p>
+      <p>Scalability chunk count: {scalabilityPerformance.chunkCount}</p>
+      <p>Scalability avg chunk size: {scalabilityPerformance.averageChunkSize}</p>
+      <p>Scalability max chunk size: {scalabilityPerformance.maxChunkSize}</p>
+      <p>Scalability risk level: {scalabilityPerformance.riskLevel}</p>
+      <p>Scalability manual review required: {String(scalabilityPerformance.requiresManualReview)}</p>
+      <p>Scalability caveat: {scalabilityPerformance.caveat}</p>
+      <p>Scalability/performance planning is dry-run only and does not write files, deploy, or prove runtime correctness.</p>
+      </>}
 
       {!!uxControlPlan && <><p>UX control plan id: {uxControlPlan.uxControlPlanId}</p>
       <p>UX active mode: {uxControlPlan.activeMode}</p>
