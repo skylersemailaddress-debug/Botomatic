@@ -5,7 +5,7 @@ for (const kind of kinds){const r=createUIReliabilityRepairPlan({failureClassifi
 const d1=createUIReliabilityRepairPlan({failureClassifications:[{kind:"parse-error",confidence:"high",normalizedMessage:"a",evidenceSnippets:[]} as any]});
 const d2=createUIReliabilityRepairPlan({failureClassifications:[{kind:"parse-error",confidence:"high",normalizedMessage:"a",evidenceSnippets:[]} as any]});
 assert.equal(d1.plan.repairPlanId,d2.plan.repairPlanId);
-assert.equal(d1.plan.attempts[0].attemptId,d1.plan.attempts[0].attemptId);
+assert.equal(d1.plan.attempts[0].attemptId, d2.plan.attempts[0].attemptId);
 assert(createUIReliabilityRepairPlan({failureClassifications:[{kind:"parse-error",confidence:"high",normalizedMessage:"a",evidenceSnippets:[]} as any],options:{maxAttempts:1,currentAttemptIndex:1}}).plan.requiresManualReview);
 assert(createUIReliabilityRepairPlan({failureClassifications:[{kind:"parse-error",confidence:"high",normalizedMessage:"a",evidenceSnippets:[]} as any],options:{outputMode:"sourcePatchPlan"}}).plan.rollbackProofRequired);
 assert(!createUIReliabilityRepairPlan({failureClassifications:[{kind:"unsafe-operation",confidence:"high",normalizedMessage:"a",evidenceSnippets:[]} as any],options:{outputMode:"rollbackOnly",allowRiskyRepairs:true}}).ok);
