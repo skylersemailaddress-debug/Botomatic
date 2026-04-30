@@ -1,0 +1,12 @@
+export type UIExportDeployProvider = "vercel" | "netlify" | "static-host" | "node-server" | "unknown";
+export type UIExportDeployRisk = "low" | "medium" | "high";
+export type UIExportDeployTarget = { name: string; kind: "preview" | "production" | "staging" | "dry-run"; staticExport?: boolean; hasApiRoutes?: boolean; rollbackReference?: string };
+export type UIExportBundleFile = { filePath: string; bytes: number; source: "sourceFile" | "fullProjectPlan" | "sourcePatchPlan" | "generatedReference"; generatedReference?: boolean };
+export type UIExportBundleManifest = { bundleManifestId: string; files: UIExportBundleFile[]; fileCount: number; totalBytes: number; hasUnsafeFiles: boolean; issues: UIExportDeployIssue[]; requiresSourceProof: boolean };
+export type UIDeployEnvironmentVariable = { name: string; value?: string; valueReference?: string; required?: boolean; secret?: boolean };
+export type UIDeployCapability = { key: string; supported: boolean; details: string };
+export type UIDeployReadinessGate = { gate: string; passed: boolean; reason: string };
+export type UIExportDeployIssue = { code: string; message: string; filePath?: string; severity: "warning" | "error" };
+export type UIExportDeployPlan = { exportDeployPlanId: string; provider: UIExportDeployProvider; target: UIExportDeployTarget; framework: "next" | "vite-react" | "node-api" | "unknown"; bundleManifest: UIExportBundleManifest; environmentVariables: UIDeployEnvironmentVariable[]; providerCapabilities: UIDeployCapability[]; readinessGates: UIDeployReadinessGate[]; rollbackPlanRequired: boolean; previewUrlPlanned: boolean; liveDeployBlocked: true; affectedFilePaths: string[]; sourcePatchOperationIds: string[]; fullProjectPlanId?: string; scalabilityPlanId?: string; reliabilityRepairPlanId?: string; uxControlPlanId?: string; blockedReasons: string[]; riskLevel: UIExportDeployRisk; requiresManualReview: boolean; caveat: typeof UI_EXPORT_DEPLOY_CAVEAT };
+export type UIExportDeployResult = { status: "planned" | "blocked"; plan: UIExportDeployPlan; issues: UIExportDeployIssue[]; risks: UIExportDeployRisk[] };
+export const UI_EXPORT_DEPLOY_CAVEAT = "Export/deploy planning is deterministic dry-run planning and does not build, package, upload, deploy, write files, create URLs, or prove runtime correctness." as const;
