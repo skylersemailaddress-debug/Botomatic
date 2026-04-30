@@ -141,9 +141,10 @@ export async function ProDashboard({ projectId }: { projectId: string }) {
         <button type="button" className="pro-dashboard-new-project">+ New Project</button>
         <nav className="pro-dashboard-nav" aria-label="Main navigation">{proSidebarNav.map((item) => <button type="button" key={item}>{item}</button>)}</nav>
         <div className="pro-sidebar-card"><h3>Recent Projects</h3>{proRecentProjects.map((recentProject, index) => <div className={`pro-sidebar-row${index === 0 ? " is-active" : ""}`} key={recentProject.name}><span>{recentProject.name}</span><small>{recentProject.updated}</small></div>)}<button type="button" className="pro-link-button">View all projects →</button></div>
+        <div className="pro-sidebar-upgrade"><h3>Account</h3><small>Static list</small><button type="button">Upgrade options</button></div>
       </aside>
       <div className="pro-dashboard-main">
-        <header className="pro-topbar"><div><h1>Pro Mode <span>PRO</span></h1><p>Technical. Powerful. Complete control.</p></div></header>
+        <header className="pro-topbar"><div><h1>Pro Mode <span>PRO</span></h1><p>Technical. Powerful. Complete control.</p></div><div className="pro-toolbar" aria-label="Pro controls"><div className="pro-select" aria-label="Project selector"><small>Project</small><strong>Current project</strong></div><div className="pro-select" aria-label="Branch selector"><small>Branch</small><strong>main</strong></div><div className="pro-select" aria-label="Environment selector"><small>Environment</small><strong>Development</strong></div><button type="button" disabled aria-label="Run controls unavailable">Run</button><button type="button" disabled aria-label="Launch controls unavailable">Launch</button><button type="button" className="is-primary" disabled aria-label="Deploy controls unavailable">Deploy</button></div></header>
         <p className="sr-only">Code Changes Live Application AI Copilot Deploy</p>
         <nav className="pro-subnav" aria-label="Pro navigation">{proSecondaryNav.map((item, index) => <button type="button" key={item} className={index === 0 ? "is-active" : ""}>{item}</button>)}</nav>
         <div className="pro-grid">
