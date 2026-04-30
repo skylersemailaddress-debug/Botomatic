@@ -80,3 +80,7 @@ assert(panel.includes("UX controls enabled"));
 assert(panel.includes("UX controls disabled"));
 assert(panel.includes("UX recovery message count"));
 assert(panel.includes("Builder UX control planning is dry-run only and does not mutate UI, write files, deploy, or prove runtime performance."));
+assert(panel.includes("Export deploy plan id:"));
+assert(panel.includes("Bundle file count:"));
+assert(panel.includes("Live deploy blocked:"));
+assert(panel.includes("Export/deploy planning is dry-run only and does not build, package, upload, deploy, write files, create URLs, or prove runtime correctness."));
