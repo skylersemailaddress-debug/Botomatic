@@ -1,0 +1,11 @@
+import assert from "assert";
+import { createUIDeployTargetPlan } from "../uiDeployTargetPlanner";
+const bundle={bundleManifestId:"b",files:[],fileCount:0,totalBytes:0,hasUnsafeFiles:false,issues:[],requiresSourceProof:false};
+assert(createUIDeployTargetPlan({provider:"vercel",framework:"next",bundleManifest:bundle}).providerCapabilities.some(c=>c.key==="next"));
+assert(createUIDeployTargetPlan({provider:"netlify",framework:"vite-react",bundleManifest:bundle}).providerCapabilities.some(c=>c.key==="vite-react"));
+assert(createUIDeployTargetPlan({provider:"static-host",framework:"node-api",bundleManifest:bundle}).blockedReasons.join(" ").includes("node-api on static-host rejected"));
+assert(createUIDeployTargetPlan({provider:"unknown",framework:"unknown",bundleManifest:bundle}).requiresManualReview);
+assert(createUIDeployTargetPlan({provider:"vercel",framework:"next",bundleManifest:bundle,environmentVariables:[{name:"BAD-NAME",valueReference:"x"}]}).blockedReasons.join(" ").includes("invalid env var name"));
+assert(createUIDeployTargetPlan({provider:"vercel",framework:"next",bundleManifest:bundle,environmentVariables:[{name:"API_KEY",secret:true,value:"rawsecret"}]}).blockedReasons.join(" ").includes("raw secret literal rejected"));
+assert.equal(createUIDeployTargetPlan({provider:"vercel",framework:"next",bundleManifest:bundle}).liveDeployBlocked,true);
+console.log("uiDeployTargetPlanner.test.ts passed");
