@@ -65,3 +65,10 @@ assert(panel.includes("Repair manual review required"));
 assert(panel.includes("Repair blocked reason count"));
 assert(panel.includes("Repair strategies preview"));
 assert(panel.includes("Reliability repair planning is dry-run only and does not write files, execute builds, deploy, or prove runtime correctness."));
+
+
+assert(panel.includes("UX control plan id"));
+assert(panel.includes("UX controls enabled"));
+assert(panel.includes("UX controls disabled"));
+assert(panel.includes("UX recovery message count"));
+assert(panel.includes("Builder UX control planning is dry-run only and does not mutate UI, write files, deploy, or prove runtime performance."));
