@@ -1,3 +1,5 @@
+import type { ApiResult, TruthState } from "./truth";
+
 const DEFAULT_API_BASE_URL = "http://localhost:3001";
 
 function normalizeApiBaseUrl(url: string): string {
@@ -141,8 +143,6 @@ export async function postMultipartWithProgress<T>(
   });
 }
 
-
-import type { ApiResult, TruthState } from "./truth";
 
 function mapFailureState(status?: number): TruthState {
   if (status === 404) return "empty";

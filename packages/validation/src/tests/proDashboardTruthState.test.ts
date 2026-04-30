@@ -1,15 +1,41 @@
 import assert from "assert";
 import fs from "fs";
 
-const c = fs.readFileSync("apps/control-plane/src/components/pro/ProDashboard.tsx", "utf8");
+const proDashboardSource = fs.readFileSync("apps/control-plane/src/components/pro/ProDashboard.tsx", "utf8");
+const northStarShellSource = fs.readFileSync("apps/control-plane/src/components/builder/NorthStarBuilderShell.tsx", "utf8");
 
-assert(!c.includes("92%"), "must not render fake 92% health");
-assert(!c.includes("All Systems Operational"), "must not render fake all systems operational");
-assert(c.includes("No test run yet"), "must render no test run fallback");
-assert(c.includes("Not Connected"), "must render services not connected fallback");
-assert(c.includes("Database not connected"), "must render DB fallback");
-assert(!c.includes("http://localhost:3000"), "must not hardcode localhost preview URL");
-assert(c.includes("No terminal logs yet"), "must show terminal fallback");
-assert(c.includes("No build started"), "must show build fallback");
+const forbiddenStrings = [
+  "92%",
+  "All Systems Operational",
+  "178/198 tests passed",
+  "198 Total Tests",
+  "1243 packages",
+  "Local server running at http://localhost:3000",
+  "http://localhost:3000",
+];
+
+for (const text of forbiddenStrings) {
+  assert(!proDashboardSource.includes(text), `must not include fake string: ${text}`);
+}
+
+assert(!northStarShellSource.includes("92%"), "NorthStarBuilderShell must not include fake 92% health");
+
+const requiredFallbacks = [
+  "No build started",
+  "Backend state unavailable",
+  "Health check not run",
+  "Preview unavailable",
+  "Runtime not connected",
+  "Service health not connected",
+  "Not Connected",
+  "Database not connected",
+  "No test run yet",
+  "No terminal logs yet",
+  "No commits available",
+];
+
+for (const text of requiredFallbacks) {
+  assert(proDashboardSource.includes(text), `must include fallback string: ${text}`);
+}
 
 console.log("proDashboardTruthState.test.ts passed");
