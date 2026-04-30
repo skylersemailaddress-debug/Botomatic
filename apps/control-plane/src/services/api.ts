@@ -166,3 +166,26 @@ export async function getJsonSafe<T>(url: string): Promise<ApiResult<T>> {
     return { ok: false, state: "not_connected", message };
   }
 }
+
+export async function postJsonSafe<TResponse, TBody>(url: string, body: TBody): Promise<ApiResult<TResponse>> {
+  const finalUrl = buildApiUrl(url);
+  try {
+    const response = await fetch(finalUrl, {
+      method: "POST",
+      headers: buildHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const message = `Request failed: ${response.status} ${response.statusText}`;
+      console.error("[api:postJsonSafe]", finalUrl, message);
+      return { ok: false, state: mapFailureState(response.status), message, status: response.status };
+    }
+
+    return { ok: true, data: (await response.json()) as TResponse };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown network error";
+    console.error("[api:postJsonSafe]", finalUrl, message);
+    return { ok: false, state: "not_connected", message };
+  }
+}

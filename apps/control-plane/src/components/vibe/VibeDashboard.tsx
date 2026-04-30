@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 
-import { actionChips, buildMapItems, recentActivity, recentProjects, suggestionChips, vibeSidebarNav } from "./vibeSeedData";
+import { actionChips, recentActivity, recentProjects, suggestionChips, vibeSidebarNav } from "./vibeSeedData";
 import { LiveUIBuilderCommandInput } from "../live-ui-builder/LiveUIBuilderCommandInput";
 import { LiveUIBuilderDiffPreview } from "../live-ui-builder/LiveUIBuilderDiffPreview";
 import { LiveUIBuilderResolutionPanel, type ResolutionTarget } from "../live-ui-builder/LiveUIBuilderResolutionPanel";
 import { LiveUIBuilderPreviewSurface } from "./LiveUIBuilderPreviewSurface";
 import { LiveUIBuilderSourceSyncPanel } from "../live-ui-builder/LiveUIBuilderSourceSyncPanel";
 import { LiveUIBuilderAppStructurePanel } from "../live-ui-builder/LiveUIBuilderAppStructurePanel";
+import { VibeOrchestrationPanel } from "../builder/VibeOrchestrationPanel";
 import { useLiveUIBuilderVibe } from "./useLiveUIBuilderVibe";
 
 export function VibeDashboard({ projectId }: { projectId: string }) {
@@ -101,8 +102,7 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
 
             <section className="vibe-input-shell" aria-label="Chat input">
               <div className="vibe-input-row">
-                <span>Ask anything… (e.g., add a pricing section, make the hero bolder, add dark mode)</span>
-                <button type="button">Send</button>
+                <span>Use the Build Map prompt to start real orchestration.</span>
               </div>
               <div className="vibe-action-row">
                 <button type="button" onClick={runSampleEdit}>Improve Design</button>
@@ -115,13 +115,7 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
           </main>
 
           <aside className="vibe-right-rail" aria-label="Vibe intelligence rail">
-            <section className="vibe-rail-card">
-              <header><h3>Build Map</h3><button type="button" className="vibe-link-button">View Audit</button></header>
-              <div className="vibe-step-line"><span className="is-done">Design</span><span className="is-active">Features</span><span>Data</span><span>Testing</span><span>Launch</span></div>
-              {buildMapItems.map((item) => (
-                <div className="vibe-rail-row" key={item.task}><span>{item.task}</span><strong>{item.status}</strong></div>
-              ))}
-            </section>
+            <VibeOrchestrationPanel projectId={projectId} />
 
             <div className="vibe-rail-two-up">
               <section className="vibe-rail-card">
