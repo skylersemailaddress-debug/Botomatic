@@ -1,0 +1,6 @@
+export type UIScalabilityRiskLevel = "low" | "medium" | "high";
+export type UIScalabilityPerformanceIssue = { code: string; message: string; blocked: boolean };
+export type UIScalabilityPerformanceModelInput = { changedFiles: string[]; operationCount: number; manualReviewCount: number; dependencyCount: number; orderedFiles?: string[]; };
+export type UIScalabilityPerformanceSummary = { scalabilityPlanId: string; changedFileCount: number; operationCount: number; manualReviewCount: number; dependencyCount: number; chunkCount: number; averageChunkSize: number; maxChunkSize: number; riskLevel: UIScalabilityRiskLevel; requiresManualReview: boolean; blockedReasons: string[]; caveat: "Scalability/performance planning is deterministic dry-run planning and does not write files, execute builds, deploy, or prove runtime correctness." };
+export type UIScalabilityPerformanceResult = { ok: boolean; summary: UIScalabilityPerformanceSummary; issues: UIScalabilityPerformanceIssue[] };
+export const UI_SCALABILITY_PERFORMANCE_CAVEAT: UIScalabilityPerformanceSummary["caveat"] = "Scalability/performance planning is deterministic dry-run planning and does not write files, execute builds, deploy, or prove runtime correctness.";

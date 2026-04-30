@@ -2,7 +2,7 @@
 
 type SourceSyncPanelProps = {
   sourceSyncStatus: "idle" | "dryRunReady" | "applyBlocked" | "simulated";
-  sourceSyncResult?: { patchSummary?: { changedFiles: string[]; operationCount: number; manualReviewCount: number; confidenceCounts?: Record<string, number>; sourceKinds?: string[]; routeFilesToCreate?: string[]; manualReviewReasons?: string[]; identitySummary?: { coverageCount: number; high: number; medium: number; low: number; stale: number; manualReviewRequired: number; selectedNodeIdentitySummary?: string }; multiFilePlanId?: string; dependencyCount?: number; riskLevel?: "low"|"medium"|"high"; requiresManualReview?: boolean; orderedFiles?: string[]; uxControlPlan?: { uxControlPlanId: string; activeMode: string; selectedNodeId?: string; controls: { enabled: boolean }[]; pendingState: { label: string }; debouncePlan: { recommendations: string[] }; undoRedoState: { undoEnabled: boolean; redoEnabled: boolean }; recoveryMessages: { message: string }[]; caveat: string }; fullProjectGeneration?: { planId: string; normalizedProjectSlug: string; framework: "next"|"vite-react"|"node-api"|"unknown"; generatedFileCount: number; directoryCount: number; conflictCount: number; normalizationIssueCount: number; riskLevel: "low"|"medium"|"high"; requiresManualReview: boolean; orderedFilePathsPreview: string[]; caveat: string }; stylePlan?: { stylePlanId: string; tokenCount: number; categoriesPresent: string[]; outputMode: "cssVariables"|"tailwindTheme"|"inlinePreview"|"unknown"; targetFilePath?: string; riskLevel: "low"|"medium"|"high"; requiresManualReview: boolean; issueCount: number; cssVariableNames: string[]; caveat: string }; dataStateApiWiring?: { wiringPlanId: string; dataBindingCount: number; stateBindingCount: number; stateActionCount: number; apiEndpointCount: number; apiRequestBindingCount: number; affectedNodeCount: number; affectedFileCount: number; riskLevel: "low"|"medium"|"high"; requiresManualReview: boolean; blockedReasonCount: number; orderedOperationLabels: string[]; caveat: string }; reliabilityRepair?: { repairPlanId: string; failureCount: number; selectedStrategyCount: number; attemptCount: number; maxAttempts: number; nextAttemptIndex: number; rollbackRequired: boolean; rollbackProofRequired: boolean; riskLevel: "low"|"medium"|"high"; requiresManualReview: boolean; blockedReasonCount: number; strategyLabels: string[]; caveat: string } }; blockedReasons?: string[]; caveat?: string };
+  sourceSyncResult?: { patchSummary?: { changedFiles: string[]; operationCount: number; manualReviewCount: number; confidenceCounts?: Record<string, number>; sourceKinds?: string[]; routeFilesToCreate?: string[]; manualReviewReasons?: string[]; identitySummary?: { coverageCount: number; high: number; medium: number; low: number; stale: number; manualReviewRequired: number; selectedNodeIdentitySummary?: string }; multiFilePlanId?: string; dependencyCount?: number; riskLevel?: "low"|"medium"|"high"; requiresManualReview?: boolean; orderedFiles?: string[]; uxControlPlan?: { uxControlPlanId: string; activeMode: string; selectedNodeId?: string; controls: { enabled: boolean }[]; pendingState: { label: string }; debouncePlan: { recommendations: string[] }; undoRedoState: { undoEnabled: boolean; redoEnabled: boolean }; recoveryMessages: { message: string }[]; caveat: string }; fullProjectGeneration?: { planId: string; normalizedProjectSlug: string; framework: "next"|"vite-react"|"node-api"|"unknown"; generatedFileCount: number; directoryCount: number; conflictCount: number; normalizationIssueCount: number; riskLevel: "low"|"medium"|"high"; requiresManualReview: boolean; orderedFilePathsPreview: string[]; caveat: string }; stylePlan?: { stylePlanId: string; tokenCount: number; categoriesPresent: string[]; outputMode: "cssVariables"|"tailwindTheme"|"inlinePreview"|"unknown"; targetFilePath?: string; riskLevel: "low"|"medium"|"high"; requiresManualReview: boolean; issueCount: number; cssVariableNames: string[]; caveat: string }; dataStateApiWiring?: { wiringPlanId: string; dataBindingCount: number; stateBindingCount: number; stateActionCount: number; apiEndpointCount: number; apiRequestBindingCount: number; affectedNodeCount: number; affectedFileCount: number; riskLevel: "low"|"medium"|"high"; requiresManualReview: boolean; blockedReasonCount: number; orderedOperationLabels: string[]; caveat: string }; reliabilityRepair?: { repairPlanId: string; failureCount: number; selectedStrategyCount: number; attemptCount: number; maxAttempts: number; nextAttemptIndex: number; rollbackRequired: boolean; rollbackProofRequired: boolean; riskLevel: "low"|"medium"|"high"; requiresManualReview: boolean; blockedReasonCount: number; strategyLabels: string[]; caveat: string }; scalabilityPerformance?: { scalabilityPlanId: string; changedFileCount: number; operationCount: number; manualReviewCount: number; dependencyCount: number; chunkCount: number; averageChunkSize: number; maxChunkSize: number; riskLevel: "low"|"medium"|"high"; requiresManualReview: boolean; blockedReasons: string[]; caveat: string } }; blockedReasons?: string[]; caveat?: string };
   onDryRun: () => void;
   onApply: () => void;
   canApply: boolean;
@@ -29,6 +29,7 @@ export function LiveUIBuilderSourceSyncPanel({ sourceSyncStatus, sourceSyncResul
   const uxControlPlan = sourceSyncResult?.patchSummary?.uxControlPlan;
   const enabledControlCount = uxControlPlan?.controls.filter((c) => c.enabled).length ?? 0;
   const disabledControlCount = uxControlPlan ? uxControlPlan.controls.length - enabledControlCount : 0;
+  const scalabilityPerformance = sourceSyncResult?.patchSummary?.scalabilityPerformance;
   const applyEnabled = canApply && hasRealFileAdapter && cleanDryRun && explicitConfirmed;
   return (<section className="vibe-rail-card" aria-label="Live UI source sync panel">
       <h3>Source Sync</h3>
@@ -51,6 +52,19 @@ export function LiveUIBuilderSourceSyncPanel({ sourceSyncStatus, sourceSyncResul
       <p>Manual review required: {String(sourceSyncResult?.patchSummary?.requiresManualReview ?? false)}</p>
       <p>Ordered files: {(sourceSyncResult?.patchSummary?.orderedFiles ?? changedFiles).join(", ") || "none"}</p>
       <p>Multi-file planning is dry-run only and does not write files or prove runtime correctness.</p>
+
+      {!!scalabilityPerformance && <>
+      <p>Scalability plan id: {scalabilityPerformance.scalabilityPlanId}</p>
+      <p>Scalability changed file count: {scalabilityPerformance.changedFileCount}</p>
+      <p>Scalability operation count: {scalabilityPerformance.operationCount}</p>
+      <p>Scalability chunk count: {scalabilityPerformance.chunkCount}</p>
+      <p>Scalability avg chunk size: {scalabilityPerformance.averageChunkSize}</p>
+      <p>Scalability max chunk size: {scalabilityPerformance.maxChunkSize}</p>
+      <p>Scalability risk level: {scalabilityPerformance.riskLevel}</p>
+      <p>Scalability manual review required: {String(scalabilityPerformance.requiresManualReview)}</p>
+      <p>Scalability caveat: {scalabilityPerformance.caveat}</p>
+      <p>Scalability/performance planning is dry-run only and does not write files, deploy, or prove runtime correctness.</p>
+      </>}
 
       {!!uxControlPlan && <><p>UX control plan id: {uxControlPlan.uxControlPlanId}</p>
       <p>UX active mode: {uxControlPlan.activeMode}</p>
