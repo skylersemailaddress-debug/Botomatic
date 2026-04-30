@@ -140,3 +140,29 @@ export async function postMultipartWithProgress<T>(
     xhr.send(formData);
   });
 }
+
+
+import type { ApiResult, TruthState } from "./truth";
+
+function mapFailureState(status?: number): TruthState {
+  if (status === 404) return "empty";
+  if (status === 401 || status === 403) return "not_connected";
+  return "error";
+}
+
+export async function getJsonSafe<T>(url: string): Promise<ApiResult<T>> {
+  const finalUrl = buildApiUrl(url);
+  try {
+    const response = await fetch(finalUrl, { cache: "no-store", headers: buildHeaders() });
+    if (!response.ok) {
+      const message = `Request failed: ${response.status} ${response.statusText}`;
+      console.error("[api:getJsonSafe]", finalUrl, message);
+      return { ok: false, state: mapFailureState(response.status), message, status: response.status };
+    }
+    return { ok: true, data: (await response.json()) as T };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown network error";
+    console.error("[api:getJsonSafe]", finalUrl, message);
+    return { ok: false, state: "not_connected", message };
+  }
+}
