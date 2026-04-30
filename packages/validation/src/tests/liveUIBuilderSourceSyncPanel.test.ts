@@ -84,3 +84,7 @@ assert(panel.includes("Export deploy plan id:"));
 assert(panel.includes("Bundle file count:"));
 assert(panel.includes("Live deploy blocked:"));
 assert(panel.includes("Export/deploy planning is dry-run only and does not build, package, upload, deploy, write files, create URLs, or prove runtime correctness."));
+
+assert(panel.includes("Platform builder plan id:"));
+assert(panel.includes("Platform target:"));
+assert(panel.includes("Platform builder planning is dry-run only and does not build, package, upload, publish, open emulators, call platform APIs, create marketplace pages, or prove runtime/platform approval."));

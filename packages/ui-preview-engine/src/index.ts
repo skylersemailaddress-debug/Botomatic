@@ -359,3 +359,8 @@ export * from "./uiDataStateApiWiringPlanner";
 export * from "./uiReliabilityRepairModel";
 export * from "./uiReliabilityFailureClassifier";
 export * from "./uiReliabilityRepairPlanner";
+
+export * from "./uiPlatformBuilderModel";
+export * from "./uiPlatformTargetNormalizer";
+export * from "./uiPlatformCapabilityPlanner";
+export * from "./uiPlatformBuilderPlanner";

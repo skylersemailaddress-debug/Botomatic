@@ -54,6 +54,7 @@ import { validateLiveUIBuilderDataStateApiWiringReadiness } from "./repoValidato
 import { validateLiveUIBuilderReliabilityRepairReadiness } from "./repoValidators/liveUIBuilderReliabilityRepairReadiness";
 import { validateLiveUIBuilderUXPolishReadiness } from "./repoValidators/liveUIBuilderUXPolishReadiness";
 import { validateLiveUIBuilderExportDeployReadiness } from "./repoValidators/liveUIBuilderExportDeployReadiness";
+import { validateLiveUIBuilderPlatformBuilderReadiness } from "./repoValidators/liveUIBuilderPlatformBuilderReadiness";
 
 export type RepoValidatorResult = {
   name: string;
@@ -1286,6 +1287,7 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateLiveUIBuilderReliabilityRepairReadiness(root),
     validateLiveUIBuilderUXPolishReadiness(root),
     validateLiveUIBuilderExportDeployReadiness(root),
+    validateLiveUIBuilderPlatformBuilderReadiness(root),
     validateUniversalBuilderReadiness(root),
     validateSelfUpgradingFactoryReadiness(root),
     validateDirtyRepoRescueReadiness(root),
