@@ -2,19 +2,22 @@
 
 import Link from "next/link";
 
-import { actionChips, buildMapItems, recentActivity, recentProjects, suggestionChips, vibeSidebarNav } from "./vibeSeedData";
+import { actionChips, recentActivity, recentProjects, suggestionChips, vibeSidebarNav } from "./vibeSeedData";
 import { LiveUIBuilderCommandInput } from "../live-ui-builder/LiveUIBuilderCommandInput";
 import { LiveUIBuilderDiffPreview } from "../live-ui-builder/LiveUIBuilderDiffPreview";
 import { LiveUIBuilderResolutionPanel, type ResolutionTarget } from "../live-ui-builder/LiveUIBuilderResolutionPanel";
 import { LiveUIBuilderPreviewSurface } from "./LiveUIBuilderPreviewSurface";
 import { LiveUIBuilderSourceSyncPanel } from "../live-ui-builder/LiveUIBuilderSourceSyncPanel";
 import { LiveUIBuilderAppStructurePanel } from "../live-ui-builder/LiveUIBuilderAppStructurePanel";
+import { VibeOrchestrationPanel } from "../builder/VibeOrchestrationPanel";
+import { useVibeOrchestration } from "../builder/useVibeOrchestration";
 import { useLiveUIBuilderVibe } from "./useLiveUIBuilderVibe";
 
 export function VibeDashboard({ projectId }: { projectId: string }) {
   const { latestResult, userFacingSummary, latestReviewPayload, confirmationPending, runSampleEdit, runDestructiveEdit, runCommandText, retryLastCommand, resolveTarget, pendingResolution, confirmPending, rejectPending, editableDocument, selectedNodeId, selectedPageId, changedNodeIds, lastPreviewPatch, selectNode, runDirectManipulationAction, preConfirmDiff, sourceSyncDryRun, sourceSyncApply, sourceSyncResult, sourceSyncStatus, hasRealFileAdapter, appStructure, appStructureNeedsResolution, appStructureCandidates, selectPage, duplicatePage, renamePage, updateNavigation, extractReusableComponent, reuseComponent } = useLiveUIBuilderVibe();
   const fallbackTargets: ResolutionTarget[] = Object.values(editableDocument.pages?.[0]?.nodes ?? {}).slice(0, 8).map((node: any) => ({ nodeId: node.id, label: node.identity?.semanticLabel ?? node.id, type: node.kind ?? "node", page: editableDocument.pages?.[0]?.id ?? "page", location: node.parentId ? `child of ${node.parentId}` : "root" }));
   const resolverTargets: ResolutionTarget[] = (pendingResolution?.candidates ?? []).map((nodeId: string) => ({ nodeId, label: nodeId, type: "resolver candidate", page: editableDocument.pages.find((page: any) => page.nodes[nodeId])?.id ?? "unknown", location: "resolver" }));
+  const orchestration = useVibeOrchestration(projectId);
   return (
     <section className="vibe-dashboard" aria-label="Vibe dashboard" data-project-id={projectId}>
       <aside className="vibe-dashboard-sidebar" aria-label="Botomatic sidebar">
@@ -100,10 +103,10 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
             </section>
 
             <section className="vibe-input-shell" aria-label="Chat input">
-              <div className="vibe-input-row">
-                <span>Ask anything… (e.g., add a pricing section, make the hero bolder, add dark mode)</span>
-                <button type="button">Send</button>
-              </div>
+              <form className="vibe-input-row" onSubmit={(event) => { event.preventDefault(); void orchestration.submitPrompt(); }}>
+                <input value={orchestration.prompt} onChange={(event) => orchestration.setPrompt(event.target.value)} placeholder="Ask anything… (e.g., add a pricing section, make the hero bolder, add dark mode)" aria-label="Vibe orchestration prompt" />
+                <button type="submit" disabled={orchestration.submitting}>{orchestration.submitting ? "Submitting…" : "Send"}</button>
+              </form>
               <div className="vibe-action-row">
                 <button type="button" onClick={runSampleEdit}>Improve Design</button>
                 <button type="button" onClick={runDestructiveEdit}>Apply destructive sample</button>
@@ -115,12 +118,9 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
           </main>
 
           <aside className="vibe-right-rail" aria-label="Vibe intelligence rail">
-            <section className="vibe-rail-card">
-              <header><h3>Build Map</h3><button type="button" className="vibe-link-button">View Audit</button></header>
-              <div className="vibe-step-line"><span className="is-done">Design</span><span className="is-active">Features</span><span>Data</span><span>Testing</span><span>Launch</span></div>
-              {buildMapItems.map((item) => (
-                <div className="vibe-rail-row" key={item.task}><span>{item.task}</span><strong>{item.status}</strong></div>
-              ))}
+            <section className="vibe-rail-card" aria-label="Build Map status">
+              <header><h3>Build Map</h3></header>
+              <VibeOrchestrationPanel graph={orchestration.graph} statusMessage={orchestration.statusMessage} />
             </section>
 
             <div className="vibe-rail-two-up">
