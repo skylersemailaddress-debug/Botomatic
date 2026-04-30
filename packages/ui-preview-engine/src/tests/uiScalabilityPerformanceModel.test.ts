@@ -1,0 +1,10 @@
+import assert from "assert";
+import { DEFAULT_UI_SCALABILITY_THRESHOLDS, UI_SCALABILITY_PERFORMANCE_CAVEAT } from "../uiScalabilityPerformanceModel";
+assert.strictEqual(DEFAULT_UI_SCALABILITY_THRESHOLDS.documentNodes.warning,500);
+assert.strictEqual(DEFAULT_UI_SCALABILITY_THRESHOLDS.documentNodes.high,2000);
+assert.strictEqual(DEFAULT_UI_SCALABILITY_THRESHOLDS.sourceFiles.warning,100);
+assert.strictEqual(DEFAULT_UI_SCALABILITY_THRESHOLDS.sourceFiles.high,500);
+assert.strictEqual(DEFAULT_UI_SCALABILITY_THRESHOLDS.totalSourceBytes.warning,1024*1024);
+assert.strictEqual(DEFAULT_UI_SCALABILITY_THRESHOLDS.totalSourceBytes.high,5*1024*1024);
+assert(UI_SCALABILITY_PERFORMANCE_CAVEAT.includes("deterministic dry-run analysis"));
+console.log("uiScalabilityPerformanceModel.test.ts passed");

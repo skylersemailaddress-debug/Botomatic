@@ -1,0 +1,15 @@
+import assert from "assert";
+import { analyzeUIScalabilityPerformance } from "../uiScalabilityPerformanceAnalyzer";
+const doc:any={id:"r",children:[{id:"a",children:[{id:"b",children:[]}]}]};
+const sourceFiles={"a.tsx":"abc","b.tsx":"12345"};
+const input:any={editableDocument:doc,sourceFiles,sourceIdentityResult:{identities:[1,2,3]},multiFilePlan:{operations:[1,2],dependencies:[1,2,3,4]},fullProjectGenerationPlan:{files:[1,2,3]},stylePlan:{tokens:[1,2]},dataStateApiWiringPlan:{operations:[1],apiEndpoints:[1,2]},reliabilityRepairPlan:{selectedStrategies:[1,2],attemptCount:3},sourcePatchPlan:{operations:[1,2,3]}};
+const p1=analyzeUIScalabilityPerformance(input); const p2=analyzeUIScalabilityPerformance({...input,sourceFiles:{...sourceFiles}});
+assert.strictEqual(p1.scalabilityPlanId,p2.scalabilityPlanId);
+assert.strictEqual(p1.documentNodeCount,3); assert.strictEqual(p1.sourceFileCount,2); assert.strictEqual(p1.totalSourceBytes,8); assert.strictEqual(p1.operationCount,8);
+assert.strictEqual(p1.generatedFileCount,3); assert.strictEqual(p1.identityCount,3); assert.strictEqual(p1.dependencyCount,4); assert.strictEqual(p1.tokenCount,2); assert.strictEqual(p1.apiEndpointCount,2); assert.strictEqual(p1.repairAttemptCount,3);
+assert.strictEqual(analyzeUIScalabilityPerformance({ editableDocument: {children:new Array(600).fill({})}} as any).riskLevel,"medium");
+assert.strictEqual(analyzeUIScalabilityPerformance({ editableDocument: {children:new Array(2100).fill({})}} as any).riskLevel,"high");
+const missing = analyzeUIScalabilityPerformance({ sourcePatchPlan:{operations:[1]} } as any); assert(missing.requiresManualReview); assert(missing.blockedReasons.some((b)=>b.includes("sourceFiles missing")));
+const limit = analyzeUIScalabilityPerformance({ sourceFiles:{"a":"x"}, sourcePatchPlan:{operations:new Array(10001).fill(1)} } as any); assert(limit.blockedReasons.some((b)=>b.includes("safe limit")));
+assert.doesNotThrow(()=>analyzeUIScalabilityPerformance("bad" as any));
+console.log("uiScalabilityPerformanceAnalyzer.test.ts passed");

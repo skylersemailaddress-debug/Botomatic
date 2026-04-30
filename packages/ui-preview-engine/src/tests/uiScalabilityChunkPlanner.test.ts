@@ -1,0 +1,14 @@
+import assert from "assert";
+import { createUIScalabilityChunkPlan, createUIScalabilityIndexPlan, createUIScalabilityPaginationPlan } from "../uiScalabilityChunkPlanner";
+const sourceFiles: Record<string,string> = {}; for (let i=0;i<150;i++) sourceFiles[`src/f-${String(i).padStart(3,"0")}.tsx`] = "x".repeat(2048);
+const a = createUIScalabilityChunkPlan({ documentNodeCount: 610, sourceFiles, operationCount: 240, byteBudget: 10*1024, nodeChunkSize: 200, operationChunkSize: 90 });
+const b = createUIScalabilityChunkPlan({ documentNodeCount: 610, sourceFiles, operationCount: 240, byteBudget: 10*1024, nodeChunkSize: 200, operationChunkSize: 90 });
+assert.deepStrictEqual(a,b);
+assert.strictEqual(a.documentChunks[0].startNodeIndex,0);
+assert(a.sourceFileChunks.length>1);
+assert.strictEqual(a.operationChunks[0].startOperationIndex,0);
+const idx = createUIScalabilityIndexPlan({ documentNodeCount: 501, sourceFileCount: 101, identityCount: 501, dependencyCount: 101 });
+assert.strictEqual(idx.recommendedIndexCount,4);
+const pg = createUIScalabilityPaginationPlan({ changedFilesCount: 101, operationCount: 101, identityCount: 101, dependencyCount: 101, repairAttemptCount: 101 });
+assert.strictEqual(pg.recommendedPaginationCount,5);
+console.log("uiScalabilityChunkPlanner.test.ts passed");

@@ -86,6 +86,21 @@ export function LiveUIBuilderSourceSyncPanel({ sourceSyncStatus, sourceSyncResul
       <p>Repair blocked reason count: {sourceSyncResult.patchSummary.reliabilityRepair.blockedReasonCount}</p>
       <p>Repair strategies preview: {sourceSyncResult.patchSummary.reliabilityRepair.strategyLabels.slice(0,10).join(", ") || "none"}</p>
       <p>Reliability repair planning is dry-run only and does not write files, execute builds, deploy, or prove runtime correctness.</p></>}
+      {!!(sourceSyncResult?.patchSummary as any)?.scalabilityPerformance && <><p>Scalability plan id: {(sourceSyncResult?.patchSummary as any).scalabilityPerformance.scalabilityPlanId}</p>
+      <p>Scalability document node count: {(sourceSyncResult?.patchSummary as any).scalabilityPerformance.documentNodeCount}</p>
+      <p>Scalability source file count: {(sourceSyncResult?.patchSummary as any).scalabilityPerformance.sourceFileCount}</p>
+      <p>Scalability total source bytes: {(sourceSyncResult?.patchSummary as any).scalabilityPerformance.totalSourceBytes}</p>
+      <p>Scalability operation count: {(sourceSyncResult?.patchSummary as any).scalabilityPerformance.operationCount}</p>
+      <p>Scalability generated file count: {(sourceSyncResult?.patchSummary as any).scalabilityPerformance.generatedFileCount}</p>
+      <p>Scalability identity count: {(sourceSyncResult?.patchSummary as any).scalabilityPerformance.identityCount}</p>
+      <p>Scalability dependency count: {(sourceSyncResult?.patchSummary as any).scalabilityPerformance.dependencyCount}</p>
+      <p>Scalability risk level: {(sourceSyncResult?.patchSummary as any).scalabilityPerformance.riskLevel}</p>
+      <p>Scalability manual review required: {String((sourceSyncResult?.patchSummary as any).scalabilityPerformance.requiresManualReview)}</p>
+      <p>Scalability chunk count: {(sourceSyncResult?.patchSummary as any).scalabilityPerformance.recommendedChunkCount}</p>
+      <p>Scalability index recommendation count: {(sourceSyncResult?.patchSummary as any).scalabilityPerformance.recommendedIndexCount}</p>
+      <p>Scalability pagination recommendation count: {(sourceSyncResult?.patchSummary as any).scalabilityPerformance.recommendedPaginationCount}</p>
+      <p>Scalability blocked reason count: {(sourceSyncResult?.patchSummary as any).scalabilityPerformance.blockedReasonCount}</p>
+      <p>Scalability/performance planning is dry-run only and does not execute benchmarks, write files, deploy, or prove runtime performance.</p></>}
 
       {!!sourceSyncResult?.patchSummary?.fullProjectGeneration && <><p>Full project plan id: {sourceSyncResult.patchSummary.fullProjectGeneration.planId}</p>
       <p>Project slug: {sourceSyncResult.patchSummary.fullProjectGeneration.normalizedProjectSlug}</p>
