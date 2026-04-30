@@ -51,6 +51,7 @@ import { validateLiveUIBuilderMultiFilePlanningReadiness } from "./repoValidator
 import { validateLiveUIBuilderFullProjectGenerationReadiness } from "./repoValidators/liveUIBuilderFullProjectGenerationReadiness";
 import { validateLiveUIBuilderDesignSystemReadiness } from "./repoValidators/liveUIBuilderDesignSystemReadiness";
 import { validateLiveUIBuilderDataStateApiWiringReadiness } from "./repoValidators/liveUIBuilderDataStateApiWiringReadiness";
+import { validateLiveUIBuilderReliabilityRepairReadiness } from "./repoValidators/liveUIBuilderReliabilityRepairReadiness";
 
 export type RepoValidatorResult = {
   name: string;
@@ -1280,6 +1281,7 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateChatFirstOperatorRouting(root),
     validateChatBehaviorExecution(root),
     validateLiveUIBuilderDataStateApiWiringReadiness(root),
+    validateLiveUIBuilderReliabilityRepairReadiness(root),
     validateUniversalBuilderReadiness(root),
     validateSelfUpgradingFactoryReadiness(root),
     validateDirtyRepoRescueReadiness(root),
