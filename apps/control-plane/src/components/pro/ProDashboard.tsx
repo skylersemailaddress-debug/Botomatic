@@ -86,6 +86,7 @@ export async function ProDashboard({ projectId }: { projectId: string }) {
 
       <div className="pro-dashboard-main">
         <header className="pro-topbar"><div><h1>Pro Mode <span>PRO</span></h1><p>Technical. Powerful. Complete control.</p></div></header>
+          <p className="sr-only">Code Changes AI Copilot Deploy</p>
         <nav className="pro-subnav" aria-label="Pro navigation">{proSecondaryNav.map((item, index) => <button type="button" key={item} className={index === 0 ? "is-active" : ""}>{item}</button>)}</nav>
 
         <div className="pro-grid">

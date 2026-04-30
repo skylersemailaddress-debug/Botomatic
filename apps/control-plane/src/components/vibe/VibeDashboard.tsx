@@ -118,7 +118,10 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
           </main>
 
           <aside className="vibe-right-rail" aria-label="Vibe intelligence rail">
-            <VibeOrchestrationPanel graph={orchestration.graph} statusMessage={orchestration.statusMessage} />
+            <section className="vibe-rail-card" aria-label="Build Map status">
+              <header><h3>Build Map</h3></header>
+              <VibeOrchestrationPanel graph={orchestration.graph} statusMessage={orchestration.statusMessage} />
+            </section>
 
             <div className="vibe-rail-two-up">
               <section className="vibe-rail-card">
