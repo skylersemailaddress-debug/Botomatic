@@ -123,6 +123,15 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
               <VibeOrchestrationPanel graph={orchestration.graph} statusMessage={orchestration.statusMessage} />
             </section>
 
+            <section className="vibe-rail-card" aria-label="Project state summary">
+              <h3>Project State</h3>
+              <div className="vibe-rail-row"><span>Objective</span><strong>{orchestration.graph.objective || "No objective saved"}</strong></div>
+              <div className="vibe-rail-row"><span>Next step</span><strong>{orchestration.graph.nextStep || "No next step saved"}</strong></div>
+              <div className="vibe-rail-row"><span>Resume</span><strong>{orchestration.runId || "No resumed run"}</strong></div>
+              <small>{orchestration.resumeMessage || "No persisted state yet"}</small>
+              {orchestration.resumeMessage === "Resume unavailable" ? <small>Project state unavailable</small> : null}
+            </section>
+
             <div className="vibe-rail-two-up">
               <section className="vibe-rail-card">
                 <header><h3>Live Preview</h3><strong>Live</strong></header>

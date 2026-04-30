@@ -1,9 +1,15 @@
 import { getJsonSafe } from "./api";
+import type { OrchestrationStage } from "./orchestration";
 import type { ApiResult, TruthState } from "./truth";
 
 type ProjectStatus = {
   projectStatus?: string;
-  latestRun?: { status?: string; stages?: Array<{ label?: string; status?: string; updatedAt?: string }> };
+  objective?: string;
+  nextStep?: string;
+  activeRunId?: string;
+  latestRunId?: string;
+  latestPrompt?: string;
+  latestRun?: { runId?: string; status?: string; stages?: OrchestrationStage[] };
   runtime?: { previewUrl?: string; status?: string };
   services?: Array<{ name: string; status: string }>;
   database?: { schema?: Array<{ table: string; rows?: number }> };
@@ -14,7 +20,7 @@ type ProjectStatus = {
 
 type HealthStatus = { status?: string };
 
-type OverviewStatus = { latestRun?: { status?: string }; activity?: Array<{ label: string }> };
+type OverviewStatus = { latestRun?: { runId?: string; status?: string; stages?: OrchestrationStage[] }; objective?: string; nextStep?: string; activeRunId?: string; latestRunId?: string; latestPrompt?: string; activity?: Array<{ label: string }> };
 
 export type ProDashboardData = {
   truth: TruthState;
