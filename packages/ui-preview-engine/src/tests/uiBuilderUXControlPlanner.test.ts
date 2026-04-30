@@ -52,4 +52,7 @@ assert(recovery.recoveryMessages.some((m) => m.message.includes("Large app mode 
 assert(recovery.recoveryMessages.some((m) => m.message.includes("Repair plan requires manual review before apply.")));
 assert(recovery.recoveryMessages.some((m) => m.message.includes("patch conflict")));
 assert.doesNotThrow(() => planUIBuilderUXControls({}));
+const malformed = planUIBuilderUXControls({} as any);
+assert.equal(malformed.requiresManualReview, true);
+assert(malformed.issues.length > 0 || malformed.blockedReasons.length > 0);
 console.log("uiBuilderUXControlPlanner.test.ts passed");

@@ -44,7 +44,7 @@ export function planUIBuilderUXControls(input: Partial<UIBuilderUXControlInput>)
   if (hasPendingMutation && canApply) blockedReasons.push("Apply blocked: pending mutation must settle before apply.");
   if (!VALID_MODES.has(activeMode)) blockedReasons.push("Apply blocked: unknown active mode.");
 
-  const requiresManualReview = blockedReasons.length > 0;
+  const requiresManualReview = blockedReasons.length > 0 || issues.length > 0;
   const riskLevel = scalabilityHigh ? "high" : input.scalabilityPlan?.riskLevel ?? input.reliabilityRepairPlan?.riskLevel ?? "low";
 
   const dryRunEnabled = !hasPendingMutation && (commandText.length > 0 || hasContext);
