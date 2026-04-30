@@ -2,7 +2,7 @@ import { getJsonSafe, postJsonSafe } from "./api";
 import type { ApiResult } from "./truth";
 
 export type ExecutionJobStatus = "queued" | "running" | "succeeded" | "failed" | "blocked" | "cancelled" | "unknown";
-export type ExecutionJobType = "plan" | "generate_files" | "update_files" | "install_dependencies" | "run_tests" | "run_lint" | "run_build" | "start_preview" | "deploy" | "rollback" | "unknown";
+export type ExecutionJobType = "test" | "build" | "file_diff" | "lint" | "typecheck" | "run_tests" | "run_lint" | "run_build" | "unknown";
 export type ExecutionJob = { id?: string; runId?: string; projectId: string; type: ExecutionJobType; label: string; status: ExecutionJobStatus; startedAt?: string; completedAt?: string; error?: string; resultSummary?: string; artifactPath?: string; logLines?: string[] };
 export type ExecutionRun = { runId?: string; projectId: string; status: ExecutionJobStatus; jobs: ExecutionJob[]; logs?: string[]; updatedAt?: string };
 
@@ -18,7 +18,10 @@ function normalizeStatus(value: unknown): ExecutionJobStatus {
 }
 function normalizeType(value: unknown): ExecutionJobType {
   const type = String(value || "").toLowerCase();
-  const known: ExecutionJobType[] = ["plan", "generate_files", "update_files", "install_dependencies", "run_tests", "run_lint", "run_build", "start_preview", "deploy", "rollback", "unknown"];
+  const known: ExecutionJobType[] = ["test", "build", "file_diff", "lint", "typecheck", "run_tests", "run_lint", "run_build", "unknown"];
+  if (type === "run_tests") return "test" as ExecutionJobType;
+  if (type === "run_lint") return "lint" as ExecutionJobType;
+  if (type === "run_build") return "build" as ExecutionJobType;
   return known.includes(type as ExecutionJobType) ? (type as ExecutionJobType) : "unknown";
 }
 
@@ -63,9 +66,8 @@ export async function getExecutionRun(projectId: string, runId?: string): Promis
 }
 
 export async function startExecutionJob(projectId: string, jobType: ExecutionJobType, payload?: unknown): Promise<ApiResult<ExecutionJob>> {
-  const body = { projectId, jobType, payload };
+  const body = { projectId, jobType, payload, idempotencyKey: `job_${Date.now().toString(36)}` };
   const endpoints = [`/api/projects/${encodeURIComponent(projectId)}/jobs`, `/api/projects/${encodeURIComponent(projectId)}/execution`];
-  // Future candidates (not activated here): /api/orchestrate/action, /api/hybrid-ci
   for (const endpoint of endpoints) {
     const result = await postJsonSafe<unknown, typeof body>(endpoint, body);
     if (result.ok) {
