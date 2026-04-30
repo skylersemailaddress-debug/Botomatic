@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { getOrchestrationStatus, submitVibeIntake, type OrchestrationGraph, type OrchestrationStage } from "@/services/orchestration";
+import { getExecutionRun, type ExecutionRun } from "@/services/execution";
 import { getProjectResume } from "@/services/projectState";
 
 const terminalStages = new Set(["complete", "failed", "blocked"]);
@@ -24,11 +25,26 @@ export function useVibeOrchestration(projectId: string) {
   const [statusMessage, setStatusMessage] = useState("No orchestration started");
   const [resumeMessage, setResumeMessage] = useState("No persisted state yet");
   const [resumeState, setResumeState] = useState<"empty" | "resumed" | "unavailable">("empty");
+  const [executionRun, setExecutionRun] = useState<ExecutionRun | null>(null);
+  const [executionMessage, setExecutionMessage] = useState("No execution run yet");
 
   const activeRun = useMemo(() => Boolean(runId) && !isTerminal(graph.stages), [graph.stages, runId]);
 
   const refreshStatus = useCallback(async () => {
     const result = await getOrchestrationStatus(projectId, runId);
+    const shouldProbeExecution = Boolean(runId || hasSubmitted || executionRun);
+    if (shouldProbeExecution) {
+      const execution = await getExecutionRun(projectId, runId);
+      if (execution.ok) {
+        setExecutionRun(execution.data);
+        setExecutionMessage(execution.data.jobs.length > 0 ? `Execution ${execution.data.status}` : "No execution run yet");
+      } else {
+        setExecutionRun(null);
+        setExecutionMessage(execution.message || "Execution status unavailable");
+      }
+    } else {
+      setExecutionMessage("No execution run yet");
+    }
     if (!result.ok) {
       if (hasSubmitted || runId) setStatusMessage(result.message || "Execution status unavailable");
       return;
@@ -48,7 +64,7 @@ export function useVibeOrchestration(projectId: string) {
     } else {
       setStatusMessage("Execution pending");
     }
-  }, [hasSubmitted, projectId, runId]);
+  }, [executionRun, hasSubmitted, projectId, runId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -115,5 +131,5 @@ export function useVibeOrchestration(projectId: string) {
     setStatusMessage(result.data.graph.stages.length > 0 ? "Execution pending" : "Stage state unavailable");
   }, [projectId, prompt]);
 
-  return { prompt, setPrompt, submitting, submitPrompt, graph, statusMessage, resumeMessage, resumeState, runId };
+  return { prompt, setPrompt, submitting, submitPrompt, graph, statusMessage, resumeMessage, resumeState, runId, executionRun, executionMessage };
 }

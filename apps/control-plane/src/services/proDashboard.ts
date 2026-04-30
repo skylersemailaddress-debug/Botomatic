@@ -1,4 +1,5 @@
 import { getJsonSafe } from "./api";
+import { getExecutionRun, type ExecutionRun } from "./execution";
 import type { OrchestrationStage } from "./orchestration";
 import type { ApiResult, TruthState } from "./truth";
 
@@ -29,15 +30,17 @@ export type ProDashboardData = {
   project: ApiResult<ProjectStatus>;
   overview: ApiResult<OverviewStatus>;
   health: ApiResult<HealthStatus>;
+  execution: ApiResult<ExecutionRun>;
 };
 
 export async function getProDashboardData(projectId: string): Promise<ProDashboardData> {
-  const [project, overview, health] = await Promise.all([
+  const [project, overview, health, execution] = await Promise.all([
     getJsonSafe<ProjectStatus>(`/api/projects/${projectId}/status`),
     getJsonSafe<OverviewStatus>(`/api/projects/${projectId}/ui/overview`),
     getJsonSafe<HealthStatus>("/api/health"),
+    getExecutionRun(projectId),
   ]);
 
   const truth: TruthState = project.ok || overview.ok || health.ok ? "connected" : "not_connected";
-  return { truth, project, overview, health };
+  return { truth, project, overview, health, execution };
 }

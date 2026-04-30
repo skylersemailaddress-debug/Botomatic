@@ -132,7 +132,7 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
           <aside className="vibe-right-rail" aria-label="Vibe intelligence rail">
             <section className="vibe-rail-card" aria-label="Build Map status">
               <header><h3>Build Map</h3></header>
-              <VibeOrchestrationPanel graph={orchestration.graph} statusMessage={orchestration.statusMessage} />
+              <VibeOrchestrationPanel graph={orchestration.graph} statusMessage={orchestration.statusMessage} executionRun={orchestration.executionRun} executionMessage={orchestration.executionMessage} />
             </section>
 
             <section className="vibe-rail-card" aria-label="Project state summary">
@@ -140,6 +140,7 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
               <div className="vibe-rail-row"><span>Objective</span><strong>{orchestration.graph.objective || "No objective saved"}</strong></div>
               <div className="vibe-rail-row"><span>Next step</span><strong>{orchestration.graph.nextStep || "No next step saved"}</strong></div>
               <div className="vibe-rail-row"><span>Resume</span><strong>{orchestration.runId || "No resumed run"}</strong></div>
+              <div className="vibe-rail-row"><span>Execution</span><strong>{orchestration.executionMessage || "Execution status unavailable"}</strong></div>
               <small>{orchestration.resumeMessage || "No persisted state yet"}</small>
               {orchestration.resumeState === "unavailable" ? <small>Project state unavailable</small> : null}
             </section>
