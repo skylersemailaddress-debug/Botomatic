@@ -87,7 +87,7 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
           </div>
           <div className="vibe-dashboard-cta-group">
             <button type="button" className="vibe-dashboard-share">Share</button>
-            <button type="button" className="vibe-dashboard-launch" disabled={!firstRunState.canLaunch}>Launch App</button>
+            <button type="button" className="vibe-dashboard-launch" disabled={!firstRunState.canLaunch} aria-label={firstRunState.canLaunch ? "Launch app" : "Launch unavailable"}>{firstRunState.canLaunch ? "Launch App" : "Launch unavailable"}</button>
           </div>
         </header>
 
