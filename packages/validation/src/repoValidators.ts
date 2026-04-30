@@ -56,6 +56,7 @@ import { validateLiveUIBuilderUXPolishReadiness } from "./repoValidators/liveUIB
 import { validateLiveUIBuilderExportDeployReadiness } from "./repoValidators/liveUIBuilderExportDeployReadiness";
 import { validateLiveUIBuilderPlatformBuilderReadiness } from "./repoValidators/liveUIBuilderPlatformBuilderReadiness";
 import { validateLocalCrossPlatformLaunchReadiness } from "./repoValidators/localCrossPlatformLaunchReadiness";
+import { validateLiveUIBuilderOrchestrationReadiness } from "./repoValidators/liveUIBuilderOrchestrationReadiness";
 
 export type RepoValidatorResult = {
   name: string;

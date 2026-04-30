@@ -1,0 +1,13 @@
+import assert from "assert"; import { verifyUILiveBuilderOrchestrationGraph } from "../uiLiveBuilderOrchestrationGraphVerifier";
+const plan={stages:[{id:"command"},{id:"target-resolution"},{id:"export-deploy"}],dependencies:[{fromStageId:"command",toStageId:"target-resolution"}],orderedStageIds:["command","target-resolution","export-deploy"],upstreamPlanIds:{"source-identity":"sid"},affectedFilePaths:["a","b"],changedFiles:["c","d"],executionBlocked:true};
+assert.equal(verifyUILiveBuilderOrchestrationGraph(plan,{sourceIdentityId:"sid"}).valid,true);
+assert.equal(verifyUILiveBuilderOrchestrationGraph({...plan,stages:[{id:"command"},{id:"command"}] as any}).valid,false);
+assert.equal(verifyUILiveBuilderOrchestrationGraph({...plan,dependencies:[{fromStageId:"x",toStageId:"command"}] as any}).valid,false);
+assert.equal(verifyUILiveBuilderOrchestrationGraph({...plan,dependencies:[{fromStageId:"command",toStageId:"target-resolution"},{fromStageId:"target-resolution",toStageId:"command"}] as any,orderedStageIds:["command","target-resolution","export-deploy"]}).valid,false);
+assert.equal(verifyUILiveBuilderOrchestrationGraph({...plan,orderedStageIds:["target-resolution","command","export-deploy"] as any}).valid,false);
+assert.equal(verifyUILiveBuilderOrchestrationGraph({...plan,upstreamPlanIds:{}}, {sourceIdentityId:"sid"}).valid,false);
+assert.equal(verifyUILiveBuilderOrchestrationGraph({...plan,affectedFilePaths:["b","a","a"]}).valid,false);
+assert.equal(verifyUILiveBuilderOrchestrationGraph({...plan,changedFiles:["d","c","c"]}).valid,false);
+assert.equal(verifyUILiveBuilderOrchestrationGraph({...plan,executionBlocked:false}).valid,false);
+assert.equal(verifyUILiveBuilderOrchestrationGraph(null as any).valid,false);
+console.log("uiLiveBuilderOrchestrationGraphVerifier.test.ts passed");
