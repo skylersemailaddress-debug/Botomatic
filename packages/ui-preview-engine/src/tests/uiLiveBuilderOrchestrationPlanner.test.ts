@@ -1,0 +1,15 @@
+import assert from "assert"; import { createUILiveBuilderOrchestrationPlan } from "../uiLiveBuilderOrchestrationPlanner";
+const input={commandResult:{},targetResolutionResult:{},uiMutationResult:{},sourceIdentityResult:{sourceIdentityId:"sid",confidence:"high"},multiFileEditPlan:{multiFilePlanId:"mid",changedFiles:["b","a","a"],affectedFilePaths:["d","c","c"]},fullProjectGenerationPlan:{fullProjectPlanId:"fid",riskLevel:"low",requiresManualReview:false},designStylePlan:{stylePlanId:"sty"},dataStateApiWiringPlan:{wiringPlanId:"wid"},reliabilityRepairPlan:{repairPlanId:"rid"},scalabilityPerformancePlan:{scalabilityPlanId:"scid"},uxControlPlan:{uxControlPlanId:"uxid"},exportDeployPlan:{exportDeployPlanId:"eid"},platformBuilderPlan:{platformBuilderPlanId:"pid"},options:{guardedApplyProof:{rollbackVerified:true,sourceIdentityVerified:true}}};
+const a=createUILiveBuilderOrchestrationPlan(input); const b=createUILiveBuilderOrchestrationPlan(input); assert.equal(a.plan.orchestrationPlanId,b.plan.orchestrationPlanId); assert.equal(a.plan.upstreamPlanIds["source-identity"],"sid"); assert.equal(a.plan.upstreamPlanIds["multi-file"],"mid"); assert.equal(a.plan.upstreamPlanIds["full-project"],"fid"); assert.equal(a.plan.upstreamPlanIds["export-deploy"],"eid"); assert.equal(a.plan.upstreamPlanIds["platform-builder"],"pid");
+assert.deepEqual(a.plan.changedFiles,["a","b"]); assert.deepEqual(a.plan.affectedFilePaths,["c","d"]); assert(a.plan.caveats.length>0); assert.equal(a.plan.readyForExportPlanning,true); assert.equal(a.plan.readyForPlatformPlanning,true); assert.equal(a.plan.executionBlocked,true);
+assert.equal(a.plan.requiresManualReview,false);
+const malformed=createUILiveBuilderOrchestrationPlan(null as any); assert.equal(malformed.issues.length>0,true);
+const req=createUILiveBuilderOrchestrationPlan({multiFileEditPlan:{},options:{requireSourceIdentity:true}}); assert.equal(req.plan.riskLevel,"high"); assert.equal(req.plan.requiresManualReview,true);
+assert.equal(createUILiveBuilderOrchestrationPlan({sourceIdentityResult:{sourceIdentityId:"x",confidence:"low"}}).plan.requiresManualReview,true);
+assert.equal(createUILiveBuilderOrchestrationPlan({sourceIdentityResult:{sourceIdentityId:"x",confidence:"high"},options:{requireRollbackProof:true}}).plan.requiresManualReview,true);
+assert.equal(createUILiveBuilderOrchestrationPlan({options:{requireExportPlan:true}}).plan.requiresManualReview,true);
+assert.equal(createUILiveBuilderOrchestrationPlan({options:{requirePlatformPlan:true}}).plan.requiresManualReview,true);
+assert.equal(createUILiveBuilderOrchestrationPlan({sourceIdentityResult:{sourceIdentityId:"x",confidence:"high"},options:{allowSourceApply:true}}).plan.requiresManualReview,true);
+assert.equal(createUILiveBuilderOrchestrationPlan({options:{allowExportExecution:true}}).plan.requiresManualReview,true);
+assert.equal(createUILiveBuilderOrchestrationPlan({options:{allowPlatformExecution:true}}).plan.requiresManualReview,true);
+console.log("uiLiveBuilderOrchestrationPlanner.test.ts passed");

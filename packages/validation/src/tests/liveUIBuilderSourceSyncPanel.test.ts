@@ -88,3 +88,10 @@ assert(panel.includes("Export/deploy planning is dry-run only and does not build
 assert(panel.includes("Platform builder plan id:"));
 assert(panel.includes("Platform target:"));
 assert(panel.includes("Platform builder planning is dry-run only and does not build, package, upload, publish, open emulators, call platform APIs, create marketplace pages, or prove runtime/platform approval."));
+
+assert(panel.includes("Orchestration plan id:"));
+assert(panel.includes("Orchestration stage count:"));
+assert(panel.includes("Orchestration dependency count:"));
+assert(panel.includes("Orchestration gate count:"));
+assert(panel.includes("Orchestration executionBlocked:"));
+assert(panel.includes("Live Builder orchestration is dry-run only"));
