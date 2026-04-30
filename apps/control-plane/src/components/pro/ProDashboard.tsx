@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { LiveApplicationPanel } from "@/components/runtime/RuntimePreviewPanel";
 import { getProDashboardData } from "@/services/proDashboard";
 import { hasItems, panelTruth } from "@/services/panelTruth";
 
@@ -90,23 +91,6 @@ function CodeChangesPanel({ changes }: { changes: CodeChange[] }) {
   );
 }
 
-function LiveApplicationPanel({ runtimeStatus, previewUrl }: { runtimeStatus?: string; previewUrl?: string }) {
-  const isLive = runtimeStatus === "live" && Boolean(previewUrl);
-
-  return (
-    <section className="pro-panel pro-panel--wide">
-      <header>
-        <h2>Live Application</h2>
-        <strong className="pro-live">● {isLive ? "Live" : "Unverified"}</strong>
-      </header>
-      <div className="pro-url-bar">{previewUrl || "Preview unavailable"}</div>
-      <div className="pro-runtime-controls">
-        <span>{runtimeStatus || "Runtime not connected"}</span>
-      </div>
-    </section>
-  );
-}
-
 function ServicesPanel({ services }: { services: ServiceStatus[] }) {
   const hasServices = hasItems(services);
   return (
@@ -150,13 +134,13 @@ export async function ProDashboard({ projectId }: { projectId: string }) {
       </aside>
       <div className="pro-dashboard-main">
         <header className="pro-topbar"><div><h1>Pro Mode <span>PRO</span></h1><p>Technical. Powerful. Complete control.</p></div></header>
-        <p className="sr-only">Code Changes AI Copilot Deploy</p>
+        <p className="sr-only">Code Changes Live Application AI Copilot Deploy</p>
         <nav className="pro-subnav" aria-label="Pro navigation">{proSecondaryNav.map((item, index) => <button type="button" key={item} className={index === 0 ? "is-active" : ""}>{item}</button>)}</nav>
         <div className="pro-grid">
           <BuildPipelinePanel pipeline={project?.latestRun?.stages ?? []} />
           <SystemHealthPanel healthStatus={health?.status} projectStatus={project?.projectStatus} latestRunStatus={overview?.latestRun?.status} />
           <CodeChangesPanel changes={project?.codeChanges ?? []} />
-          <LiveApplicationPanel runtimeStatus={project?.runtime?.status} previewUrl={project?.runtime?.previewUrl} />
+          <LiveApplicationPanel runtimeStatus={project?.runtime?.status} previewUrl={project?.runtime?.previewUrl} previewUnavailableLabel="Preview unavailable" runtimeNotConnectedLabel="Runtime not connected" />
           <ServicesPanel services={project?.services ?? []} />
           <DatabasePanel schema={project?.database?.schema ?? []} />
           <TestResultsPanel tests={project?.tests} />

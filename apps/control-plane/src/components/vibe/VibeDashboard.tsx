@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 import { actionChips, recentProjects, suggestionChips, vibeSidebarNav } from "./vibeSeedData";
 import { LiveUIBuilderCommandInput } from "../live-ui-builder/LiveUIBuilderCommandInput";
@@ -12,11 +13,22 @@ import { LiveUIBuilderAppStructurePanel } from "../live-ui-builder/LiveUIBuilder
 import { VibeOrchestrationPanel } from "../builder/VibeOrchestrationPanel";
 import { useVibeOrchestration } from "../builder/useVibeOrchestration";
 import { useLiveUIBuilderVibe } from "./useLiveUIBuilderVibe";
+import { VibeLivePreviewPanel } from "@/components/runtime/RuntimePreviewPanel";
+import { getProjectRuntimeState } from "@/services/runtimeStatus";
 
 export function VibeDashboard({ projectId }: { projectId: string }) {
   const { latestResult, userFacingSummary, latestReviewPayload, confirmationPending, runSampleEdit, runDestructiveEdit, runCommandText, retryLastCommand, resolveTarget, pendingResolution, confirmPending, rejectPending, editableDocument, selectedNodeId, selectedPageId, changedNodeIds, lastPreviewPatch, selectNode, runDirectManipulationAction, preConfirmDiff, sourceSyncDryRun, sourceSyncApply, sourceSyncResult, sourceSyncStatus, hasRealFileAdapter, appStructure, appStructureNeedsResolution, appStructureCandidates, selectPage, duplicatePage, renamePage, updateNavigation, extractReusableComponent, reuseComponent } = useLiveUIBuilderVibe();
   const fallbackTargets: ResolutionTarget[] = Object.values(editableDocument.pages?.[0]?.nodes ?? {}).slice(0, 8).map((node: any) => ({ nodeId: node.id, label: node.identity?.semanticLabel ?? node.id, type: node.kind ?? "node", page: editableDocument.pages?.[0]?.id ?? "page", location: node.parentId ? `child of ${node.parentId}` : "root" }));
   const resolverTargets: ResolutionTarget[] = (pendingResolution?.candidates ?? []).map((nodeId: string) => ({ nodeId, label: nodeId, type: "resolver candidate", page: editableDocument.pages.find((page: any) => page.nodes[nodeId])?.id ?? "unknown", location: "resolver" }));
+  const [runtimeState, setRuntimeState] = useState<{ status?: string; previewUrl?: string }>({});
+  useEffect(() => {
+    let active = true;
+    getProjectRuntimeState(projectId).then((runtime) => {
+      if (!active) return;
+      setRuntimeState(runtime);
+    }).catch(() => { if (active) setRuntimeState({}); });
+    return () => { active = false; };
+  }, [projectId]);
   const orchestration = useVibeOrchestration(projectId);
   return (
     <section className="vibe-dashboard" aria-label="Vibe dashboard" data-project-id={projectId}>
@@ -133,10 +145,7 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
             </section>
 
             <div className="vibe-rail-two-up">
-              <section className="vibe-rail-card">
-                <header><h3>Live Preview</h3><strong>Preview</strong></header>
-                <div className="vibe-mini-preview">Preview unavailable</div><small>Runtime not connected</small>
-              </section>
+              <VibeLivePreviewPanel runtimeStatus={runtimeState.status} previewUrl={runtimeState.previewUrl} />
               <section className="vibe-rail-card">
                 <header><h3>App Health</h3></header>
                 <div className="vibe-health">--<small>Health check not run</small></div>
