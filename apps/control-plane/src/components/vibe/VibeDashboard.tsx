@@ -15,18 +15,28 @@ import { useVibeOrchestration } from "../builder/useVibeOrchestration";
 import { useLiveUIBuilderVibe } from "./useLiveUIBuilderVibe";
 import { VibeLivePreviewPanel } from "@/components/runtime/RuntimePreviewPanel";
 import { getProjectRuntimeState } from "@/services/runtimeStatus";
+import { getFirstRunFallback, getFirstRunState, type FirstRunState } from "@/services/firstRun";
 
 export function VibeDashboard({ projectId }: { projectId: string }) {
   const { latestResult, userFacingSummary, latestReviewPayload, confirmationPending, runSampleEdit, runDestructiveEdit, runCommandText, retryLastCommand, resolveTarget, pendingResolution, confirmPending, rejectPending, editableDocument, selectedNodeId, selectedPageId, changedNodeIds, lastPreviewPatch, selectNode, runDirectManipulationAction, preConfirmDiff, sourceSyncDryRun, sourceSyncApply, sourceSyncResult, sourceSyncStatus, hasRealFileAdapter, appStructure, appStructureNeedsResolution, appStructureCandidates, selectPage, duplicatePage, renamePage, updateNavigation, extractReusableComponent, reuseComponent } = useLiveUIBuilderVibe();
   const fallbackTargets: ResolutionTarget[] = Object.values(editableDocument.pages?.[0]?.nodes ?? {}).slice(0, 8).map((node: any) => ({ nodeId: node.id, label: node.identity?.semanticLabel ?? node.id, type: node.kind ?? "node", page: editableDocument.pages?.[0]?.id ?? "page", location: node.parentId ? `child of ${node.parentId}` : "root" }));
   const resolverTargets: ResolutionTarget[] = (pendingResolution?.candidates ?? []).map((nodeId: string) => ({ nodeId, label: nodeId, type: "resolver candidate", page: editableDocument.pages.find((page: any) => page.nodes[nodeId])?.id ?? "unknown", location: "resolver" }));
   const [runtimeState, setRuntimeState] = useState<{ status?: string; previewUrl?: string }>({});
+  const [firstRunState, setFirstRunState] = useState<FirstRunState>(getFirstRunFallback(projectId));
+  const [firstRunMessage, setFirstRunMessage] = useState<string>("No first-run state yet");
   useEffect(() => {
     let active = true;
-    getProjectRuntimeState(projectId).then((runtime) => {
+    Promise.all([getProjectRuntimeState(projectId), getFirstRunState(projectId)]).then(([runtime, firstRun]) => {
       if (!active) return;
       setRuntimeState(runtime);
-    }).catch(() => { if (active) setRuntimeState({}); });
+      if (firstRun.ok) {
+        setFirstRunState(firstRun.data);
+        setFirstRunMessage("");
+      } else {
+        setFirstRunState(getFirstRunFallback(projectId));
+        setFirstRunMessage(firstRun.message || "No first-run state yet");
+      }
+    }).catch(() => { if (active) { setRuntimeState({}); setFirstRunState(getFirstRunFallback(projectId)); setFirstRunMessage("No first-run state yet"); } });
     return () => { active = false; };
   }, [projectId]);
   const orchestration = useVibeOrchestration(projectId);
@@ -41,7 +51,7 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
           </span>
         </Link>
 
-        <button type="button" className="vibe-dashboard-new-project">+ New Project</button>
+        <Link href="/" className="vibe-dashboard-new-project">+ New Project</Link>
 
         <nav className="vibe-dashboard-nav" aria-label="Dashboard navigation">
           {vibeSidebarNav.map((item) => <button type="button" key={item} className={item === "Home" ? "is-active" : ""}>{item}</button>)}
@@ -77,7 +87,7 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
           </div>
           <div className="vibe-dashboard-cta-group">
             <button type="button" className="vibe-dashboard-share">Share</button>
-            <button type="button" className="vibe-dashboard-launch">Launch App</button>
+            <button type="button" className="vibe-dashboard-launch" disabled={!firstRunState.canLaunch}>Launch App</button>
           </div>
         </header>
 
@@ -155,11 +165,12 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
 
             <section className="vibe-rail-card">
               <h3>What’s Next</h3>
+              <p>{firstRunMessage || firstRunState.primaryAction?.label || "Describe your app idea"}</p>
+              <small>{firstRunState.primaryAction?.detail || "No first-run state yet"}</small>
               <div className="vibe-next-grid">
-                <button type="button">Connect Domain</button>
-                <button type="button">Add Logo</button>
-                <button type="button">Payment Setup</button>
-                <button type="button">Email Notifications</button>
+                {firstRunState.steps.map((step) => (
+                  <button type="button" key={step.id} disabled={step.disabled}>{step.label} · {step.status}</button>
+                ))}
               </div>
             </section>
 
@@ -180,8 +191,9 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
 
             <section className="vibe-rail-card vibe-launch-card">
               <h3>One-Click Launch</h3>
-              <p>No launch proof yet.</p>
-              <button type="button" disabled>Launch unavailable</button>
+              <p>{firstRunState.canLaunch ? "Launch prerequisites met" : "No launch proof yet"}</p>
+              {!firstRunState.canLaunch ? <small>Launch proof missing</small> : null}
+              <button type="button" disabled={!firstRunState.canLaunch}>{firstRunState.canLaunch ? "Launch" : "Launch unavailable"}</button>
             </section>
           </aside>
         </div>
