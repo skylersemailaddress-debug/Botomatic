@@ -150,7 +150,7 @@
     "test:ui-generated-app-runtime-smoke-model": "tsx packages/ui-preview-engine/src/tests/uiGeneratedAppRuntimeSmokeModel.test.ts",
     "test:ui-generated-app-runtime-smoke-planner": "tsx packages/ui-preview-engine/src/tests/uiGeneratedAppRuntimeSmokePlanner.test.ts",
     "test:generated-app-runtime-smoke-runner": "tsx packages/validation/src/tests/generatedAppRuntimeSmokeRunner.test.ts",
-    "test": "npm run -s test:wave-025 && npm run -s test:wave-026 && npm run -s test:wave-027 && npm run -s test:wave-028 && npm run -s test:wave-029 && npm run -s test:wave-030 && npm run -s test:wave-031 && npm run -s test:wave-032",
+    "test": "npm run -s test:wave-025 && npm run -s test:wave-026 && npm run -s test:wave-027 && npm run -s test:wave-028 && npm run -s test:wave-029 && npm run -s test:wave-030 && npm run -s test:wave-031 && npm run -s test:wave-032 && npm run -s test:wave-033",
     "test:wave-025": "tsx packages/validation/src/tests/proDashboardTruthState.test.ts",
     "test:wave-026": "tsx packages/validation/src/tests/wave026LiveOrchestrationLoop.test.ts",
     "test:wave-027": "tsx packages/validation/src/tests/wave027StatePersistenceResolution.test.ts",
@@ -158,7 +158,8 @@
     "test:wave-029": "tsx packages/validation/src/tests/wave029RuntimePreviewCorrection.test.ts",
     "test:wave-030": "tsx packages/validation/src/tests/wave030ExecutionLayerActivation.test.ts",
     "test:wave-031": "tsx packages/validation/src/tests/wave031FirstRunExperienceReality.test.ts",
-    "test:wave-032": "tsx packages/validation/src/tests/wave032CommercialUiPolish.test.ts"
+    "test:wave-032": "tsx packages/validation/src/tests/wave032CommercialUiPolish.test.ts",
+    "test:wave-033": "tsx packages/validation/src/tests/wave033ReferenceUiMatch.test.ts"
   },
   "dependencies": {
     "@trigger.dev/sdk": "^4.4.4"
