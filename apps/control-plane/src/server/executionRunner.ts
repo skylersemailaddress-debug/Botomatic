@@ -5,7 +5,19 @@ import fs from "node:fs";
 import { AllowedJobType, StoredJob, appendLog, checksum, redactLine } from "./executionStore";
 
 const execFileAsync = promisify(execFile);
-const repoRoot = path.resolve(process.cwd(), "../..");
+
+function discoverRepoRoot(start: string): string {
+  let current = path.resolve(start);
+  while (true) {
+    if (fs.existsSync(path.join(current, "package.json"))) return current;
+    const parent = path.dirname(current);
+    if (parent === current) break;
+    current = parent;
+  }
+  return path.resolve(start);
+}
+
+const repoRoot = discoverRepoRoot(process.cwd());
 
 export const ALLOWLISTED_JOB_TYPES: AllowedJobType[] = ["test", "build", "file_diff", "lint", "typecheck"];
 

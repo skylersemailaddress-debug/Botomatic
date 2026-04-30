@@ -28,10 +28,18 @@ export async function POST(request: NextRequest, { params }: { params: { project
     if (existing) return NextResponse.json(existing);
   }
 
+  const requestedJobsRaw = body?.requestedJobs;
+  const requestedJobs = Array.isArray(requestedJobsRaw) ? requestedJobsRaw : [];
+  const requestedJobsProvided = requestedJobsRaw !== undefined;
+  if (requestedJobsProvided) {
+    const invalid = requestedJobs.find((job) => typeof job !== "string" || !ALLOWLISTED_JOB_TYPES.includes(job as any));
+    if (invalid !== undefined || !Array.isArray(requestedJobsRaw)) {
+      return NextResponse.json({ error: { code: "blocked_job_type", message: `Requested job ${String(invalid ?? requestedJobsRaw)} is not allowlisted`, retryable: false, details: { allowlistedJobTypes: ALLOWLISTED_JOB_TYPES } } }, { status: 409 });
+    }
+  }
+
+  const targetJobTypes = requestedJobs.length ? requestedJobs : ["file_diff"];
   const run = createRun(projectId, idempotencyKey, typeof body?.objective === "string" ? body.objective : undefined, typeof body?.prompt === "string" ? body.prompt : undefined);
-  const requestedJobs = Array.isArray(body?.requestedJobs) ? body.requestedJobs : [];
-  const filteredJobs = requestedJobs.filter((job: unknown) => typeof job === "string" && ALLOWLISTED_JOB_TYPES.includes(job as any));
-  const targetJobTypes = filteredJobs.length ? filteredJobs : ["file_diff"];
 
   run.status = "running";
   for (const type of targetJobTypes) {

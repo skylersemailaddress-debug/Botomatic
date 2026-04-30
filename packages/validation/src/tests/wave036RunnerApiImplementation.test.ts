@@ -18,6 +18,9 @@ const runner = read("apps/control-plane/src/server/executionRunner.ts");
 for (const jt of ["test", "build", "file_diff", "lint", "typecheck"]) assert(runner.includes(`"${jt}"`), `missing allowlisted type ${jt}`);
 assert(runner.includes("ALLOWLISTED_JOB_TYPES"), "missing allowlist constant");
 assert(!runner.includes("exec("), "must not use broad exec shell");
+assert(!runner.includes('path.resolve(process.cwd(), "../..")'), "runner must not hardcode ../../ repo root");
+assert(runner.includes("discoverRepoRoot"), "runner must contain repo-root discovery function");
+assert(runner.includes("while (true)"), "runner must walk parent directories to discover repo root");
 
 const jobsRoute = read("apps/control-plane/src/app/api/projects/[projectId]/jobs/route.ts");
 assert(jobsRoute.includes("idempotencyKey is required"), "idempotency requirement missing in jobs route");
@@ -25,6 +28,8 @@ assert(jobsRoute.includes("blocked_job_type"), "disallowed job types must be blo
 
 const executionRoute = read("apps/control-plane/src/app/api/projects/[projectId]/execution/route.ts");
 assert(executionRoute.includes("idempotencyKey is required"), "idempotency requirement missing in execution route");
+assert(executionRoute.includes("blocked_job_type"), "execution route must block disallowed requestedJobs");
+assert(!executionRoute.includes("filteredJobs"), "execution route must not silently filter requestedJobs");
 
 const store = read("apps/control-plane/src/server/executionStore.ts");
 for (const marker of ["checksum", "redactLine", "runs", "idempotency", "data/execution"]) assert(store.includes(marker), `missing receipt/evidence marker ${marker}`);
