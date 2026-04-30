@@ -171,7 +171,7 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
             <section className="vibe-rail-card vibe-launch-card">
               <h3>One-Click Launch</h3>
               <p>No launch proof yet.</p>
-              <button type="button">Launch My App</button>
+              <button type="button" disabled>Launch unavailable</button>
             </section>
           </aside>
         </div>

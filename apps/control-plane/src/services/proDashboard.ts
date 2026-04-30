@@ -15,8 +15,8 @@ type ProjectStatus = {
   database?: { schema?: Array<{ table: string; rows?: number }> };
   tests?: { total?: number; passed?: number; failed?: number; skipped?: number };
   logs?: string[];
-  commits?: Array<{ message: string; author?: string; time?: string }>
-  codeChanges?: Array<{ path?: string; summary?: string }>
+  commits?: Array<{ message: string; author?: string; time?: string }>;
+  codeChanges?: Array<{ path?: string; summary?: string }>;
   copilotActivity?: Array<{ message?: string; timestamp?: string }>;
 };
 
