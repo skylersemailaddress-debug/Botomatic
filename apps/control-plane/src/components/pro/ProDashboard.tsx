@@ -25,7 +25,7 @@ function BuildPipelinePanel({ pipeline }: { pipeline: PipelineStage[] }) {
     <section className="pro-panel">
       <header>
         <h2>Build Pipeline</h2>
-        <TruthBadge label={hasPipeline ? "Live data" : "Backend state unavailable"} />
+        <TruthBadge label={hasPipeline ? "Live data" : "No execution run yet"} />
       </header>
       <div className="pro-pipeline">
         {hasPipeline ? (
@@ -123,6 +123,10 @@ export async function ProDashboard({ projectId }: { projectId: string }) {
   const project = data.project.ok ? data.project.data : null;
   const overview = data.overview.ok ? data.overview.data : null;
   const health = data.health.ok ? data.health.data : null;
+  const execution = data.execution.ok ? data.execution.data : null;
+  const executionPipeline = execution?.jobs.map((job) => ({ label: job.label, status: job.status, updatedAt: job.completedAt || job.startedAt })) ?? [];
+  const logs = execution?.logs?.length ? execution.logs : (project?.logs ?? []);
+  const testJob = execution?.jobs.find((job) => job.type === "run_tests" && (job.resultSummary || job.artifactPath));
 
   return (
     <section className="pro-dashboard" aria-label="Pro dashboard" data-project-id={projectId}>
@@ -137,14 +141,14 @@ export async function ProDashboard({ projectId }: { projectId: string }) {
         <p className="sr-only">Code Changes Live Application AI Copilot Deploy</p>
         <nav className="pro-subnav" aria-label="Pro navigation">{proSecondaryNav.map((item, index) => <button type="button" key={item} className={index === 0 ? "is-active" : ""}>{item}</button>)}</nav>
         <div className="pro-grid">
-          <BuildPipelinePanel pipeline={project?.latestRun?.stages ?? []} />
+          <BuildPipelinePanel pipeline={executionPipeline.length > 0 ? executionPipeline : (project?.latestRun?.stages ?? [])} />
           <SystemHealthPanel healthStatus={health?.status} projectStatus={project?.projectStatus} latestRunStatus={overview?.latestRun?.status} />
           <CodeChangesPanel changes={project?.codeChanges ?? []} />
           <LiveApplicationPanel runtimeStatus={project?.runtime?.status} previewUrl={project?.runtime?.previewUrl} previewUnavailableLabel="Preview unavailable" runtimeNotConnectedLabel="Runtime not connected" />
           <ServicesPanel services={project?.services ?? []} />
           <DatabasePanel schema={project?.database?.schema ?? []} />
-          <TestResultsPanel tests={project?.tests} />
-          <TerminalPanel logs={project?.logs ?? []} />
+          <TestResultsPanel tests={testJob ? project?.tests : undefined} />
+          <TerminalPanel logs={logs} />
           <CopilotPanel activity={project?.copilotActivity ?? []} />
           <RecentCommitsPanel commits={project?.commits ?? []} />
         </div>
