@@ -14,6 +14,7 @@ import { VibeOrchestrationPanel } from "../builder/VibeOrchestrationPanel";
 import { useVibeOrchestration } from "../builder/useVibeOrchestration";
 import { useLiveUIBuilderVibe } from "./useLiveUIBuilderVibe";
 import { VibeLivePreviewPanel } from "@/components/runtime/RuntimePreviewPanel";
+import { getProjectRuntimeState } from "@/services/runtimeStatus";
 
 export function VibeDashboard({ projectId }: { projectId: string }) {
   const { latestResult, userFacingSummary, latestReviewPayload, confirmationPending, runSampleEdit, runDestructiveEdit, runCommandText, retryLastCommand, resolveTarget, pendingResolution, confirmPending, rejectPending, editableDocument, selectedNodeId, selectedPageId, changedNodeIds, lastPreviewPatch, selectNode, runDirectManipulationAction, preConfirmDiff, sourceSyncDryRun, sourceSyncApply, sourceSyncResult, sourceSyncStatus, hasRealFileAdapter, appStructure, appStructureNeedsResolution, appStructureCandidates, selectPage, duplicatePage, renamePage, updateNavigation, extractReusableComponent, reuseComponent } = useLiveUIBuilderVibe();
@@ -22,9 +23,9 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
   const [runtimeState, setRuntimeState] = useState<{ status?: string; previewUrl?: string }>({});
   useEffect(() => {
     let active = true;
-    fetch(`/api/projects/${projectId}/status`).then((r) => r.json()).then((data) => {
+    getProjectRuntimeState(projectId).then((runtime) => {
       if (!active) return;
-      setRuntimeState(data?.runtime ?? {});
+      setRuntimeState(runtime);
     }).catch(() => { if (active) setRuntimeState({}); });
     return () => { active = false; };
   }, [projectId]);

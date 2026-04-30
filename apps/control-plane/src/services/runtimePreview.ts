@@ -65,7 +65,7 @@ export function derivePreviewUrlFromBrowser(options: { browser?: BrowserContext;
     }
   }
 
-  if (env === "local" || env === "lan" || env === "browser") {
+  if (env === "local" || env === "lan") {
     return `${protocol}//${browser.hostname}:${port}`;
   }
 
