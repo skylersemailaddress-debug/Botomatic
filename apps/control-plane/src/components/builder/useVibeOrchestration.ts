@@ -23,6 +23,7 @@ export function useVibeOrchestration(projectId: string) {
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [statusMessage, setStatusMessage] = useState("No orchestration started");
   const [resumeMessage, setResumeMessage] = useState("No persisted state yet");
+  const [resumeState, setResumeState] = useState<"empty" | "resumed" | "unavailable">("empty");
 
   const activeRun = useMemo(() => Boolean(runId) && !isTerminal(graph.stages), [graph.stages, runId]);
 
@@ -55,20 +56,28 @@ export function useVibeOrchestration(projectId: string) {
       const result = await getProjectResume(projectId);
       if (cancelled) return;
       if (!result.ok) {
+        if (result.state === "empty" || result.status === 404) {
+          setResumeMessage("No persisted state yet");
+          setResumeState("empty");
+          return;
+        }
         setResumeMessage(result.message || "Resume unavailable");
+        setResumeState("unavailable");
         return;
       }
       const resumeRunId = result.data.activeRunId || result.data.latestRunId;
       const stages = result.data.stages ?? [];
       if (!resumeRunId && stages.length === 0 && !result.data.objective && !result.data.nextStep && !result.data.latestPrompt) {
         setResumeMessage("No persisted state yet");
+        setResumeState("empty");
         return;
       }
       setGraph((prev) => ({ ...prev, runId: resumeRunId, objective: result.data.objective, nextStep: result.data.nextStep, stages }));
-      setPrompt(result.data.latestPrompt || "");
+      setPrompt((currentPrompt) => currentPrompt || result.data.latestPrompt || "");
       setRunId(resumeRunId);
       setStatusMessage("Resumed project state");
       setResumeMessage("Resumed project state");
+      setResumeState("resumed");
       if (resumeRunId) setHasSubmitted(true);
     };
     void resume();
@@ -106,5 +115,5 @@ export function useVibeOrchestration(projectId: string) {
     setStatusMessage(result.data.graph.stages.length > 0 ? "Execution pending" : "Stage state unavailable");
   }, [projectId, prompt]);
 
-  return { prompt, setPrompt, submitting, submitPrompt, graph, statusMessage, resumeMessage, runId };
+  return { prompt, setPrompt, submitting, submitPrompt, graph, statusMessage, resumeMessage, resumeState, runId };
 }

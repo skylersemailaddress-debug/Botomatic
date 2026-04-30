@@ -129,7 +129,7 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
               <div className="vibe-rail-row"><span>Next step</span><strong>{orchestration.graph.nextStep || "No next step saved"}</strong></div>
               <div className="vibe-rail-row"><span>Resume</span><strong>{orchestration.runId || "No resumed run"}</strong></div>
               <small>{orchestration.resumeMessage || "No persisted state yet"}</small>
-              {orchestration.resumeMessage === "Resume unavailable" ? <small>Project state unavailable</small> : null}
+              {orchestration.resumeState === "unavailable" ? <small>Project state unavailable</small> : null}
             </section>
 
             <div className="vibe-rail-two-up">

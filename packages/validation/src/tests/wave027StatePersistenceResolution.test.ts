@@ -21,6 +21,11 @@ for (const endpoint of resumeFallbackOrder) {
 }
 
 assert(orchestrationHookSource.includes("getProjectResume(projectId)"), "useVibeOrchestration must call getProjectResume on mount");
+assert(projectStateSource.includes('message: "No persisted state yet"'), "empty resume must map to No persisted state yet");
+assert(projectStateSource.includes('message: "Resume unavailable"'), "resume unavailable message must still exist for real failures");
+assert(orchestrationHookSource.includes('result.state === "empty" || result.status === 404'), "hook must treat empty resume distinctly from unavailable failure");
+assert(orchestrationHookSource.includes('setPrompt((currentPrompt) => currentPrompt || result.data.latestPrompt || "")'), "hook must avoid overwriting user prompt during late resume hydration");
+assert(vibeDashboardSource.includes('orchestration.resumeState === "unavailable"'), "project state unavailable UI should be driven by resume state flag");
 
 const truthfulFallbacks = [
   "No persisted state yet",

@@ -136,5 +136,5 @@ export async function getProjectResume(projectId: string): Promise<ApiResult<Pro
     }
     if (result.status && result.status !== 404) return { ok: false, state: result.state, message: "Resume unavailable", status: result.status };
   }
-  return { ok: false, state: "empty", message: "Resume unavailable", status: 404 };
+  return { ok: false, state: "empty", message: "No persisted state yet", status: 404 };
 }
