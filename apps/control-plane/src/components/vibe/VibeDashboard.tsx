@@ -10,12 +10,14 @@ import { LiveUIBuilderPreviewSurface } from "./LiveUIBuilderPreviewSurface";
 import { LiveUIBuilderSourceSyncPanel } from "../live-ui-builder/LiveUIBuilderSourceSyncPanel";
 import { LiveUIBuilderAppStructurePanel } from "../live-ui-builder/LiveUIBuilderAppStructurePanel";
 import { VibeOrchestrationPanel } from "../builder/VibeOrchestrationPanel";
+import { useVibeOrchestration } from "../builder/useVibeOrchestration";
 import { useLiveUIBuilderVibe } from "./useLiveUIBuilderVibe";
 
 export function VibeDashboard({ projectId }: { projectId: string }) {
   const { latestResult, userFacingSummary, latestReviewPayload, confirmationPending, runSampleEdit, runDestructiveEdit, runCommandText, retryLastCommand, resolveTarget, pendingResolution, confirmPending, rejectPending, editableDocument, selectedNodeId, selectedPageId, changedNodeIds, lastPreviewPatch, selectNode, runDirectManipulationAction, preConfirmDiff, sourceSyncDryRun, sourceSyncApply, sourceSyncResult, sourceSyncStatus, hasRealFileAdapter, appStructure, appStructureNeedsResolution, appStructureCandidates, selectPage, duplicatePage, renamePage, updateNavigation, extractReusableComponent, reuseComponent } = useLiveUIBuilderVibe();
   const fallbackTargets: ResolutionTarget[] = Object.values(editableDocument.pages?.[0]?.nodes ?? {}).slice(0, 8).map((node: any) => ({ nodeId: node.id, label: node.identity?.semanticLabel ?? node.id, type: node.kind ?? "node", page: editableDocument.pages?.[0]?.id ?? "page", location: node.parentId ? `child of ${node.parentId}` : "root" }));
   const resolverTargets: ResolutionTarget[] = (pendingResolution?.candidates ?? []).map((nodeId: string) => ({ nodeId, label: nodeId, type: "resolver candidate", page: editableDocument.pages.find((page: any) => page.nodes[nodeId])?.id ?? "unknown", location: "resolver" }));
+  const orchestration = useVibeOrchestration(projectId);
   return (
     <section className="vibe-dashboard" aria-label="Vibe dashboard" data-project-id={projectId}>
       <aside className="vibe-dashboard-sidebar" aria-label="Botomatic sidebar">
@@ -101,9 +103,10 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
             </section>
 
             <section className="vibe-input-shell" aria-label="Chat input">
-              <div className="vibe-input-row">
-                <span>Use the Build Map prompt to start real orchestration.</span>
-              </div>
+              <form className="vibe-input-row" onSubmit={(event) => { event.preventDefault(); void orchestration.submitPrompt(); }}>
+                <input value={orchestration.prompt} onChange={(event) => orchestration.setPrompt(event.target.value)} placeholder="Ask anything… (e.g., add a pricing section, make the hero bolder, add dark mode)" aria-label="Vibe orchestration prompt" />
+                <button type="submit" disabled={orchestration.submitting}>{orchestration.submitting ? "Submitting…" : "Send"}</button>
+              </form>
               <div className="vibe-action-row">
                 <button type="button" onClick={runSampleEdit}>Improve Design</button>
                 <button type="button" onClick={runDestructiveEdit}>Apply destructive sample</button>
@@ -115,7 +118,7 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
           </main>
 
           <aside className="vibe-right-rail" aria-label="Vibe intelligence rail">
-            <VibeOrchestrationPanel projectId={projectId} />
+            <VibeOrchestrationPanel graph={orchestration.graph} statusMessage={orchestration.statusMessage} />
 
             <div className="vibe-rail-two-up">
               <section className="vibe-rail-card">
