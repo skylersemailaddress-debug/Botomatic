@@ -10,6 +10,7 @@ type PipelineStage = { label?: string; status?: string; updatedAt?: string };
 type ServiceStatus = { name: string; status: string };
 type SchemaRow = { table: string; rows?: number };
 type TestStatus = { total?: number; passed?: number; failed?: number; skipped?: number };
+type TestEvidence = { summary?: string; artifactPath?: string };
 type Commit = { message: string; author?: string; time?: string };
 type CodeChange = { path?: string; summary?: string };
 type CopilotActivity = { message?: string; timestamp?: string };
@@ -108,8 +109,13 @@ function DatabasePanel({ schema }: { schema: SchemaRow[] }) {
   return <section className="pro-panel"><header><h2>Database Schema</h2></header>{hasItems(schema) ? schema.map((item) => <div className="pro-service-row" key={item.table}><span>{item.table}</span><small>{item.rows ?? "Unknown rows"}</small></div>) : <div className="pro-service-row"><span>Schema</span><strong>{"Database not connected"}</strong></div>}</section>;
 }
 
-function TestResultsPanel({ tests }: { tests?: TestStatus }) {
-  return <section className="pro-panel"><header><h2>Test Results</h2></header>{tests ? <><div className="pro-test-total">{tests.total ?? 0} <small>Total Tests</small></div><div className="pro-health-row"><span>Passed</span><strong>{tests.passed ?? 0}</strong></div><div className="pro-health-row"><span>Failed</span><strong>{tests.failed ?? 0}</strong></div><div className="pro-health-row"><span>Skipped</span><strong>{tests.skipped ?? 0}</strong></div></> : <div className="pro-health-row"><span>Status</span><strong>{"No test run yet"}</strong></div>}</section>;
+function hasStructuredTests(tests?: TestStatus): tests is TestStatus {
+  if (!tests) return false;
+  return typeof tests.total === "number" || typeof tests.passed === "number" || typeof tests.failed === "number" || typeof tests.skipped === "number";
+}
+
+function TestResultsPanel({ tests, evidence }: { tests?: TestStatus; evidence?: TestEvidence }) {
+  return <section className="pro-panel"><header><h2>Test Results</h2></header>{hasStructuredTests(tests) ? <><div className="pro-test-total">{tests.total ?? 0} <small>Total Tests</small></div><div className="pro-health-row"><span>Passed</span><strong>{tests.passed ?? 0}</strong></div><div className="pro-health-row"><span>Failed</span><strong>{tests.failed ?? 0}</strong></div><div className="pro-health-row"><span>Skipped</span><strong>{tests.skipped ?? 0}</strong></div></> : evidence ? <><div className="pro-health-row"><span>Status</span><strong>Test evidence available</strong></div><div className="pro-health-row"><span>Evidence</span><strong>{evidence.summary || evidence.artifactPath || panelTruth.unknown}</strong></div></> : <div className="pro-health-row"><span>Status</span><strong>{"No test run yet"}</strong></div>}</section>;
 }
 
 const TerminalPanel = ({ logs }: { logs: string[] }) => <section className="pro-panel"><header><h2>Terminal</h2></header>{hasItems(logs) ? <pre className="pro-terminal">{logs.join("\n")}</pre> : <pre className="pro-terminal">{"No terminal logs yet"}</pre>}</section>;
@@ -147,7 +153,7 @@ export async function ProDashboard({ projectId }: { projectId: string }) {
           <LiveApplicationPanel runtimeStatus={project?.runtime?.status} previewUrl={project?.runtime?.previewUrl} previewUnavailableLabel="Preview unavailable" runtimeNotConnectedLabel="Runtime not connected" />
           <ServicesPanel services={project?.services ?? []} />
           <DatabasePanel schema={project?.database?.schema ?? []} />
-          <TestResultsPanel tests={testJob ? project?.tests : undefined} />
+          <TestResultsPanel tests={project?.tests} evidence={testJob ? { summary: testJob.resultSummary, artifactPath: testJob.artifactPath } : undefined} />
           <TerminalPanel logs={logs} />
           <CopilotPanel activity={project?.copilotActivity ?? []} />
           <RecentCommitsPanel commits={project?.commits ?? []} />

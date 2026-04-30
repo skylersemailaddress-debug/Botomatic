@@ -15,6 +15,8 @@ assert(execution.includes("/status"));
 assert(execution.includes("/state"));
 assert(execution.includes("/ui/overview"));
 assert(execution.includes("Execution runner unavailable"));
+assert(!execution.includes('"/api/hybrid-ci"'));
+assert(!execution.includes('"/api/orchestrate/action"'));
 
 const vibeHook = read("apps/control-plane/src/components/builder/useVibeOrchestration.ts");
 const vibe = read("apps/control-plane/src/components/vibe/VibeDashboard.tsx");

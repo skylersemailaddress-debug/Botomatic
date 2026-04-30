@@ -64,7 +64,8 @@ export async function getExecutionRun(projectId: string, runId?: string): Promis
 
 export async function startExecutionJob(projectId: string, jobType: ExecutionJobType, payload?: unknown): Promise<ApiResult<ExecutionJob>> {
   const body = { projectId, jobType, payload };
-  const endpoints = [`/api/projects/${encodeURIComponent(projectId)}/jobs`, `/api/projects/${encodeURIComponent(projectId)}/execution`, "/api/orchestrate/action", "/api/hybrid-ci"];
+  const endpoints = [`/api/projects/${encodeURIComponent(projectId)}/jobs`, `/api/projects/${encodeURIComponent(projectId)}/execution`];
+  // Future candidates (not activated here): /api/orchestrate/action, /api/hybrid-ci
   for (const endpoint of endpoints) {
     const result = await postJsonSafe<unknown, typeof body>(endpoint, body);
     if (result.ok) {

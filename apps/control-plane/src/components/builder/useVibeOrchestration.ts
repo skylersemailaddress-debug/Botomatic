@@ -32,13 +32,18 @@ export function useVibeOrchestration(projectId: string) {
 
   const refreshStatus = useCallback(async () => {
     const result = await getOrchestrationStatus(projectId, runId);
-    const execution = await getExecutionRun(projectId, runId);
-    if (execution.ok) {
-      setExecutionRun(execution.data);
-      setExecutionMessage(execution.data.jobs.length > 0 ? `Execution ${execution.data.status}` : "No execution run yet");
+    const shouldProbeExecution = Boolean(runId || hasSubmitted || executionRun);
+    if (shouldProbeExecution) {
+      const execution = await getExecutionRun(projectId, runId);
+      if (execution.ok) {
+        setExecutionRun(execution.data);
+        setExecutionMessage(execution.data.jobs.length > 0 ? `Execution ${execution.data.status}` : "No execution run yet");
+      } else {
+        setExecutionRun(null);
+        setExecutionMessage(execution.message || "Execution status unavailable");
+      }
     } else {
-      setExecutionRun(null);
-      setExecutionMessage(execution.message || "Execution status unavailable");
+      setExecutionMessage("No execution run yet");
     }
     if (!result.ok) {
       if (hasSubmitted || runId) setStatusMessage(result.message || "Execution status unavailable");
@@ -59,7 +64,7 @@ export function useVibeOrchestration(projectId: string) {
     } else {
       setStatusMessage("Execution pending");
     }
-  }, [hasSubmitted, projectId, runId]);
+  }, [executionRun, hasSubmitted, projectId, runId]);
 
   useEffect(() => {
     let cancelled = false;
