@@ -23,7 +23,7 @@ function BuildPipelinePanel({ pipeline }: { pipeline: PipelineStage[] }) {
   const hasPipeline = hasItems(pipeline);
 
   return (
-    <section className="pro-panel">
+    <section className="pro-panel" data-testid="pro-panel">
       <header>
         <h2>Build Pipeline</h2>
         <TruthBadge label={hasPipeline ? "Live data" : "No execution run yet"} />
@@ -50,7 +50,7 @@ function SystemHealthPanel({ healthStatus, projectStatus, latestRunStatus }: { h
   const healthy = healthStatus === "ok";
 
   return (
-    <section className="pro-panel">
+    <section className="pro-panel" data-testid="pro-panel">
       <header>
         <h2>System Health</h2>
       </header>
@@ -71,7 +71,7 @@ function SystemHealthPanel({ healthStatus, projectStatus, latestRunStatus }: { h
 
 function CodeChangesPanel({ changes }: { changes: CodeChange[] }) {
   return (
-    <section className="pro-panel">
+    <section className="pro-panel" data-testid="pro-panel">
       <header>
         <h2>Code Changes</h2>
       </header>
@@ -95,7 +95,7 @@ function CodeChangesPanel({ changes }: { changes: CodeChange[] }) {
 function ServicesPanel({ services }: { services: ServiceStatus[] }) {
   const hasServices = hasItems(services);
   return (
-    <section className="pro-panel">
+    <section className="pro-panel" data-testid="pro-panel">
       <header><h2>Services</h2></header>
       <small>{hasServices ? "Live data" : "Service health not connected"}</small>
       {hasServices ? services.map((service) => (
@@ -106,7 +106,7 @@ function ServicesPanel({ services }: { services: ServiceStatus[] }) {
 }
 
 function DatabasePanel({ schema }: { schema: SchemaRow[] }) {
-  return <section className="pro-panel"><header><h2>Database Schema</h2></header>{hasItems(schema) ? schema.map((item) => <div className="pro-service-row" key={item.table}><span>{item.table}</span><small>{item.rows ?? "Unknown rows"}</small></div>) : <div className="pro-service-row"><span>Schema</span><strong>{"Database not connected"}</strong></div>}</section>;
+  return <section className="pro-panel" data-testid="pro-panel"><header><h2>Database Schema</h2></header>{hasItems(schema) ? schema.map((item) => <div className="pro-service-row" key={item.table}><span>{item.table}</span><small>{item.rows ?? "Unknown rows"}</small></div>) : <div className="pro-service-row"><span>Schema</span><strong>{"Database not connected"}</strong></div>}</section>;
 }
 
 function hasStructuredTests(tests?: TestStatus): tests is TestStatus {
@@ -115,14 +115,14 @@ function hasStructuredTests(tests?: TestStatus): tests is TestStatus {
 }
 
 function TestResultsPanel({ tests, evidence }: { tests?: TestStatus; evidence?: TestEvidence }) {
-  return <section className="pro-panel"><header><h2>Test Results</h2></header>{hasStructuredTests(tests) ? <><div className="pro-test-total">{tests.total ?? 0} <small>Total Tests</small></div><div className="pro-health-row"><span>Passed</span><strong>{tests.passed ?? 0}</strong></div><div className="pro-health-row"><span>Failed</span><strong>{tests.failed ?? 0}</strong></div><div className="pro-health-row"><span>Skipped</span><strong>{tests.skipped ?? 0}</strong></div></> : evidence ? <><div className="pro-health-row"><span>Status</span><strong>Test evidence available</strong></div><div className="pro-health-row"><span>Evidence</span><strong>{evidence.summary || evidence.artifactPath || panelTruth.unknown}</strong></div></> : <div className="pro-health-row"><span>Status</span><strong>{"No test run yet"}</strong></div>}</section>;
+  return <section className="pro-panel" data-testid="pro-panel"><header><h2>Test Results</h2></header>{hasStructuredTests(tests) ? <><div className="pro-test-total">{tests.total ?? 0} <small>Total Tests</small></div><div className="pro-health-row"><span>Passed</span><strong>{tests.passed ?? 0}</strong></div><div className="pro-health-row"><span>Failed</span><strong>{tests.failed ?? 0}</strong></div><div className="pro-health-row"><span>Skipped</span><strong>{tests.skipped ?? 0}</strong></div></> : evidence ? <><div className="pro-health-row"><span>Status</span><strong>Test evidence available</strong></div><div className="pro-health-row"><span>Evidence</span><strong>{evidence.summary || evidence.artifactPath || panelTruth.unknown}</strong></div></> : <div className="pro-health-row"><span>Status</span><strong>{"No test run yet"}</strong></div>}</section>;
 }
 
-const TerminalPanel = ({ logs }: { logs: string[] }) => <section className="pro-panel"><header><h2>Terminal</h2></header>{hasItems(logs) ? <pre className="pro-terminal">{logs.join("\n")}</pre> : <pre className="pro-terminal">{"No terminal logs yet"}</pre>}</section>;
+const TerminalPanel = ({ logs }: { logs: string[] }) => <section className="pro-panel" data-testid="pro-panel"><header><h2>Terminal</h2></header>{hasItems(logs) ? <pre className="pro-terminal">{logs.join("\n")}</pre> : <pre className="pro-terminal">{"No terminal logs yet"}</pre>}</section>;
 
-const CopilotPanel = ({ activity }: { activity: CopilotActivity[] }) => <section className="pro-panel"><header><h2>AI Copilot</h2></header>{hasItems(activity) ? activity.map((item, index) => <div className="pro-commit-row" key={`${item.timestamp || "activity"}-${index}`}><span>{item.message || panelTruth.unknown}</span><small>{item.timestamp || ""}</small></div>) : <div className="pro-commit-row"><span>{"No Copilot activity yet"}</span></div>}</section>;
+const CopilotPanel = ({ activity }: { activity: CopilotActivity[] }) => <section className="pro-panel" data-testid="pro-panel"><header><h2>AI Copilot</h2></header>{hasItems(activity) ? activity.map((item, index) => <div className="pro-commit-row" key={`${item.timestamp || "activity"}-${index}`}><span>{item.message || panelTruth.unknown}</span><small>{item.timestamp || ""}</small></div>) : <div className="pro-commit-row"><span>{"No Copilot activity yet"}</span></div>}</section>;
 
-const RecentCommitsPanel = ({ commits }: { commits: Commit[] }) => <section className="pro-panel"><header><h2>Recent Commits</h2></header>{hasItems(commits) ? commits.map((commit, index) => <div className="pro-commit-row" key={`${commit.message}-${index}`}><span>{commit.message}<small>{commit.author || "Unknown author"}</small></span><small>{commit.time || "Unknown time"}</small></div>) : <div className="pro-commit-row"><span>{"No commits available"}</span></div>}</section>;
+const RecentCommitsPanel = ({ commits }: { commits: Commit[] }) => <section className="pro-panel" data-testid="pro-panel"><header><h2>Recent Commits</h2></header>{hasItems(commits) ? commits.map((commit, index) => <div className="pro-commit-row" key={`${commit.message}-${index}`}><span>{commit.message}<small>{commit.author || "Unknown author"}</small></span><small>{commit.time || "Unknown time"}</small></div>) : <div className="pro-commit-row"><span>{"No commits available"}</span></div>}</section>;
 
 export async function ProDashboard({ projectId }: { projectId: string }) {
   const data = await getProDashboardData(projectId);
@@ -144,14 +144,14 @@ export async function ProDashboard({ projectId }: { projectId: string }) {
         <div className="pro-sidebar-upgrade"><h3>Account</h3><small>Static list</small><button type="button">Upgrade options</button></div>
       </aside>
       <div className="pro-dashboard-main">
-        <header className="pro-topbar"><div><h1>Pro Mode <span>PRO</span></h1><p>Technical. Powerful. Complete control.</p></div><div className="pro-toolbar" aria-label="Pro controls"><div className="pro-select" aria-label="Project selector"><small>Project</small><strong>Current project</strong></div><div className="pro-select" aria-label="Branch selector"><small>Branch</small><strong>main</strong></div><div className="pro-select" aria-label="Environment selector"><small>Environment</small><strong>Development</strong></div><button type="button" disabled aria-label="Run controls unavailable">Run</button><button type="button" disabled aria-label="Launch controls unavailable">Launch</button><button type="button" className="is-primary" disabled aria-label="Deploy controls unavailable">Deploy</button></div></header>
+        <header className="pro-topbar" data-testid="pro-toolbar"><div className="pro-topbar-title"><h1>Pro Mode <span>PRO</span></h1><p>Technical. Powerful. Complete control.</p></div><div className="pro-toolbar" aria-label="Pro controls"><div className="pro-select" aria-label="Project selector"><small>Project</small><strong>Current project</strong></div><div className="pro-select" aria-label="Branch selector"><small>Branch</small><strong>main</strong></div><div className="pro-select" aria-label="Environment selector"><small>Environment</small><strong>Development</strong></div><button type="button" disabled aria-label="Run controls unavailable">Run</button><button type="button" disabled aria-label="Launch controls unavailable">Launch</button><button type="button" className="is-primary" disabled aria-label="Deploy controls unavailable">Deploy</button></div></header>
         <p className="sr-only">Code Changes Live Application AI Copilot Deploy</p>
         <nav className="pro-subnav" aria-label="Pro navigation">{proSecondaryNav.map((item, index) => <button type="button" key={item} className={index === 0 ? "is-active" : ""}>{item}</button>)}</nav>
-        <div className="pro-grid">
+        <div className="pro-grid" data-testid="pro-grid">
           <BuildPipelinePanel pipeline={executionPipeline.length > 0 ? executionPipeline : (project?.latestRun?.stages ?? [])} />
           <SystemHealthPanel healthStatus={health?.status} projectStatus={project?.projectStatus} latestRunStatus={overview?.latestRun?.status} />
           <CodeChangesPanel changes={project?.codeChanges ?? []} />
-          <LiveApplicationPanel runtimeStatus={project?.runtime?.status} previewUrl={project?.runtime?.previewUrl} previewUnavailableLabel="Preview unavailable" runtimeNotConnectedLabel="Runtime not connected" />
+          <section className="pro-panel" data-testid="pro-panel"><header><h2>Live Application</h2></header><LiveApplicationPanel runtimeStatus={project?.runtime?.status} previewUrl={project?.runtime?.previewUrl} previewUnavailableLabel="Preview unavailable" runtimeNotConnectedLabel="Runtime not connected" /></section>
           <ServicesPanel services={project?.services ?? []} />
           <DatabasePanel schema={project?.database?.schema ?? []} />
           <TestResultsPanel tests={project?.tests} evidence={testJob ? { summary: testJob.resultSummary, artifactPath: testJob.artifactPath } : undefined} />

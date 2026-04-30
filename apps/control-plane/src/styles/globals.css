@@ -2059,6 +2059,46 @@ a:hover {
   .pro-panel,.pro-panel--wide { grid-column: span 1; }
 }
 
+
+
+/* WAVE-033 reference match refinements */
+.vibe-mode-pill { display:inline-flex; align-items:center; justify-content:center; border:1px solid #d9d0ff; color:#5b2be0; background:#f4efff; border-radius:999px; padding:.2rem .55rem; font-size:.68rem; font-weight:700; letter-spacing:.08em; }
+.vibe-dashboard-header { grid-template-columns: auto 1fr auto auto; background:#fff; border: var(--dash-card-border); border-radius: 1rem; box-shadow: var(--dash-card-shadow); padding: .85rem 1rem; }
+.vibe-dashboard-layout > main { min-width:0; }
+.vibe-chat-timeline { min-height: 620px; display:flex; flex-direction:column; }
+.vibe-input-shell { position: sticky; bottom: 0; z-index: 2; }
+.vibe-right-rail { align-content:start; }
+.vibe-rail-two-up { display:grid; grid-template-columns: repeat(2,minmax(0,1fr)); }
+.vibe-rail-card p { margin: .35rem 0; }
+
+.pro-dashboard-sidebar { gap: 1.1rem; }
+.pro-dashboard-main { padding: 1.1rem; }
+.pro-topbar { align-items: stretch; padding: .9rem; }
+.pro-topbar-title h1 { font-size: 1.5rem; }
+.pro-toolbar { align-items:stretch; }
+.pro-toolbar button { min-height: 40px; }
+.pro-grid { gap: .85rem; }
+.pro-grid > .pro-panel:nth-child(1),
+.pro-grid > .pro-panel:nth-child(2) { grid-column: span 6; }
+.pro-grid > .pro-panel:nth-child(3),
+.pro-grid > .pro-panel:nth-child(4) { grid-column: span 6; }
+.pro-grid > .pro-panel:nth-child(8) { grid-column: span 6; }
+.pro-grid > .pro-panel:nth-child(10) { grid-column: span 6; }
+.pro-panel h2 { font-size: 1rem; }
+.pro-terminal { min-height: 180px; }
+
+@media (max-width: 1240px) {
+  .vibe-dashboard-header { grid-template-columns: 1fr; }
+  .vibe-mode-pill { justify-self: start; }
+  .vibe-rail-two-up { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 920px) {
+  .pro-topbar { padding: .75rem; }
+  .pro-toolbar { gap: .45rem; }
+  .pro-toolbar button,.pro-select { width: 100%; }
+  .vibe-chat-timeline { min-height: auto; }
+}
 .vibe-command-input {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

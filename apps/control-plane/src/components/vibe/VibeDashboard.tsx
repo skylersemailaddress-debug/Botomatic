@@ -75,7 +75,7 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
       </aside>
 
       <div className="vibe-dashboard-main">
-        <header className="vibe-dashboard-header">
+        <header className="vibe-dashboard-header"><div className="vibe-mode-pill">VIBE</div>
           <div>
             <h1>Vibe Mode</h1>
             <p>Chat. Design. Build. Launch. All in one flow.</p>
@@ -91,9 +91,9 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
           </div>
         </header>
 
-        <div className="vibe-dashboard-layout">
+        <div className="vibe-dashboard-layout" data-testid="vibe-dashboard-layout">
           <main>
-            <section className="vibe-chat-timeline">
+            <section className="vibe-chat-timeline" data-testid="vibe-chat-timeline">
               <div className="vibe-msg vibe-msg-user">Build me a modern booking website for a luxury hotel with a beautiful landing page.</div>
               <div className="vibe-msg vibe-msg-agent">
                 I&apos;ve got you! I&apos;ll create a luxury hotel booking website with a stunning landing page.
@@ -124,7 +124,7 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
               </div>
             </section>
 
-            <section className="vibe-input-shell" aria-label="Chat input">
+            <section className="vibe-input-shell" aria-label="Chat input" data-testid="vibe-input-shell">
               <form className="vibe-input-row" onSubmit={(event) => { event.preventDefault(); void orchestration.submitPrompt(); }}>
                 <input value={orchestration.prompt} onChange={(event) => orchestration.setPrompt(event.target.value)} placeholder="Ask anything… (e.g., add a pricing section, make the hero bolder, add dark mode)" aria-label="Vibe orchestration prompt" />
                 <button type="submit" disabled={orchestration.submitting}>{orchestration.submitting ? "Submitting…" : "Send"}</button>
@@ -139,7 +139,7 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
             </section>
           </main>
 
-          <aside className="vibe-right-rail" aria-label="Vibe intelligence rail">
+          <aside className="vibe-right-rail" aria-label="Vibe intelligence rail" data-testid="vibe-right-rail">
             <section className="vibe-rail-card" aria-label="Build Map status">
               <header><h3>Build Map</h3></header>
               <VibeOrchestrationPanel graph={orchestration.graph} statusMessage={orchestration.statusMessage} executionRun={orchestration.executionRun} executionMessage={orchestration.executionMessage} />
