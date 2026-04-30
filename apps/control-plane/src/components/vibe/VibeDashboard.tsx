@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-import { actionChips, recentActivity, recentProjects, suggestionChips, vibeSidebarNav } from "./vibeSeedData";
+import { actionChips, recentProjects, suggestionChips, vibeSidebarNav } from "./vibeSeedData";
 import { LiveUIBuilderCommandInput } from "../live-ui-builder/LiveUIBuilderCommandInput";
 import { LiveUIBuilderDiffPreview } from "../live-ui-builder/LiveUIBuilderDiffPreview";
 import { LiveUIBuilderResolutionPanel, type ResolutionTarget } from "../live-ui-builder/LiveUIBuilderResolutionPanel";
@@ -36,7 +36,7 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
         </nav>
 
         <div className="vibe-dashboard-card">
-          <h3>Recent Projects</h3>
+          <h3>Recent Projects</h3><small>Static list</small>
           {recentProjects.map((project) => (
             <div key={project.name} className="vibe-dashboard-row">
               <span>{project.name}</span>
@@ -134,12 +134,12 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
 
             <div className="vibe-rail-two-up">
               <section className="vibe-rail-card">
-                <header><h3>Live Preview</h3><strong>Live</strong></header>
-                <div className="vibe-mini-preview">Luxury hotel page preview</div>
+                <header><h3>Live Preview</h3><strong>Preview</strong></header>
+                <div className="vibe-mini-preview">Preview unavailable</div><small>Runtime not connected</small>
               </section>
               <section className="vibe-rail-card">
                 <header><h3>App Health</h3></header>
-                <div className="vibe-health">92%<small>Excellent</small></div>
+                <div className="vibe-health">--<small>Health check not run</small></div>
               </section>
             </div>
 
@@ -165,14 +165,12 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
             </section>
             <section className="vibe-rail-card">
               <h3>Recent Activity</h3>
-              {recentActivity.map((event) => (
-                <div key={event.item} className="vibe-rail-row"><span>{event.item}</span><small>{event.time}</small></div>
-              ))}
+              <div className="vibe-rail-row"><span>No recent activity</span></div>
             </section>
 
             <section className="vibe-rail-card vibe-launch-card">
               <h3>One-Click Launch</h3>
-              <p>Everything looks good! Your app is ready to launch locally.</p>
+              <p>No launch proof yet.</p>
               <button type="button">Launch My App</button>
             </section>
           </aside>
