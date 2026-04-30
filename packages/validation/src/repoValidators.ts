@@ -55,6 +55,7 @@ import { validateLiveUIBuilderReliabilityRepairReadiness } from "./repoValidator
 import { validateLiveUIBuilderUXPolishReadiness } from "./repoValidators/liveUIBuilderUXPolishReadiness";
 import { validateLiveUIBuilderExportDeployReadiness } from "./repoValidators/liveUIBuilderExportDeployReadiness";
 import { validateLiveUIBuilderPlatformBuilderReadiness } from "./repoValidators/liveUIBuilderPlatformBuilderReadiness";
+import { validateLocalCrossPlatformLaunchReadiness } from "./repoValidators/localCrossPlatformLaunchReadiness";
 
 export type RepoValidatorResult = {
   name: string;
@@ -1313,6 +1314,7 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateFailureClassificationReadiness(root),
     validateAdaptiveRepairStrategyReadiness(root),
     validateUploadPlanHandoffReadiness(root),
+    validateLocalCrossPlatformLaunchReadiness(root),
     validateDashboardRouteIntegrityReadiness(root),
     validateClaimBoundaryReadiness(root),
     validateMasterTruthSpecReadiness(root),
