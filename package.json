@@ -149,7 +149,9 @@
     "test:local-cross-platform-launch-readiness": "tsx packages/validation/src/tests/localCrossPlatformLaunchReadiness.test.ts",
     "test:ui-generated-app-runtime-smoke-model": "tsx packages/ui-preview-engine/src/tests/uiGeneratedAppRuntimeSmokeModel.test.ts",
     "test:ui-generated-app-runtime-smoke-planner": "tsx packages/ui-preview-engine/src/tests/uiGeneratedAppRuntimeSmokePlanner.test.ts",
-    "test:generated-app-runtime-smoke-runner": "tsx packages/validation/src/tests/generatedAppRuntimeSmokeRunner.test.ts"
+    "test:generated-app-runtime-smoke-runner": "tsx packages/validation/src/tests/generatedAppRuntimeSmokeRunner.test.ts",
+    "test": "npm run -s test:wave-025",
+    "test:wave-025": "tsx packages/validation/src/tests/proDashboardTruthState.test.ts"
   },
   "dependencies": {
     "@trigger.dev/sdk": "^4.4.4"

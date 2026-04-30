@@ -181,8 +181,8 @@ function VibeBuildRail() {
         <div className="northstar-metric-row"><span>Payment setup</span><strong>Blocked</strong></div>
       </WorkspaceCard>
       <WorkspaceCard title="App Health" eyebrow="Truthful readiness" source="not-implemented">
-        <div className="app-health-ring">92<span>%</span></div>
-        <ProofBackedStatus tone="planned" source="not-implemented" label="Health wiring planned" />
+        <div className="app-health-ring">--</div>
+        <ProofBackedStatus tone="planned" source="not-implemented" label="Health check not run" />
       </WorkspaceCard>
       <WorkspaceCard title="What’s Next" eyebrow="Recommended actions" source="not-implemented">
         <div className="next-action-grid"><button type="button">Answer blockers</button><button type="button">Approve contract</button><button type="button">Connect payments</button><button type="button">Run tests</button></div>
@@ -199,7 +199,7 @@ export function ProBuilderSkeleton({ projectId }: { projectId: string }) {
     <NorthStarBuilderShell projectId={projectId} workspace="pro" rightRail={<ProControlRail />}>
       <div className="pro-builder-grid pro-builder-grid--command">
         <WorkspaceCard title="Build Pipeline" eyebrow="Execution" source="static-preview"><div className="northstar-stepper">{['Spec', 'Design', 'Data', 'Logic', 'Tests', 'Launch', 'Deploy'].map((step, index) => <div className="northstar-step" key={step}><span>{index + 1}</span><strong>{step}</strong><small>{index < 3 ? 'Preview' : 'Waiting'}</small></div>)}</div></WorkspaceCard>
-        <WorkspaceCard title="System Health" eyebrow="Proof-aware" source="not-implemented"><div className="system-health-grid"><div className="app-health-ring">92<span>%</span></div><div><div className="northstar-metric-row"><span>Performance</span><strong>Pending</strong></div><div className="northstar-metric-row"><span>Security</span><strong>Pending</strong></div><div className="northstar-metric-row"><span>Code Quality</span><strong>Pending</strong></div></div></div></WorkspaceCard>
+        <WorkspaceCard title="System Health" eyebrow="Proof-aware" source="not-implemented"><div className="system-health-grid"><div className="app-health-ring">--</div><div><div className="northstar-metric-row"><span>Performance</span><strong>Pending</strong></div><div className="northstar-metric-row"><span>Security</span><strong>Pending</strong></div><div className="northstar-metric-row"><span>Code Quality</span><strong>Pending</strong></div></div></div></WorkspaceCard>
         <WorkspaceCard title="Code Changes" eyebrow="Repository" source="not-implemented"><div className="code-diff-shell"><div className="code-tree"><strong>apps/web</strong><span>app/page.tsx</span><span>components/Hero.tsx</span><span>lib/api.ts</span></div><pre>{`- <Hero title="Luxury stays" />\n+ <Hero title="Your Escape Awaits" />`}</pre></div></WorkspaceCard>
         <WorkspaceCard title="Live Application" eyebrow="Runtime preview" source="not-implemented"><div className="pro-preview-box"><GeneratedPreviewMini /></div></WorkspaceCard>
         <WorkspaceCard title="Test Results" eyebrow="Validators" source="validator"><div className="test-summary"><strong>Pending wiring</strong><span>Unit · Integration · E2E · API · Security · No-placeholder</span></div></WorkspaceCard>
