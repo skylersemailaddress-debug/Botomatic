@@ -29,9 +29,10 @@ function writeEnvFile(filePath: string, required: Record<string, string>) {
 }
 
 function npmCommand(): string { return process.platform === "win32" ? "npm.cmd" : "npm"; }
+function npxCommand(): string { return process.platform === "win32" ? "npx.cmd" : "npx"; }
 
-function start(name: string, args: string[], env: NodeJS.ProcessEnv): ChildProcess {
-  const child = spawn(npmCommand(), args, { stdio: "inherit", env, cwd: ROOT });
+function start(command: string, name: string, args: string[], env: NodeJS.ProcessEnv): ChildProcess {
+  const child = spawn(command, args, { stdio: "inherit", env, cwd: ROOT });
   child.on("exit", (code, signal) => {
     if (!shuttingDown) {
       console.error(`[${name}] exited unexpectedly (code=${code ?? "null"}, signal=${signal ?? "null"})`);
@@ -80,8 +81,8 @@ export function run(lanMode = false) {
   const uiEnv = { ...process.env, PORT: UI_PORT, HOSTNAME: host, NEXT_PUBLIC_BOTOMATIC_API_TOKEN: DEV_TOKEN, NEXT_PUBLIC_API_BASE_URL: "" };
 
   children = [
-    start("api", ["--prefix", "apps/orchestrator-api", "run", "dev"], apiEnv),
-    start("ui", ["--prefix", "apps/control-plane", "run", "dev", "--", "-H", host, "-p", UI_PORT], uiEnv),
+    start(npxCommand(), "api", ["tsx", "apps/orchestrator-api/src/bootstrap.ts"], apiEnv),
+    start(npmCommand(), "ui", ["--prefix", "apps/control-plane", "run", "dev", "--", "-H", host, "-p", UI_PORT], uiEnv),
   ];
 
   const lanIp = lanMode ? lanIPv4() : null;
