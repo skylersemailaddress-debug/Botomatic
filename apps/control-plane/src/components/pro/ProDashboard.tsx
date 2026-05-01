@@ -1,10 +1,10 @@
-import Link from "next/link";
+import ProjectWorkspaceShell from "../project/ProjectWorkspaceShell";
 
 import { LiveApplicationPanel } from "@/components/runtime/RuntimePreviewPanel";
 import { getProDashboardData } from "@/services/proDashboard";
 import { hasItems, panelTruth } from "@/services/panelTruth";
 
-import { proRecentProjects, proSecondaryNav, proSidebarNav } from "./proSeedData";
+import { proSecondaryNav } from "./proSeedData";
 import { ProDashboardSubnav } from "./ProDashboardSubnav";
 import { ProDashboardToolbar } from "./ProDashboardToolbar";
 
@@ -137,14 +137,7 @@ export async function ProDashboard({ projectId }: { projectId: string }) {
   const testJob = execution?.jobs.find((job) => job.type === "run_tests" && (job.resultSummary || job.artifactPath));
 
   return (
-    <section className="pro-dashboard" aria-label="Pro dashboard" data-project-id={projectId}>
-      <aside className="pro-dashboard-sidebar" aria-label="Botomatic sidebar">
-        <Link href="/" className="pro-dashboard-brand"><span className="pro-dashboard-brand-icon">⬢</span><span><strong>Botomatic</strong><small>NEXUS</small></span></Link>
-        <Link href="/" className="pro-dashboard-new-project">+ New Project</Link>
-        <nav className="pro-dashboard-nav" aria-label="Main navigation">{proSidebarNav.map((item) => <Link href="/" key={item}>{item}</Link>)}</nav>
-        <div className="pro-sidebar-card"><h3>Recent Projects</h3>{proRecentProjects.length > 0 ? proRecentProjects.map((recentProject, index) => <div className={`pro-sidebar-row${index === 0 ? " is-active" : ""}`} key={recentProject.name}><span>{recentProject.name}</span><small>{recentProject.updated}</small></div>) : <small>No projects yet</small>}<Link href="/" className="pro-link-button">View all projects →</Link></div>
-        <div className="pro-sidebar-upgrade"><h3>Account</h3><Link href={`/projects/${projectId}/settings`}>Upgrade options</Link></div>
-      </aside>
+    <ProjectWorkspaceShell projectId={projectId} mode="pro">
       <div className="pro-dashboard-main">
         <header className="pro-topbar" data-testid="pro-toolbar"><div className="pro-topbar-title"><h1>Pro Mode <span>PRO</span></h1><p>Technical. Powerful. Complete control.</p></div><ProDashboardToolbar projectId={projectId} /></header>
         <p className="sr-only">Code Changes Live Application AI Copilot Deploy</p>
@@ -162,6 +155,6 @@ export async function ProDashboard({ projectId }: { projectId: string }) {
           <RecentCommitsPanel commits={project?.commits ?? []} />
         </div>
       </div>
-    </section>
+    </ProjectWorkspaceShell>
   );
 }

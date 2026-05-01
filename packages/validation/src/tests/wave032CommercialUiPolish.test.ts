@@ -7,12 +7,13 @@ const read = (rel: string) => fs.readFileSync(path.join(root, rel), "utf8");
 
 const pro = read("apps/control-plane/src/components/pro/ProDashboard.tsx");
 const vibe = read("apps/control-plane/src/components/vibe/VibeDashboard.tsx");
+const shell = read("apps/control-plane/src/components/project/ProjectWorkspaceShell.tsx");
 const orchestrationPanel = read("apps/control-plane/src/components/builder/VibeOrchestrationPanel.tsx");
 const orchestrationHook = read("apps/control-plane/src/components/builder/useVibeOrchestration.ts");
 const css = read("apps/control-plane/src/styles/globals.css");
 
-for (const signal of ["Pro Mode", "Vibe Mode", "Botomatic", "Build Pipeline", "System Health", "Code Changes", "Live Application", "AI Copilot", "Build Map", "What’s Next", "One-Click Launch"]) {
-  assert(pro.includes(signal) || vibe.includes(signal), `missing signal: ${signal}`);
+for (const signal of ["Pro Mode", "Vibe Mode", "Botomatic", "Build Pipeline", "System Health", "Code Changes", "Live Application", "AI Copilot", "Build Map", "What's Next", "One-Click Launch"]) {
+  assert(pro.includes(signal) || vibe.includes(signal) || shell.includes(signal), `missing signal: ${signal}`);
 }
 
 for (const forbidden of ["92%", "All Systems Operational", "178/198", "198 Total Tests", "http://localhost:3000", "Compilation successful", "I’ve optimized"]) {

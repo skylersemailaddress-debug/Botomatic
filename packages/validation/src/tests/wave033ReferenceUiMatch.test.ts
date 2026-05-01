@@ -7,13 +7,15 @@ const read = (rel: string) => fs.readFileSync(path.join(root, rel), "utf8");
 
 const pro = read("apps/control-plane/src/components/pro/ProDashboard.tsx");
 const vibe = read("apps/control-plane/src/components/vibe/VibeDashboard.tsx");
+const shell = read("apps/control-plane/src/components/project/ProjectWorkspaceShell.tsx");
 const css = read("apps/control-plane/src/styles/globals.css");
 const orchestrationPanel = read("apps/control-plane/src/components/builder/VibeOrchestrationPanel.tsx");
 const orchestrationHook = read("apps/control-plane/src/components/builder/useVibeOrchestration.ts");
 const executionService = read("apps/control-plane/src/services/execution.ts");
 
-for (const signal of ["pro-dashboard-sidebar", "pro-toolbar", "pro-grid", "pro-panel", "vibe-dashboard-sidebar", "vibe-dashboard-layout", "vibe-right-rail", "vibe-rail-card", "vibe-chat-timeline", "vibe-input-shell"]) {
-  assert(pro.includes(signal) || vibe.includes(signal), `missing layout signal: ${signal}`);
+// Layout signals that are now in ProjectWorkspaceShell instead of individual dashboards
+for (const signal of ["northstar-shell", "northstar-sidebar", "northstar-main", "pro-toolbar", "pro-grid", "pro-panel", "vibe-right-rail", "vibe-rail-card", "vibe-chat-timeline", "vibe-input-shell"]) {
+  assert(pro.includes(signal) || vibe.includes(signal) || shell.includes(signal), `missing layout signal: ${signal}`);
 }
 
 for (const cssSignal of ["--dash-bg-layer", "--dash-card-shadow", "--dash-card-border", ".pro-dashboard-sidebar", ".pro-topbar", ".vibe-right-rail", "@media (max-width: 1240px)", "@media (max-width: 920px)"]) {

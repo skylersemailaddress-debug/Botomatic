@@ -14,7 +14,7 @@ assert(firstRun.includes('from "./execution"'));
 assert(firstRun.includes('from "./runtimeStatus"'));
 
 const vibe = read("apps/control-plane/src/components/vibe/VibeDashboard.tsx");
-assert(vibe.includes("What’s Next"));
+assert(vibe.includes("What's Next"));
 assert(vibe.includes("getFirstRunState"));
 assert(vibe.includes("firstRunState.steps.map"));
 assert(vibe.includes("Describe your app idea"));

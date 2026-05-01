@@ -21,7 +21,9 @@ export function ProDashboardSubnav({ projectId, items }: { projectId: string; it
         const subpath = SUBNAV_ROUTES[item];
         if (subpath) {
           const href = `/projects/${projectId}/${subpath}`;
-          const isActive = pathname?.endsWith(`/${subpath}`) ?? false;
+          const isActive = subpath === "advanced"
+            ? pathname === `/projects/${projectId}/advanced`
+            : pathname?.endsWith(`/${subpath}`) ?? false;
           return (
             <Link key={item} href={href} className={isActive ? "is-active" : ""}>
               {item}
