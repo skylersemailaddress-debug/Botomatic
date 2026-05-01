@@ -8,7 +8,19 @@ export type RuntimeProof = { healthcheckUrl?: string; healthcheckStatus?: number
 export type RuntimeLog = { ts: string; level: "info" | "warn" | "error"; message: string; redacted: boolean; source: "runtime"; runId?: string };
 export type RuntimeRecord = { projectId: string; state: RuntimeState; verifiedPreviewUrl?: string; derivedPreviewUrl?: string; proof?: RuntimeProof; logs: RuntimeLog[]; updatedAt: string; lastError?: string; idempotency?: Record<string, string> };
 
-const DATA_ROOT = path.resolve(process.cwd(), "data/runtime");
+function discoverRepoRoot(start: string): string {
+  let current = path.resolve(start);
+  while (true) {
+    if (fs.existsSync(path.join(current, "package.json"))) return current;
+    const parent = path.dirname(current);
+    if (parent === current) break;
+    current = parent;
+  }
+  return path.resolve(start);
+}
+
+const repoRoot = discoverRepoRoot(process.cwd());
+const DATA_ROOT = path.join(repoRoot, "data", "runtime");
 const nowIso = () => new Date().toISOString();
 const ensureRoot = () => fs.mkdirSync(DATA_ROOT, { recursive: true });
 const filePath = (projectId: string) => path.join(DATA_ROOT, `${sanitizeProjectId(projectId)}.json`);

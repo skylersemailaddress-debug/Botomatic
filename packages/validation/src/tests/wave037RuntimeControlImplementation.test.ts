@@ -15,7 +15,9 @@ for (const rel of [
 ]) assert(exists(rel), `missing required file: ${rel}`);
 
 const store = read("apps/control-plane/src/server/runtimeStore.ts");
-for (const marker of ["stopped", "starting", "running", "stopping", "errored", "verifiedPreviewUrl", "healthcheckUrl", "healthcheckStatus", "verifiedAt", "verifier", "receiptId", "checksum", "redactLine", "data/runtime"]) assert(store.includes(marker), `missing marker ${marker}`);
+for (const marker of ["stopped", "starting", "running", "stopping", "errored", "verifiedPreviewUrl", "healthcheckUrl", "healthcheckStatus", "verifiedAt", "verifier", "receiptId", "checksum", "redactLine", "discoverRepoRoot", "while (true)"]) assert(store.includes(marker), `missing marker ${marker}`);
+assert(store.includes('path.join(repoRoot, "data", "runtime")'), "runtime store should resolve repoRoot/data/runtime path segments");
+assert(!store.includes("path.resolve(process.cwd(), \"data/runtime\")"), "runtime store must not pin DATA_ROOT to process.cwd()/data/runtime");
 
 const start = read("apps/control-plane/src/app/api/projects/[projectId]/runtime/start/route.ts");
 assert(start.includes("idempotencyKey is required"), "start route must require idempotency key");
@@ -23,6 +25,7 @@ assert(start.includes("Runtime start requires verified preview target"), "start 
 assert(start.includes("verification_failed"), "start route must fail if verification fails");
 assert(start.includes("healthcheckUrl"), "start route must use healthcheck url");
 assert(start.includes("state: \"running\""), "start route should only set running via verification path");
+assert(!start.includes("derivedPreviewUrl"), "start route must never read derivedPreviewUrl as proof");
 
 const logs = read("apps/control-plane/src/app/api/projects/[projectId]/runtime/logs/route.ts");
 assert(logs.includes("limit"), "logs route should support capping/pagination");
