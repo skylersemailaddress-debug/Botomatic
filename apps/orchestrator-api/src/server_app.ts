@@ -18,7 +18,15 @@ import {
 } from "../../../packages/spec-engine/src";
 import { matchBlueprintFromText } from "../../../packages/blueprints/src/registry";
 import { planSelfUpgrade, detectArchitectureDrift, runRegressionGuard, SelfUpgradeSpec } from "../../../packages/self-upgrade-engine/src";
-import { classifyRepo, detectFrameworks, detectLanguages, mapArchitecture, inferDomain, scanRepoRisk } from "../../../packages/repo-intake/src";
+import {
+  classifyRepo,
+  detectFrameworks,
+  detectLanguages,
+  mapArchitecture,
+  inferDomain,
+  scanRepoRisk,
+  createDirtyRepoEvidenceSnapshot,
+} from "../../../packages/repo-intake/src";
 import {
   repoHealthAudit,
   buildFailureAudit,
