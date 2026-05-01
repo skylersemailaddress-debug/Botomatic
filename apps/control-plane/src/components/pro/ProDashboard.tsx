@@ -1,4 +1,3 @@
-import Link from "next/link";
 import ProjectWorkspaceShell from "../project/ProjectWorkspaceShell";
 
 import { LiveApplicationPanel } from "@/components/runtime/RuntimePreviewPanel";

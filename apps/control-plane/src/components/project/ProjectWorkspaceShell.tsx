@@ -18,6 +18,10 @@ interface NavItem {
   testId?: string;
 }
 
+function getWorkspaceVariant(mode: ProjectWorkspaceMode): "vibe" | "pro" {
+  return mode === "vibe" ? "vibe" : "pro";
+}
+
 function getProjectNavigation(projectId: string): NavItem[] {
   return [
     { label: "Vibe", href: `/projects/${projectId}`, testId: "nav-vibe" },
@@ -47,16 +51,16 @@ export default function ProjectWorkspaceShell({
 }: ProjectWorkspaceShellProps) {
   const pathname = usePathname();
   const navItems = getProjectNavigation(projectId);
+  const workspaceVariant = getWorkspaceVariant(mode);
 
   return (
     <section
-      className="northstar-shell"
+      className={`northstar-shell project-workspace-shell project-workspace-shell--${workspaceVariant}`}
       data-project-id={projectId}
       data-workspace-mode={mode}
       aria-label="Project workspace"
     >
-      {/* Left Sidebar */}
-      <aside className="northstar-global-sidebar" aria-label="Project navigation">
+      <aside className="northstar-global-sidebar northstar-sidebar project-workspace-sidebar" aria-label="Project navigation">
         <Link href="/" className="northstar-brand" aria-label="Botomatic home">
           <span className="northstar-brand-mark">⬢</span>
           <span>
@@ -82,14 +86,19 @@ export default function ProjectWorkspaceShell({
           ))}
         </nav>
 
-        <div className="northstar-sidebar-note">
-          <div>Project workspace</div>
-          <small>Navigate between builder modes and project settings.</small>
+        <div className="project-workspace-sidebar-card" data-testid="project-workspace-identity-card">
+          <small className="project-workspace-sidebar-eyebrow">Commercial workspace</small>
+          <strong>Project {projectId}</strong>
+          <p>Shared premium shell for Vibe, Advanced, and all project routes.</p>
+        </div>
+
+        <div className="northstar-sidebar-note project-workspace-sidebar-note">
+          <div>{workspaceVariant === "vibe" ? "Vibe reference shell" : "Pro reference shell"}</div>
+          <small>Commercial navigation stays consistent across every project page.</small>
         </div>
       </aside>
 
-      {/* Main Content */}
-      <div className="northstar-main">
+      <div className="northstar-main project-workspace-main">
         {children}
       </div>
     </section>
