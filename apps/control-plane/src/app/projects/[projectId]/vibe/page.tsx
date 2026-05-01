@@ -1,7 +1,7 @@
-import { VibeWiredClient } from "./VibeWiredClient";
+import { VibeClientOnly } from "./VibeClientOnly";
 
 export const dynamic = "force-dynamic";
 
 export default function ProjectVibePage({ params }: { params: { projectId: string } }) {
-  return <VibeWiredClient projectId={params.projectId} />;
+  return <VibeClientOnly projectId={params.projectId} />;
 }
