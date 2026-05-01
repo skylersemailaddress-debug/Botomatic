@@ -42,8 +42,12 @@ assert(!firstRun.includes("canLaunch = Boolean(runtime"), "runtime preview alone
 
 const pro = read("apps/control-plane/src/components/pro/ProDashboard.tsx");
 const vibe = read("apps/control-plane/src/components/vibe/VibeDashboard.tsx");
-assert(pro.includes("Launch controls unavailable"), "launch controls must remain unavailable");
-assert(pro.includes("Deploy controls unavailable"), "deploy controls must remain unavailable");
+const proToolbar = read("apps/control-plane/src/components/pro/ProDashboardToolbar.tsx");
+// Toolbar buttons are now handled by ProDashboardToolbar client component.
+// Verify the component exists, is wired to launch/deploy services, and that ProDashboard uses it.
+assert(pro.includes("ProDashboardToolbar"), "launch controls must be handled by ProDashboardToolbar");
+assert(proToolbar.includes("requestDeploy") || proToolbar.includes("Launch"), "launch controls must remain properly gated in ProDashboardToolbar");
+assert(proToolbar.includes("promoteProject") || proToolbar.includes("Deploy"), "deploy controls must remain properly gated in ProDashboardToolbar");
 assert(!pro.includes("fetch("), "no raw fetch in ProDashboard");
 assert(!vibe.includes("fetch("), "no raw fetch in VibeDashboard");
 

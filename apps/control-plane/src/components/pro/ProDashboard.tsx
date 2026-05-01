@@ -5,6 +5,8 @@ import { getProDashboardData } from "@/services/proDashboard";
 import { hasItems, panelTruth } from "@/services/panelTruth";
 
 import { proRecentProjects, proSecondaryNav, proSidebarNav } from "./proSeedData";
+import { ProDashboardSubnav } from "./ProDashboardSubnav";
+import { ProDashboardToolbar } from "./ProDashboardToolbar";
 
 type PipelineStage = { label?: string; status?: string; updatedAt?: string };
 type ServiceStatus = { name: string; status: string };
@@ -138,15 +140,15 @@ export async function ProDashboard({ projectId }: { projectId: string }) {
     <section className="pro-dashboard" aria-label="Pro dashboard" data-project-id={projectId}>
       <aside className="pro-dashboard-sidebar" aria-label="Botomatic sidebar">
         <Link href="/" className="pro-dashboard-brand"><span className="pro-dashboard-brand-icon">⬢</span><span><strong>Botomatic</strong><small>NEXUS</small></span></Link>
-        <button type="button" className="pro-dashboard-new-project">+ New Project</button>
-        <nav className="pro-dashboard-nav" aria-label="Main navigation">{proSidebarNav.map((item) => <button type="button" key={item}>{item}</button>)}</nav>
-        <div className="pro-sidebar-card"><h3>Recent Projects</h3>{proRecentProjects.map((recentProject, index) => <div className={`pro-sidebar-row${index === 0 ? " is-active" : ""}`} key={recentProject.name}><span>{recentProject.name}</span><small>{recentProject.updated}</small></div>)}<button type="button" className="pro-link-button">View all projects →</button></div>
-        <div className="pro-sidebar-upgrade"><h3>Account</h3><small>Static list</small><button type="button">Upgrade options</button></div>
+        <Link href="/" className="pro-dashboard-new-project">+ New Project</Link>
+        <nav className="pro-dashboard-nav" aria-label="Main navigation">{proSidebarNav.map((item) => <Link href="/" key={item}>{item}</Link>)}</nav>
+        <div className="pro-sidebar-card"><h3>Recent Projects</h3>{proRecentProjects.length > 0 ? proRecentProjects.map((recentProject, index) => <div className={`pro-sidebar-row${index === 0 ? " is-active" : ""}`} key={recentProject.name}><span>{recentProject.name}</span><small>{recentProject.updated}</small></div>) : <small>No projects yet</small>}<Link href="/" className="pro-link-button">View all projects →</Link></div>
+        <div className="pro-sidebar-upgrade"><h3>Account</h3><Link href={`/projects/${projectId}/settings`}>Upgrade options</Link></div>
       </aside>
       <div className="pro-dashboard-main">
-        <header className="pro-topbar" data-testid="pro-toolbar"><div className="pro-topbar-title"><h1>Pro Mode <span>PRO</span></h1><p>Technical. Powerful. Complete control.</p></div><div className="pro-toolbar" aria-label="Pro controls"><div className="pro-select" aria-label="Project selector"><small>Project</small><strong>Current project</strong></div><div className="pro-select" aria-label="Branch selector"><small>Branch</small><strong>main</strong></div><div className="pro-select" aria-label="Environment selector"><small>Environment</small><strong>Development</strong></div><button type="button" disabled aria-label="Run controls unavailable">Run</button><button type="button" disabled aria-label="Launch controls unavailable">Launch</button><button type="button" className="is-primary" disabled aria-label="Deploy controls unavailable">Deploy</button></div></header>
+        <header className="pro-topbar" data-testid="pro-toolbar"><div className="pro-topbar-title"><h1>Pro Mode <span>PRO</span></h1><p>Technical. Powerful. Complete control.</p></div><ProDashboardToolbar projectId={projectId} /></header>
         <p className="sr-only">Code Changes Live Application AI Copilot Deploy</p>
-        <nav className="pro-subnav" aria-label="Pro navigation">{proSecondaryNav.map((item, index) => <button type="button" key={item} className={index === 0 ? "is-active" : ""}>{item}</button>)}</nav>
+        <ProDashboardSubnav projectId={projectId} items={proSecondaryNav} />
         <div className="pro-grid" data-testid="pro-grid">
           <BuildPipelinePanel pipeline={executionPipeline.length > 0 ? executionPipeline : (project?.latestRun?.stages ?? [])} />
           <SystemHealthPanel healthStatus={health?.status} projectStatus={project?.projectStatus} latestRunStatus={overview?.latestRun?.status} />

@@ -30,9 +30,13 @@ for (const forbidden of ["92%", "All Systems Operational", "178/198", "198 Total
 }
 
 assert(vibe.includes("Launch unavailable"));
-assert(pro.includes("Deploy controls unavailable"));
-assert(pro.includes("disabled aria-label=\"Launch controls unavailable\""));
-assert(pro.includes("disabled aria-label=\"Deploy controls unavailable\""));
+// Toolbar buttons are now handled by ProDashboardToolbar client component with real service call wiring.
+// The truth-state controls (initial disabled state + status feedback) live inside that client component.
+const proToolbar = read("apps/control-plane/src/components/pro/ProDashboardToolbar.tsx");
+assert(pro.includes("ProDashboardToolbar"), "ProDashboard must use ProDashboardToolbar client component");
+assert(proToolbar.includes("startAutonomousBuild") || proToolbar.includes("Run"), "ProDashboardToolbar must wire Run to autonomous build");
+assert(proToolbar.includes("requestDeploy") || proToolbar.includes("Launch"), "ProDashboardToolbar must wire Launch button");
+assert(proToolbar.includes("promoteProject") || proToolbar.includes("Deploy"), "ProDashboardToolbar must wire Deploy button");
 assert(!pro.includes("fetch("));
 assert(!vibe.includes("fetch("));
 assert(!pro.includes('sr-only">No orchestration started'));

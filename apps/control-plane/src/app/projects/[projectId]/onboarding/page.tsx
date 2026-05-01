@@ -1,5 +1,6 @@
 import AppShell from "@/components/shell/AppShell";
 import FirstRunWhatsNextPanel from "@/components/overview/FirstRunWhatsNextPanel";
+import IntakeHubPanel from "@/components/overview/IntakeHubPanel";
 
 export default async function ProjectOnboardingPage({ params }: { params: { projectId: string } }) {
   const projectId = params.projectId;
@@ -8,6 +9,7 @@ export default async function ProjectOnboardingPage({ params }: { params: { proj
     <AppShell projectName={projectId} environment="commercial" runStatus="idle" mode="page">
       <section className="detail-page-grid">
         <FirstRunWhatsNextPanel projectId={projectId} />
+        <IntakeHubPanel projectId={projectId} />
       </section>
     </AppShell>
   );

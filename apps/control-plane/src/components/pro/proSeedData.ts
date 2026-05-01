@@ -1,12 +1,6 @@
 export const proSidebarNav = ["Home", "Projects", "Templates", "Design Studio", "Brand Kit", "Launch", "Learn"];
 
-export const proRecentProjects = [
-  { name: "Luxury Booking Site", updated: "Just now" },
-  { name: "SaaS Dashboard", updated: "2h ago" },
-  { name: "AI Landing Page", updated: "1d ago" },
-  { name: "Portfolio Website", updated: "2d ago" },
-  { name: "E-commerce Store", updated: "3d ago" },
-];
+export const proRecentProjects: { name: string; updated: string }[] = [];
 
 export const proSecondaryNav = [
   "Overview",
