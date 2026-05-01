@@ -1,89 +1,156 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { useProjectLiveState } from "./useProjectLiveState";
 
 const navItems = ["Home", "Projects", "Templates", "Design Studio", "Brand Kit", "Launch", "Learn"];
-const recentProjects = [["Luxury Booking Site", "Just now", "#42c878"], ["SaaS Dashboard", "2h ago", "#f0a529"], ["AI Landing Page", "1d ago", "#5d89ff"], ["Portfolio Website", "2d ago", "#6f8199"]];
-const activityFallback = [["Homepage design updated", "10:24 AM"], ["Room listing page created", "10:18 AM"], ["Booking flow designed", "10:12 AM"]];
 
 function LuxoraPreview({ compact = false, runtimeUrl }: { compact?: boolean; runtimeUrl?: string }) {
   if (runtimeUrl) return <iframe className={compact ? "luxora compact" : "luxora"} src={runtimeUrl} title="Live runtime preview" />;
-  return <div className={compact ? "luxora compact" : "luxora"}><div className="luxora-nav"><b>LUXORA</b><span>Home</span><span>Rooms</span><span>Experiences</span><span>About Us</span><span>Contact</span><button>Book Now</button></div><div className="luxora-copy"><h2>Your Escape<br />Awaits</h2><p>Experience unparalleled luxury and unforgettable moments.</p><div><button>Book Your Stay</button><button>Explore Rooms</button></div></div>{!compact ? <div className="booking"><span><small>Check In</small>May 24, 2024</span><span><small>Check Out</small>May 27, 2024</span><span><small>Guests</small>2 Adults, 1 Child</span><span><small>Room</small>1 Suite</span><button>Check Availability</button></div> : null}</div>;
+  return <div className={compact ? "luxora compact" : "luxora"} />;
 }
 
 export function VibeWiredClient({ projectId }: { projectId: string }) {
   const router = useRouter();
   const pathname = usePathname();
-  const navRoutes: Record<string, string> = { Home: `/projects/${projectId}`, Projects: `/projects/${projectId}`, Templates: `/projects/${projectId}`, "Design Studio": `/projects/${projectId}/vibe`, "Brand Kit": `/projects/${projectId}/advanced`, Launch: `/projects/${projectId}/deployment`, Learn: `/projects/${projectId}/logs` };
-  const activeNav = pathname?.includes("/deployment") ? "Launch" : pathname?.includes("/advanced") ? "Brand Kit" : pathname?.includes("/logs") ? "Learn" : pathname?.includes("/vibe") ? "Design Studio" : "Home";
+
+  const { execution, runtime, launchProof, refresh, mutate } = useProjectLiveState(projectId);
+
+  const navRoutes: Record<string, string> = {
+    Home: `/projects/${projectId}`,
+    Projects: `/projects/${projectId}`,
+    Templates: `/projects/${projectId}`,
+    "Design Studio": `/projects/${projectId}/vibe`,
+    "Brand Kit": `/projects/${projectId}/advanced`,
+    Launch: `/projects/${projectId}/deployment`,
+    Learn: `/projects/${projectId}/logs`
+  };
+
+  const activeNav = pathname?.includes("/deployment")
+    ? "Launch"
+    : pathname?.includes("/advanced")
+    ? "Brand Kit"
+    : pathname?.includes("/logs")
+    ? "Learn"
+    : pathname?.includes("/vibe")
+    ? "Design Studio"
+    : "Home";
+
   const [prompt, setPrompt] = useState("");
-  const [execution, setExecution] = useState<any>(null);
-  const [runtime, setRuntime] = useState<any>(null);
-  const [launchProof, setLaunchProof] = useState<any>(null);
-  const [deployMessage, setDeployMessage] = useState("Ready for local launch proof");
   const [busy, setBusy] = useState(false);
-
-  async function refresh() {
-    const [execRes, runtimeRes, proofRes] = await Promise.allSettled([
-      fetch(`/api/projects/${projectId}/execution`, { cache: "no-store" }),
-      fetch(`/api/projects/${projectId}/runtime`, { cache: "no-store" }),
-      fetch(`/api/projects/${projectId}/launch-proof`, { cache: "no-store" }),
-    ]);
-    if (execRes.status === "fulfilled" && execRes.value.ok) setExecution(await execRes.value.json());
-    if (runtimeRes.status === "fulfilled" && runtimeRes.value.ok) setRuntime(await runtimeRes.value.json());
-    if (proofRes.status === "fulfilled" && proofRes.value.ok) setLaunchProof(await proofRes.value.json());
-  }
-
-  useEffect(() => { refresh(); }, []);
 
   async function runExecution(nextPrompt: string) {
     setBusy(true);
     try {
-      const res = await fetch(`/api/projects/${projectId}/execution`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ idempotencyKey: `vibe-${Date.now()}`, prompt: nextPrompt, objective: nextPrompt, requestedJobs: ["file_diff"] }) });
+      const res = await fetch(`/api/projects/${projectId}/execution`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          idempotencyKey: `vibe-${Date.now()}`,
+          prompt: nextPrompt,
+          objective: nextPrompt,
+          requestedJobs: ["file_diff"]
+        })
+      });
       const data = await res.json();
-      setExecution(data);
-    } finally { setBusy(false); refresh(); }
+      mutate({ execution: data });
+    } finally {
+      setBusy(false);
+      refresh();
+    }
   }
 
-  async function submit(e: FormEvent) {
-    e.preventDefault();
-    const text = prompt.trim();
-    if (!text) return;
-    setPrompt("");
-    await runExecution(text);
+  async function startRuntime() {
+    const res = await fetch(`/api/projects/${projectId}/runtime/start`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ idempotencyKey: `runtime-${Date.now()}` })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      mutate({ runtime: data.runtime });
+      return data.runtime;
+    }
+    return null;
   }
 
   async function launchLocal() {
     setBusy(true);
     try {
-      const res = await fetch(`/api/projects/${projectId}/launch/local`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ idempotencyKey: `local-${Date.now()}` }) });
+      const rt = runtime?.state === "running" ? runtime : await startRuntime();
+      const res = await fetch(`/api/projects/${projectId}/launch/local`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ idempotencyKey: `launch-${Date.now()}` })
+      });
       const data = await res.json();
-      setDeployMessage(data?.deployment?.status === "deployed" ? "Local app is live and deployment record is created" : data?.error?.message || "Local launch completed");
-      if (data?.execution) setExecution(data.execution);
-      if (data?.runtime) setRuntime(data.runtime);
-      if (data?.launchProof) setLaunchProof(data.launchProof);
-    } finally { setBusy(false); refresh(); }
+      if (data.runtime) mutate({ runtime: data.runtime });
+      if (data.launchProof) mutate({ launchProof: data.launchProof });
+    } finally {
+      setBusy(false);
+      refresh();
+    }
   }
 
   async function deploy() {
     setBusy(true);
     try {
-      const res = await fetch(`/api/projects/${projectId}/deploy`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ idempotencyKey: `deploy-${Date.now()}` }) });
-      const data = await res.json();
-      setDeployMessage(data?.deployment?.message || data?.deployment?.status || data?.error?.message || "Deploy request completed");
-    } finally { setBusy(false); refresh(); }
+      await fetch(`/api/projects/${projectId}/deploy`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ idempotencyKey: `deploy-${Date.now()}` })
+      });
+    } finally {
+      setBusy(false);
+      refresh();
+    }
   }
 
-  const jobs = Array.isArray(execution?.jobs) ? execution.jobs : [];
-  const buildTasks = jobs.length ? jobs.map((j: any) => [j.label || j.type || "Execution job", j.status || "queued"]) : [["Create homepage", "Complete"], ["Design room listing page", "Complete"], ["Add booking flow", execution ? execution.status : "Ready"], ["Runtime preview", runtime?.state || "not connected"], ["Launch proof", launchProof?.launchReady ? "verified" : "required"]];
   const runtimeUrl = runtime?.verifiedPreviewUrl || "";
-  const healthScore = runtime?.state === "running" ? 96 : execution?.status === "succeeded" ? 88 : 72;
-  const healthLabel = runtime?.state === "running" ? "Live" : execution?.status === "succeeded" ? "Ready" : "Local";
   const launchReady = Boolean(launchProof?.launchReady && launchProof?.launchProof?.verified);
-  const activity = jobs.length ? jobs.slice(-3).map((j: any) => [j.label || j.type || "Job", j.status || "updated"]) : activityFallback;
 
-  return <main className="ref"><aside className="sidebar"><div className="brand"><span className="logo">⬢</span><div><b>Botomatic</b><small>NEXUS</small></div></div><button className="new" onClick={() => runExecution("Create a new app project shell")}>+ New Project</button><nav>{navItems.map((item) => <button type="button" key={item} className={item === activeNav ? "active" : ""} onClick={() => router.push(navRoutes[item])}>{item}</button>)}</nav><section className="sidecard"><h3>RECENT PROJECTS</h3>{recentProjects.map(([name,time,color]) => <div className="recent" key={name}><i style={{background:color}}/><span>{name}</span><small>{time}</small></div>)}<a onClick={() => router.push(`/projects/${projectId}`)}>View all projects →</a></section><section className="upgrade"><h3>Go Pro Anytime</h3><p>Unlock advanced features and priority support.</p><button onClick={() => router.push(`/projects/${projectId}/advanced`)}>Upgrade to Pro</button></section><section className="user"><span>AJ</span><div><b>Alex Johnson</b><small>alex@example.com</small></div><small>⌄</small></section></aside><section className="work"><header className="top"><div className="title"><span>✦</span><div><h1>Vibe Mode</h1><p>Chat. Design. Build. Launch. All in one flow.</p></div></div><div className="devices"><button className="active">Desktop</button><button>Tablet</button><button>Mobile</button></div><div className="acts"><button onClick={refresh}>↻</button><button>?</button><button>Share</button><button className="launch" onClick={launchReady ? deploy : launchLocal} disabled={busy}>{launchReady ? "Launch App" : "Launch Local"}</button></div></header><div className="layout"><section className="center"><div className="userMsg">{execution?.prompt || "Build me a modern booking website for a luxury hotel with a beautiful landing page."}<small>{execution?.updatedAt ? new Date(execution.updatedAt).toLocaleTimeString() : "Ready"}</small></div><div className="agentMsg"><p>{execution ? `Execution ${execution.status}. ${jobs.length} job(s) tracked.` : "I&apos;ve got you. I&apos;ll create a luxury hotel booking website with a stunning landing page."}</p><div><span>✓ Understanding your idea</span><span>✓ Designing the UI</span><span>{execution?.status === "succeeded" ? "✓ Execution complete" : "◔ Execution ready"}</span><span>{runtime?.state === "running" ? "✓ Runtime live" : "◔ Runtime pending"}</span></div></div><section className="preview"><p>{runtimeUrl ? "Live runtime preview is connected." : "Reference preview is active until a verified runtime target is connected."}</p><div className="bar"><button>✦ Edit</button><span>Desktop · Tablet · Mobile</span><span>{runtime?.state || "local"}</span></div><LuxoraPreview runtimeUrl={runtimeUrl} /></section><form className="input" onSubmit={submit}><div><input value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="Ask anything… (e.g., add a pricing section, make the hero bolder, add dark mode)"/><button disabled={busy}>➜</button></div><div>{["Improve Design","Add Page","Add Feature","Connect Payments","Run Tests"].map(x=><button type="button" key={x} onClick={() => runExecution(x)}>{x}</button>)}<button type="button" onClick={launchLocal}>Launch App</button></div></form></section><aside className="rail"><section className="panel build"><header><div><h3>Build Map</h3><p>Real execution state from the local API</p></div><a onClick={refresh}>Refresh →</a></header><div className="steps"><span className="done">Design<small>Complete</small></span><span className={execution ? "active" : ""}>Features<small>{execution?.status || "Ready"}</small></span><span>Data<small>{runtime?.state || "Pending"}</small></span><span>Testing<small>{jobs.some((j:any)=>j.status==="succeeded") ? "Passed" : "Pending"}</small></span><span>Launch<small>{launchReady ? "Ready" : "Proof"}</small></span></div>{buildTasks.slice(0,5).map(([task,status]: any[]) => <div className="task" key={task}><span>{task}</span><b>{status}</b></div>)}</section><div className="two"><section className="panel"><header><h3>Live Preview</h3><b className="live">{runtime?.state || "Local"}</b></header><LuxoraPreview compact runtimeUrl={runtimeUrl}/></section><section className="panel health"><header><h3>App Health</h3><span>•••</span></header><div className="ring">{healthScore}%<small>{healthLabel}</small></div>{["Execution", "Runtime", "Launch Proof"].map((x) => <div className="score" key={x}><span>{x}</span><b>{x === "Execution" ? (execution?.status || "Ready") : x === "Runtime" ? (runtime?.state || "Local") : launchReady ? "Verified" : "Required"}</b></div>)}</section></div><section className="panel next"><h3>What&apos;s Next</h3><p>{deployMessage}</p><div>{["Run Build","Start Runtime","Verify Proof"].map(x=><button key={x} onClick={() => x === "Start Runtime" || x === "Verify Proof" ? launchLocal() : runExecution(x)}>{x}<small>Run →</small></button>)}<button onClick={launchLocal}>Launch App<small>Run →</small></button></div></section><div className="two bottom"><section className="panel"><h3>Recent Activity</h3>{activity.map(([a,t]: any[]) => <div className="score" key={a}><span>{a}</span><small>{t}</small></div>)}</section><section className="panel launchCard"><h3>One-Click Launch</h3><p>{launchReady ? "Verified launch proof is ready." : "Launch is gated until verified proof exists."}</p><button onClick={launchReady ? deploy : launchLocal} disabled={busy}>{launchReady ? "Launch My App" : "Launch Local"}</button><div>Preview&nbsp;&nbsp; Test&nbsp;&nbsp; Deploy</div></section></div></aside></div></section><Style /></main>;
+  return (
+    <main className="ref">
+      <aside className="sidebar">
+        <button className="new" onClick={() => runExecution("Create a new app project shell")}>+ New Project</button>
+        <nav>
+          {navItems.map((item) => (
+            <button key={item} className={item === activeNav ? "active" : ""} onClick={() => router.push(navRoutes[item])}>
+              {item}
+            </button>
+          ))}
+        </nav>
+      </aside>
+
+      <section className="work">
+        <header className="top">
+          <h1>Vibe Mode</h1>
+          <button onClick={refresh}>↻</button>
+          <button className="launch" onClick={launchReady ? deploy : launchLocal} disabled={busy}>
+            {launchReady ? "Launch App" : "Start Runtime"}
+          </button>
+        </header>
+
+        <div>
+          <div>
+            {execution?.prompt || "No execution yet"}
+          </div>
+
+          <LuxoraPreview runtimeUrl={runtimeUrl} />
+
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (prompt.trim()) runExecution(prompt);
+              setPrompt("");
+            }}
+          >
+            <input value={prompt} onChange={(e) => setPrompt(e.target.value)} />
+            <button disabled={busy}>Run</button>
+          </form>
+        </div>
+      </section>
+    </main>
+  );
 }
-
-function Style(){return <style>{`*{box-sizing:border-box}body{margin:0;background:#fbfbff;color:#211a39;font-family:Inter,system-ui,sans-serif;overflow:hidden}.ref{height:100vh;width:100vw;display:grid;grid-template-columns:206px 1fr;gap:14px;padding:14px;background:#fbfbff;overflow:hidden}.sidebar{height:calc(100vh - 28px);display:flex;flex-direction:column;gap:10px;overflow:hidden}.brand{display:flex;align-items:center;gap:10px;height:38px}.brand b,.brand small{display:block}.brand b{font-size:14px}.brand small{color:#786a98;letter-spacing:.14em;font-weight:900;font-size:9px}.logo{width:34px;height:34px;border-radius:10px;color:white;background:linear-gradient(135deg,#7c4dff,#5b2be0);display:grid;place-items:center}.new,.launch{background:linear-gradient(135deg,#7c4dff,#5b2be0);color:white;box-shadow:0 12px 26px rgba(98,57,255,.22)}button{border:0;border-radius:8px;background:white;color:#4c4265;padding:7px 9px;font-weight:800;cursor:pointer;font-size:11px}button:disabled{opacity:.55;cursor:wait}nav{display:grid;gap:3px}nav button{text-align:left;background:transparent;font-size:12px;padding:8px 10px}nav .active{color:#5b2be0;background:#eee8ff}.sidecard,.upgrade,.user,.panel,.preview,.input{background:white;border:1px solid #ece8fb;border-radius:12px;box-shadow:0 10px 30px rgba(57,43,105,.06)}.sidecard{padding:10px;display:grid;gap:7px}.sidecard h3,.upgrade h3{font-size:10px;color:#9a91ad;letter-spacing:.1em;margin:0}.recent{display:grid;grid-template-columns:12px 1fr auto;gap:6px;font-size:10px;color:#4d4567}.recent i{width:12px;height:12px;border-radius:4px}.recent small,.upgrade p,.user small{color:#8b819d}.sidecard a,.panel a{color:#6332e8;font-weight:900;font-size:10px}.upgrade{margin-top:auto;padding:10px}.upgrade p{font-size:10px;margin:6px 0}.upgrade button{width:100%;background:linear-gradient(135deg,#7c4dff,#5b2be0);color:white}.user{display:grid;grid-template-columns:28px 1fr auto;gap:8px;align-items:center;padding:8px;font-size:10px}.user>span{width:28px;height:28px;border-radius:99px;background:#241a3d;color:white;display:grid;place-items:center}.work{height:calc(100vh - 28px);min-width:0;overflow:hidden}.top{height:48px;display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:12px;margin-bottom:10px}.title{display:flex;gap:8px}.title span{color:#6332e8}.title h1{font-size:22px;margin:0;line-height:1}.title p{font-size:11px;color:#746988;margin:4px 0 0}.devices{display:flex;gap:2px;padding:4px;border:1px solid #ece8fb;border-radius:14px;background:white}.devices button{font-size:11px}.devices .active{color:#6332e8;background:#f1ebff}.acts{display:flex;gap:8px}.layout{height:calc(100vh - 86px);display:grid;grid-template-columns:minmax(520px,1.12fr) minmax(380px,.88fr);gap:14px;overflow:hidden}.center{height:100%;display:grid;grid-template-rows:auto auto 1fr auto;gap:10px;overflow:hidden}.userMsg{justify-self:end;max-width:520px;background:linear-gradient(135deg,#7c4dff,#5b2be0);color:white;border-radius:16px;padding:14px 18px;box-shadow:0 14px 34px rgba(98,57,255,.22);font-size:14px}.agentMsg{justify-self:start;max-width:660px;background:white;border:1px solid #ece8fb;border-radius:16px;padding:12px 16px;box-shadow:0 12px 34px rgba(57,43,105,.06);font-size:13px}.userMsg small{display:block;text-align:right;margin-top:6px;opacity:.65;font-size:9px}.agentMsg p{margin:0 0 8px}.agentMsg div{display:flex;gap:6px;flex-wrap:wrap}.agentMsg span{font-size:10px;border:1px solid #eee9fb;background:#faf9ff;border-radius:7px;padding:6px 8px;font-weight:800}.preview{padding:12px;min-height:0;overflow:hidden}.preview>p{margin:0 0 8px;color:#4d4567;font-size:12px}.bar{display:flex;justify-content:space-between;margin-bottom:8px;font-size:10px;color:#6c627d}.bar>*{border:1px solid #ede8fb;border-radius:99px;padding:5px 8px;background:white}.luxora{position:relative;height:100%;min-height:230px;border:0;border-radius:12px;overflow:hidden;color:white;background:linear-gradient(90deg,rgba(6,11,32,.94),rgba(6,11,32,.25)),radial-gradient(circle at 82% 25%,rgba(236,172,72,.92),transparent 13%),linear-gradient(135deg,#061228,#172b58 45%,#783a36 70%,#d29345)}.luxora:after{content:"";position:absolute;inset:48% -8% -12%;background:rgba(255,255,255,.08);transform:skewY(-8deg)}.luxora-nav{position:relative;z-index:2;display:flex;align-items:center;gap:16px;padding:13px 20px;font-size:9px}.luxora-nav button{margin-left:auto;background:#f1bd5d;color:#241a13}.luxora-copy{position:relative;z-index:2;padding:22px 28px 70px;max-width:420px}.luxora-copy h2{font-family:Georgia,serif;font-weight:500;font-size:34px;line-height:1.02;margin:0}.luxora-copy p{color:rgba(255,255,255,.82);font-size:12px}.luxora-copy button:first-child,.booking button{background:#d99a31;color:white}.luxora-copy button{margin-right:8px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);color:white}.booking{position:absolute;z-index:3;left:26px;right:26px;bottom:18px;display:grid;grid-template-columns:repeat(4,1fr) auto;background:white;color:#342a45;border-radius:9px;box-shadow:0 14px 30px rgba(6,11,32,.2);overflow:hidden}.booking span{padding:8px 10px;border-right:1px solid #eee9fb;font-size:10px}.booking small{display:block;color:#8b819d;font-size:8px}.booking button{margin:7px}.compact{height:100%;min-height:104px}.compact .luxora-nav{font-size:5px;gap:5px;padding:7px}.compact .luxora-copy{padding:12px}.compact .luxora-copy h2{font-size:18px}.compact .luxora-copy p,.compact .luxora-copy button{font-size:7px}.compact .booking{display:none}.input{padding:10px}.input>div:first-child{display:flex}.input input{flex:1;border:0;outline:0;font-size:11px}.input>div:first-child button{background:#6332e8;color:white}.input>div:nth-child(2){display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.input button{font-size:10px;border:1px solid #ede8fb;padding:6px 8px}.rail{height:100%;display:grid;grid-template-rows:auto minmax(145px,.8fr) auto minmax(130px,.7fr);gap:10px;overflow:hidden}.panel{padding:10px;overflow:hidden}.panel header{display:flex;justify-content:space-between;gap:10px}.panel h3{margin:0;font-size:12px}.panel p{font-size:10px;color:#80758e;margin:3px 0}.steps{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:10px 0}.steps span{text-align:center;font-size:9px;font-weight:900}.steps span:before{content:"";display:block;width:22px;height:22px;margin:0 auto 5px;border-radius:99px;background:#f4f1fb;border:1px solid #ded7f3}.steps .done:before{background:#41b978}.steps .active:before{background:#5b2be0}.steps small{display:block;color:#9a91ad}.task,.score{display:flex;justify-content:space-between;font-size:10px;color:#554c68;padding:3px 0}.task:before{content:"✓";color:#3eb875}.task b,.live,.score b{color:#45a96b}.two{display:grid;grid-template-columns:1fr 1fr;gap:10px;min-height:0}.ring{width:74px;height:74px;margin:5px auto;border-radius:99px;border:6px solid #91d6aa;display:grid;place-items:center;font-size:20px;font-weight:900}.ring small{display:block;font-size:8px;color:#50aa6d}.next>div{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.next button{text-align:left;min-height:48px;border:1px solid #ede8fb;font-size:9px;padding:6px}.next small{display:block;color:#6332e8;margin-top:5px}.launchCard{background:linear-gradient(135deg,#7c4dff,#5b2be0);color:white}.launchCard p{color:rgba(255,255,255,.82)}.launchCard button{width:100%;color:#5b2be0}.launchCard div{text-align:center;font-size:10px;opacity:.9}@media(max-width:1100px){.ref{grid-template-columns:180px 1fr;padding:10px;gap:10px}.layout{grid-template-columns:1fr 330px;gap:10px}.rail{grid-template-rows:auto auto auto auto}.title h1{font-size:18px}.luxora-copy h2{font-size:28px}.acts button:nth-child(-n+2){display:none}}`}</style>}
