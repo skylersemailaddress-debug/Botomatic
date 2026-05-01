@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 const nowIso = () => new Date().toISOString();
 const localPreviewUrl = (request: NextRequest, projectId: string) => {
   const origin = new URL(request.url).origin;
-  return `${origin}/projects/${projectId}/vibe`;
+  return `${origin}/projects/${projectId}/preview`;
 };
 
 function makeJob(projectId: string, runId: string, type: StoredJob["type"], label: string, summary: string): StoredJob {
