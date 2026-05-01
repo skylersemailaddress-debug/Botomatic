@@ -5,6 +5,10 @@ import path from "path";
 const BASE_URL = process.env.BASE_URL || "http://127.0.0.1:3000";
 const API_BASE_URL = process.env.API_BASE_URL || "http://127.0.0.1:3001";
 const TOKEN = process.env.BOTOMATIC_API_TOKEN || "dev-api-token";
+
+
+
+
 const SCREENSHOT_DIR = path.join(process.cwd(), "receipts", "beta-simulation", "screenshots");
 
 function isNonFatalOwnerLaunchConsoleNoise(message: string) {
