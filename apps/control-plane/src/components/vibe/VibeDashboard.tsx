@@ -156,7 +156,7 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
             </div>
 
             <section className="vibe-rail-card">
-              <h3>What’s Next</h3>
+              <h3>What's Next</h3>
               <p>{firstRunMessage || firstRunState.primaryAction?.label || "Describe your app idea"}</p>
               <small>{firstRunState.primaryAction?.detail || "No first-run state yet"}</small>
               <div className="vibe-next-grid">
