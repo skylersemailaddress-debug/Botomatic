@@ -1,5 +1,7 @@
-import { VibeDashboard } from "@/components/vibe/VibeDashboard";
+import { VibeWiredClient } from "./vibe/VibeWiredClient";
 
-export default async function ProjectPage({ params }: { params: { projectId: string } }) {
-  return <VibeDashboard projectId={params.projectId} />;
+export const dynamic = "force-dynamic";
+
+export default function ProjectPage({ params }: { params: { projectId: string } }) {
+  return <VibeWiredClient projectId={params.projectId} />;
 }
