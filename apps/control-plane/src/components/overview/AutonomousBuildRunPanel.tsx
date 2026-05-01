@@ -107,7 +107,7 @@ export default function AutonomousBuildRunPanel({ projectId }: { projectId: stri
 
       <label style={{ display: "block", marginBottom: 10 }}>
         Run intent
-        <textarea className="composer-textarea" value={draft} onChange={(e) => setDraft(e.target.value)} />
+        <textarea className="composer-textarea" style={{}} value={draft} onChange={(e) => setDraft(e.target.value)} />
       </label>
 
       {!run ? (
