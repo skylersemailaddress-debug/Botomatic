@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sanitizeProjectId } from "@/server/executionStore";
-import { loadLaunchProof } from "@/server/launchProofStore";
+import { loadLaunchProof, saveLaunchProof, createDeploymentRecord } from "@/server/launchProofStore";
 
 export async function POST(req: NextRequest, { params }: { params: { projectId: string } }) {
   const projectId = sanitizeProjectId(params.projectId);
@@ -12,11 +12,18 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
   }
 
   const record = loadLaunchProof(projectId);
-  const exists = record?.deploymentRecords?.some((d) => d.deploymentId === deploymentId);
+  if (!record) {
+    return NextResponse.json({ error: { code: "not_found", message: "No launch proof record" } }, { status: 404 });
+  }
 
-  if (!exists) {
+  const existing = record.deploymentRecords.find((d) => d.deploymentId === deploymentId);
+  if (!existing) {
     return NextResponse.json({ error: { code: "deployment_record_required", message: "Rollback requires deployment record" } }, { status: 409 });
   }
 
-  return NextResponse.json({ status: "blocked", message: "Rollback action not connected" });
+  const rollback = createDeploymentRecord(projectId, "rolled_back", undefined, deploymentId, existing.target);
+  record.deploymentRecords.push(rollback);
+  saveLaunchProof(projectId, record);
+
+  return NextResponse.json({ rollback });
 }
