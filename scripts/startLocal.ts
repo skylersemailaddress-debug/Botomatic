@@ -80,7 +80,7 @@ export function run(lanMode = false) {
   const uiEnv = { ...process.env, PORT: UI_PORT, HOSTNAME: host, NEXT_PUBLIC_BOTOMATIC_API_TOKEN: DEV_TOKEN, NEXT_PUBLIC_API_BASE_URL: "" };
 
   children = [
-    start("api", ["--prefix", "apps/orchestrator-api", "run", "dev"], apiEnv),
+    start("api", ["--prefix", "apps/orchestrator-api", "run", "start"], apiEnv),
     start("ui", ["--prefix", "apps/control-plane", "run", "dev", "--", "-H", host, "-p", UI_PORT], uiEnv),
   ];
 
