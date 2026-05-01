@@ -26,6 +26,8 @@ import {
   inferDomain,
   scanRepoRisk,
   createDirtyRepoEvidenceSnapshot,
+  addDirtyRepoEvidenceEntry,
+  deriveDirtyRepoCompletionBlockers,
 } from "../../../packages/repo-intake/src";
 import {
   repoHealthAudit,
