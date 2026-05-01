@@ -1,5 +1,5 @@
-import { VibeBuilderSkeleton } from "@/components/builder/NorthStarBuilderShell";
+import { VibeDashboard } from "@/components/vibe/VibeDashboard";
 
 export default async function ProjectPage({ params }: { params: { projectId: string } }) {
-  return <VibeBuilderSkeleton projectId={params.projectId} />;
+  return <VibeDashboard projectId={params.projectId} />;
 }
