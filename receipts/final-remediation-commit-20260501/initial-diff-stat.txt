@@ -1,0 +1,15 @@
+ .../[projectId]/execution/[runId]/route.ts         |     2 +-
+ .../api/projects/[projectId]/execution/route.ts    |     2 +-
+ .../app/api/projects/[projectId]/runtime/route.ts  |     2 +-
+ .../src/app/projects/[projectId]/page.tsx          |     3 +-
+ .../src/components/pro/ProDashboardSubnav.tsx      |     2 +-
+ .../src/components/runtime/RuntimePreviewPanel.tsx |    10 +-
+ apps/control-plane/src/services/api.ts             |    34 +-
+ apps/orchestrator-api/src/server.ts                |     6 +-
+ apps/orchestrator-api/src/server_app.ts            |   172 +-
+ .../beta-simulation/beta-simulation-report.json    |  2131 +-
+ receipts/beta-simulation/beta-simulation-report.md |   196 +-
+ .../beta-simulation/beta-simulation-requests.json  | 25864 ++++++++++---------
+ receipts/beta-simulation/screenshots/--desktop.png |   Bin 162205 -> 15433 bytes
+ scripts/beta-simulation.mjs                        |    55 +-
+ 14 files changed, 14594 insertions(+), 13885 deletions(-)

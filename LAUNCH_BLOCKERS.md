@@ -1,12 +1,12 @@
 # Botomatic Launch Blockers
 
-Status: Universal-builder launch-gate closure achieved
+Status: Universal-builder representative launch-gate closure achieved (not max-power completion)
 Purpose: Central source of truth for launch-blocking gaps and closure evidence.
 
 Important:
 - Legacy enterprise control-plane gate evidence remains recorded below.
 - This file now also tracks universal-builder launch blockers.
-- Universal-builder launch gates are satisfied by validator-backed proof in this repository.
+- Universal-builder launch gates are satisfied by validator-backed representative proof in this repository.
 
 ---
 
@@ -106,6 +106,13 @@ Important:
 - Performance optimization
 - Advanced UI polish
 - Extended integrations
+
+---
+
+## Max-Power Completion Blockers (Open)
+
+- Open: exhaustive domain/permutation corpus proof is not yet complete for max-power completion. Evidence tracker: `release-evidence/runtime/max_power_domain_permutation_index.json`.
+- Open: live UI source-sync-before-export/launch requirement is not yet proven as complete end-to-end max-power evidence. Evidence tracker: `release-evidence/runtime/max_power_completion_proof.json`.
 
 ---
 

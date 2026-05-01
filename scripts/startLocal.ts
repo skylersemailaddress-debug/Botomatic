@@ -69,22 +69,31 @@ function lanIPv4(): string | null {
 
 export function run(lanMode = false) {
   const host = lanMode ? "0.0.0.0" : "127.0.0.1";
+  const lanIp = lanMode ? lanIPv4() : null;
+  const apiBaseUrl = `http://${lanMode && lanIp ? lanIp : "127.0.0.1"}:${API_PORT}`;
   writeEnvFile(path.join(ROOT, ".env.local"), { PORT: API_PORT, API_AUTH_TOKEN: DEV_TOKEN });
   writeEnvFile(path.join(ROOT, "apps/control-plane/.env.local"), {
     PORT: UI_PORT,
     NEXT_PUBLIC_BOTOMATIC_API_TOKEN: DEV_TOKEN,
-    NEXT_PUBLIC_API_BASE_URL: "",
+    NEXT_PUBLIC_DEV_BEARER_TOKEN: DEV_TOKEN,
+    NEXT_PUBLIC_API_BASE_URL: apiBaseUrl,
   });
 
   const apiEnv = { ...process.env, PORT: API_PORT, HOST: host, API_AUTH_TOKEN: DEV_TOKEN };
-  const uiEnv = { ...process.env, PORT: UI_PORT, HOSTNAME: host, NEXT_PUBLIC_BOTOMATIC_API_TOKEN: DEV_TOKEN, NEXT_PUBLIC_API_BASE_URL: "" };
+  const uiEnv = {
+    ...process.env,
+    PORT: UI_PORT,
+    HOSTNAME: host,
+    NEXT_PUBLIC_BOTOMATIC_API_TOKEN: DEV_TOKEN,
+    NEXT_PUBLIC_DEV_BEARER_TOKEN: DEV_TOKEN,
+    NEXT_PUBLIC_API_BASE_URL: apiBaseUrl,
+  };
 
   children = [
-    start("api", ["--prefix", "apps/orchestrator-api", "run", "start"], apiEnv),
+    start("api", ["run", "api:dev"], apiEnv),
     start("ui", ["--prefix", "apps/control-plane", "run", "dev", "--", "-H", host, "-p", UI_PORT], uiEnv),
   ];
 
-  const lanIp = lanMode ? lanIPv4() : null;
   console.log("\nBotomatic local launch ready");
   console.log(`- API URL: http://${lanMode && lanIp ? lanIp : "localhost"}:${API_PORT}`);
   console.log(`- UI URL: http://localhost:${UI_PORT}`);

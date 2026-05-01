@@ -28,11 +28,13 @@ import { validateAdaptiveRepairStrategyReadiness } from "./repoValidators/adapti
 import { validateUploadPlanHandoffReadiness } from "./repoValidators/uploadPlanHandoffReadiness";
 import { validateDashboardRouteIntegrityReadiness } from "./repoValidators/dashboardRouteIntegrityReadiness";
 import { validateClaimBoundaryReadiness } from "./repoValidators/claimBoundaryReadiness";
+import { validateClaim99EntitlementReadiness } from "./repoValidators/claim99EntitlementReadiness";
 import { validateGeneratedAppNoPlaceholderValidatorReadiness } from "./repoValidators/generatedAppNoPlaceholderValidatorReadiness";
 import { validateGeneratedAppCommercialReadinessGateReadiness } from "./repoValidators/generatedAppCommercialReadinessGateReadiness";
 import { validateGeneratedAppCorpusHarnessReadiness } from "./repoValidators/generatedAppCorpusHarnessReadiness";
 import { validateGeneratedAppRepresentativeCorpusReadiness } from "./repoValidators/generatedAppRepresentativeCorpusReadiness";
 import { validateMasterTruthSpecReadiness } from "./repoValidators/masterTruthSpecReadiness";
+import { validateMaxPowerCompletionReadiness } from "./repoValidators/maxPowerCompletionReadiness";
 import { validateEditableUIDocumentModelReadiness } from "./repoValidators/editableUIDocumentModelReadiness";
 import { validateUIEditCommandParserReadiness } from "./repoValidators/uiEditCommandParserReadiness";
 import { validateLiveUIBuilderCoreReadiness } from "./repoValidators/liveUIBuilderCoreReadiness";
@@ -1319,7 +1321,9 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateLocalCrossPlatformLaunchReadiness(root),
     validateDashboardRouteIntegrityReadiness(root),
     validateClaimBoundaryReadiness(root),
+    validateClaim99EntitlementReadiness(root),
     validateMasterTruthSpecReadiness(root),
+    validateMaxPowerCompletionReadiness(root),
     validateGeneratedAppNoPlaceholderValidatorReadiness(root),
     validateGeneratedAppCommercialReadinessGateReadiness(root),
     validateGeneratedAppCorpusHarnessReadiness(root),

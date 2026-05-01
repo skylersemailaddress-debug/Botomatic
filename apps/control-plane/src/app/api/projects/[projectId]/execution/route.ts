@@ -10,7 +10,7 @@ export async function GET(_: NextRequest, { params }: { params: { projectId: str
   const projectId = sanitizeProjectId(params.projectId);
   const state = loadProjectState(projectId);
   const latest = state.runs.at(-1);
-  if (!latest) return NextResponse.json({ error: { code: "not_found", message: "No execution runs yet", retryable: false, details: {} } }, { status: 404 });
+  if (!latest) return NextResponse.json({ runId: `${projectId}_none`, projectId, status: "queued", jobs: [], logs: [], updatedAt: new Date().toISOString() });
   return NextResponse.json(latest);
 }
 

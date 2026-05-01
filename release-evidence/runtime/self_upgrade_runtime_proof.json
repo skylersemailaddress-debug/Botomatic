@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-28T07:52:41.009Z",
+  "generatedAt": "2026-05-01T08:52:51.191Z",
   "proofGrade": "local_runtime",
   "pathId": "self_upgrade",
   "inputUsed": {
@@ -15,13 +15,13 @@
     },
     {
       "method": "POST",
-      "path": "/api/projects/proj_1777362760431/self-upgrade/spec",
+      "path": "/api/projects/proj_1777625570529/self-upgrade/spec",
       "status": 200,
       "ok": true
     },
     {
       "method": "GET",
-      "path": "/api/projects/proj_1777362760431/self-upgrade/status",
+      "path": "/api/projects/proj_1777625570529/self-upgrade/status",
       "status": 200,
       "ok": true
     }
@@ -36,7 +36,7 @@
   "contract": {
     "type": "self_upgrade_spec",
     "payload": {
-      "id": "su_1777362760443_vcu2zh",
+      "id": "su_1777625570546_3c71ka",
       "request": "Improve validator depth for universal runtime proof and strengthen generated-output quality controls.",
       "objective": "Safely upgrade Botomatic behavior while preserving governance and non-regression guarantees.",
       "affectedModules": [
@@ -53,7 +53,7 @@
         "Re-run regression validators"
       ],
       "requiresHumanApproval": true,
-      "createdAt": "2026-04-28T07:52:40.443Z"
+      "createdAt": "2026-05-01T08:52:50.546Z"
     }
   },
   "generatedPlanOrBuildGraph": {
@@ -78,7 +78,7 @@
     {
       "step": "intake_self_upgrade_project",
       "status": "passed",
-      "details": "status=200 projectId=proj_1777362760431"
+      "details": "status=200 projectId=proj_1777625570529"
     },
     {
       "step": "create_self_upgrade_spec",
@@ -127,12 +127,30 @@
         "validatorSummary": "test:self-upgrade:passed, runRegressionGuard:passed, validator_non_weakening_guard:passed",
         "outcome": "passed",
         "rollbackPlan": "Revert self-upgrade related changes and rerun targeted plus regression validators.",
-        "id": "proof_1777362761009_su4qlp",
-        "timestamp": "2026-04-28T07:52:41.009Z"
+        "id": "proof_1777625571191_idgqs3",
+        "timestamp": "2026-05-01T08:52:51.191Z"
       },
       "claimVerification": {
-        "ok": true,
-        "blockers": []
+        "recordValid": false,
+        "readinessEligible": false,
+        "errors": [
+          "Required evidence class missing for claim type 'self_upgrade_claim'.",
+          "Self-upgrade claim requires self_upgrade_safety_contract evidence or explicit positive SELF-001 metadata."
+        ],
+        "warnings": [
+          "Legacy string evidence accepted as low-confidence documentation evidence.",
+          "Legacy string evidence accepted as low-confidence documentation evidence.",
+          "Legacy string evidence accepted as low-confidence documentation evidence."
+        ],
+        "requiredEvidenceClasses": [
+          "self_upgrade_safety_contract"
+        ],
+        "suppliedEvidenceClasses": [
+          "documentation"
+        ],
+        "claimType": "self_upgrade_claim",
+        "outcome": "passed",
+        "freshness": {}
       }
     }
   ],

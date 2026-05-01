@@ -1,0 +1,18 @@
+{
+  "status": "complete",
+  "declaredDomains": [
+    "web_saas_app",
+    "marketing_website",
+    "api_service",
+    "mobile_app",
+    "bot",
+    "ai_agent",
+    "game",
+    "dirty_repo_completion"
+  ],
+  "declaredDomainCount": 8,
+  "coveredDomainCount": 8,
+  "requiredPermutationCount": 24,
+  "coveredPermutationCount": 24,
+  "uncoveredReason": "none"
+}

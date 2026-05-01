@@ -1,0 +1,10 @@
+validate:all
+validate:fast
+validate:changed
+validate:behavioral
+validate:observability
+proof:claim-99-independent-audit
+test:e2e:beta-owner-launch
+test:ui-generated-app-runtime-smoke-model
+test:ui-generated-app-runtime-smoke-planner
+test:generated-app-runtime-smoke-runner

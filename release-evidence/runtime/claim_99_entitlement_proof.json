@@ -1,0 +1,42 @@
+{
+  "status": "blocked",
+  "claimId": "fully_built_live_and_autobuild_99_percent_of_supported_scope",
+  "entitled": false,
+  "requirements": [
+    {
+      "id": "exhaustive_domain_proof",
+      "requiredEvidenceClass": "exhaustive-domain-proven",
+      "evidencePath": "release-evidence/runtime/max_power_completion_proof.json",
+      "satisfied": true,
+      "details": "Max-power completion proof is eligible for exhaustive-domain language."
+    },
+    {
+      "id": "live_deployment_proven_all_declared_providers",
+      "requiredEvidenceClass": "live-deployment-proven",
+      "evidencePath": "release-evidence/runtime/live_deployment_provider_execution_proof.json",
+      "satisfied": false,
+      "details": "Live deployment proof across declared providers is not yet present; readiness-only evidence is not sufficient."
+    },
+    {
+      "id": "autobuild_99_statistical_threshold",
+      "requiredEvidenceClass": "runtime-proven + exhaustive-domain-proven",
+      "evidencePath": "release-evidence/runtime/autobuild_99_statistical_proof.json",
+      "satisfied": false,
+      "details": "99% autobuild threshold is not yet independently proven with a confidence bound on a frozen corpus."
+    },
+    {
+      "id": "independent_verification_audit",
+      "requiredEvidenceClass": "independent-audit-signoff",
+      "evidencePath": "release-evidence/runtime/claim_99_independent_audit.json",
+      "satisfied": false,
+      "details": "Independent audit sign-off artifact is missing or not signed off."
+    }
+  ],
+  "unmetRequirements": [
+    "live_deployment_proven_all_declared_providers",
+    "autobuild_99_statistical_threshold",
+    "independent_verification_audit"
+  ],
+  "generatedAt": "2026-05-01T08:54:47.236Z",
+  "caveat": "Fail-closed: 99% claim entitlement is blocked until all required live/statistical/audit evidence classes are satisfied."
+}

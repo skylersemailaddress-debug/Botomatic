@@ -29,7 +29,7 @@ export function ProDashboardSubnav({ projectId, items }: { projectId: string; it
           );
         }
         return (
-          <button type="button" key={item} disabled aria-label={`${item} — coming soon`}>
+          <button type="button" key={item} disabled aria-label={`${item} unavailable`}>
             {item}
           </button>
         );

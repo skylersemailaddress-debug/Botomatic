@@ -77,6 +77,10 @@ function now(): string {
   return new Date().toISOString();
 }
 
+function makeProjectId(): string {
+  return `proj_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
 function toStored(record: {
   projectId: string;
   name: string;
@@ -226,7 +230,7 @@ app.post("/api/projects/intake", async (req, res) => {
 
   try {
     const { name, request } = req.body;
-    const projectId = `proj_${Date.now()}`;
+    const projectId = makeProjectId();
 
     const project = toStored({
       projectId,

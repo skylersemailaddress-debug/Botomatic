@@ -1,6 +1,6 @@
 {
   "domainId": "marketing_website",
-  "generatedAt": "2026-04-28T07:54:29.360Z",
+  "generatedAt": "2026-05-01T08:54:37.520Z",
   "emittedPath": "/workspaces/Botomatic/release-evidence/generated-apps/marketing_website",
   "emittedFileCount": 109,
   "emittedFiles": [
@@ -75,11 +75,11 @@
     ".next/server/server-reference-manifest.js",
     ".next/server/server-reference-manifest.json",
     ".next/server/webpack-runtime.js",
-    ".next/static/LUbl8A2K1OtxQtv5H4LwY/_buildManifest.js",
-    ".next/static/LUbl8A2K1OtxQtv5H4LwY/_ssgManifest.js",
+    ".next/static/8pewZNjgOBM_M2ZlC1hwa/_buildManifest.js",
+    ".next/static/8pewZNjgOBM_M2ZlC1hwa/_ssgManifest.js",
     ".next/static/chunks/594-f8c2b09a5fb6b0d7.js",
     ".next/static/chunks/app/_not-found/page-83fa322cfc54ce2b.js",
-    ".next/static/chunks/app/layout-f01ec4cd0288d164.js",
+    ".next/static/chunks/app/layout-db33928bb0b45476.js",
     ".next/static/chunks/app/page-63df6807a6c19082.js",
     ".next/static/chunks/app/pricing/page-6ea0d584a54ddee8.js",
     ".next/static/chunks/b6261da7-2e663bd2eae7df17.js",

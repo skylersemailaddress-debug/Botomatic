@@ -1,6 +1,6 @@
 {
   "status": "passed",
-  "generatedAt": "2026-04-28T07:54:32.353Z",
+  "generatedAt": "2026-05-01T08:54:40.249Z",
   "specIngestion": true,
   "milestoneGraphCreated": true,
   "autonomousExecutionPlanCreated": true,
@@ -26,7 +26,7 @@
     "runStatus": "failed",
     "humanBlockerCategories": [],
     "checkpoint": {
-      "runId": "autonomous_run_1777362872343",
+      "runId": "autonomous_run_1777625680243",
       "currentMilestone": "foundation_runtime",
       "completedMilestones": [],
       "failedMilestone": "foundation_runtime",
@@ -45,7 +45,7 @@
           "repairAction": "Apply targeted generated-output patch and rerun milestone validators",
           "outcome": "failed",
           "reason": "Selected strategy requires explicit approval before execution.",
-          "attemptedAt": "2026-04-28T07:54:32.351Z"
+          "attemptedAt": "2026-05-01T08:54:40.246Z"
         },
         {
           "milestoneId": "foundation_runtime",
@@ -54,11 +54,11 @@
           "repairAction": "Apply targeted generated-output patch and rerun milestone validators",
           "outcome": "failed",
           "reason": "Identical failure signature repeated and same repair was already attempted.",
-          "attemptedAt": "2026-04-28T07:54:32.352Z"
+          "attemptedAt": "2026-05-01T08:54:40.248Z"
         }
       ],
       "lastFailure": {
-        "runId": "autonomous_run_1777362872343",
+        "runId": "autonomous_run_1777625680243",
         "milestoneId": "foundation_runtime",
         "failureCategory": "generated_app_implementation_failure",
         "confidence": 0.78,
@@ -75,7 +75,7 @@
         "safeRepairAvailable": true,
         "recommendedRepair": "Apply targeted generated-output patch and rerun milestone validators",
         "escalationRequired": false,
-        "resumeCommand": "npm run -s autonomous-build:resume -- autonomous_run_1777362872343",
+        "resumeCommand": "npm run -s autonomous-build:resume -- autonomous_run_1777625680243",
         "validationCommandAfterRepair": "validate:foundation_runtime",
         "failureSignature": "7442bd38cfa2b9e6",
         "attemptsBySignature": 2,
@@ -135,32 +135,32 @@
           {
             "strategyId": "none",
             "outcome": "escalated",
-            "timestamp": "2026-04-28T07:54:32.350Z",
+            "timestamp": "2026-05-01T08:54:40.245Z",
             "notes": "Selected strategy requires explicit approval before execution."
-          },
-          {
-            "strategyId": "none",
-            "outcome": "escalated",
-            "timestamp": "2026-04-28T07:52:30.783Z",
-            "notes": "Identical failure signature repeated and same repair was already attempted."
           },
           {
             "strategyId": "fix_import_or_export",
             "outcome": "success",
-            "timestamp": "2026-04-28T07:51:48.446Z",
+            "timestamp": "2026-05-01T08:40:03.786Z",
             "notes": "Adaptive strategy selected and repair applied."
           },
           {
             "strategyId": "none",
             "outcome": "escalated",
-            "timestamp": "2026-04-28T07:51:48.445Z",
+            "timestamp": "2026-05-01T08:40:03.781Z",
             "notes": "Identical failure signature repeated and same repair was already attempted."
           },
           {
             "strategyId": "none",
             "outcome": "escalated",
-            "timestamp": "2026-04-28T07:51:48.444Z",
+            "timestamp": "2026-05-01T08:40:03.778Z",
             "notes": "Selected strategy requires explicit approval before execution."
+          },
+          {
+            "strategyId": "none",
+            "outcome": "escalated",
+            "timestamp": "2026-05-01T08:39:43.576Z",
+            "notes": "Identical failure signature repeated and same repair was already attempted."
           }
         ],
         "approvalRequired": true,
@@ -182,20 +182,20 @@
         "repair_budget_exhausted: Selected strategy requires explicit approval before execution.",
         "repair_budget_exhausted: Identical failure signature repeated and same repair was already attempted."
       ],
-      "resumeCommand": "npm run -s autonomous-build:resume -- autonomous_run_1777362872343",
+      "resumeCommand": "npm run -s autonomous-build:resume -- autonomous_run_1777625680243",
       "nextAction": "Repair failed for foundation_runtime; repair_budget_exhausted",
       "log": "repair_budget_exhausted: Identical failure signature repeated and same repair was already attempted."
     },
     "finalReleaseBundle": {
-      "finalAppOutputPath": "release-evidence/generated-apps/autonomous_run_1777362872343/app",
-      "launchPackagePath": "release-evidence/generated-apps/autonomous_run_1777362872343/launch",
-      "secretRequirementsPath": "release-evidence/generated-apps/autonomous_run_1777362872343/launch/secret-requirements.json",
-      "deploymentReadinessPath": "release-evidence/generated-apps/autonomous_run_1777362872343/deploy/deployment_readiness.json",
-      "smokeTestsPath": "release-evidence/generated-apps/autonomous_run_1777362872343/launch/SMOKE_TESTS.md",
-      "rollbackPlanPath": "release-evidence/generated-apps/autonomous_run_1777362872343/launch/ROLLBACK.md",
+      "finalAppOutputPath": "release-evidence/generated-apps/autonomous_run_1777625680243/app",
+      "launchPackagePath": "release-evidence/generated-apps/autonomous_run_1777625680243/launch",
+      "secretRequirementsPath": "release-evidence/generated-apps/autonomous_run_1777625680243/launch/secret-requirements.json",
+      "deploymentReadinessPath": "release-evidence/generated-apps/autonomous_run_1777625680243/deploy/deployment_readiness.json",
+      "smokeTestsPath": "release-evidence/generated-apps/autonomous_run_1777625680243/launch/SMOKE_TESTS.md",
+      "rollbackPlanPath": "release-evidence/generated-apps/autonomous_run_1777625680243/launch/ROLLBACK.md",
       "proofArtifactsPath": "release-evidence/runtime",
-      "readmePath": "release-evidence/generated-apps/autonomous_run_1777362872343/README.md",
-      "runbookPath": "release-evidence/generated-apps/autonomous_run_1777362872343/RUNBOOK.md",
+      "readmePath": "release-evidence/generated-apps/autonomous_run_1777625680243/README.md",
+      "runbookPath": "release-evidence/generated-apps/autonomous_run_1777625680243/RUNBOOK.md",
       "finalReleaseEvidencePath": "release-evidence/runtime/final_commercial_release_evidence.json",
       "assembled": true
     }

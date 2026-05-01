@@ -1,8 +1,8 @@
 domain=mobile_app
 commandId=build
 kind=build
-startedAt=2026-04-28T07:53:34.033Z
-finishedAt=2026-04-28T07:53:34.531Z
+startedAt=2026-05-01T08:53:43.639Z
+finishedAt=2026-05-01T08:53:44.163Z
 status=passed
 exitCode=0
 --- stdout ---

@@ -1,6 +1,6 @@
 # Botomatic Product Scope
 
-Status: Universal-builder transition in progress
+Status: Release-candidate foundation ready; max-power completion in progress
 
 ---
 
@@ -29,12 +29,12 @@ It must:
 
 ---
 
-## Not yet complete (blocks universal launch claim)
+## Not yet complete (blocks max-power completion claim)
 
-- universal-builder benchmark score/critical-fail posture does not yet meet launch threshold
-- generated-app output quality needs stronger proof beyond static benchmark simulation
-- readiness/launch docs still include legacy enterprise-closure posture and are being reconciled
-- additional runtime validator depth is required before claiming 99 percent coverage
+- max-power universal completion is not yet proven across exhaustive blueprint permutations and deployment environments
+- representative runtime/deployment evidence exists, but exhaustive-domain proof remains incomplete
+- live deployment remains approval- and credential-gated; this repo does not claim live deployment execution success as universally proven
+- additional runtime validator depth is required before claiming 99 percent coverage as independently proven
 
 ---
 

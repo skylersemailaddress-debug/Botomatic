@@ -1,0 +1,202 @@
+{
+  "generatedAt": "2026-05-01T08:54:43.647Z",
+  "status": "passed",
+  "declaredDomainCount": 8,
+  "coveredDomainCount": 8,
+  "requiredPermutationCount": 24,
+  "coveredPermutationCount": 24,
+  "results": [
+    {
+      "domainId": "web_saas_app",
+      "permutationId": "saas_core_runtime",
+      "status": "passed",
+      "missingPaths": [],
+      "placeholderScanPassed": true,
+      "placeholderIssues": []
+    },
+    {
+      "domainId": "web_saas_app",
+      "permutationId": "saas_data_auth",
+      "status": "passed",
+      "missingPaths": [],
+      "placeholderScanPassed": true,
+      "placeholderIssues": []
+    },
+    {
+      "domainId": "web_saas_app",
+      "permutationId": "saas_deploy_package",
+      "status": "passed",
+      "missingPaths": [],
+      "placeholderScanPassed": true,
+      "placeholderIssues": []
+    },
+    {
+      "domainId": "marketing_website",
+      "permutationId": "marketing_core_pages",
+      "status": "passed",
+      "missingPaths": [],
+      "placeholderScanPassed": true,
+      "placeholderIssues": []
+    },
+    {
+      "domainId": "marketing_website",
+      "permutationId": "marketing_conversion_api",
+      "status": "passed",
+      "missingPaths": [],
+      "placeholderScanPassed": true,
+      "placeholderIssues": []
+    },
+    {
+      "domainId": "marketing_website",
+      "permutationId": "marketing_deploy_package",
+      "status": "passed",
+      "missingPaths": [],
+      "placeholderScanPassed": true,
+      "placeholderIssues": []
+    },
+    {
+      "domainId": "api_service",
+      "permutationId": "api_core_runtime",
+      "status": "passed",
+      "missingPaths": [],
+      "placeholderScanPassed": true,
+      "placeholderIssues": []
+    },
+    {
+      "domainId": "api_service",
+      "permutationId": "api_contract_data",
+      "status": "passed",
+      "missingPaths": [],
+      "placeholderScanPassed": true,
+      "placeholderIssues": []
+    },
+    {
+      "domainId": "api_service",
+      "permutationId": "api_deploy_package",
+      "status": "passed",
+      "missingPaths": [],
+      "placeholderScanPassed": true,
+      "placeholderIssues": []
+    },
+    {
+      "domainId": "mobile_app",
+      "permutationId": "mobile_core_runtime",
+      "status": "passed",
+      "missingPaths": [],
+      "placeholderScanPassed": true,
+      "placeholderIssues": []
+    },
+    {
+      "domainId": "mobile_app",
+      "permutationId": "mobile_state_services",
+      "status": "passed",
+      "missingPaths": [],
+      "placeholderScanPassed": true,
+      "placeholderIssues": []
+    },
+    {
+      "domainId": "mobile_app",
+      "permutationId": "mobile_release_package",
+      "status": "passed",
+      "missingPaths": [],
+      "placeholderScanPassed": true,
+      "placeholderIssues": []
+    },
+    {
+      "domainId": "bot",
+      "permutationId": "bot_core_runtime",
+      "status": "passed",
+      "missingPaths": [],
+      "placeholderScanPassed": true,
+      "placeholderIssues": []
+    },
+    {
+      "domainId": "bot",
+      "permutationId": "bot_safety_controls",
+      "status": "passed",
+      "missingPaths": [],
+      "placeholderScanPassed": true,
+      "placeholderIssues": []
+    },
+    {
+      "domainId": "bot",
+      "permutationId": "bot_deploy_package",
+      "status": "passed",
+      "missingPaths": [],
+      "placeholderScanPassed": true,
+      "placeholderIssues": []
+    },
+    {
+      "domainId": "ai_agent",
+      "permutationId": "agent_core_runtime",
+      "status": "passed",
+      "missingPaths": [],
+      "placeholderScanPassed": true,
+      "placeholderIssues": []
+    },
+    {
+      "domainId": "ai_agent",
+      "permutationId": "agent_eval_audit",
+      "status": "passed",
+      "missingPaths": [],
+      "placeholderScanPassed": true,
+      "placeholderIssues": []
+    },
+    {
+      "domainId": "ai_agent",
+      "permutationId": "agent_deploy_package",
+      "status": "passed",
+      "missingPaths": [],
+      "placeholderScanPassed": true,
+      "placeholderIssues": []
+    },
+    {
+      "domainId": "game",
+      "permutationId": "game_core_runtime",
+      "status": "passed",
+      "missingPaths": [],
+      "placeholderScanPassed": true,
+      "placeholderIssues": []
+    },
+    {
+      "domainId": "game",
+      "permutationId": "game_assets_save",
+      "status": "passed",
+      "missingPaths": [],
+      "placeholderScanPassed": true,
+      "placeholderIssues": []
+    },
+    {
+      "domainId": "game",
+      "permutationId": "game_export_package",
+      "status": "passed",
+      "missingPaths": [],
+      "placeholderScanPassed": true,
+      "placeholderIssues": []
+    },
+    {
+      "domainId": "dirty_repo_completion",
+      "permutationId": "repair_contract_runtime",
+      "status": "passed",
+      "missingPaths": [],
+      "placeholderScanPassed": true,
+      "placeholderIssues": []
+    },
+    {
+      "domainId": "dirty_repo_completion",
+      "permutationId": "repair_validation_bundle",
+      "status": "passed",
+      "missingPaths": [],
+      "placeholderScanPassed": true,
+      "placeholderIssues": []
+    },
+    {
+      "domainId": "dirty_repo_completion",
+      "permutationId": "repair_handoff_package",
+      "status": "passed",
+      "missingPaths": [],
+      "placeholderScanPassed": true,
+      "placeholderIssues": []
+    }
+  ]
+}

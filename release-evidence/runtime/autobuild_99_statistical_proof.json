@@ -1,0 +1,19 @@
+{
+  "status": "blocked",
+  "claimId": "fully_built_live_and_autobuild_99_percent_of_supported_scope",
+  "frozenCorpus": false,
+  "corpusVersion": "pending",
+  "evaluatedCaseCount": 0,
+  "successRate": 0,
+  "lowerConfidenceBound": 0,
+  "confidenceLevel": 0.95,
+  "threshold": 0.99,
+  "unmetRequirements": [
+    "frozen_corpus_missing",
+    "minimum_sample_size_not_met",
+    "confidence_bound_below_threshold",
+    "independent_reproducibility_not_confirmed"
+  ],
+  "generatedAt": "2026-05-01T08:54:45.577Z",
+  "caveat": "Fail-closed scaffold: statistical claim entitlement requires frozen corpus evaluation with confidence-bound evidence."
+}

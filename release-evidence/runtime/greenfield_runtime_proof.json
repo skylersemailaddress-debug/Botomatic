@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-28T07:52:38.050Z",
+  "generatedAt": "2026-05-01T08:52:48.028Z",
   "proofGrade": "local_runtime",
   "pathId": "greenfield_app_build",
   "inputUsed": {
@@ -15,49 +15,49 @@
     },
     {
       "method": "POST",
-      "path": "/api/projects/proj_1777362757988/spec/analyze",
+      "path": "/api/projects/proj_1777625567884/spec/analyze",
       "status": 200,
       "ok": true
     },
     {
       "method": "GET",
-      "path": "/api/projects/proj_1777362757988/spec/status",
+      "path": "/api/projects/proj_1777625567884/spec/status",
       "status": 200,
       "ok": true
     },
     {
       "method": "POST",
-      "path": "/api/projects/proj_1777362757988/spec/assumptions/accept",
+      "path": "/api/projects/proj_1777625567884/spec/assumptions/accept",
       "status": 200,
       "ok": true
     },
     {
       "method": "POST",
-      "path": "/api/projects/proj_1777362757988/spec/build-contract",
+      "path": "/api/projects/proj_1777625567884/spec/build-contract",
       "status": 200,
       "ok": true
     },
     {
       "method": "POST",
-      "path": "/api/projects/proj_1777362757988/spec/approve",
+      "path": "/api/projects/proj_1777625567884/spec/approve",
       "status": 200,
       "ok": true
     },
     {
       "method": "POST",
-      "path": "/api/projects/proj_1777362757988/compile",
+      "path": "/api/projects/proj_1777625567884/compile",
       "status": 200,
       "ok": true
     },
     {
       "method": "POST",
-      "path": "/api/projects/proj_1777362757988/plan",
+      "path": "/api/projects/proj_1777625567884/plan",
       "status": 200,
       "ok": true
     },
     {
       "method": "GET",
-      "path": "/api/projects/proj_1777362757988/status",
+      "path": "/api/projects/proj_1777625567884/status",
       "status": 200,
       "ok": true
     }
@@ -74,8 +74,8 @@
   "contract": {
     "type": "build_contract",
     "payload": {
-      "id": "contract_proj_1777362757988_1777362758014",
-      "projectId": "proj_1777362757988",
+      "id": "contract_proj_1777625567884_1777625567965",
+      "projectId": "proj_1777625567884",
       "appSummary": "Proof Greenfield SaaS: Deliver a production-grade application with validated workflows.",
       "targetUsers": [
         "admin",
@@ -152,7 +152,7 @@
       ],
       "assumptions": [
         {
-          "id": "assumption_1777362758003_fw9oc2",
+          "id": "assumption_1777625567903_m27gf1",
           "field": "notification provider",
           "decision": "Email is enabled by default",
           "reason": "Low-risk baseline for transactional workflows",
@@ -162,10 +162,10 @@
           "requiresApproval": false,
           "approved": true,
           "canChangeLater": true,
-          "createdAt": "2026-04-28T07:52:38.003Z"
+          "createdAt": "2026-05-01T08:52:47.903Z"
         },
         {
-          "id": "assumption_1777362758003_rnamj4",
+          "id": "assumption_1777625567904_vnmzln",
           "field": "auth/security",
           "decision": "OIDC with role guards",
           "reason": "Enterprise-safe default",
@@ -175,7 +175,7 @@
           "requiresApproval": true,
           "approved": true,
           "canChangeLater": true,
-          "createdAt": "2026-04-28T07:52:38.003Z"
+          "createdAt": "2026-05-01T08:52:47.904Z"
         }
       ],
       "excludedItems": [
@@ -186,8 +186,8 @@
       "readinessScore": 97,
       "readyToBuild": true,
       "blockers": [],
-      "createdAt": "2026-04-28T07:52:38.014Z",
-      "updatedAt": "2026-04-28T07:52:38.014Z"
+      "createdAt": "2026-05-01T08:52:47.965Z",
+      "updatedAt": "2026-05-01T08:52:47.965Z"
     }
   },
   "generatedPlanOrBuildGraph": {
@@ -278,7 +278,7 @@
     {
       "step": "intake_project",
       "status": "passed",
-      "details": "status=200 projectId=proj_1777362757988"
+      "details": "status=200 projectId=proj_1777625567884"
     },
     {
       "step": "analyze_spec",
@@ -356,12 +356,29 @@
         "validatorSummary": "greenfield_contract_and_plan_integrity:passed, generated_app_validator:passed, no_placeholder_validator:passed",
         "outcome": "passed",
         "rollbackPlan": "Revert greenfield planner and contract changes; rerun benchmark and validators.",
-        "id": "proof_1777362758050_vybrns",
-        "timestamp": "2026-04-28T07:52:38.050Z"
+        "id": "proof_1777625568027_13dtaw",
+        "timestamp": "2026-05-01T08:52:48.027Z"
       },
       "claimVerification": {
-        "ok": true,
-        "blockers": []
+        "recordValid": true,
+        "readinessEligible": true,
+        "errors": [],
+        "warnings": [
+          "Legacy string evidence accepted as low-confidence documentation evidence.",
+          "Legacy string evidence accepted as low-confidence documentation evidence.",
+          "Legacy string evidence accepted as low-confidence documentation evidence.",
+          "Legacy string evidence accepted as low-confidence documentation evidence.",
+          "Legacy string evidence accepted as low-confidence documentation evidence."
+        ],
+        "requiredEvidenceClasses": [
+          "documentation"
+        ],
+        "suppliedEvidenceClasses": [
+          "documentation"
+        ],
+        "claimType": "documentation_claim",
+        "outcome": "passed",
+        "freshness": {}
       }
     }
   ],

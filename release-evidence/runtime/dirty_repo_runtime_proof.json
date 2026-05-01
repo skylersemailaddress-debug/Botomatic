@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-28T07:52:39.333Z",
+  "generatedAt": "2026-05-01T08:52:49.281Z",
   "proofGrade": "local_runtime",
   "pathId": "dirty_repo_rescue_completion",
   "inputUsed": {
@@ -15,13 +15,13 @@
     },
     {
       "method": "POST",
-      "path": "/api/projects/proj_1777362759309/repo/completion-contract",
+      "path": "/api/projects/proj_1777625569215/repo/completion-contract",
       "status": 200,
       "ok": true
     },
     {
       "method": "GET",
-      "path": "/api/projects/proj_1777362759309/repo/status",
+      "path": "/api/projects/proj_1777625569215/repo/status",
       "status": 200,
       "ok": true
     }
@@ -89,6 +89,739 @@
         "Security/deployment validators pass",
         "Proof ledger entry is recorded"
       ],
+      "evidenceSnapshot": {
+        "snapshotId": "dre_1777625569234",
+        "capturedAt": "2026-05-01T08:52:49.234Z",
+        "sources": [
+          "commercial_audit",
+          "risk_fake_integration",
+          "risk_placeholder"
+        ],
+        "entries": [
+          {
+            "id": "audit_1",
+            "source": "commercial_audit",
+            "severity": "high",
+            "category": "commercial",
+            "message": "Build failed.",
+            "completionArea": "launch_readiness"
+          },
+          {
+            "id": "audit_2",
+            "source": "commercial_audit",
+            "severity": "high",
+            "category": "commercial",
+            "message": "Tests failed.",
+            "completionArea": "launch_readiness"
+          },
+          {
+            "id": "audit_3",
+            "source": "commercial_audit",
+            "severity": "high",
+            "category": "commercial",
+            "message": "Placeholder token detected: placeholder",
+            "completionArea": "launch_readiness"
+          },
+          {
+            "id": "audit_4",
+            "source": "commercial_audit",
+            "severity": "high",
+            "category": "commercial",
+            "message": "Placeholder token detected: stub",
+            "completionArea": "launch_readiness"
+          },
+          {
+            "id": "fake_1",
+            "source": "risk_fake_integration",
+            "severity": "high",
+            "category": "integration",
+            "message": "Fake integration signal: stub",
+            "completionArea": "integrations"
+          },
+          {
+            "id": "placeholder_1",
+            "source": "risk_placeholder",
+            "severity": "high",
+            "category": "placeholder",
+            "message": "placeholder",
+            "completionArea": "code_quality"
+          }
+        ],
+        "summary": {
+          "totalEntries": 6,
+          "bySeverity": {
+            "low": 0,
+            "medium": 0,
+            "high": 6,
+            "critical": 0
+          },
+          "byCategory": {
+            "commercial": 4,
+            "integration": 1,
+            "security": 0,
+            "placeholder": 1,
+            "intake": 0
+          }
+        }
+      },
+      "evidenceEntries": [
+        {
+          "id": "audit_1",
+          "source": "commercial_audit",
+          "severity": "high",
+          "category": "commercial",
+          "message": "Build failed.",
+          "completionArea": "launch_readiness"
+        },
+        {
+          "id": "audit_2",
+          "source": "commercial_audit",
+          "severity": "high",
+          "category": "commercial",
+          "message": "Tests failed.",
+          "completionArea": "launch_readiness"
+        },
+        {
+          "id": "audit_3",
+          "source": "commercial_audit",
+          "severity": "high",
+          "category": "commercial",
+          "message": "Placeholder token detected: placeholder",
+          "completionArea": "launch_readiness"
+        },
+        {
+          "id": "audit_4",
+          "source": "commercial_audit",
+          "severity": "high",
+          "category": "commercial",
+          "message": "Placeholder token detected: stub",
+          "completionArea": "launch_readiness"
+        },
+        {
+          "id": "fake_1",
+          "source": "risk_fake_integration",
+          "severity": "high",
+          "category": "integration",
+          "message": "Fake integration signal: stub",
+          "completionArea": "integrations"
+        },
+        {
+          "id": "placeholder_1",
+          "source": "risk_placeholder",
+          "severity": "high",
+          "category": "placeholder",
+          "message": "placeholder",
+          "completionArea": "code_quality"
+        }
+      ],
+      "completionBlockers": [
+        {
+          "id": "blocker_1",
+          "area": "launch_readiness",
+          "message": "Build failed.",
+          "severity": "high",
+          "evidenceEntryIds": [
+            "audit_1"
+          ]
+        },
+        {
+          "id": "blocker_2",
+          "area": "launch_readiness",
+          "message": "Tests failed.",
+          "severity": "high",
+          "evidenceEntryIds": [
+            "audit_2"
+          ]
+        },
+        {
+          "id": "blocker_3",
+          "area": "launch_readiness",
+          "message": "Placeholder token detected: placeholder",
+          "severity": "high",
+          "evidenceEntryIds": [
+            "audit_3"
+          ]
+        },
+        {
+          "id": "blocker_4",
+          "area": "launch_readiness",
+          "message": "Placeholder token detected: stub",
+          "severity": "high",
+          "evidenceEntryIds": [
+            "audit_4"
+          ]
+        },
+        {
+          "id": "blocker_5",
+          "area": "integrations",
+          "message": "Fake integration signal: stub",
+          "severity": "high",
+          "evidenceEntryIds": [
+            "fake_1"
+          ]
+        },
+        {
+          "id": "blocker_6",
+          "area": "code_quality",
+          "message": "placeholder",
+          "severity": "high",
+          "evidenceEntryIds": [
+            "placeholder_1"
+          ]
+        }
+      ],
+      "completionContractV2": {
+        "contractVersion": "2.0",
+        "generatedAt": "2026-05-01T08:52:49.235Z",
+        "detectedProduct": "web_app",
+        "detectedStack": [],
+        "evidenceSnapshot": {
+          "snapshotId": "dre_1777625569234",
+          "capturedAt": "2026-05-01T08:52:49.234Z",
+          "sources": [
+            "commercial_audit",
+            "risk_fake_integration",
+            "risk_placeholder"
+          ],
+          "entries": [
+            {
+              "id": "audit_1",
+              "source": "commercial_audit",
+              "severity": "high",
+              "category": "commercial",
+              "message": "Build failed.",
+              "completionArea": "launch_readiness"
+            },
+            {
+              "id": "audit_2",
+              "source": "commercial_audit",
+              "severity": "high",
+              "category": "commercial",
+              "message": "Tests failed.",
+              "completionArea": "launch_readiness"
+            },
+            {
+              "id": "audit_3",
+              "source": "commercial_audit",
+              "severity": "high",
+              "category": "commercial",
+              "message": "Placeholder token detected: placeholder",
+              "completionArea": "launch_readiness"
+            },
+            {
+              "id": "audit_4",
+              "source": "commercial_audit",
+              "severity": "high",
+              "category": "commercial",
+              "message": "Placeholder token detected: stub",
+              "completionArea": "launch_readiness"
+            },
+            {
+              "id": "fake_1",
+              "source": "risk_fake_integration",
+              "severity": "high",
+              "category": "integration",
+              "message": "Fake integration signal: stub",
+              "completionArea": "integrations"
+            },
+            {
+              "id": "placeholder_1",
+              "source": "risk_placeholder",
+              "severity": "high",
+              "category": "placeholder",
+              "message": "placeholder",
+              "completionArea": "code_quality"
+            }
+          ],
+          "summary": {
+            "totalEntries": 6,
+            "bySeverity": {
+              "low": 0,
+              "medium": 0,
+              "high": 6,
+              "critical": 0
+            },
+            "byCategory": {
+              "commercial": 4,
+              "integration": 1,
+              "security": 0,
+              "placeholder": 1,
+              "intake": 0
+            }
+          }
+        },
+        "evidenceSummary": "entries=6; critical=0; high=6; security=0",
+        "blockers": [
+          {
+            "id": "blocker_1",
+            "area": "launch_readiness",
+            "message": "Build failed.",
+            "severity": "high",
+            "evidenceEntryIds": [
+              "audit_1"
+            ]
+          },
+          {
+            "id": "blocker_2",
+            "area": "launch_readiness",
+            "message": "Tests failed.",
+            "severity": "high",
+            "evidenceEntryIds": [
+              "audit_2"
+            ]
+          },
+          {
+            "id": "blocker_3",
+            "area": "launch_readiness",
+            "message": "Placeholder token detected: placeholder",
+            "severity": "high",
+            "evidenceEntryIds": [
+              "audit_3"
+            ]
+          },
+          {
+            "id": "blocker_4",
+            "area": "launch_readiness",
+            "message": "Placeholder token detected: stub",
+            "severity": "high",
+            "evidenceEntryIds": [
+              "audit_4"
+            ]
+          },
+          {
+            "id": "blocker_5",
+            "area": "integrations",
+            "message": "Fake integration signal: stub",
+            "severity": "high",
+            "evidenceEntryIds": [
+              "fake_1"
+            ]
+          },
+          {
+            "id": "blocker_6",
+            "area": "code_quality",
+            "message": "placeholder",
+            "severity": "high",
+            "evidenceEntryIds": [
+              "placeholder_1"
+            ]
+          }
+        ],
+        "completionAreas": [
+          "launch_readiness",
+          "integrations",
+          "code_quality"
+        ],
+        "milestones": [
+          {
+            "id": "m1",
+            "label": "Document completion boundaries",
+            "done": true,
+            "evidenceEntryIds": []
+          },
+          {
+            "id": "m2",
+            "label": "Resolve evidence-linked blockers",
+            "done": false,
+            "evidenceEntryIds": [
+              "audit_1",
+              "audit_2",
+              "audit_3",
+              "audit_4",
+              "fake_1",
+              "placeholder_1"
+            ]
+          },
+          {
+            "id": "m3",
+            "label": "Run validator/proof pass",
+            "done": true,
+            "evidenceEntryIds": []
+          }
+        ],
+        "exitCriteria": [
+          {
+            "id": "install_build_path_known",
+            "label": "Install/build path known",
+            "measurable": true,
+            "satisfied": true,
+            "evidenceEntryIds": []
+          },
+          {
+            "id": "test_command_known",
+            "label": "Test command known",
+            "measurable": true,
+            "satisfied": true,
+            "evidenceEntryIds": []
+          },
+          {
+            "id": "no_placeholder_scan_required",
+            "label": "No-placeholder scan required",
+            "measurable": true,
+            "satisfied": true,
+            "evidenceEntryIds": []
+          },
+          {
+            "id": "security_scan_required",
+            "label": "Security scan required",
+            "measurable": true,
+            "satisfied": true,
+            "evidenceEntryIds": []
+          },
+          {
+            "id": "integration_boundaries_documented",
+            "label": "Integration boundaries documented",
+            "measurable": true,
+            "satisfied": true,
+            "evidenceEntryIds": [
+              "fake_1"
+            ]
+          },
+          {
+            "id": "deployment_boundary_documented",
+            "label": "Deployment boundary documented",
+            "measurable": true,
+            "satisfied": true,
+            "evidenceEntryIds": []
+          },
+          {
+            "id": "proof_ledger_entry_required",
+            "label": "Proof ledger entry required",
+            "measurable": true,
+            "satisfied": true,
+            "evidenceEntryIds": []
+          },
+          {
+            "id": "user_approval_required_before_claim_expansion",
+            "label": "User approval required before claim expansion",
+            "measurable": true,
+            "satisfied": true,
+            "evidenceEntryIds": []
+          }
+        ],
+        "risks": [
+          {
+            "id": "risk_audit_1",
+            "severity": "high",
+            "message": "Build failed.",
+            "evidenceEntryIds": [
+              "audit_1"
+            ]
+          },
+          {
+            "id": "risk_audit_2",
+            "severity": "high",
+            "message": "Tests failed.",
+            "evidenceEntryIds": [
+              "audit_2"
+            ]
+          },
+          {
+            "id": "risk_audit_3",
+            "severity": "high",
+            "message": "Placeholder token detected: placeholder",
+            "evidenceEntryIds": [
+              "audit_3"
+            ]
+          },
+          {
+            "id": "risk_audit_4",
+            "severity": "high",
+            "message": "Placeholder token detected: stub",
+            "evidenceEntryIds": [
+              "audit_4"
+            ]
+          },
+          {
+            "id": "risk_fake_1",
+            "severity": "high",
+            "message": "Fake integration signal: stub",
+            "evidenceEntryIds": [
+              "fake_1"
+            ]
+          },
+          {
+            "id": "risk_placeholder_1",
+            "severity": "high",
+            "message": "placeholder",
+            "evidenceEntryIds": [
+              "placeholder_1"
+            ]
+          }
+        ],
+        "proofConsistency": {
+          "status": "passed",
+          "reasons": [],
+          "failedCriticalValidatorIds": []
+        },
+        "claimBoundary": "candidate_ready is non-launch evidence only; launch/production claims remain out of scope",
+        "recommendedNextActions": [
+          "Resolve launch_readiness: Build failed.",
+          "Resolve launch_readiness: Tests failed.",
+          "Resolve launch_readiness: Placeholder token detected: placeholder",
+          "Resolve launch_readiness: Placeholder token detected: stub",
+          "Resolve integrations: Fake integration signal: stub",
+          "Resolve code_quality: placeholder"
+        ],
+        "status": "repair_ready",
+        "legacyCompat": {
+          "commercialLaunchBlockers": [
+            "Build failed.",
+            "Tests failed.",
+            "Placeholder token detected: placeholder",
+            "Placeholder token detected: stub",
+            "Fake integration signal: stub"
+          ],
+          "recommendedCompletionPlan": [
+            "Stabilize build and tests: Fix install/build/test blockers",
+            "Replace placeholders and fake flows: Remove placeholders, Implement real integrations",
+            "Close product/security/deployment gaps: Build failed., Tests failed., Placeholder token detected: placeholder, Placeholder token detected: stub, Fake integration signal: stub"
+          ]
+        }
+      },
+      "repairLoopProof": {
+        "generatedAt": "2026-05-01T08:52:49.244Z",
+        "status": "validation_ready",
+        "evidenceSnapshotId": "dre_1777625569234",
+        "completionContractVersion": "2.0",
+        "plan": {
+          "orderedActions": [
+            {
+              "id": "repair_1",
+              "actionType": "defer_live_deployment",
+              "title": "Repair commercial finding",
+              "rationale": "Build failed.",
+              "priority": 20,
+              "risk": "high",
+              "evidenceEntryIds": [
+                "audit_1"
+              ],
+              "blocked": false,
+              "requiresUserApproval": false,
+              "executesUntrustedCode": false
+            },
+            {
+              "id": "repair_2",
+              "actionType": "defer_live_deployment",
+              "title": "Repair commercial finding",
+              "rationale": "Tests failed.",
+              "priority": 20,
+              "risk": "high",
+              "evidenceEntryIds": [
+                "audit_2"
+              ],
+              "blocked": false,
+              "requiresUserApproval": false,
+              "executesUntrustedCode": false
+            },
+            {
+              "id": "repair_3",
+              "actionType": "defer_live_deployment",
+              "title": "Repair commercial finding",
+              "rationale": "Placeholder token detected: placeholder",
+              "priority": 20,
+              "risk": "high",
+              "evidenceEntryIds": [
+                "audit_3"
+              ],
+              "blocked": false,
+              "requiresUserApproval": false,
+              "executesUntrustedCode": false
+            },
+            {
+              "id": "repair_4",
+              "actionType": "defer_live_deployment",
+              "title": "Repair commercial finding",
+              "rationale": "Placeholder token detected: stub",
+              "priority": 20,
+              "risk": "high",
+              "evidenceEntryIds": [
+                "audit_4"
+              ],
+              "blocked": false,
+              "requiresUserApproval": false,
+              "executesUntrustedCode": false
+            },
+            {
+              "id": "repair_5",
+              "actionType": "document_integration_boundary",
+              "title": "Repair integration finding",
+              "rationale": "Fake integration signal: stub",
+              "priority": 20,
+              "risk": "high",
+              "evidenceEntryIds": [
+                "fake_1"
+              ],
+              "blocked": false,
+              "requiresUserApproval": false,
+              "executesUntrustedCode": false
+            },
+            {
+              "id": "repair_6",
+              "actionType": "remove_placeholder",
+              "title": "Repair placeholder finding",
+              "rationale": "placeholder",
+              "priority": 20,
+              "risk": "high",
+              "evidenceEntryIds": [
+                "placeholder_1"
+              ],
+              "blocked": false,
+              "requiresUserApproval": false,
+              "executesUntrustedCode": false
+            },
+            {
+              "id": "repair_7",
+              "actionType": "add_validator",
+              "title": "Add static validation coverage",
+              "rationale": "Ensure every repair action remains evidence-linked.",
+              "priority": 35,
+              "risk": "medium",
+              "evidenceEntryIds": [
+                "audit_1",
+                "audit_2",
+                "audit_3",
+                "audit_4",
+                "fake_1",
+                "placeholder_1"
+              ],
+              "blocked": false,
+              "requiresUserApproval": false,
+              "executesUntrustedCode": false
+            },
+            {
+              "id": "repair_8",
+              "actionType": "request_user_evidence",
+              "title": "Request user approval and missing evidence",
+              "rationale": "Approval is required before any claim expansion.",
+              "priority": 90,
+              "risk": "low",
+              "evidenceEntryIds": [
+                "audit_1",
+                "audit_2",
+                "audit_3",
+                "audit_4",
+                "fake_1",
+                "placeholder_1"
+              ],
+              "blocked": true,
+              "requiresUserApproval": true,
+              "executesUntrustedCode": false
+            }
+          ],
+          "unresolvedCriticalBlockers": []
+        },
+        "risks": [
+          {
+            "id": "repair_risk_audit_1",
+            "severity": "high",
+            "message": "Build failed.",
+            "evidenceEntryIds": [
+              "audit_1"
+            ]
+          },
+          {
+            "id": "repair_risk_audit_2",
+            "severity": "high",
+            "message": "Tests failed.",
+            "evidenceEntryIds": [
+              "audit_2"
+            ]
+          },
+          {
+            "id": "repair_risk_audit_3",
+            "severity": "high",
+            "message": "Placeholder token detected: placeholder",
+            "evidenceEntryIds": [
+              "audit_3"
+            ]
+          },
+          {
+            "id": "repair_risk_audit_4",
+            "severity": "high",
+            "message": "Placeholder token detected: stub",
+            "evidenceEntryIds": [
+              "audit_4"
+            ]
+          },
+          {
+            "id": "repair_risk_fake_1",
+            "severity": "high",
+            "message": "Fake integration signal: stub",
+            "evidenceEntryIds": [
+              "fake_1"
+            ]
+          },
+          {
+            "id": "repair_risk_placeholder_1",
+            "severity": "high",
+            "message": "placeholder",
+            "evidenceEntryIds": [
+              "placeholder_1"
+            ]
+          }
+        ],
+        "safetyPosture": {
+          "noUntrustedExecution": true,
+          "planningMode": "static_evidence_only"
+        },
+        "validationSteps": [
+          {
+            "id": "static_validation",
+            "label": "Static repair-loop validation",
+            "required": true,
+            "completed": true,
+            "evidenceEntryIds": [
+              "audit_1",
+              "audit_2",
+              "audit_3",
+              "audit_4",
+              "fake_1",
+              "placeholder_1"
+            ]
+          },
+          {
+            "id": "no_placeholder_scan",
+            "label": "No-placeholder scan",
+            "required": true,
+            "completed": false,
+            "evidenceEntryIds": [
+              "placeholder_1"
+            ]
+          },
+          {
+            "id": "security_scan",
+            "label": "Security scan",
+            "required": true,
+            "completed": false,
+            "evidenceEntryIds": []
+          },
+          {
+            "id": "integration_boundary_review",
+            "label": "Integration boundary review",
+            "required": true,
+            "completed": false,
+            "evidenceEntryIds": [
+              "fake_1"
+            ]
+          },
+          {
+            "id": "user_approval",
+            "label": "User approval",
+            "required": true,
+            "completed": false,
+            "evidenceEntryIds": [
+              "audit_1",
+              "audit_2",
+              "audit_3",
+              "audit_4",
+              "fake_1",
+              "placeholder_1"
+            ]
+          }
+        ],
+        "claimBoundary": "repair-loop proof is evidence-bound candidate planning only; not launch-ready and not production-ready"
+      },
       "frameworkDetectionRan": true,
       "languageDetectionRan": true,
       "packageManagerDetectionRan": true,
@@ -134,7 +867,7 @@
     {
       "step": "intake_existing_repo_project",
       "status": "passed",
-      "details": "status=200 projectId=proj_1777362759309"
+      "details": "status=200 projectId=proj_1777625569215"
     },
     {
       "step": "build_completion_contract",
@@ -179,12 +912,28 @@
         "validatorSummary": "validateExistingRepoReadiness:failed, incremental_repo_validation:passed",
         "outcome": "passed",
         "rollbackPlan": "Revert repo-intake/audit/repair/completion contract changes and rerun rescue proof.",
-        "id": "proof_1777362759333_mvnaug",
-        "timestamp": "2026-04-28T07:52:39.333Z"
+        "id": "proof_1777625569280_flvpvi",
+        "timestamp": "2026-05-01T08:52:49.280Z"
       },
       "claimVerification": {
-        "ok": true,
-        "blockers": []
+        "recordValid": false,
+        "readinessEligible": false,
+        "errors": [
+          "Required evidence class missing for claim type 'readiness_claim'."
+        ],
+        "warnings": [
+          "Legacy string evidence accepted as low-confidence documentation evidence.",
+          "Legacy string evidence accepted as low-confidence documentation evidence."
+        ],
+        "requiredEvidenceClasses": [
+          "runtime_validator"
+        ],
+        "suppliedEvidenceClasses": [
+          "documentation"
+        ],
+        "claimType": "readiness_claim",
+        "outcome": "passed",
+        "freshness": {}
       }
     }
   ],

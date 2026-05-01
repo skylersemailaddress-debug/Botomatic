@@ -1,4 +1,4 @@
-node_modules
+node_modules/
 
 .trigger.env.local
 
@@ -14,11 +14,26 @@ node_modules
 apps/control-plane/.next/
 .next/
 
+# Generic build outputs / caches
+dist/
+build/
+coverage/
+.turbo/
+.playwright/
+test-results/
+playwright-report/
+
 # Local validator cache
 .cache/
+
+# Local logs and temp files
+*.log
+*.tmp
+*.bak
+*.backup
+.DS_Store
 
 # Generated app transient build caches
 release-evidence/generated-apps/**/.next/
 *.old
 release-evidence/runtime/repair_strategy_memory.json
-release-evidence/runtime/*.json

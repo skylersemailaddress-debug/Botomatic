@@ -55,17 +55,15 @@ export const processGitOperationTask = task({
       {}
     );
 
-    const mockResult = {
+    const failClosedResult = {
       operationId: payload.operationId,
-      status: "succeeded",
-      branchName: "placeholder-branch",
-      prUrl: "https://github.com/placeholder/pull/1",
-      commitSha: "placeholder-sha",
+      status: "failed",
+      error: "Trigger task is not configured to execute real git operations in this environment.",
     };
 
     const result = await postJson(
       `${payload.apiBaseUrl}/api/projects/${payload.projectId}/git/result`,
-      mockResult
+      failClosedResult
     );
 
     logger.log("Git result posted", { result });

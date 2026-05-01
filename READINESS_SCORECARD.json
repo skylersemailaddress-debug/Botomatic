@@ -1,9 +1,10 @@
 {
-  "status": "universal_builder_launch_gates_satisfied",
+  "status": "release_candidate_foundation_ready",
+  "claim_boundary": "representative_launch_gates_satisfied_not_max_power_complete",
   "overall_target": "chat-first universal commercial builder",
   "enterprise_control_plane_track": {
     "legacy_gate_program": "historically closed by proof in repository evidence",
-    "note": "This does not imply universal-builder launch readiness."
+    "note": "This does not imply max-power universal completion or exhaustive-domain proof."
   },
   "universal_builder_track": {
     "launch_claim_allowed": true,

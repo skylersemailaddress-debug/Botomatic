@@ -1,11 +1,19 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import { getBrowserContext, resolveRuntimePreview } from "@/services/runtimePreview";
 
 type Props = { runtimeStatus?: string; previewUrl?: string; panel: "pro" | "vibe"; previewUnavailableLabel?: string; runtimeNotConnectedLabel?: string };
 
 export function RuntimePreviewPanel({ runtimeStatus, previewUrl, panel, previewUnavailableLabel = "Preview unavailable", runtimeNotConnectedLabel = "Runtime not connected" }: Props) {
-  const state = resolveRuntimePreview({ runtimeStatus, previewUrl, browser: getBrowserContext() });
+  const [browserContext, setBrowserContext] = useState<ReturnType<typeof getBrowserContext>>(undefined);
+
+  useEffect(() => {
+    setBrowserContext(getBrowserContext());
+  }, []);
+
+  const state = resolveRuntimePreview({ runtimeStatus, previewUrl, browser: browserContext });
   const isVerifiedLive = state.status === "live" && state.source === "backend" && Boolean(state.previewUrl);
   const hasPreview = Boolean(state.previewUrl);
   const statusLabel = isVerifiedLive ? "Live" : state.source === "derived" ? "Derived preview" : "Unverified";

@@ -93,5 +93,5 @@
     }
   ],
   "launchCaveat": "Live deployment requires Vercel account access, OIDC credentials, and production database connectivity.",
-  "generatedAt": "2026-04-28T07:54:04.909Z"
+  "generatedAt": "2026-05-01T08:54:13.680Z"
 }
