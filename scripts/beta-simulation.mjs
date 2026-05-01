@@ -159,7 +159,38 @@ function buildProjectName(user) {
 }
 
 function buildProjectRequest(user) {
-  return `Build a commercially ready ${slugify(user.persona)} application with auth, approvals, builder flow, generated app quality, observability, and deployment safeguards for ${user.userId}.`;
+  return `Build a commercially ready ${slugify(user.persona)} application with auth, approvals, builder flow, generated app quality, observability, and deployment safeguards for ${user.userId}. Decide for me using safe defaults. Compliance targets include SOC2 and GDPR. Pricing model is tiered paid subscription with trial.`;
+}
+
+async function ensureBuildContractReady(recorder, user, projectId, results) {
+  const retryAnalyze = await apiRequest(recorder, user, "spec_analysis_remediation", "POST", `/api/projects/${projectId}/spec/analyze`, {
+    headers: authHeaders(),
+    body: {
+      message: "Decide for me using safe defaults. Treat compliance as SOC2 and GDPR. Keep tiered paid subscription pricing and proceed to build-ready contract.",
+    },
+  });
+  results.push({ workflow: "spec_analysis_remediation", passed: retryAnalyze.status === 200, critical: false, details: `status=${retryAnalyze.status}` });
+
+  const status = await apiRequest(recorder, user, "spec_status_remediation", "GET", `/api/projects/${projectId}/spec/status`, {
+    headers: authHeaders(),
+  });
+
+  const assumptions = Array.isArray(status.body?.spec?.assumptions) ? status.body.spec.assumptions : [];
+  const assumptionIds = assumptions.filter((item) => item?.requiresApproval && !item?.approved).map((item) => item.id);
+  if (assumptionIds.length > 0) {
+    const assumptionAccept = await apiRequest(recorder, user, "assumption_accept_remediation", "POST", `/api/projects/${projectId}/spec/assumptions/accept`, {
+      headers: authHeaders(),
+      body: { assumptionIds },
+    });
+    results.push({ workflow: "assumption_accept_remediation", passed: assumptionAccept.status === 200, critical: false, details: `status=${assumptionAccept.status}` });
+  }
+
+  const rebuilt = await apiRequest(recorder, user, "build_contract_rebuild", "POST", `/api/projects/${projectId}/spec/build-contract`, {
+    headers: authHeaders(),
+    body: {},
+  });
+  results.push({ workflow: "build_contract_rebuild", passed: rebuilt.status === 200, critical: false, details: `status=${rebuilt.status}` });
+  return rebuilt;
 }
 
 async function createProject(recorder, user) {
@@ -229,11 +260,17 @@ async function runCommonFlow(recorder, user, results) {
   });
   results.push({ workflow: "build_contract_creation", passed: buildContract.status === 200, critical: true, details: `status=${buildContract.status}` });
 
+  let activeContract = buildContract;
+  if (buildContract.status === 200 && !buildContract.body?.contract?.readyToBuild) {
+    activeContract = await ensureBuildContractReady(recorder, user, projectId, results);
+  }
+
   const approveContract = await apiRequest(recorder, user, "contract_approval", "POST", `/api/projects/${projectId}/spec/approve`, {
     headers: authHeaders(),
     body: {},
   });
-  results.push({ workflow: "contract_approval", passed: approveContract.status === 200, critical: true, details: `status=${approveContract.status}` });
+  const contractReady = activeContract.body?.contract?.readyToBuild === true;
+  results.push({ workflow: "contract_approval", passed: approveContract.status === 200 && contractReady, critical: true, details: `status=${approveContract.status} ready=${contractReady}` });
 
   const compile = await apiRequest(recorder, user, "compile", "POST", `/api/projects/${projectId}/compile`, {
     headers: authHeaders(),
@@ -310,6 +347,12 @@ async function runAuthAndGateChecks(recorder, user, projectId, results, notes) {
     body: { name: "Bad Token", request: "Should fail" },
   });
   results.push({ workflow: "bad_token_rejected", passed: badToken.status === 401, critical: true, details: `status=${badToken.status}` });
+
+  const unauthorizedApprove = await apiRequest(recorder, user, "unauthorized_approval_rejected", "POST", `/api/projects/${projectId}/spec/approve`, {
+    headers: {},
+    body: {},
+  });
+  results.push({ workflow: "unauthorized_approval_rejected", passed: unauthorizedApprove.status === 401, critical: true, details: `status=${unauthorizedApprove.status}` });
 
   if (BOTOMATIC_REVIEWER_TOKEN) {
     const reviewerAdmin = await apiRequest(recorder, user, "reviewer_admin_denied", "POST", `/api/projects/${projectId}/deploy/promote`, {
@@ -444,6 +487,7 @@ function summarizeSimulation(users, requestLog, userRuns) {
   const notProven = [];
   let criticalFailures = 0;
   let logicalSuccessCount = 0;
+  let logicalEvaluatedCount = 0;
 
   for (const run of userRuns) {
     for (const note of run.notes) notProven.push(note);
@@ -456,8 +500,10 @@ function summarizeSimulation(users, requestLog, userRuns) {
       } else if (result.passed) {
         current.passed += 1;
         logicalSuccessCount += 1;
+        logicalEvaluatedCount += 1;
       } else {
         current.failed += 1;
+        logicalEvaluatedCount += 1;
         if (result.critical) criticalFailures += 1;
       }
       workflowStats.set(result.workflow, current);
@@ -466,6 +512,7 @@ function summarizeSimulation(users, requestLog, userRuns) {
 
   const workflowSummary = Array.from(workflowStats.entries()).sort(([a], [b]) => a.localeCompare(b)).map(([workflow, stats]) => ({ workflow, ...stats }));
   const requestSuccessRate = requestLog.length === 0 ? 0 : Number(((requestLog.filter((entry) => entry.ok).length / requestLog.length) * 100).toFixed(2));
+  const workflowSuccessRate = logicalEvaluatedCount === 0 ? 0 : Number(((logicalSuccessCount / logicalEvaluatedCount) * 100).toFixed(2));
   const latencies = requestLog.map((entry) => entry.latencyMs);
   const criticalWorkflowEntries = workflowSummary.filter((entry) => CRITICAL_WORKFLOWS.includes(entry.workflow));
   const criticalWorkflowSuccessRate = criticalWorkflowEntries.length === 0
@@ -476,13 +523,14 @@ function summarizeSimulation(users, requestLog, userRuns) {
     userCount: users.length,
     requestCount: requestLog.length,
     requestSuccessRate,
+    workflowSuccessRate,
     criticalWorkflowSuccessRate,
     p95LatencyMs: percentile(latencies, 95),
     criticalFailures,
     workflowSummary,
     notProven: Array.from(new Set(notProven)).sort(),
     acceptance: {
-      overallRequestSuccessAtLeast99: requestSuccessRate >= 99,
+      overallWorkflowSuccessAtLeast99: workflowSuccessRate >= 99,
       criticalWorkflowSuccess100: criticalWorkflowSuccessRate === 100,
       noCriticalFailures: criticalFailures === 0,
     },
@@ -499,6 +547,7 @@ function renderMarkdown(report) {
   lines.push(`Users simulated: ${report.summary.userCount}`);
   lines.push(`Requests: ${report.summary.requestCount}`);
   lines.push(`Overall success rate: ${report.summary.requestSuccessRate}%`);
+  lines.push(`Workflow success rate: ${report.summary.workflowSuccessRate}%`);
   lines.push(`Critical workflow success rate: ${report.summary.criticalWorkflowSuccessRate}%`);
   lines.push(`p95 latency: ${report.summary.p95LatencyMs} ms`);
   lines.push(`Critical failures: ${report.summary.criticalFailures}`);

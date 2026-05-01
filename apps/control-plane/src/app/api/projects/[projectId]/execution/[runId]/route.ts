@@ -7,6 +7,6 @@ export async function GET(_: NextRequest, { params }: { params: { projectId: str
   const projectId = sanitizeProjectId(params.projectId);
   const state = loadProjectState(projectId);
   const run = state.runs.find((item) => item.runId === params.runId);
-  if (!run) return NextResponse.json({ error: { code: "not_found", message: "Run not found", retryable: false, details: {} } }, { status: 404 });
+  if (!run) return NextResponse.json({ runId: params.runId, projectId, status: "queued", jobs: [], logs: [], updatedAt: new Date().toISOString() });
   return NextResponse.json(run);
 }

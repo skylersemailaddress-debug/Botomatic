@@ -1,0 +1,14 @@
+apps/control-plane/src/app/api/projects/[projectId]/execution/[runId]/route.ts
+apps/control-plane/src/app/api/projects/[projectId]/execution/route.ts
+apps/control-plane/src/app/api/projects/[projectId]/runtime/route.ts
+apps/control-plane/src/app/projects/[projectId]/page.tsx
+apps/control-plane/src/components/pro/ProDashboardSubnav.tsx
+apps/control-plane/src/components/runtime/RuntimePreviewPanel.tsx
+apps/control-plane/src/services/api.ts
+apps/orchestrator-api/src/server.ts
+apps/orchestrator-api/src/server_app.ts
+receipts/beta-simulation/beta-simulation-report.json
+receipts/beta-simulation/beta-simulation-report.md
+receipts/beta-simulation/beta-simulation-requests.json
+receipts/beta-simulation/screenshots/--desktop.png
+scripts/beta-simulation.mjs

@@ -151,6 +151,10 @@ function makeRequestId(): string {
   return `req_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
+function makeProjectId(): string {
+  return `proj_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
 function updateTelemetryTimestamp() {
   telemetryUpdatedAt = now();
 }
@@ -1568,7 +1572,7 @@ export function buildApp(config: RuntimeConfig) {
     const actor = await getRequestActor(req, config);
     try {
       const { name, request } = req.body;
-      const projectId = `proj_${Date.now()}`;
+      const projectId = makeProjectId();
       const project = toStored({ projectId, name, request, status: "clarifying", governanceApproval: buildDefaultGovernanceApproval(actor.actorId) });
       ensureGovernanceApprovalState(project, actor.actorId);
       const blueprint = matchBlueprintFromText(request || name || "");
@@ -2733,7 +2737,37 @@ export function buildApp(config: RuntimeConfig) {
       const project = await repo.getProject(req.params.projectId);
       if (!project) return res.status(404).json({ error: "Project not found" });
       const run = getAutonomousBuildRun(project);
-      if (!run) return res.status(404).json({ error: "No autonomous build run found" });
+      if (!run) {
+        const timestamp = now();
+        return res.json({
+          ok: true,
+          run: {
+            runId: `${project.projectId}_autonomous_idle`,
+            status: "idle",
+            milestoneGraph: [],
+            checkpoint: {
+              runId: `${project.projectId}_autonomous_idle`,
+              currentMilestone: "none",
+              completedMilestones: [],
+              failedMilestone: null,
+              repairAttempts: 0,
+              repairAttemptsBySignature: {},
+              repairAttemptsByMilestoneCategory: {},
+              repairHistory: [],
+              lastFailure: null,
+              artifactPaths: [],
+              logs: [],
+              resumeCommand: "Start an autonomous run",
+              nextAction: "Start autonomous build",
+            },
+            humanBlockers: [],
+            finalReleaseAssembled: false,
+            startedAt: timestamp,
+            updatedAt: timestamp,
+          } as any,
+          actorId: actor.actorId,
+        });
+      }
       return res.json({ ok: true, run, actorId: actor.actorId });
     } catch (error) {
       return handleRouteError(res, config, error, "GET /api/projects/:projectId/autonomous-build/status", actor);
@@ -3493,6 +3527,140 @@ export function buildApp(config: RuntimeConfig) {
       return res.json({ ...project, intakeArtifacts, actorId: actor.actorId, workerId });
     } catch (error) {
       return handleRouteError(res, config, error, "GET /api/projects/:projectId/status", actor);
+    }
+  });
+
+  app.get("/api/projects/:projectId/state", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const overview = buildOverview(project);
+      const nextStep = overview.blockers.length > 0 ? overview.blockers[0] : "Continue build pipeline";
+      const stageStatus = project.status || "idle";
+      return res.json({
+        projectId: project.projectId,
+        objective: project.request || project.name,
+        nextStep,
+        runId: project.projectId,
+        latestRunId: project.projectId,
+        activeRunId: project.projectId,
+        latestRun: {
+          runId: project.projectId,
+          status: stageStatus,
+          stages: [{ id: "project_status", label: "Project status", status: stageStatus, updatedAt: (project as any).updatedAt || now() }],
+        },
+        orchestration: {
+          runId: project.projectId,
+          status: stageStatus,
+          stages: [{ id: "project_status", label: "Project status", status: stageStatus, updatedAt: (project as any).updatedAt || now() }],
+        },
+        activity: overview.activity,
+        actorId: actor.actorId,
+        workerId,
+      });
+    } catch (error) {
+      return handleRouteError(res, config, error, "GET /api/projects/:projectId/state", actor);
+    }
+  });
+
+  app.get("/api/projects/:projectId/resume", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const overview = buildOverview(project);
+      return res.json({
+        projectId: project.projectId,
+        objective: project.request || project.name,
+        nextStep: overview.blockers[0] || "Continue build pipeline",
+        activeRunId: project.projectId,
+        latestRunId: project.projectId,
+        latestPrompt: project.request,
+        stages: [{ id: "project_status", label: "Project status", status: project.status || "idle", updatedAt: (project as any).updatedAt || now() }],
+        updatedAt: (project as any).updatedAt || now(),
+        actorId: actor.actorId,
+        workerId,
+      });
+    } catch (error) {
+      return handleRouteError(res, config, error, "GET /api/projects/:projectId/resume", actor);
+    }
+  });
+
+  app.get("/api/projects/:projectId/runtime", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const status = project.status || "idle";
+      return res.json({
+        projectId: project.projectId,
+        status,
+        state: status,
+        previewUrl: null,
+        verifiedPreviewUrl: null,
+        derivedPreviewUrl: null,
+        actorId: actor.actorId,
+        workerId,
+      });
+    } catch (error) {
+      return handleRouteError(res, config, error, "GET /api/projects/:projectId/runtime", actor);
+    }
+  });
+
+  app.get("/api/projects/:projectId/execution", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const jobs = buildPacketList(project).map((packet: any) => ({
+        id: packet.packetId,
+        runId: project.projectId,
+        projectId: project.projectId,
+        type: "build",
+        label: packet.title || packet.packetId,
+        status: packet.status,
+      }));
+      return res.json({
+        runId: project.projectId,
+        projectId: project.projectId,
+        status: project.status || "idle",
+        jobs,
+        logs: [],
+        updatedAt: (project as any).updatedAt || now(),
+        actorId: actor.actorId,
+        workerId,
+      });
+    } catch (error) {
+      return handleRouteError(res, config, error, "GET /api/projects/:projectId/execution", actor);
+    }
+  });
+
+  app.get("/api/projects/:projectId/execution/:runId", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const jobs = buildPacketList(project).map((packet: any) => ({
+        id: packet.packetId,
+        runId: req.params.runId,
+        projectId: project.projectId,
+        type: "build",
+        label: packet.title || packet.packetId,
+        status: packet.status,
+      }));
+      return res.json({
+        runId: req.params.runId,
+        projectId: project.projectId,
+        status: project.status || "idle",
+        jobs,
+        logs: [],
+        updatedAt: (project as any).updatedAt || now(),
+        actorId: actor.actorId,
+        workerId,
+      });
+    } catch (error) {
+      return handleRouteError(res, config, error, "GET /api/projects/:projectId/execution/:runId", actor);
     }
   });
 

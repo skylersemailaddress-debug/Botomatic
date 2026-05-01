@@ -2,6 +2,19 @@ import type { ApiResult, TruthState } from "./truth";
 
 const DEFAULT_API_BASE_URL = "http://localhost:3001";
 
+function normalizeAppBaseUrl(url: string): string {
+  return url.endsWith("/") ? url.slice(0, -1) : url;
+}
+
+function getServerAppBaseUrl(): string {
+  const explicit = process.env.NEXT_PUBLIC_APP_BASE_URL || process.env.BOTOMATIC_APP_BASE_URL;
+  if (explicit) {
+    return normalizeAppBaseUrl(explicit);
+  }
+  const port = process.env.PORT || "3000";
+  return `http://127.0.0.1:${port}`;
+}
+
 function normalizeApiBaseUrl(url: string): string {
   return url.endsWith("/") ? url.slice(0, -1) : url;
 }
@@ -26,7 +39,12 @@ export function buildApiUrl(path: string): string {
       return `${normalizeApiBaseUrl(configuredBaseUrl)}${path}`;
     }
 
-    // Keep API paths relative by default so Next.js rewrites can proxy in development.
+    // On server-side render, use absolute same-origin URL so Node fetch can resolve it.
+    if (typeof window === "undefined") {
+      return `${getServerAppBaseUrl()}${path}`;
+    }
+
+    // In browser, keep API paths relative by default so same-origin routes/rewrites are used.
     return path;
   }
 
@@ -36,8 +54,10 @@ export function buildApiUrl(path: string): string {
 function buildHeaders(overrides: Record<string, string> = {}): Record<string, string> {
   const headers: Record<string, string> = {};
 
-  // Add dev bearer token only in development builds.
-  if (process.env.NODE_ENV === "development" && process.env.NEXT_PUBLIC_DEV_BEARER_TOKEN) {
+  // Allow explicit public token for local authenticated stacks (production-mode local runs included).
+  if (process.env.NEXT_PUBLIC_BOTOMATIC_API_TOKEN) {
+    headers["Authorization"] = `Bearer ${process.env.NEXT_PUBLIC_BOTOMATIC_API_TOKEN}`;
+  } else if (process.env.NEXT_PUBLIC_DEV_BEARER_TOKEN) {
     headers["Authorization"] = `Bearer ${process.env.NEXT_PUBLIC_DEV_BEARER_TOKEN}`;
   }
 
@@ -156,13 +176,13 @@ export async function getJsonSafe<T>(url: string): Promise<ApiResult<T>> {
     const response = await fetch(finalUrl, { cache: "no-store", headers: buildHeaders() });
     if (!response.ok) {
       const message = `Request failed: ${response.status} ${response.statusText}`;
-      console.error("[api:getJsonSafe]", finalUrl, message);
+      if (response.status !== 404) console.warn("[api:getJsonSafe]", finalUrl, message);
       return { ok: false, state: mapFailureState(response.status), message, status: response.status };
     }
     return { ok: true, data: (await response.json()) as T };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown network error";
-    console.error("[api:getJsonSafe]", finalUrl, message);
+    console.warn("[api:getJsonSafe]", finalUrl, message);
     return { ok: false, state: "not_connected", message };
   }
 }
@@ -178,14 +198,14 @@ export async function postJsonSafe<TResponse, TBody>(url: string, body: TBody): 
 
     if (!response.ok) {
       const message = `Request failed: ${response.status} ${response.statusText}`;
-      console.error("[api:postJsonSafe]", finalUrl, message);
+      if (response.status !== 404) console.warn("[api:postJsonSafe]", finalUrl, message);
       return { ok: false, state: mapFailureState(response.status), message, status: response.status };
     }
 
     return { ok: true, data: (await response.json()) as TResponse };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown network error";
-    console.error("[api:postJsonSafe]", finalUrl, message);
+    console.warn("[api:postJsonSafe]", finalUrl, message);
     return { ok: false, state: "not_connected", message };
   }
 }
