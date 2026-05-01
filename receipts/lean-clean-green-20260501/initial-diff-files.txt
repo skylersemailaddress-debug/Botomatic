@@ -1,0 +1,4 @@
+receipts/beta-simulation/beta-simulation-report.json
+receipts/beta-simulation/beta-simulation-report.md
+receipts/beta-simulation/beta-simulation-requests.json
+receipts/beta-simulation/screenshots/--desktop.png

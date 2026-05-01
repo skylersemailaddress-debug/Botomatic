@@ -1,0 +1,16 @@
+npm warn deprecated next@14.2.5: This version has a security vulnerability. Please upgrade to a patched version. See https://nextjs.org/blog/security-update-2025-12-11 for more details.
+
+added 316 packages, and audited 319 packages in 45s
+
+54 packages are looking for funding
+  run `npm fund` for details
+
+11 vulnerabilities (3 low, 2 moderate, 5 high, 1 critical)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.

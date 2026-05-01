@@ -1,0 +1,3 @@
+{
+  "validateAll": "tsx packages/validation/src/cli.ts"
+}

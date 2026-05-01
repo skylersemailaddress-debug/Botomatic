@@ -1,0 +1,65 @@
+
+> build
+> npm run ui:build
+
+
+> ui:build
+> npm --prefix apps/control-plane run build
+
+
+> @botomatic/control-plane@0.1.0 build
+> next build
+
+  ▲ Next.js 14.2.5
+  - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/5) ...
+   Generating static pages (1/5) 
+   Generating static pages (2/5) 
+   Generating static pages (3/5) 
+ ✓ Generating static pages (5/5)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                      Size     First Load JS
+┌ ○ /                                            2.89 kB          90 kB
+├ ○ /_not-found                                  873 B            88 kB
+├ ƒ /api/[...path]                               0 B                0 B
+├ ƒ /api/hybrid-ci                               0 B                0 B
+├ ƒ /api/local-repo-dashboard                    0 B                0 B
+├ ƒ /api/local-repo-dashboard/stream             0 B                0 B
+├ ƒ /api/projects/[projectId]/deploy             0 B                0 B
+├ ƒ /api/projects/[projectId]/deployments        0 B                0 B
+├ ƒ /api/projects/[projectId]/execution          0 B                0 B
+├ ƒ /api/projects/[projectId]/execution/[runId]  0 B                0 B
+├ ƒ /api/projects/[projectId]/jobs               0 B                0 B
+├ ƒ /api/projects/[projectId]/launch-proof       0 B                0 B
+├ ƒ /api/projects/[projectId]/launch/verify      0 B                0 B
+├ ƒ /api/projects/[projectId]/rollback           0 B                0 B
+├ ƒ /api/projects/[projectId]/runtime            0 B                0 B
+├ ƒ /api/projects/[projectId]/runtime/logs       0 B                0 B
+├ ƒ /api/projects/[projectId]/runtime/start      0 B                0 B
+├ ƒ /api/projects/[projectId]/runtime/stop       0 B                0 B
+├ ƒ /projects/[projectId]                        145 B           260 kB
+├ ƒ /projects/[projectId]/advanced               3.57 kB        98.3 kB
+├ ƒ /projects/[projectId]/deployment             4.27 kB         102 kB
+├ ƒ /projects/[projectId]/evidence               2.89 kB         100 kB
+├ ƒ /projects/[projectId]/logs                   1.14 kB         101 kB
+├ ƒ /projects/[projectId]/onboarding             3.74 kB         101 kB
+├ ƒ /projects/[projectId]/settings               2.97 kB         100 kB
+├ ƒ /projects/[projectId]/validators             1.94 kB         102 kB
+├ ƒ /projects/[projectId]/vault                  4.86 kB         102 kB
+└ ƒ /projects/[projectId]/vibe                   145 B           260 kB
++ First Load JS shared by all                    87.1 kB
+  ├ chunks/1dd3208c-1a0f037a5a46a21f.js          53.6 kB
+  ├ chunks/286-3fd782eb147199e8.js               31.5 kB
+  └ other shared chunks (total)                  1.95 kB
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
