@@ -274,6 +274,26 @@ a:hover {
   color: #1b1430;
 }
 
+.project-workspace-shell {
+  --dash-bg-layer: linear-gradient(180deg, #fcfbff 0%, #f3efff 100%);
+  --dash-card-border: 1px solid #e9e6f8;
+  --dash-card-shadow: 0 14px 28px rgba(54, 39, 118, 0.07);
+  min-height: 100vh;
+  padding: 20px;
+  background:
+    radial-gradient(circle at top left, rgba(123, 77, 255, 0.12), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(67, 196, 172, 0.12), transparent 24%),
+    var(--dash-bg-layer);
+}
+
+.project-workspace-shell--vibe {
+  --dash-bg-layer: linear-gradient(180deg, #fcfbff 0%, #f4f1ff 100%);
+}
+
+.project-workspace-shell--pro {
+  --dash-bg-layer: linear-gradient(180deg, #fcfbff 0%, #f2f0ff 100%);
+}
+
 .northstar-global-sidebar {
   min-height: 0;
   border: 1px solid rgba(116, 88, 220, 0.14);
@@ -285,6 +305,16 @@ a:hover {
   flex-direction: column;
   gap: 16px;
   overflow: hidden;
+}
+
+.project-workspace-sidebar {
+  position: sticky;
+  top: 20px;
+  min-height: calc(100vh - 40px);
+  border: var(--dash-card-border);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: var(--dash-card-shadow);
+  backdrop-filter: blur(18px);
 }
 
 .northstar-brand {
@@ -380,11 +410,73 @@ a:hover {
   color: #877ba0;
 }
 
+.project-workspace-sidebar-card {
+  border: var(--dash-card-border);
+  border-radius: 18px;
+  padding: 14px;
+  background: linear-gradient(180deg, rgba(112, 83, 230, 0.09), rgba(255, 255, 255, 0.95));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+.project-workspace-sidebar-card strong {
+  display: block;
+  margin-top: 6px;
+  color: #241a42;
+}
+
+.project-workspace-sidebar-card p {
+  margin: 8px 0 0;
+  color: #6a5e85;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.project-workspace-sidebar-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 8px;
+  color: #5b2be0;
+  background: rgba(91, 43, 224, 0.1);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.project-workspace-sidebar-note {
+  border: var(--dash-card-border);
+  box-shadow: var(--dash-card-shadow);
+}
+
 .northstar-main {
   min-height: 0;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   gap: 14px;
+}
+
+.project-workspace-main {
+  min-width: 0;
+}
+
+@media (max-width: 1240px) {
+  .project-workspace-shell {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+
+  .project-workspace-sidebar {
+    position: static;
+    min-height: auto;
+  }
+}
+
+@media (max-width: 920px) {
+  .project-workspace-shell {
+    gap: 14px;
+    padding: 12px;
+  }
 }
 
 .northstar-workspace-topbar {
@@ -1997,8 +2089,8 @@ a:hover {
 .pro-toolbar button.is-primary { background:#5b3df4; color:#fff; border-color:#5b3df4; }
 .pro-toolbar-icons { display:grid; place-items:center; border:1px solid #e1e4f1; border-radius:.65rem; padding:.5rem .8rem; background:#fff; }
 .pro-subnav { display:flex; gap:.3rem; padding:.4rem; overflow:auto; }
-.pro-subnav button { border:0; background:transparent; padding:.45rem .7rem; border-radius:.5rem; white-space:nowrap; color:#4f5777; }
-.pro-subnav button.is-active { background:#f0ecff; color:#5b3df4; font-weight:700; }
+.pro-subnav a,.pro-subnav button { border:0; background:transparent; padding:.45rem .7rem; border-radius:.5rem; white-space:nowrap; color:#4f5777; text-decoration:none; }
+.pro-subnav a.is-active,.pro-subnav button.is-active { background:#f0ecff; color:#5b3df4; font-weight:700; }
 
 .pro-grid { display:grid; grid-template-columns: repeat(12, 1fr); gap: .8rem; }
 .pro-panel { grid-column: span 3; padding: .85rem; }
