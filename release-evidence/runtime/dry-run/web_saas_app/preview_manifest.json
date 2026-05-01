@@ -1,6 +1,6 @@
 {
   "domainId": "web_saas_app",
-  "generatedAt": "2026-04-28T07:54:29.341Z",
+  "generatedAt": "2026-05-01T08:54:37.515Z",
   "emittedPath": "/workspaces/Botomatic/release-evidence/generated-apps/web_saas_app",
   "emittedFileCount": 111,
   "emittedFiles": [
@@ -88,8 +88,8 @@
     ".next/static/chunks/pages/_error-2594f39b9eb1ab63.js",
     ".next/static/chunks/polyfills-78c92fac7aa8fdd8.js",
     ".next/static/chunks/webpack-100b9e646d9c912e.js",
-    ".next/static/gy8wo9vI53OD-UtY9Vy6I/_buildManifest.js",
-    ".next/static/gy8wo9vI53OD-UtY9Vy6I/_ssgManifest.js",
+    ".next/static/uwngSAEnZ5_X_AryqGFj5/_buildManifest.js",
+    ".next/static/uwngSAEnZ5_X_AryqGFj5/_ssgManifest.js",
     ".next/trace",
     ".next/types/app/api/workflows/execute/route.ts",
     ".next/types/app/dashboard/page.ts",

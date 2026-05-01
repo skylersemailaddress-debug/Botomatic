@@ -1,0 +1,62 @@
+{
+  "generatedAt": "2026-05-01T08:54:44.349Z",
+  "status": "passed",
+  "sourceSyncBeforeExportLaunch": true,
+  "blockedBeforeSourceSync": true,
+  "exportReadyAfterSourceSync": true,
+  "launchReadyAfterSourceSync": true,
+  "applyResult": {
+    "ok": true,
+    "mode": "confirmedApply",
+    "changedFiles": [
+      "components/Hero.tsx"
+    ],
+    "writesPerformed": 1,
+    "blockedReasons": [],
+    "adapterKind": "local",
+    "dryRunPreview": {
+      "changedFiles": [
+        "components/Hero.tsx"
+      ],
+      "blockedReasons": []
+    }
+  },
+  "rollbackResult": {
+    "ok": true,
+    "rollbackRestoredFiles": [
+      "components/Hero.tsx"
+    ],
+    "rollbackDeletedFiles": [],
+    "blockedReasons": []
+  },
+  "applyProof": {
+    "transactionId": "757b2bcf2fd519ec",
+    "changedFiles": [
+      "components/Hero.tsx"
+    ],
+    "writesPerformed": 1,
+    "rollbackAvailable": true,
+    "rollbackVerified": true,
+    "blockedReasons": [],
+    "caveat": "Local apply proof verifies guarded file-write behavior only. It does not deploy, export, or prove runtime correctness.",
+    "mode": "confirmedApply"
+  },
+  "applyProofValidation": {
+    "valid": true,
+    "issues": []
+  },
+  "exportPlanBeforeSync": {
+    "exportDeployPlanId": "export-deploy-216f5fd16966d6b3",
+    "blockedReasons": [
+      "bundle contains unsafe files",
+      "source proof missing"
+    ],
+    "requiresManualReview": true
+  },
+  "exportPlanAfterSync": {
+    "exportDeployPlanId": "export-deploy-6694bc1ae7161196",
+    "blockedReasons": [],
+    "requiresManualReview": false
+  },
+  "caveat": "Proof verifies guarded local source-sync apply/rollback and demonstrates export planning is blocked before source proof and unblocked after confirmed source sync."
+}

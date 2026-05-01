@@ -1,7 +1,7 @@
 {
   "pathId": "deployment_dry_run",
   "status": "passed",
-  "generatedAt": "2026-04-28T07:54:29.393Z",
+  "generatedAt": "2026-05-01T08:54:37.529Z",
   "domainCount": 8,
   "failedDomainCount": 0,
   "failedDomains": [],
@@ -25,7 +25,35 @@
       "dryRunStatus": "passed",
       "dryRunSkipReason": null,
       "readinessStatus": "passed_with_caveats",
-      "readinessCaveat": "Dry-run readiness is based on structural validation of deployment configs, preview manifest generation, smoke-test plan generation, and rollback plan generation. Live deployment and credential-authenticated preview environment validation are not performed."
+      "readinessCaveat": "Dry-run readiness is based on structural validation of deployment configs, preview manifest generation, smoke-test plan generation, and rollback plan generation. Live deployment and credential-authenticated preview environment validation are not performed.",
+      "providerHandoffCompleteness": {
+        "providerId": "vercel_web_deploy",
+        "environment": "prod",
+        "requiredSecretsReferenced": [
+          "VERCEL_TOKEN",
+          "VERCEL_ORG_ID",
+          "VERCEL_PROJECT_ID",
+          "DATABASE_URL"
+        ],
+        "buildCommandKnown": true,
+        "outputDirectoryKnown": true,
+        "deployCommandTemplatePresent": true,
+        "healthCheckPathKnown": true,
+        "smokePlanPresent": true,
+        "rollbackPlanPresent": true,
+        "approvalRequired": true,
+        "status": "blocked"
+      },
+      "providerRollbackCompleteness": {
+        "providerId": "vercel_web_deploy",
+        "environment": "prod",
+        "rollbackStrategy": "vercel_rollback_last_known_good",
+        "rollbackCommandTemplatePresent": true,
+        "previousVersionReferenceRequired": true,
+        "dataRollbackBoundaryDocumented": true,
+        "approvalRequired": true,
+        "status": "blocked"
+      }
     },
     {
       "domainId": "marketing_website",
@@ -44,7 +72,32 @@
       "dryRunStatus": "passed",
       "dryRunSkipReason": null,
       "readinessStatus": "passed_with_caveats",
-      "readinessCaveat": "Dry-run readiness is based on structural validation of deployment configs, preview manifest generation, smoke-test plan generation, and rollback plan generation. Live deployment and credential-authenticated preview environment validation are not performed."
+      "readinessCaveat": "Dry-run readiness is based on structural validation of deployment configs, preview manifest generation, smoke-test plan generation, and rollback plan generation. Live deployment and credential-authenticated preview environment validation are not performed.",
+      "providerHandoffCompleteness": {
+        "providerId": "github_release_handoff",
+        "environment": "prod",
+        "requiredSecretsReferenced": [
+          "GITHUB_TOKEN"
+        ],
+        "buildCommandKnown": true,
+        "outputDirectoryKnown": true,
+        "deployCommandTemplatePresent": true,
+        "healthCheckPathKnown": true,
+        "smokePlanPresent": true,
+        "rollbackPlanPresent": true,
+        "approvalRequired": true,
+        "status": "blocked"
+      },
+      "providerRollbackCompleteness": {
+        "providerId": "github_release_handoff",
+        "environment": "prod",
+        "rollbackStrategy": "revert_release_and_restore_previous_artifact",
+        "rollbackCommandTemplatePresent": true,
+        "previousVersionReferenceRequired": true,
+        "dataRollbackBoundaryDocumented": true,
+        "approvalRequired": true,
+        "status": "blocked"
+      }
     },
     {
       "domainId": "api_service",
@@ -63,7 +116,34 @@
       "dryRunStatus": "passed",
       "dryRunSkipReason": null,
       "readinessStatus": "passed_with_caveats",
-      "readinessCaveat": "Dry-run readiness is based on structural validation of deployment configs, preview manifest generation, smoke-test plan generation, and rollback plan generation. Live deployment and credential-authenticated preview environment validation are not performed."
+      "readinessCaveat": "Dry-run readiness is based on structural validation of deployment configs, preview manifest generation, smoke-test plan generation, and rollback plan generation. Live deployment and credential-authenticated preview environment validation are not performed.",
+      "providerHandoffCompleteness": {
+        "providerId": "supabase_backend_deploy",
+        "environment": "prod",
+        "requiredSecretsReferenced": [
+          "SUPABASE_ACCESS_TOKEN",
+          "SUPABASE_PROJECT_REF",
+          "SUPABASE_DB_PASSWORD"
+        ],
+        "buildCommandKnown": true,
+        "outputDirectoryKnown": true,
+        "deployCommandTemplatePresent": true,
+        "healthCheckPathKnown": true,
+        "smokePlanPresent": true,
+        "rollbackPlanPresent": true,
+        "approvalRequired": true,
+        "status": "blocked"
+      },
+      "providerRollbackCompleteness": {
+        "providerId": "supabase_backend_deploy",
+        "environment": "prod",
+        "rollbackStrategy": "revert_migration_or_restore_snapshot",
+        "rollbackCommandTemplatePresent": true,
+        "previousVersionReferenceRequired": true,
+        "dataRollbackBoundaryDocumented": true,
+        "approvalRequired": true,
+        "status": "blocked"
+      }
     },
     {
       "domainId": "mobile_app",
@@ -82,7 +162,35 @@
       "dryRunStatus": "passed",
       "dryRunSkipReason": null,
       "readinessStatus": "passed_with_caveats",
-      "readinessCaveat": "Dry-run readiness is based on structural validation of deployment configs, preview manifest generation, smoke-test plan generation, and rollback plan generation. Live deployment and credential-authenticated preview environment validation are not performed."
+      "readinessCaveat": "Dry-run readiness is based on structural validation of deployment configs, preview manifest generation, smoke-test plan generation, and rollback plan generation. Live deployment and credential-authenticated preview environment validation are not performed.",
+      "providerHandoffCompleteness": {
+        "providerId": "mobile_store_handoff",
+        "environment": "prod",
+        "requiredSecretsReferenced": [
+          "APP_STORE_CONNECT_API_KEY",
+          "PLAY_STORE_SERVICE_ACCOUNT_JSON",
+          "IOS_SIGNING_CERT",
+          "ANDROID_KEYSTORE"
+        ],
+        "buildCommandKnown": true,
+        "outputDirectoryKnown": true,
+        "deployCommandTemplatePresent": true,
+        "healthCheckPathKnown": true,
+        "smokePlanPresent": true,
+        "rollbackPlanPresent": true,
+        "approvalRequired": true,
+        "status": "blocked"
+      },
+      "providerRollbackCompleteness": {
+        "providerId": "mobile_store_handoff",
+        "environment": "prod",
+        "rollbackStrategy": "store_rollout_pause_or_revert_track",
+        "rollbackCommandTemplatePresent": true,
+        "previousVersionReferenceRequired": true,
+        "dataRollbackBoundaryDocumented": true,
+        "approvalRequired": true,
+        "status": "blocked"
+      }
     },
     {
       "domainId": "bot",
@@ -101,7 +209,34 @@
       "dryRunStatus": "passed",
       "dryRunSkipReason": null,
       "readinessStatus": "passed_with_caveats",
-      "readinessCaveat": "Dry-run readiness is based on structural validation of deployment configs, preview manifest generation, smoke-test plan generation, and rollback plan generation. Live deployment and credential-authenticated preview environment validation are not performed."
+      "readinessCaveat": "Dry-run readiness is based on structural validation of deployment configs, preview manifest generation, smoke-test plan generation, and rollback plan generation. Live deployment and credential-authenticated preview environment validation are not performed.",
+      "providerHandoffCompleteness": {
+        "providerId": "bot_platform_deploy",
+        "environment": "prod",
+        "requiredSecretsReferenced": [
+          "BOT_TOKEN",
+          "BOT_WEBHOOK_SECRET",
+          "WORKER_DEPLOY_TOKEN"
+        ],
+        "buildCommandKnown": true,
+        "outputDirectoryKnown": true,
+        "deployCommandTemplatePresent": true,
+        "healthCheckPathKnown": true,
+        "smokePlanPresent": true,
+        "rollbackPlanPresent": true,
+        "approvalRequired": true,
+        "status": "blocked"
+      },
+      "providerRollbackCompleteness": {
+        "providerId": "bot_platform_deploy",
+        "environment": "prod",
+        "rollbackStrategy": "worker_revision_rollback",
+        "rollbackCommandTemplatePresent": true,
+        "previousVersionReferenceRequired": true,
+        "dataRollbackBoundaryDocumented": true,
+        "approvalRequired": true,
+        "status": "blocked"
+      }
     },
     {
       "domainId": "ai_agent",
@@ -120,7 +255,34 @@
       "dryRunStatus": "passed",
       "dryRunSkipReason": null,
       "readinessStatus": "passed_with_caveats",
-      "readinessCaveat": "Dry-run readiness is based on structural validation of deployment configs, preview manifest generation, smoke-test plan generation, and rollback plan generation. Live deployment and credential-authenticated preview environment validation are not performed."
+      "readinessCaveat": "Dry-run readiness is based on structural validation of deployment configs, preview manifest generation, smoke-test plan generation, and rollback plan generation. Live deployment and credential-authenticated preview environment validation are not performed.",
+      "providerHandoffCompleteness": {
+        "providerId": "ai_agent_runtime_deploy",
+        "environment": "prod",
+        "requiredSecretsReferenced": [
+          "LLM_API_KEY",
+          "LLM_MODEL",
+          "AGENT_RUNTIME_DEPLOY_TOKEN"
+        ],
+        "buildCommandKnown": true,
+        "outputDirectoryKnown": true,
+        "deployCommandTemplatePresent": true,
+        "healthCheckPathKnown": true,
+        "smokePlanPresent": true,
+        "rollbackPlanPresent": true,
+        "approvalRequired": true,
+        "status": "blocked"
+      },
+      "providerRollbackCompleteness": {
+        "providerId": "ai_agent_runtime_deploy",
+        "environment": "prod",
+        "rollbackStrategy": "repoint_to_previous_agent_revision",
+        "rollbackCommandTemplatePresent": true,
+        "previousVersionReferenceRequired": true,
+        "dataRollbackBoundaryDocumented": true,
+        "approvalRequired": true,
+        "status": "blocked"
+      }
     },
     {
       "domainId": "game",
@@ -139,7 +301,33 @@
       "dryRunStatus": "passed",
       "dryRunSkipReason": null,
       "readinessStatus": "passed_with_caveats",
-      "readinessCaveat": "Dry-run readiness is based on structural validation of deployment configs, preview manifest generation, smoke-test plan generation, and rollback plan generation. Live deployment and credential-authenticated preview environment validation are not performed."
+      "readinessCaveat": "Dry-run readiness is based on structural validation of deployment configs, preview manifest generation, smoke-test plan generation, and rollback plan generation. Live deployment and credential-authenticated preview environment validation are not performed.",
+      "providerHandoffCompleteness": {
+        "providerId": "game_distribution_handoff",
+        "environment": "prod",
+        "requiredSecretsReferenced": [
+          "DISTRIBUTION_SIGNING_KEY",
+          "PLATFORM_PUBLISHER_ACCOUNT"
+        ],
+        "buildCommandKnown": true,
+        "outputDirectoryKnown": true,
+        "deployCommandTemplatePresent": true,
+        "healthCheckPathKnown": true,
+        "smokePlanPresent": true,
+        "rollbackPlanPresent": true,
+        "approvalRequired": true,
+        "status": "blocked"
+      },
+      "providerRollbackCompleteness": {
+        "providerId": "game_distribution_handoff",
+        "environment": "prod",
+        "rollbackStrategy": "revert_to_previous_distributed_build",
+        "rollbackCommandTemplatePresent": true,
+        "previousVersionReferenceRequired": true,
+        "dataRollbackBoundaryDocumented": true,
+        "approvalRequired": true,
+        "status": "blocked"
+      }
     },
     {
       "domainId": "dirty_repo_completion",
@@ -158,7 +346,33 @@
       "dryRunStatus": "passed",
       "dryRunSkipReason": null,
       "readinessStatus": "passed_with_caveats",
-      "readinessCaveat": "Dry-run readiness is based on structural validation of deployment configs, preview manifest generation, smoke-test plan generation, and rollback plan generation. Live deployment and credential-authenticated preview environment validation are not performed."
+      "readinessCaveat": "Dry-run readiness is based on structural validation of deployment configs, preview manifest generation, smoke-test plan generation, and rollback plan generation. Live deployment and credential-authenticated preview environment validation are not performed.",
+      "providerHandoffCompleteness": {
+        "providerId": "dirty_repo_completion_handoff",
+        "environment": "prod",
+        "requiredSecretsReferenced": [
+          "GIT_HOSTING_TOKEN",
+          "CI_RUNNER_TOKEN"
+        ],
+        "buildCommandKnown": true,
+        "outputDirectoryKnown": true,
+        "deployCommandTemplatePresent": true,
+        "healthCheckPathKnown": true,
+        "smokePlanPresent": true,
+        "rollbackPlanPresent": true,
+        "approvalRequired": true,
+        "status": "blocked"
+      },
+      "providerRollbackCompleteness": {
+        "providerId": "dirty_repo_completion_handoff",
+        "environment": "prod",
+        "rollbackStrategy": "git_revert_and_redeploy_previous_revision",
+        "rollbackCommandTemplatePresent": true,
+        "previousVersionReferenceRequired": true,
+        "dataRollbackBoundaryDocumented": true,
+        "approvalRequired": true,
+        "status": "blocked"
+      }
     }
   ]
 }

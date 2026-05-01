@@ -1,8 +1,8 @@
 domain=ai_agent
 commandId=install
 kind=install
-startedAt=2026-04-28T07:53:39.877Z
-finishedAt=2026-04-28T07:53:40.435Z
+startedAt=2026-05-01T08:53:49.578Z
+finishedAt=2026-05-01T08:53:50.074Z
 status=passed
 exitCode=0
 --- stdout ---

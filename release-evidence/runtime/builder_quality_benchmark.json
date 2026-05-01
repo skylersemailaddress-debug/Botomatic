@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-26T23:33:15.145Z",
+  "generatedAt": "2026-05-01T08:40:14.012Z",
   "proofGrade": "local_static",
   "methodology": "spec+plan+generated-app-validator benchmark scoring",
   "averageScoreOutOf10": 10,
@@ -19,7 +19,7 @@
       "appType": "website",
       "domain": "website",
       "buildContract": {
-        "id": "contract_bench_vague_founder_ramble_1777246395123",
+        "id": "contract_bench_vague_founder_ramble_1777624813992",
         "readyToBuild": true,
         "blockers": []
       },
@@ -270,7 +270,7 @@
       "appType": "saas",
       "domain": "saas",
       "buildContract": {
-        "id": "contract_bench_detailed_saas_dashboard_1777246395126",
+        "id": "contract_bench_detailed_saas_dashboard_1777624813996",
         "readyToBuild": true,
         "blockers": []
       },
@@ -521,7 +521,7 @@
       "appType": "business",
       "domain": "business",
       "buildContract": {
-        "id": "contract_bench_crm_1777246395129",
+        "id": "contract_bench_crm_1777624813997",
         "readyToBuild": true,
         "blockers": []
       },
@@ -772,7 +772,7 @@
       "appType": "operations",
       "domain": "operations",
       "buildContract": {
-        "id": "contract_bench_booking_platform_1777246395130",
+        "id": "contract_bench_booking_platform_1777624813997",
         "readyToBuild": true,
         "blockers": []
       },
@@ -1023,7 +1023,7 @@
       "appType": "commerce",
       "domain": "commerce",
       "buildContract": {
-        "id": "contract_bench_ecommerce_1777246395130",
+        "id": "contract_bench_ecommerce_1777624813998",
         "readyToBuild": true,
         "blockers": []
       },
@@ -1274,7 +1274,7 @@
       "appType": "commerce",
       "domain": "commerce",
       "buildContract": {
-        "id": "contract_bench_marketplace_1777246395131",
+        "id": "contract_bench_marketplace_1777624813998",
         "readyToBuild": true,
         "blockers": []
       },
@@ -1525,7 +1525,7 @@
       "appType": "website",
       "domain": "website",
       "buildContract": {
-        "id": "contract_bench_marketing_website_1777246395132",
+        "id": "contract_bench_marketing_website_1777624813999",
         "readyToBuild": true,
         "blockers": []
       },
@@ -1776,7 +1776,7 @@
       "appType": "website",
       "domain": "website",
       "buildContract": {
-        "id": "contract_bench_landing_page_1777246395133",
+        "id": "contract_bench_landing_page_1777624813999",
         "readyToBuild": true,
         "blockers": []
       },
@@ -2027,7 +2027,7 @@
       "appType": "community",
       "domain": "community",
       "buildContract": {
-        "id": "contract_bench_membership_community_1777246395134",
+        "id": "contract_bench_membership_community_1777624814000",
         "readyToBuild": true,
         "blockers": []
       },
@@ -2278,7 +2278,7 @@
       "appType": "education",
       "domain": "education",
       "buildContract": {
-        "id": "contract_bench_lms_1777246395135",
+        "id": "contract_bench_lms_1777624814001",
         "readyToBuild": true,
         "blockers": []
       },
@@ -2529,7 +2529,7 @@
       "appType": "listings",
       "domain": "listings",
       "buildContract": {
-        "id": "contract_bench_job_board_1777246395136",
+        "id": "contract_bench_job_board_1777624814002",
         "readyToBuild": true,
         "blockers": []
       },
@@ -2780,7 +2780,7 @@
       "appType": "listings",
       "domain": "listings",
       "buildContract": {
-        "id": "contract_bench_directory_listings_1777246395137",
+        "id": "contract_bench_directory_listings_1777624814002",
         "readyToBuild": true,
         "blockers": []
       },
@@ -3031,7 +3031,7 @@
       "appType": "operations",
       "domain": "operations",
       "buildContract": {
-        "id": "contract_bench_internal_admin_tool_1777246395137",
+        "id": "contract_bench_internal_admin_tool_1777624814002",
         "readyToBuild": true,
         "blockers": []
       },
@@ -3282,7 +3282,7 @@
       "appType": "operations",
       "domain": "operations",
       "buildContract": {
-        "id": "contract_bench_workflow_operations_system_1777246395137",
+        "id": "contract_bench_workflow_operations_system_1777624814003",
         "readyToBuild": true,
         "blockers": []
       },
@@ -3533,7 +3533,7 @@
       "appType": "portal",
       "domain": "portal",
       "buildContract": {
-        "id": "contract_bench_customer_portal_1777246395138",
+        "id": "contract_bench_customer_portal_1777624814003",
         "readyToBuild": true,
         "blockers": []
       },
@@ -3784,7 +3784,7 @@
       "appType": "analytics",
       "domain": "analytics",
       "buildContract": {
-        "id": "contract_bench_analytics_reporting_1777246395138",
+        "id": "contract_bench_analytics_reporting_1777624814004",
         "readyToBuild": true,
         "blockers": []
       },
@@ -4035,7 +4035,7 @@
       "appType": "website",
       "domain": "website",
       "buildContract": {
-        "id": "contract_bench_event_platform_1777246395139",
+        "id": "contract_bench_event_platform_1777624814004",
         "readyToBuild": true,
         "blockers": []
       },
@@ -4286,7 +4286,7 @@
       "appType": "media",
       "domain": "media",
       "buildContract": {
-        "id": "contract_bench_content_media_site_1777246395139",
+        "id": "contract_bench_content_media_site_1777624814006",
         "readyToBuild": true,
         "blockers": []
       },
@@ -4537,7 +4537,7 @@
       "appType": "website",
       "domain": "website",
       "buildContract": {
-        "id": "contract_bench_ai_chatbot_app_1777246395140",
+        "id": "contract_bench_ai_chatbot_app_1777624814007",
         "readyToBuild": true,
         "blockers": []
       },
@@ -4788,7 +4788,7 @@
       "appType": "website",
       "domain": "website",
       "buildContract": {
-        "id": "contract_bench_ai_agent_workflow_1777246395140",
+        "id": "contract_bench_ai_agent_workflow_1777624814007",
         "readyToBuild": true,
         "blockers": []
       },
@@ -5039,7 +5039,7 @@
       "appType": "website",
       "domain": "website",
       "buildContract": {
-        "id": "contract_bench_document_processing_1777246395141",
+        "id": "contract_bench_document_processing_1777624814008",
         "readyToBuild": true,
         "blockers": []
       },
@@ -5290,7 +5290,7 @@
       "appType": "website",
       "domain": "website",
       "buildContract": {
-        "id": "contract_bench_inventory_order_management_1777246395141",
+        "id": "contract_bench_inventory_order_management_1777624814008",
         "readyToBuild": true,
         "blockers": []
       },
@@ -5541,7 +5541,7 @@
       "appType": "support",
       "domain": "support",
       "buildContract": {
-        "id": "contract_bench_support_helpdesk_1777246395142",
+        "id": "contract_bench_support_helpdesk_1777624814008",
         "readyToBuild": true,
         "blockers": []
       },
@@ -5792,7 +5792,7 @@
       "appType": "listings",
       "domain": "listings",
       "buildContract": {
-        "id": "contract_bench_real_estate_listings_1777246395142",
+        "id": "contract_bench_real_estate_listings_1777624814009",
         "readyToBuild": true,
         "blockers": []
       },
@@ -6043,7 +6043,7 @@
       "appType": "operations",
       "domain": "operations",
       "buildContract": {
-        "id": "contract_bench_field_service_1777246395142",
+        "id": "contract_bench_field_service_1777624814009",
         "readyToBuild": true,
         "blockers": []
       },
@@ -6294,7 +6294,7 @@
       "appType": "nonprofit",
       "domain": "nonprofit",
       "buildContract": {
-        "id": "contract_bench_nonprofit_volunteer_ops_1777246395143",
+        "id": "contract_bench_nonprofit_volunteer_ops_1777624814010",
         "readyToBuild": true,
         "blockers": []
       },
@@ -6545,7 +6545,7 @@
       "appType": "operations",
       "domain": "operations",
       "buildContract": {
-        "id": "contract_bench_campaign_ops_1777246395144",
+        "id": "contract_bench_campaign_ops_1777624814010",
         "readyToBuild": true,
         "blockers": []
       },
@@ -6796,7 +6796,7 @@
       "appType": "website",
       "domain": "website",
       "buildContract": {
-        "id": "contract_bench_payments_heavy_1777246395144",
+        "id": "contract_bench_payments_heavy_1777624814011",
         "readyToBuild": true,
         "blockers": []
       },
@@ -7047,7 +7047,7 @@
       "appType": "website",
       "domain": "website",
       "buildContract": {
-        "id": "contract_bench_compliance_sensitive_1777246395144",
+        "id": "contract_bench_compliance_sensitive_1777624814011",
         "readyToBuild": true,
         "blockers": []
       },
@@ -7298,7 +7298,7 @@
       "appType": "website",
       "domain": "website",
       "buildContract": {
-        "id": "contract_bench_conflicting_requirements_1777246395145",
+        "id": "contract_bench_conflicting_requirements_1777624814012",
         "readyToBuild": true,
         "blockers": []
       },
@@ -7549,7 +7549,7 @@
       "appType": "website",
       "domain": "website",
       "buildContract": {
-        "id": "contract_bench_decide_everything_for_me_1777246395145",
+        "id": "contract_bench_decide_everything_for_me_1777624814012",
         "readyToBuild": true,
         "blockers": []
       },

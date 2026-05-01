@@ -1,0 +1,15 @@
+{
+  "status": "max_power_complete",
+  "exhaustiveDomainProven": true,
+  "representativeOnly": false,
+  "declaredDomainCount": 8,
+  "coveredDomainCount": 8,
+  "requiredPermutationCount": 24,
+  "coveredPermutationCount": 24,
+  "unresolvedBlockers": [],
+  "criticalValidatorFailures": [],
+  "liveUiSourceSyncBeforeExportLaunch": true,
+  "claimBoundaryConsistency": true,
+  "generatedAt": "2026-05-01T08:54:48.058Z",
+  "caveat": "Max-power completion auto-promoted because all gates and non-maxpower validators passed."
+}

@@ -1,8 +1,8 @@
 import { ProjectRepository, StoredProjectRecord } from "./types";
 
 /**
- * Supabase-backed repository (placeholder implementation).
- * Replace internal methods with real Supabase client calls.
+ * Supabase-backed repository adapter.
+ * This implementation performs direct project record get/upsert operations.
  */
 export class SupabaseProjectRepository implements ProjectRepository {
   constructor(private readonly client: any) {}

@@ -1,8 +1,8 @@
 domain=web_saas_app
 commandId=test
 kind=test
-startedAt=2026-04-28T07:53:06.176Z
-finishedAt=2026-04-28T07:53:06.552Z
+startedAt=2026-05-01T08:53:16.521Z
+finishedAt=2026-05-01T08:53:17.036Z
 status=passed
 exitCode=0
 --- stdout ---

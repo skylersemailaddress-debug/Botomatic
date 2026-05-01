@@ -7,6 +7,13 @@ const proofs = [
   "proof:autonomous-complex-build",
   "proof:domain-scorecards",
   "proof:eval-suite",
+  "proof:max-power-domain-permutations",
+  "proof:live-ui-source-sync-before-export-launch",
+  "proof:live-deployment-provider-execution",
+  "proof:autobuild-99-statistical",
+  "proof:claim-99-independent-audit",
+  "proof:claim-99-entitlement",
+  "proof:max-power-completion",
 ];
 
 for (const script of proofs) {

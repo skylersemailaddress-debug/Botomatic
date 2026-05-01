@@ -1,6 +1,6 @@
 # Botomatic Validation Matrix
 
-Status: Universal-builder launch-gate closure achieved
+Status: Universal-builder representative launch-gate closure achieved (not max-power completion)
 Purpose: Map each launch category to required validators.
 
 ---
@@ -49,6 +49,8 @@ Purpose: Map each launch category to required validators.
 | Self-Upgrading Factory Readiness | Validate-Botomatic-SelfUpgradingFactoryReadiness | IMPLEMENTED (PASS) |
 | Dirty Repo Rescue Readiness | Validate-Botomatic-DirtyRepoRescueReadiness | IMPLEMENTED (PASS) |
 | Universal Capability Stress Readiness | Validate-Botomatic-UniversalCapabilityStressReadiness | IMPLEMENTED (PASS) |
+| Claim 99 Entitlement Readiness | Validate-Botomatic-Claim99EntitlementReadiness | IMPLEMENTED (PASS, FAIL-CLOSED while 99% claim evidence is incomplete) |
+| Max-Power Completion Readiness | Validate-Botomatic-MaxPowerCompletionReadiness | IMPLEMENTED (PASS when exhaustive-domain proof artifact is complete) |
 
 Current constraint:
 - `Validate-Botomatic-BuilderQualityBenchmarks` must remain passing at strict thresholds (caseCount>=31, >= 8.5 launchable, >= 9.2 universal when universal pass claimed, zero critical failures, zero per-case strictness violations).
@@ -78,6 +80,8 @@ Runtime-proof harness requirements (content-inspected validators):
 - `Validate-Botomatic-MultiSourceIntakeReadiness` requires `release-evidence/runtime/multi_source_intake_readiness_proof.json` and fails closed on missing multi-source intake routes, source-model coverage, intake-router decisions, adapter modules, intake lifecycle events, Intake Hub UI wiring, or no-code-execution intake declarations.
 - `Validate-Botomatic-Documentation` enforces launch-truth alignment across `LAUNCH_BLOCKERS.md`, `READINESS_SCORECARD.json`, `release-evidence/manifest.json`, and `README.md`.
 - `Validate-Botomatic-UIReadiness` and `Validate-Botomatic-UIControlPlaneIntegration` now enforce enterprise surface wiring, no-placeholder UI signals, loading/error/empty states, and real API service bindings.
+- `Validate-Botomatic-Claim99EntitlementReadiness` requires `release-evidence/runtime/live_deployment_provider_execution_proof.json`, `release-evidence/runtime/autobuild_99_statistical_proof.json`, `release-evidence/runtime/claim_99_independent_audit.json`, and `release-evidence/runtime/claim_99_entitlement_proof.json`; it fails closed for 99%-claim entitlement unless exhaustive-domain, live-deployment, statistical-threshold, and independent-audit requirements are all satisfied.
+- Provider execution evidence ingestion format is stored at `release-evidence/runtime/live_deployment_provider_execution_ingestion.json` and must include per-provider deployment log, smoke-test log, and rollback log references.
 
 Proof harness commands:
 - `npm run -s proof:greenfield`
@@ -96,6 +100,13 @@ Proof harness commands:
 - `npm run -s proof:autonomous-complex-build`
 - `npm run -s proof:large-file-intake`
 - `npm run -s proof:multi-source-intake`
+- `npm run -s proof:max-power-domain-permutations`
+- `npm run -s proof:live-ui-source-sync-before-export-launch`
+- `npm run -s proof:live-deployment-provider-execution`
+- `npm run -s proof:autobuild-99-statistical`
+- `npm run -s proof:claim-99-independent-audit`
+- `npm run -s proof:claim-99-entitlement`
+- `npm run -s proof:max-power-completion`
 - `npm run -s proof:fast`
 - `npm run -s proof:all`
 
@@ -129,4 +140,4 @@ No category may reach 10/10 without:
 
 No gate may be marked closed by proof without runtime evidence captured in-repo.
 
-Commercial universal-builder launch claim is allowed only when all validators pass and strict builder benchmark thresholds are met.
+Commercial universal-builder launch claim is allowed only when all validators pass and strict builder benchmark thresholds are met, and must remain bounded as representative evidence (not exhaustive/max-power completion) unless exhaustive-domain proof is captured.

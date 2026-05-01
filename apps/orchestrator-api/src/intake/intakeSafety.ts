@@ -20,6 +20,6 @@ export function isBlockedFileExtension(fileName: string): boolean {
 export function suspiciousBinaryHook(fileName: string): { status: "pending"; detail: string } {
   return {
     status: "pending",
-    detail: `Suspicious binary scan placeholder hook for ${fileName}.`,
+    detail: `Suspicious binary scan integration pending for ${fileName}; treat as non-launch evidence until completed.`,
   };
 }

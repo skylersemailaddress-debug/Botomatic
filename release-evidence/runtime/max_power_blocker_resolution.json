@@ -1,0 +1,20 @@
+{
+  "status": "passed",
+  "blockers": [
+    {
+      "id": "exhaustive_domain_permutation_corpus_missing",
+      "severity": "critical",
+      "state": "closed",
+      "requiredEvidence": "release-evidence/runtime/max_power_domain_permutation_index.json with coveredPermutationCount == requiredPermutationCount",
+      "closedAt": "2026-05-01T08:54:48.058Z"
+    },
+    {
+      "id": "live_ui_source_sync_before_export_launch_not_proven",
+      "severity": "critical",
+      "state": "closed",
+      "requiredEvidence": "runtime proof that source sync is confirmed before export/launch claims",
+      "closedAt": "2026-05-01T08:54:48.058Z"
+    }
+  ],
+  "generatedAt": "2026-05-01T08:54:48.058Z"
+}
