@@ -150,7 +150,7 @@
     "test:ui-generated-app-runtime-smoke-model": "tsx packages/ui-preview-engine/src/tests/uiGeneratedAppRuntimeSmokeModel.test.ts",
     "test:ui-generated-app-runtime-smoke-planner": "tsx packages/ui-preview-engine/src/tests/uiGeneratedAppRuntimeSmokePlanner.test.ts",
     "test:generated-app-runtime-smoke-runner": "tsx packages/validation/src/tests/generatedAppRuntimeSmokeRunner.test.ts",
-    "test": "npm run -s test:wave-025 && npm run -s test:wave-026 && npm run -s test:wave-027 && npm run -s test:wave-028 && npm run -s test:wave-029 && npm run -s test:wave-030 && npm run -s test:wave-031 && npm run -s test:wave-032 && npm run -s test:wave-033 && npm run -s test:wave-034 && npm run -s test:wave-035 && npm run -s test:wave-036 && npm run -s test:wave-037",
+    "test": "npm run -s test:wave-025 && npm run -s test:wave-026 && npm run -s test:wave-027 && npm run -s test:wave-028 && npm run -s test:wave-029 && npm run -s test:wave-030 && npm run -s test:wave-031 && npm run -s test:wave-032 && npm run -s test:wave-033 && npm run -s test:wave-034 && npm run -s test:wave-035 && npm run -s test:wave-036 && npm run -s test:wave-037 && npm run -s test:wave-038",
     "test:wave-025": "tsx packages/validation/src/tests/proDashboardTruthState.test.ts",
     "test:wave-026": "tsx packages/validation/src/tests/wave026LiveOrchestrationLoop.test.ts",
     "test:wave-027": "tsx packages/validation/src/tests/wave027StatePersistenceResolution.test.ts",
@@ -163,7 +163,8 @@
     "test:wave-034": "tsx packages/validation/src/tests/wave034ReleaseCandidateAcceptanceAudit.test.ts",
     "test:wave-035": "tsx packages/validation/src/tests/wave035BackendProofRunnerContracts.test.ts",
     "test:wave-036": "tsx packages/validation/src/tests/wave036RunnerApiImplementation.test.ts",
-    "test:wave-037": "tsx packages/validation/src/tests/wave037RuntimeControlImplementation.test.ts"
+    "test:wave-037": "tsx packages/validation/src/tests/wave037RuntimeControlImplementation.test.ts",
+    "test:wave-038": "tsx packages/validation/src/tests/wave038LaunchProofDeployGating.test.ts"
   },
   "dependencies": {
     "@trigger.dev/sdk": "^4.4.4"
