@@ -1,0 +1,4 @@
+
+> beta:simulation
+> node scripts/beta-simulation.mjs
+

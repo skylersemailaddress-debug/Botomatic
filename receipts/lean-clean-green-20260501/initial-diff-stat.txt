@@ -1,0 +1,5 @@
+ .../beta-simulation/beta-simulation-report.json    |  6683 ++--
+ receipts/beta-simulation/beta-simulation-report.md |   241 +-
+ .../beta-simulation/beta-simulation-requests.json  | 31552 +++++++++----------
+ receipts/beta-simulation/screenshots/--desktop.png |   Bin 162205 -> 15410 bytes
+ 4 files changed, 18564 insertions(+), 19912 deletions(-)

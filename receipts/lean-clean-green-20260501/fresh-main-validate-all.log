@@ -1,0 +1,170 @@
+
+> validate:all
+> tsx packages/validation/src/cli.ts
+
+
+Botomatic Validation Results
+
+PASS — Validate-Botomatic-Architecture
+  API entrypoint, core runtime routes, and app wiring are present.
+PASS — Validate-Botomatic-BuilderCapability
+  Compile, plan, execution, adapter, and broad blueprint coverage are present.
+PASS — Validate-Botomatic-UIReadiness
+  Enterprise control-plane UI surfaces and quality signals are present.
+PASS — Validate-Botomatic-Security
+  OIDC verification, role-enforced routes, and runtime negative-path auth proof are present.
+PASS — Validate-Botomatic-Governance
+  Gate-aware promotion and governance runtime proof are present.
+PASS — Validate-Botomatic-Reliability
+  Queue worker, finalize path, replay controls, and durability proof evidence exist.
+PASS — Validate-Botomatic-Observability
+  Audit API, ops endpoints, request correlation, alert sink wiring, and runtime observability proof exist.
+PASS — Validate-Botomatic-LaunchReadiness
+  Gate logic, strict benchmark, runtime proof set, and launch truth alignment are present.
+PASS — Validate-Botomatic-DeploymentRollbackGate5
+  Promote and rollback routes are wired with gate checks, persistent deployment state, and audit events.
+PASS — Validate-Botomatic-Documentation
+  Core scope, blockers, validation matrix, scorecard, and launch-truth alignment docs are consistent.
+PASS — Validate-Botomatic-AuthGovernanceGate4
+  Auth roles, OIDC wiring, and governance endpoints are present; runtime proof still required for Gate 4 closure
+PASS — Validate-Botomatic-UIControlPlaneIntegration
+  Core enterprise control-plane panels are mounted and backed by real API services.
+PASS — Validate-Botomatic-BuilderQualityBenchmarks
+  Builder quality benchmark passed strict thresholds (10/10 launchable, 10/10 universal, local proof).
+PASS — Validate-Botomatic-BehavioralRuntimeCoverage
+  Behavioral runtime negative-path checks passed (local proof).
+PASS — Validate-Botomatic-ObservabilityRuntimeEvidence
+  Observability runtime checks passed (local proof).
+PASS — Validate-Botomatic-ProductionProofProfile
+  Production-proof profile is internally consistent with launch claim posture.
+PASS — Validate-Botomatic-FinalLaunchReadiness
+  Final launch criteria are satisfied and enterprise launch can be claimed.
+PASS — Validate-Botomatic-FileIngestion
+  Large-file upload route, secure archive safeguards, progress wiring, and config-driven UI limits are present.
+PASS — Validate-Botomatic-ChatFirstOperatorRouting
+  Chat-first operator route, advanced-only manual controls, and canonical spec v2 compilation are wired.
+PASS — Validate-Botomatic-ChatBehaviorExecution
+  Behavioral routing simulation confirms runtime intent classification, self-upgrade guardrails, canonical command dispatch, action-rail parity, unified intake normalization, and next-best-action outputs.
+PASS — Validate-Botomatic-LiveUIBuilderDataStateApiWiringReadiness
+  Data/state/API wiring readiness is fail-closed and fully wired.
+PASS — Validate-Botomatic-LiveUIBuilderReliabilityRepairReadiness
+  Live UI reliability repair planning readiness checks passed.
+PASS — Validate-Botomatic-LiveUIBuilderUXPolishReadiness
+  Live UI Builder UX polish readiness checks passed.
+PASS — Validate-Botomatic-LiveUIBuilderExportDeployReadiness
+  Live UI Builder export/deploy readiness checks passed.
+PASS — Validate-Botomatic-LiveUIBuilderPlatformBuilderReadiness
+  Platform builder dry-run planning, guardrails, panel summary, tests, and scripts are wired.
+PASS — Validate-Botomatic-UniversalBuilderReadiness
+  Universal builder readiness scaffolding and gates are present with benchmark coverage and chat-first constraints.
+PASS — Validate-Botomatic-SelfUpgradingFactoryReadiness
+  Self-upgrading factory foundations are present with anti-drift, memory, proof, domain, sandbox, repair, and capability controls.
+PASS — Validate-Botomatic-DirtyRepoRescueReadiness
+  Dirty-repo intake/audit/repair/completion flow is present and wired into API/operator path.
+PASS — Validate-Botomatic-UniversalCapabilityStressReadiness
+  Universal capability stress pipeline is wired with reusable engines and 10-output artifact contract.
+PASS — Validate-Botomatic-MultiDomainEmittedOutputReadiness
+  Required multi-domain emitted-output trees are present, non-empty, placeholder-clean, and proof-backed.
+PASS — Validate-Botomatic-DomainRuntimeCommandExecutionReadiness
+  Required domain runtime commands are proof-backed with machine-readable logs and fail-closed readiness status.
+PASS — Validate-Botomatic-ExternalIntegrationDeploymentReadiness
+  External integration and deployment readiness evidence is complete, machine-readable, and fail-closed across required domains.
+PASS — Validate-Botomatic-DeploymentDryRunReadiness
+  Deployment dry-run readiness evidence is complete across all required domains with smoke-test plans, rollback plans, and explicit live-deployment-skip justifications.
+PASS — Validate-Botomatic-CredentialedDeploymentReadiness
+  Credentialed deployment readiness is declared per required domain: credential manifests complete, approval gates blocked, provider adapters defined, secret policies pass, live deployment blocked by default.
+PASS — Validate-Botomatic-LiveDeploymentExecutionReadiness
+  Live deployment execution readiness is contract-backed, approval-gated, provider-aware, smoke-test-aware, rollback-aware, auditable, and blocked by default with no live execution performed.
+PASS — Validate-Botomatic-FinalCommercialReleaseEvidence
+  Final commercial release evidence is complete, consistent, and meets all commercial hardening criteria.
+PASS — Validate-Botomatic-FinalReleaseEvidenceLock
+  Final release evidence lock document is present and claim-bounded.
+PASS — Validate-Botomatic-SecretsCredentialManagementReadiness
+  DEPLOY-001 scope enforced with static secret pattern scanning across safe file set (scanned 1493 files) and explicit skip boundaries.
+PASS — Validate-Botomatic-AutonomousComplexBuildReadiness
+  Autonomous complex build readiness is present: ingestion, milestone planning, checkpoint/resume, autonomous repair loop, high-risk escalation policy, and final release assembler are wired with readiness proof and no live-deployment claim.
+PASS — Validate-Botomatic-DomainQualityScorecardsReadiness
+  Per-domain quality scorecards are present with strict readiness scoring and representative caveat.
+PASS — Validate-Botomatic-EvalSuiteReadiness
+  Eval suite covers messy prompts, giant specs, dirty repos, games, mobile, bots, AI agents, and decide-for-me paths.
+PASS — Validate-Botomatic-SecurityCenterReadiness
+  Security Center includes threat model, RBAC matrix, data privacy, dependency risk, supply-chain checks, and audit log surface.
+PASS — Validate-Botomatic-FirstRunExperienceReadiness
+  First-run onboarding and What's Next workflow is present with actionable controls.
+PASS — Validate-Botomatic-ValidationCacheReadiness
+  Fast validation and content-hash cache commands are wired (validate:fast, validate:changed, proof:fast, cache:clear).
+PASS — Validate-Botomatic-InstallerRuntimeReadiness
+  Installer runtime readiness is present: cross-platform installers, doctor/easy-start wiring, repair/uninstall flow, and Linux executable permissions are valid.
+PASS — Validate-Botomatic-LargeFileIntakeReadiness
+  Large-file intake readiness is validated: config-driven high limits, disk-backed upload path, safe archive checks, progress events, and proof artifact all pass.
+PASS — Validate-Botomatic-MultiSourceIntakeReadiness
+  Multi-source intake readiness is validated across API routes, source model/router, adapters, Intake Hub UI, lifecycle events, and proof artifact coverage.
+PASS — Validate-Botomatic-FailureClassificationReadiness
+  Failure classification readiness is wired: taxonomy, inspection contract, policy engine, signature-aware repair budget, safe secret handling guidance, and chat explanation envelope are present.
+PASS — Validate-Botomatic-AdaptiveRepairStrategyReadiness
+  Adaptive repair strategy readiness is present: registry, selection engine, memory/outcome recording, safety gates, adaptive chat fields, and proof artifact all pass fail-closed checks.
+PASS — Validate-Botomatic-UploadPlanHandoffReadiness
+  Upload-plan handoff sequencing is correct: compile before plan, 413 classified, master truth gate enforced.
+PASS — Validate-Botomatic-LocalCrossPlatformLaunchReadiness
+  Cross-platform and LAN local launch readiness is wired.
+PASS — Validate-Botomatic-DashboardRouteIntegrityReadiness
+  Dashboard route integrity readiness is satisfied across vibe/pro routes, dashboard API routes, and rewrite order.
+PASS — Validate-Botomatic-ClaimBoundaryReadiness
+  Claim-boundary guard is enforced: required legal/evidence/marketing docs exist, README links are present, required caveats exist, and prohibited public claims are blocked outside explicit prohibited-example sections.
+PASS — Validate-Botomatic-Claim99EntitlementReadiness
+  99% claim entitlement gate is fail-closed and currently blocked pending live/statistical/audit proof classes.
+PASS — Validate-Botomatic-MasterTruthSpecReadiness
+  Canonical master truth spec and boundary safeguards are present.
+PASS — Validate-Botomatic-MaxPowerCompletionReadiness
+  Max-power completion gates are satisfied with exhaustive-domain proof evidence.
+PASS — Validate-Botomatic-GeneratedAppNoPlaceholderValidator
+  Generated-app no-placeholder validator is present with tests, docs, and universal test script wiring.
+PASS — Validate-Botomatic-GeneratedAppCommercialReadinessGate
+  Generated-app commercial readiness gate is present with required statuses, gates, tests, docs, and script wiring.
+PASS — Validate-Botomatic-GeneratedAppCorpusHarness
+  Generated app corpus harness is present with required schema, API surface, non-claim boundaries, tests, docs, and scripts.
+PASS — Validate-Botomatic-GeneratedAppRepresentativeCorpus
+  Representative generated app corpus is present with required IDs, bounded readiness expectations, docs caveats, tests, and script wiring.
+PASS — Validate-Botomatic-EditableUIDocumentModelReadiness
+  Editable UI document model foundation, caveat, exports, and tests are in place.
+PASS — Validate-Botomatic-UIEditCommandParserReadiness
+  UI edit command parser schema, caveat, exports, required kinds, and tests are in place.
+PASS — Validate-Botomatic-LiveUIBuilderCoreReadiness
+  Live UI selection/target-resolution/mutation-core readiness checks passed.
+PASS — Validate-Botomatic-LiveUIBuilderSafetyReadiness
+  Live UI builder safety readiness checks passed.
+PASS — Validate-Botomatic-LiveUIBuilderInteractionReadiness
+  Live UI builder interaction-contract readiness checks passed.
+PASS — Validate-Botomatic-LiveUIBuilderVisualReadiness
+  Live UI builder visual readiness checks passed.
+PASS — Validate-Botomatic-LiveUIBuilderInteractionUXReadiness
+  Live UI builder interaction UX readiness checks passed.
+PASS — Validate-Botomatic-LiveUIBuilderSourceSyncReadiness
+  Guarded source sync modules, tests, scripts, and claim boundaries are wired.
+PASS — Validate-Botomatic-LiveUIBuilderReactSourcePatchReadiness
+  React source patch readiness is wired with quality guards.
+PASS — Validate-Botomatic-LiveUIBuilderLocalFileAdapterReadiness
+  Local file adapter contract, safety gates, scripts, and validator wiring are present.
+PASS — Validate-Botomatic-LiveUIBuilderAppStructureReadiness
+  Live UI builder app structure readiness checks passed.
+PASS — Validate-Botomatic-LiveUIBuilderLocalApplyRollbackReadiness
+  Local apply transaction, rollback proof, scripts, and safeguards are wired.
+PASS — Validate-Botomatic-LiveUIBuilderDirectManipulationReadiness
+  Live UI direct manipulation readiness is wired and deterministic.
+PASS — Validate-Botomatic-LiveUIBuilderSourceIdentityReadiness
+  Live UI source identity readiness is parser-backed and guardrailed.
+PASS — Validate-Botomatic-LiveUIBuilderMultiFilePlanningReadiness
+  Multi-file planning readiness wired.
+PASS — Validate-Botomatic-LiveUIBuilderFullProjectGenerationReadiness
+  full project generation readiness validated
+PASS — Validate-Botomatic-LiveUIBuilderDesignSystemReadiness
+  design token/style control readiness validated
+PASS — Validate-Botomatic-GeneratedAppRuntimeSmokeReadiness
+  Generated app runtime smoke readiness is wired with local-only safety guards.
+
+Summary:
+  Mode: all
+  Executed: 78
+  Cached: 0
+  Passed: 78
+  Failed: 0

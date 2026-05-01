@@ -1,0 +1,1 @@
+./package.json:17:    "validate:all": "tsx packages/validation/src/cli.ts",
