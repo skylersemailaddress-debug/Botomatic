@@ -22,7 +22,7 @@ export function LiveUIBuilderCommandInput(props: Props) {
 
   return (
     <form className="vibe-command-input" onSubmit={submit} aria-label="Live UI command input">
-      <input type="text" value={value} onChange={(event) => setValue(event.target.value)} placeholder='Type a UI command (e.g., rewrite this headline to "Elevated Luxury Stays")' />
+      <input type="text" style={{}} value={value} onChange={(event) => setValue(event.target.value)} placeholder='Type a UI command (e.g., rewrite this headline to "Elevated Luxury Stays")' />
       <button type="submit">Send</button>
       {error ? <p className="vibe-command-input-error" role="alert">{error}</p> : null}
     </form>
