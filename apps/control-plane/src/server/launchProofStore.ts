@@ -101,6 +101,14 @@ export function emptyLaunchProof(projectId: string): LaunchProofRecord {
   };
 }
 
+export function getIdempotentResult(record: LaunchProofRecord, key: string): string | undefined {
+  return record.idempotency?.[key];
+}
+
+export function setIdempotentResult(record: LaunchProofRecord, key: string, value: string): LaunchProofRecord {
+  return { ...record, idempotency: { ...(record.idempotency || {}), [key]: value } };
+}
+
 export function loadLaunchProof(projectId: string): LaunchProofRecord | null {
   ensureRoot();
   const fp = filePath(projectId);
@@ -166,7 +174,9 @@ export function verifyLaunchPreconditions(projectId: string): { ok: true; proof:
   if (!runtime?.proof?.checksum) missing.push("runtime proof checksum");
 
   const runs = Array.isArray(execution.runs) ? execution.runs : [];
-  const successfulJobs = runs.flatMap((run) => run.jobs.map((job) => ({ run, job }))).filter(({ job }) => job.status === "succeeded");
+  const successfulJobs = runs
+    .flatMap((run) => (Array.isArray(run.jobs) ? run.jobs.map((job) => ({ run, job })) : []))
+    .filter(({ job }) => job.status === "succeeded");
   const preferredBuild = successfulJobs.find(({ job }) => job.type === "build");
   const preferredTest = successfulJobs.find(({ job }) => job.type === "test");
   const selected = preferredBuild || preferredTest || successfulJobs.find(({ job }) => job.type === "file_diff" || job.type === "lint" || job.type === "typecheck");
