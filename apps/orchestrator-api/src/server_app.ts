@@ -1514,6 +1514,30 @@ export function buildApp(config: RuntimeConfig) {
     startQueueWorker(config);
   }
   app.use(express.json());
+
+  app.use((req, res, next) => {
+    const allowedOrigins = new Set([
+      "http://127.0.0.1:3000",
+      "http://localhost:3000",
+    ]);
+
+    const origin = req.header("origin");
+
+    if (origin && allowedOrigins.has(origin)) {
+      res.header("Access-Control-Allow-Origin", origin);
+      res.header("Vary", "Origin");
+    }
+
+    res.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
+    res.header("Access-Control-Allow-Headers", "Authorization,Content-Type,x-actor-id,x-user-email");
+
+    if (req.method === "OPTIONS") {
+      return res.sendStatus(204);
+    }
+
+    return next();
+  });
+
   app.use((req, res, next) => {
     const requestId = req.header("x-request-id") || makeRequestId();
     (res.locals as any).requestId = requestId;
