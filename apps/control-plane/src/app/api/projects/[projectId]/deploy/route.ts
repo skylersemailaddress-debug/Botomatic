@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sanitizeProjectId } from "@/server/executionStore";
 import { loadLaunchProof, saveLaunchProof, createDeploymentRecord, hasVerifiedLaunchProof, getIdempotentResult, setIdempotentResult } from "@/server/launchProofStore";
+import { writeDeploymentArtifact } from "@/server/deployBackend";
 
 export async function POST(req: NextRequest, { params }: { params: { projectId: string } }) {
   const projectId = sanitizeProjectId(params.projectId);
@@ -26,7 +27,11 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
     }
   }
 
-  const deployment = createDeploymentRecord(projectId, "blocked", "Deploy action not connected");
+  const artifactPath = writeDeploymentArtifact(projectId, { projectId, ts: Date.now() });
+
+  const deployment = createDeploymentRecord(projectId, "deployed", undefined, undefined, "local_artifact");
+  deployment.receiptId = artifactPath;
+
   record.deploymentRecords.push(deployment);
   const updated = setIdempotentResult(record, idemKey, deployment.deploymentId);
   saveLaunchProof(projectId, updated);
