@@ -58,13 +58,13 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
         </nav>
 
         <div className="vibe-dashboard-card">
-          <h3>Recent Projects</h3><small>Static list</small>
-          {recentProjects.map((project) => (
+          <h3>Recent Projects</h3>
+          {recentProjects.length > 0 ? recentProjects.map((project) => (
             <div key={project.name} className="vibe-dashboard-row">
               <span>{project.name}</span>
               <small>{project.updated}</small>
             </div>
-          ))}
+          )) : <small>No projects yet</small>}
         </div>
 
         <div className="vibe-dashboard-upgrade">
@@ -94,17 +94,6 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
         <div className="vibe-dashboard-layout" data-testid="vibe-dashboard-layout">
           <main>
             <section className="vibe-chat-timeline" data-testid="vibe-chat-timeline">
-              <div className="vibe-msg vibe-msg-user">Build me a modern booking website for a luxury hotel with a beautiful landing page.</div>
-              <div className="vibe-msg vibe-msg-agent">
-                I&apos;ve got you! I&apos;ll create a luxury hotel booking website with a stunning landing page.
-                <div className="vibe-msg-pills">
-                  <span>Understanding your idea</span>
-                  <span>Designing the UI</span>
-                  <span>Planning the features</span>
-                  <span>Building it all together</span>
-                </div>
-              </div>
-
               <LiveUIBuilderCommandInput onSubmit={runCommandText} />
 
               {latestResult?.status === "needsResolution" ? (
