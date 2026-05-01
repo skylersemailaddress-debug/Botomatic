@@ -31,13 +31,14 @@ export async function POST(req: NextRequest, { params }: { params: { projectId: 
     return NextResponse.json({ error: { code: "blocked", message: "Launch proof missing", details: check.missing } }, { status: 409 });
   }
 
-  record.launchProof = check.proof;
+  const launchProof = check.proof;
+  record.launchProof = launchProof;
   record.launchReady = true;
   record.status = "verified";
   record.message = "Launch proof verified";
   record.releaseEvidence = { launchReady: true, updatedAt: new Date().toISOString() };
   record = appendLaunchLog(record, "info", "Launch proof verified");
-  record = setIdempotentResult(record, idemKey, record.launchProof.checksum || "verified");
+  record = setIdempotentResult(record, idemKey, launchProof.checksum || "verified");
   saveLaunchProof(projectId, record);
 
   return NextResponse.json(record);
