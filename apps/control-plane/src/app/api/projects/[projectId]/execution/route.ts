@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createRun, loadProjectState, saveProjectState, sanitizeProjectId } from "@/server/executionStore";
 import { ALLOWLISTED_JOB_TYPES, appendRunLogs, executeAllowlistedJob, routeStatusFromJobs } from "@/server/executionRunner";
+import { generateApp } from "@/server/generatedAppStore";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +40,8 @@ export async function POST(request: NextRequest, { params }: { params: { project
   }
 
   const targetJobTypes = requestedJobs.length ? requestedJobs : ["file_diff"];
-  const run = createRun(projectId, idempotencyKey, typeof body?.objective === "string" ? body.objective : undefined, typeof body?.prompt === "string" ? body.prompt : undefined);
+  const prompt = typeof body?.prompt === "string" ? body.prompt : "";
+  const run = createRun(projectId, idempotencyKey, typeof body?.objective === "string" ? body.objective : undefined, prompt || undefined);
 
   run.status = "running";
   for (const type of targetJobTypes) {
@@ -48,7 +50,17 @@ export async function POST(request: NextRequest, { params }: { params: { project
     run.logs = appendRunLogs(run.logs, job);
   }
 
-  run.status = routeStatusFromJobs(run.jobs);
+  if (prompt.trim()) {
+    try {
+      const artifact = generateApp(projectId, prompt);
+      run.logs.push(`[${new Date().toISOString()}] Generated app artifact ${artifact.checksum}.`);
+    } catch (error) {
+      run.status = "failed";
+      run.logs.push(`[${new Date().toISOString()}] App generation failed: ${error instanceof Error ? error.message : "unknown error"}.`);
+    }
+  }
+
+  run.status = run.status === "failed" ? "failed" : routeStatusFromJobs(run.jobs);
   run.updatedAt = new Date().toISOString();
   state.runs.push(run);
   state.idempotency[idemKey] = { type: "execution", runId: run.runId };
