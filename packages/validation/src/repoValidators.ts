@@ -879,20 +879,29 @@ export function validateUIControlPlaneIntegration(root: string): RepoValidatorRe
     fileOk &&
     page.includes("<VibeBuilderSkeleton") &&
     advancedPage.includes("<ProDashboard") &&
-    settingsPage.includes("<GatePanel") &&
-    settingsPage.includes("<LaunchReadinessPanel") &&
-    evidencePage.includes("<ProofValidationPanel") &&
-    evidencePage.includes("<PacketPanel") &&
-    evidencePage.includes("<ArtifactPanel") &&
-    deploymentPage.includes("<DeploymentPanel") &&
-    logsPage.includes("<AuditPanel") &&
+    settingsPage.includes("ProjectWorkspaceShell") &&
+    settingsPage.includes("Identity") &&
+    settingsPage.includes("Environment") &&
+    settingsPage.includes("Integrations") &&
+    settingsPage.includes("Dangerous Actions") &&
+    evidencePage.includes("ProjectWorkspaceShell") &&
+    evidencePage.includes("Proof Artifacts") &&
+    evidencePage.includes("Validator Receipts") &&
+    evidencePage.includes("NOT_PROVEN") &&
+    deploymentPage.includes("ProjectWorkspaceShell") &&
+    deploymentPage.includes("Targets") &&
+    deploymentPage.includes("Deployment Gates") &&
+    deploymentPage.includes("Rollback") &&
+    logsPage.includes("ProjectWorkspaceShell") &&
+    logsPage.includes("Structured logs") &&
+    logsPage.includes("severity") &&
     servicesUseRealApi;
   return result(
     "Validate-Botomatic-UIControlPlaneIntegration",
     ok,
     ok
-      ? "Core enterprise control-plane panels are mounted and backed by real API services."
-      : "One or more core enterprise control-plane panels or service API mappings are missing.",
+      ? "Core control-plane project routes use the shared shell, commercial page-specific panels, and real API service mappings."
+      : "One or more project route panels, shell contracts, or service API mappings are missing.",
     checks
   );
 }

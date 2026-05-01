@@ -154,6 +154,15 @@ export async function ProDashboard({ projectId }: { projectId: string }) {
           <CopilotPanel activity={project?.copilotActivity ?? []} />
           <RecentCommitsPanel commits={project?.commits ?? []} />
         </div>
+        <footer className="pro-status-bar" data-testid="pro-status-bar" aria-label="Pro runtime status bar">
+          <span><strong>Runtime</strong> {project?.runtime?.status || "Not connected"}</span>
+          <span><strong>Deploy</strong> Not deployed</span>
+          <span><strong>Launch</strong> Launch unavailable</span>
+          <span><strong>Pipeline</strong> {overview?.latestRun?.status || "Not started"}</span>
+          <span><strong>Tests</strong> {typeof project?.tests?.total === "number" ? `${project.tests.total} discovered` : "No test run yet"}</span>
+          <span><strong>Health</strong> {health?.status === "ok" ? "Live data" : "Health check not run"}</span>
+          <span><strong>Gate</strong> Not proven</span>
+        </footer>
       </div>
     </ProjectWorkspaceShell>
   );

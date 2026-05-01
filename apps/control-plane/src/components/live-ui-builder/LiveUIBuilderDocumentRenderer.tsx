@@ -25,7 +25,7 @@ function NodeView({ node, nodes, selectedNodeId, changedNodeIds }: { node: Edita
   const kind = node.kind as string;
   const Tag = getTag(kind) as any;
   const text = getNodeText(node);
-  return <Tag data-live-ui-node-id={node.id} data-live-ui-node-kind={kind} data-selectable="true" data-selected={selectedNodeId===node.id?"true":undefined} data-changed={changedNodeIds.has(node.id)?"true":undefined}><small>{kind} · {node.identity.semanticLabel} · {node.identity.semanticRole}</small>{kind === "input" ? <input aria-label={text} placeholder={text} /> : kind === "image" ? <img alt={text} src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" /> : kind === "list" ? <li>{text}</li> : <span>{text}</span>}{!KNOWN_KINDS.has(kind) ? <em>Unknown node kind rendered safely.</em> : null}{node.childIds.map((id) => nodes[id] ? <NodeView key={id} node={nodes[id]} nodes={nodes} selectedNodeId={selectedNodeId} changedNodeIds={changedNodeIds} /> : null)}</Tag>;
+  return <Tag data-live-ui-node-id={node.id} data-live-ui-node-kind={kind} data-selectable="true" data-selected={selectedNodeId===node.id?"true":undefined} data-changed={changedNodeIds.has(node.id)?"true":undefined}>{kind === "input" ? <input aria-label={text} placeholder={text} /> : kind === "image" ? <img alt={text} src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" /> : kind === "list" ? <li>{text}</li> : <span>{text}</span>}{!KNOWN_KINDS.has(kind) ? <em>Unsupported node rendered safely.</em> : null}{node.childIds.map((id) => nodes[id] ? <NodeView key={id} node={nodes[id]} nodes={nodes} selectedNodeId={selectedNodeId} changedNodeIds={changedNodeIds} /> : null)}</Tag>;
 }
 
 export function LiveUIBuilderDocumentRenderer({ editableDocument, selectedNodeId, changedNodeIds, onSelectNode }: { editableDocument: EditableUIDocument; selectedNodeId?: string; changedNodeIds?: string[]; onSelectNode?: (nodeId: string) => void }) {
@@ -35,5 +35,5 @@ export function LiveUIBuilderDocumentRenderer({ editableDocument, selectedNodeId
     const nodeId = resolveLiveUINodeIdFromTarget(event.target as unknown as LiveUIBuilderNodeSelectionTarget);
     if (nodeId) onSelectNode(nodeId);
   };
-  return <section data-testid="live-ui-builder-document-renderer" onClickCapture={onClickCapture}><p>Document-driven preview, not final production rendering.</p>{editableDocument.pages.map((page) => <section key={page.id} data-live-ui-page-id={page.id}><h3>{page.title}</h3>{page.rootNodeIds.map((id) => page.nodes[id] ? <NodeView key={id} node={page.nodes[id]} nodes={page.nodes} selectedNodeId={selectedNodeId} changedNodeIds={changedSet} /> : null)}</section>)}</section>;
+  return <section data-testid="live-ui-builder-document-renderer" onClickCapture={onClickCapture}><p>Example canvas output for this prompt.</p>{editableDocument.pages.map((page) => <section key={page.id} data-live-ui-page-id={page.id}><h3>{page.title}</h3>{page.rootNodeIds.map((id) => page.nodes[id] ? <NodeView key={id} node={page.nodes[id]} nodes={page.nodes} selectedNodeId={selectedNodeId} changedNodeIds={changedSet} /> : null)}</section>)}</section>;
 }

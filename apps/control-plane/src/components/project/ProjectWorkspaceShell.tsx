@@ -18,6 +18,12 @@ interface NavItem {
   testId?: string;
 }
 
+interface RecentProject {
+  id: string;
+  label: string;
+  updated: string;
+}
+
 function getWorkspaceVariant(mode: ProjectWorkspaceMode): "vibe" | "pro" {
   return mode === "vibe" ? "vibe" : "pro";
 }
@@ -36,12 +42,21 @@ function getProjectNavigation(projectId: string): NavItem[] {
   ];
 }
 
+function getRecentProjects(projectId: string): RecentProject[] {
+  return [
+    { id: projectId, label: `Project ${projectId}`, updated: "Active now" },
+    { id: `${projectId}-beta`, label: "Marketing Site", updated: "2h ago" },
+    { id: `${projectId}-ops`, label: "Ops Console", updated: "Yesterday" },
+  ];
+}
+
 function isNavItemActive(href: string, pathname: string, mode: ProjectWorkspaceMode): boolean {
-  // Special case: /projects/:id and /projects/:id/vibe should both show vibe as active
-  if (mode === "vibe" && (pathname?.endsWith(`/projects/${href.split("/").pop()}`) || pathname?.endsWith("/vibe"))) {
+  if (!pathname) return false;
+  // Special case: /projects/:id and /projects/:id/vibe should both show vibe as active.
+  if (mode === "vibe" && (pathname === href || pathname.endsWith("/vibe"))) {
     return true;
   }
-  return pathname?.endsWith(href.split("/").pop() ?? "") ?? false;
+  return pathname === href;
 }
 
 export default function ProjectWorkspaceShell({
@@ -51,6 +66,7 @@ export default function ProjectWorkspaceShell({
 }: ProjectWorkspaceShellProps) {
   const pathname = usePathname();
   const navItems = getProjectNavigation(projectId);
+  const recentProjects = getRecentProjects(projectId);
   const workspaceVariant = getWorkspaceVariant(mode);
 
   return (
@@ -60,7 +76,7 @@ export default function ProjectWorkspaceShell({
       data-workspace-mode={mode}
       aria-label="Project workspace"
     >
-      <aside className="northstar-global-sidebar northstar-sidebar project-workspace-sidebar" aria-label="Project navigation">
+      <aside className="northstar-global-sidebar northstar-sidebar project-workspace-sidebar" aria-label="Project navigation" data-testid="project-workspace-sidebar">
         <Link href="/" className="northstar-brand" aria-label="Botomatic home">
           <span className="northstar-brand-mark">⬢</span>
           <span>
@@ -86,10 +102,55 @@ export default function ProjectWorkspaceShell({
           ))}
         </nav>
 
+        <section className="project-workspace-sidebar-card" aria-label="Recent projects" data-testid="project-workspace-recent-projects">
+          <small className="project-workspace-sidebar-eyebrow">Recent projects</small>
+          <div className="project-workspace-recent-list">
+            {recentProjects.map((item) => (
+              <Link key={item.id} href={`/projects/${item.id}`} className="project-workspace-recent-item">
+                <strong>{item.label}</strong>
+                <small>{item.updated}</small>
+              </Link>
+            ))}
+          </div>
+        </section>
+
         <div className="project-workspace-sidebar-card" data-testid="project-workspace-identity-card">
           <small className="project-workspace-sidebar-eyebrow">Commercial workspace</small>
           <strong>Project {projectId}</strong>
           <p>Shared premium shell for Vibe, Advanced, and all project routes.</p>
+        </div>
+
+        <section className="project-workspace-sidebar-card" aria-label="Go Pro plan" data-testid="project-workspace-go-pro">
+          <small className="project-workspace-sidebar-eyebrow">Go Pro</small>
+          <strong>Unlock CI + deployment controls</strong>
+          <p>Activate Advanced controls for branch gating, deployment approvals, and launch checks.</p>
+          <button
+            type="button"
+            className="northstar-primary-button"
+            disabled
+            aria-label="Upgrade unavailable in local beta"
+            title="Billing and plan upgrades are not connected in local beta mode"
+          >
+            Upgrade unavailable
+          </button>
+          <small>Billing flow is not connected in local beta mode.</small>
+        </section>
+
+        <div className="project-workspace-account-strip" data-testid="project-workspace-account-strip">
+          <span className="project-workspace-account-avatar" aria-hidden="true">SK</span>
+          <div>
+            <strong>Skyler Admin</strong>
+            <small>Owner account</small>
+          </div>
+          <button
+            type="button"
+            className="northstar-ghost-action"
+            disabled
+            aria-label="Manage unavailable"
+            title="Account management is controlled from enterprise identity settings"
+          >
+            Manage unavailable
+          </button>
         </div>
 
         <div className="northstar-sidebar-note project-workspace-sidebar-note">

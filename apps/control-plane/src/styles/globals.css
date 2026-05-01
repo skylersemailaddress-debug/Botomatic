@@ -431,6 +431,35 @@ a:hover {
   line-height: 1.45;
 }
 
+.project-workspace-recent-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.project-workspace-recent-item {
+  border: 1px solid rgba(116, 88, 220, 0.14);
+  border-radius: 12px;
+  padding: 8px 10px;
+  color: #4f4469;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.project-workspace-recent-item strong,
+.project-workspace-recent-item small {
+  display: block;
+}
+
+.project-workspace-recent-item small {
+  color: #7d7395;
+  margin-top: 2px;
+}
+
+.project-workspace-recent-item:hover {
+  text-decoration: none;
+  border-color: rgba(91, 43, 224, 0.35);
+}
+
 .project-workspace-sidebar-eyebrow {
   display: inline-flex;
   align-items: center;
@@ -447,6 +476,38 @@ a:hover {
 .project-workspace-sidebar-note {
   border: var(--dash-card-border);
   box-shadow: var(--dash-card-shadow);
+}
+
+.project-workspace-account-strip {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  border: var(--dash-card-border);
+  border-radius: 16px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.project-workspace-account-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: rgba(91, 43, 224, 0.12);
+  color: #5b2be0;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.project-workspace-account-strip strong,
+.project-workspace-account-strip small {
+  display: block;
+}
+
+.project-workspace-account-strip small {
+  color: #7c7294;
 }
 
 .northstar-main {
@@ -1006,6 +1067,85 @@ a:hover {
   padding-bottom: var(--space-5);
 }
 
+.project-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.project-detail-card {
+  border: var(--dash-card-border);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: var(--dash-card-shadow);
+  padding: 16px 18px;
+}
+
+.project-detail-card h3,
+.project-detail-card p {
+  margin: 0;
+}
+
+.project-detail-card p {
+  color: #6f6488;
+  margin-top: 6px;
+  font-size: 13px;
+}
+
+.project-detail-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.project-detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #ece8f8;
+  border-radius: 12px;
+  padding: 10px 12px;
+  color: #4f4668;
+  background: #fff;
+}
+
+.project-detail-item strong {
+  font-size: 13px;
+}
+
+.project-status-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid #dfd7f5;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #6a5f85;
+  background: #f9f7ff;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.project-status-pill.is-pass {
+  border-color: rgba(24, 122, 75, 0.2);
+  color: #176c47;
+  background: rgba(20, 122, 75, 0.08);
+}
+
+.project-status-pill.is-fail {
+  border-color: rgba(183, 55, 55, 0.22);
+  color: #8a3b3b;
+  background: rgba(183, 55, 55, 0.08);
+}
+
+.project-status-pill.is-blocked {
+  border-color: rgba(156, 106, 0, 0.25);
+  color: #8a6400;
+  background: rgba(156, 106, 0, 0.1);
+}
+
 .surface-card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -1554,7 +1694,7 @@ a:hover {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .northstar-global-sidebar {
+  .northstar-shell:not(.project-workspace-shell) .northstar-global-sidebar {
     display: none;
   }
 
@@ -1620,6 +1760,7 @@ a:hover {
   }
 
   .detail-page-grid,
+  .project-detail-grid,
   .rail-card-grid,
   .rail-controls {
     grid-template-columns: minmax(0, 1fr);
@@ -1879,11 +2020,51 @@ a:hover {
   padding: 0.9rem;
 }
 
+.vibe-live-preview-empty {
+  display: grid;
+  gap: 0.5rem;
+  align-content: center;
+  min-height: 240px;
+  text-align: center;
+}
+
+.vibe-live-preview-empty h3 {
+  margin: 0;
+}
+
+.vibe-live-preview-empty p,
+.vibe-live-preview-empty small {
+  margin: 0;
+  color: #6d6789;
+}
+
 .vibe-live-preview header {
   display: flex;
   justify-content: space-between;
   gap: 0.75rem;
   margin-bottom: 0.8rem;
+}
+
+.vibe-preview-stage {
+  border: var(--dash-card-border);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: var(--dash-card-shadow);
+  padding: 0.85rem;
+  margin-top: 0.75rem;
+}
+
+.vibe-preview-stage > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.6rem;
+  color: #4e426f;
+}
+
+.vibe-preview-stage > header h2 {
+  margin: 0;
+  font-size: 1rem;
 }
 
 .vibe-hotel-preview {

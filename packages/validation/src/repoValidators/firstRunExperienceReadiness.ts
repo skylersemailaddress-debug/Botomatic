@@ -33,19 +33,19 @@ export function validateFirstRunExperienceReadiness(root: string): RepoValidator
   const panel = read(root, "apps/control-plane/src/components/overview/FirstRunWhatsNextPanel.tsx").toLowerCase();
 
   const ok =
-    page.includes("<FirstRunWhatsNextPanel") &&
-    panel.includes("build from idea") &&
-    panel.includes("upload spec zip") &&
-    panel.includes("upload dirty repo") &&
-    panel.includes("configure keys") &&
-    panel.includes("launch locally") &&
-    panel.includes("prepare deployment") &&
+    page.includes("ProjectWorkspaceShell") &&
+    page.includes("Guided setup checklist") &&
+    page.includes("Step 1: Define Scope") &&
+    page.includes("Step 2: Connect Runtime") &&
+    page.includes("Step 3: Validate") &&
+    page.includes("Step 4: Launch") &&
+    page.includes("Launch remains unavailable") &&
     panel.includes("what's next");
 
   return result(
     ok,
     ok
-      ? "First-run onboarding and What's Next workflow is present with actionable controls."
+      ? "First-run onboarding checklist and What's Next workflow are present with actionable controls."
       : "First-run onboarding and What's Next workflow is incomplete.",
     checks
   );

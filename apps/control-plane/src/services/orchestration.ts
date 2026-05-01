@@ -55,8 +55,16 @@ function fromPayload(projectId: string, payloadRaw: unknown, fallbackRunId?: str
 }
 
 export async function submitVibeIntake(projectId: string, prompt: string): Promise<ApiResult<IntakeResponse>> {
-  const body: IntakeRequest & { request: string; message: string } = { projectId, prompt, request: prompt, message: prompt };
-  const candidates = [`/api/projects/${encodeURIComponent(projectId)}/intake`, "/api/projects/intake", "/api/orchestrate/action"];
+  const requestText = String(prompt || "").trim();
+  const nameSeed = requestText.replace(/\s+/g, " ").slice(0, 64).trim();
+  const body: IntakeRequest & { request: string; message: string; name: string } = {
+    projectId,
+    prompt,
+    request: requestText || "Start a new project with Botomatic.",
+    message: requestText || "Start a new project with Botomatic.",
+    name: nameSeed ? `Vibe Update: ${nameSeed}` : "Vibe Update",
+  };
+  const candidates = ["/api/projects/intake"];
   for (const endpoint of candidates) {
     const result = await postJsonSafe<unknown, typeof body>(endpoint, body);
     if (result.ok) return { ok: true, data: fromPayload(projectId, result.data) };

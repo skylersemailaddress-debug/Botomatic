@@ -1596,15 +1596,32 @@ export function buildApp(config: RuntimeConfig) {
     const actor = await getRequestActor(req, config);
     try {
       const { name, request } = req.body;
+      const requestText = String(request || "").trim();
+      const explicitName = typeof name === "string" ? name.trim() : "";
+      const requestNameSeed = requestText.replace(/\s+/g, " ").slice(0, 72).trim();
+      const resolvedName = explicitName || (requestNameSeed ? `Project: ${requestNameSeed}` : "Launch Project");
       const projectId = makeProjectId();
-      const project = toStored({ projectId, name, request, status: "clarifying", governanceApproval: buildDefaultGovernanceApproval(actor.actorId) });
+      const project = toStored({
+        projectId,
+        name: resolvedName,
+        request: requestText || "Start a new project with Botomatic.",
+        status: "clarifying",
+        governanceApproval: buildDefaultGovernanceApproval(actor.actorId),
+      });
       ensureGovernanceApprovalState(project, actor.actorId);
-      const blueprint = matchBlueprintFromText(request || name || "");
-      const analyzed = analyzeSpec({ appName: name, request: String(request || ""), blueprint, actorId: actor.actorId });
+      const blueprint = matchBlueprintFromText(requestText || resolvedName || "");
+      const analyzed = analyzeSpec({ appName: resolvedName, request: requestText, blueprint, actorId: actor.actorId });
       setMasterSpec(project, analyzed.spec);
       setSpecClarifications(project, analyzed.clarifications);
       project.runs = { ...((project.runs || {}) as Record<string, unknown>), [specStyleRunKey]: analyzed.style };
-      emitEvent(project as any, { id: `evt_${Date.now()}`, projectId, type: "intake", actorId: actor.actorId, timestamp: now(), metadata: { name } });
+      emitEvent(project as any, {
+        id: `evt_${Date.now()}`,
+        projectId,
+        type: "intake",
+        actorId: actor.actorId,
+        timestamp: now(),
+        metadata: { name: resolvedName },
+      });
       await repo.upsertProject(project);
       return res.json({ projectId, status: project.status, actorId: actor.actorId });
     } catch (error) {
