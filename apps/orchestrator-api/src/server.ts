@@ -81,6 +81,22 @@ function makeProjectId(): string {
   return `proj_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
+function deriveProjectName(input: { name?: unknown; request?: unknown; prompt?: unknown; projectName?: unknown }): string {
+  const raw =
+    typeof input.name === "string" && input.name.trim()
+      ? input.name
+      : typeof input.projectName === "string" && input.projectName.trim()
+      ? input.projectName
+      : typeof input.request === "string" && input.request.trim()
+      ? input.request
+      : typeof input.prompt === "string" && input.prompt.trim()
+      ? input.prompt
+      : "";
+
+  const cleaned = raw.trim().replace(/\s+/g, " ").slice(0, 80);
+  return cleaned || "Untitled Botomatic Project";
+}
+
 function toStored(record: {
   projectId: string;
   name: string;
@@ -229,13 +245,14 @@ app.post("/api/projects/intake", async (req, res) => {
   const actor = getRequestActor(req);
 
   try {
-    const { name, request } = req.body;
+    const { name, request, prompt, projectName } = req.body;
     const projectId = makeProjectId();
+    const safeRequest = typeof request === "string" && request.trim() ? request : typeof prompt === "string" ? prompt : "";
 
     const project = toStored({
       projectId,
-      name,
-      request,
+      name: deriveProjectName({ name, projectName, request, prompt }),
+      request: safeRequest,
       status: "clarifying",
     });
 
