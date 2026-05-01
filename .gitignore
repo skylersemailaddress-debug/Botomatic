@@ -22,3 +22,6 @@ release-evidence/generated-apps/**/.next/
 *.old
 release-evidence/runtime/repair_strategy_memory.json
 release-evidence/runtime/*.json
+
+# Playwright artifacts
+test-results/
