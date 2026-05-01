@@ -1,4 +1,4 @@
-import AppShell from "@/components/shell/AppShell";
+import ProjectWorkspaceShell from "@/components/project/ProjectWorkspaceShell";
 import DeploymentPanel from "@/components/overview/DeploymentPanel";
 import DeploymentHistoryPanel from "@/components/overview/DeploymentHistoryPanel";
 
@@ -6,11 +6,22 @@ export default async function ProjectDeploymentPage({ params }: { params: { proj
   const projectId = params.projectId;
 
   return (
-    <AppShell projectName={projectId} environment="commercial" runStatus="idle" mode="page">
-      <section className="detail-page-grid">
-        <DeploymentPanel projectId={projectId} />
-        <DeploymentHistoryPanel projectId={projectId} />
-      </section>
-    </AppShell>
+    <ProjectWorkspaceShell projectId={projectId} mode="deployment">
+      <header className="northstar-workspace-topbar">
+        <div>
+          <div className="northstar-eyebrow">Deployment</div>
+          <h2>Deployment</h2>
+          <p>Deploy your application to production.</p>
+        </div>
+      </header>
+      <div className="northstar-content-grid">
+        <main className="northstar-content">
+          <section className="detail-page-grid">
+            <DeploymentPanel projectId={projectId} />
+            <DeploymentHistoryPanel projectId={projectId} />
+          </section>
+        </main>
+      </div>
+    </ProjectWorkspaceShell>
   );
 }

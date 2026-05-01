@@ -1,10 +1,10 @@
 "use client";
 
+import ProjectWorkspaceShell from "../project/ProjectWorkspaceShell";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 
-import { actionChips, recentProjects, suggestionChips, vibeSidebarNav } from "./vibeSeedData";
+import { actionChips, suggestionChips } from "./vibeSeedData";
 import { LiveUIBuilderCommandInput } from "../live-ui-builder/LiveUIBuilderCommandInput";
 import { LiveUIBuilderDiffPreview } from "../live-ui-builder/LiveUIBuilderDiffPreview";
 import { LiveUIBuilderResolutionPanel, type ResolutionTarget } from "../live-ui-builder/LiveUIBuilderResolutionPanel";
@@ -20,7 +20,6 @@ import { getFirstRunFallback, getFirstRunState, type FirstRunState } from "@/ser
 import { requestDeploy } from "@/services/launchProof";
 
 export function VibeDashboard({ projectId }: { projectId: string }) {
-  const router = useRouter();
   const { latestResult, userFacingSummary, latestReviewPayload, confirmationPending, runSampleEdit, runDestructiveEdit, runCommandText, retryLastCommand, resolveTarget, pendingResolution, confirmPending, rejectPending, editableDocument, selectedNodeId, selectedPageId, changedNodeIds, lastPreviewPatch, selectNode, runDirectManipulationAction, preConfirmDiff, sourceSyncDryRun, sourceSyncApply, sourceSyncResult, sourceSyncStatus, hasRealFileAdapter, appStructure, appStructureNeedsResolution, appStructureCandidates, selectPage, duplicatePage, renamePage, updateNavigation, extractReusableComponent, reuseComponent, addPage } = useLiveUIBuilderVibe();
   const fallbackTargets: ResolutionTarget[] = Object.values(editableDocument.pages?.[0]?.nodes ?? {}).slice(0, 8).map((node: any) => ({ nodeId: node.id, label: node.identity?.semanticLabel ?? node.id, type: node.kind ?? "node", page: editableDocument.pages?.[0]?.id ?? "page", location: node.parentId ? `child of ${node.parentId}` : "root" }));
   const resolverTargets: ResolutionTarget[] = (pendingResolution?.candidates ?? []).map((nodeId: string) => ({ nodeId, label: nodeId, type: "resolver candidate", page: editableDocument.pages.find((page: any) => page.nodes[nodeId])?.id ?? "unknown", location: "resolver" }));
@@ -76,38 +75,7 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
     void orchestration.submitPrompt();
   }, [addPage, firstRunState.canLaunch, handleLaunch, orchestration]);
   return (
-    <section className="vibe-dashboard" aria-label="Vibe dashboard" data-project-id={projectId} data-device-mode={deviceMode}>
-      <aside className="vibe-dashboard-sidebar" aria-label="Botomatic sidebar">
-        <Link href="/" className="vibe-dashboard-brand">
-          <span className="vibe-dashboard-brand-icon">⬢</span>
-          <span>
-            <strong>Botomatic</strong>
-            <small>NEXUS</small>
-          </span>
-        </Link>
-
-        <Link href="/" className="vibe-dashboard-new-project">+ New Project</Link>
-
-        <nav className="vibe-dashboard-nav" aria-label="Dashboard navigation">
-          {vibeSidebarNav.map((item) => <Link href="/" key={item} className={item === "Home" ? "is-active" : ""}>{item}</Link>)}
-        </nav>
-
-        <div className="vibe-dashboard-card">
-          <h3>Recent Projects</h3>
-          {recentProjects.length > 0 ? recentProjects.map((project) => (
-            <div key={project.name} className="vibe-dashboard-row">
-              <span>{project.name}</span>
-              <small>{project.updated}</small>
-            </div>
-          )) : <small>No projects yet</small>}
-        </div>
-
-        <div className="vibe-dashboard-upgrade">
-          <h3>Go Pro Anytime</h3>
-          <p>Unlock advanced features, team collaboration, and priority support.</p>
-          <button type="button" onClick={() => router.push(`/projects/${projectId}/advanced`)}>Upgrade to Pro</button>
-        </div>
-      </aside>
+    <ProjectWorkspaceShell projectId={projectId} mode="vibe">
 
       <div className="vibe-dashboard-main">
         <header className="vibe-dashboard-header"><div className="vibe-mode-pill">VIBE</div>
@@ -222,6 +190,6 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
           </aside>
         </div>
       </div>
-    </section>
+    </ProjectWorkspaceShell>
   );
 }
