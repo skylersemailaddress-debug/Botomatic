@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { actionChips, recentProjects, suggestionChips, vibeSidebarNav } from "./vibeSeedData";
 import { LiveUIBuilderCommandInput } from "../live-ui-builder/LiveUIBuilderCommandInput";
@@ -16,14 +17,17 @@ import { useLiveUIBuilderVibe } from "./useLiveUIBuilderVibe";
 import { VibeLivePreviewPanel } from "@/components/runtime/RuntimePreviewPanel";
 import { getProjectRuntimeState } from "@/services/runtimeStatus";
 import { getFirstRunFallback, getFirstRunState, type FirstRunState } from "@/services/firstRun";
+import { requestDeploy } from "@/services/launchProof";
 
 export function VibeDashboard({ projectId }: { projectId: string }) {
-  const { latestResult, userFacingSummary, latestReviewPayload, confirmationPending, runSampleEdit, runDestructiveEdit, runCommandText, retryLastCommand, resolveTarget, pendingResolution, confirmPending, rejectPending, editableDocument, selectedNodeId, selectedPageId, changedNodeIds, lastPreviewPatch, selectNode, runDirectManipulationAction, preConfirmDiff, sourceSyncDryRun, sourceSyncApply, sourceSyncResult, sourceSyncStatus, hasRealFileAdapter, appStructure, appStructureNeedsResolution, appStructureCandidates, selectPage, duplicatePage, renamePage, updateNavigation, extractReusableComponent, reuseComponent } = useLiveUIBuilderVibe();
+  const router = useRouter();
+  const { latestResult, userFacingSummary, latestReviewPayload, confirmationPending, runSampleEdit, runDestructiveEdit, runCommandText, retryLastCommand, resolveTarget, pendingResolution, confirmPending, rejectPending, editableDocument, selectedNodeId, selectedPageId, changedNodeIds, lastPreviewPatch, selectNode, runDirectManipulationAction, preConfirmDiff, sourceSyncDryRun, sourceSyncApply, sourceSyncResult, sourceSyncStatus, hasRealFileAdapter, appStructure, appStructureNeedsResolution, appStructureCandidates, selectPage, duplicatePage, renamePage, updateNavigation, extractReusableComponent, reuseComponent, addPage } = useLiveUIBuilderVibe();
   const fallbackTargets: ResolutionTarget[] = Object.values(editableDocument.pages?.[0]?.nodes ?? {}).slice(0, 8).map((node: any) => ({ nodeId: node.id, label: node.identity?.semanticLabel ?? node.id, type: node.kind ?? "node", page: editableDocument.pages?.[0]?.id ?? "page", location: node.parentId ? `child of ${node.parentId}` : "root" }));
   const resolverTargets: ResolutionTarget[] = (pendingResolution?.candidates ?? []).map((nodeId: string) => ({ nodeId, label: nodeId, type: "resolver candidate", page: editableDocument.pages.find((page: any) => page.nodes[nodeId])?.id ?? "unknown", location: "resolver" }));
   const [runtimeState, setRuntimeState] = useState<{ status?: string; previewUrl?: string }>({});
   const [firstRunState, setFirstRunState] = useState<FirstRunState>(getFirstRunFallback(projectId));
   const [firstRunMessage, setFirstRunMessage] = useState<string>("No first-run state yet");
+  const [deviceMode, setDeviceMode] = useState<"desktop" | "tablet" | "mobile">("desktop");
   useEffect(() => {
     let active = true;
     Promise.all([getProjectRuntimeState(projectId), getFirstRunState(projectId)]).then(([runtime, firstRun]) => {
@@ -40,8 +44,39 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
     return () => { active = false; };
   }, [projectId]);
   const orchestration = useVibeOrchestration(projectId);
+
+  const handleShare = useCallback(() => {
+    void navigator.clipboard.writeText(window.location.href).catch(() => undefined);
+  }, []);
+
+  const handleLaunch = useCallback(async () => {
+    await requestDeploy(projectId, { idempotencyKey: `launch_${Date.now()}` });
+  }, [projectId]);
+
+  const handleSuggestionChip = useCallback((chip: string) => {
+    orchestration.setPrompt(chip);
+    void orchestration.submitPrompt();
+  }, [orchestration]);
+
+  const handleActionChip = useCallback((chip: string) => {
+    if (chip === "Add Page") { addPage("New Page"); return; }
+    if (chip === "Launch App") {
+      if (firstRunState.canLaunch) { void handleLaunch(); return; }
+      orchestration.setPrompt("Launch the app");
+      void orchestration.submitPrompt();
+      return;
+    }
+    const promptMap: Record<string, string> = {
+      "Add Feature": "Add a new feature to the app",
+      "Connect Payments": "Connect payments with Stripe",
+      "Run Tests": "Run the test suite",
+    };
+    const prompt = promptMap[chip] ?? chip;
+    orchestration.setPrompt(prompt);
+    void orchestration.submitPrompt();
+  }, [addPage, firstRunState.canLaunch, handleLaunch, orchestration]);
   return (
-    <section className="vibe-dashboard" aria-label="Vibe dashboard" data-project-id={projectId}>
+    <section className="vibe-dashboard" aria-label="Vibe dashboard" data-project-id={projectId} data-device-mode={deviceMode}>
       <aside className="vibe-dashboard-sidebar" aria-label="Botomatic sidebar">
         <Link href="/" className="vibe-dashboard-brand">
           <span className="vibe-dashboard-brand-icon">⬢</span>
@@ -54,7 +89,7 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
         <Link href="/" className="vibe-dashboard-new-project">+ New Project</Link>
 
         <nav className="vibe-dashboard-nav" aria-label="Dashboard navigation">
-          {vibeSidebarNav.map((item) => <button type="button" key={item} className={item === "Home" ? "is-active" : ""}>{item}</button>)}
+          {vibeSidebarNav.map((item) => <Link href="/" key={item} className={item === "Home" ? "is-active" : ""}>{item}</Link>)}
         </nav>
 
         <div className="vibe-dashboard-card">
@@ -70,7 +105,7 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
         <div className="vibe-dashboard-upgrade">
           <h3>Go Pro Anytime</h3>
           <p>Unlock advanced features, team collaboration, and priority support.</p>
-          <button type="button">Upgrade to Pro</button>
+          <button type="button" onClick={() => router.push(`/projects/${projectId}/advanced`)}>Upgrade to Pro</button>
         </div>
       </aside>
 
@@ -81,13 +116,13 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
             <p>Chat. Design. Build. Launch. All in one flow.</p>
           </div>
           <div className="vibe-dashboard-device-switcher" role="tablist" aria-label="Device preview switcher">
-            <button type="button" className="is-active">Desktop</button>
-            <button type="button">Tablet</button>
-            <button type="button">Mobile</button>
+            <button type="button" className={deviceMode === "desktop" ? "is-active" : ""} onClick={() => setDeviceMode("desktop")}>Desktop</button>
+            <button type="button" className={deviceMode === "tablet" ? "is-active" : ""} onClick={() => setDeviceMode("tablet")}>Tablet</button>
+            <button type="button" className={deviceMode === "mobile" ? "is-active" : ""} onClick={() => setDeviceMode("mobile")}>Mobile</button>
           </div>
           <div className="vibe-dashboard-cta-group">
-            <button type="button" className="vibe-dashboard-share">Share</button>
-            <button type="button" className="vibe-dashboard-launch" disabled={!firstRunState.canLaunch} aria-label={firstRunState.canLaunch ? "Launch app" : "Launch unavailable"}>{firstRunState.canLaunch ? "Launch App" : "Launch unavailable"}</button>
+            <button type="button" className="vibe-dashboard-share" onClick={handleShare}>Share</button>
+            <button type="button" className="vibe-dashboard-launch" disabled={!firstRunState.canLaunch} aria-label={firstRunState.canLaunch ? "Launch app" : "Launch unavailable"} onClick={() => { if (firstRunState.canLaunch) void handleLaunch(); }}>{firstRunState.canLaunch ? "Launch App" : "Launch unavailable"}</button>
           </div>
         </header>
 
@@ -109,7 +144,7 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
               <LiveUIBuilderPreviewSurface editableDocument={editableDocument} selectedNodeId={selectedNodeId} selectedPageId={selectedPageId} changedNodeIds={changedNodeIds} previewPatch={lastPreviewPatch} onSelectNode={selectNode} onDirectAction={runDirectManipulationAction} />
 
               <div className="vibe-suggestion-chips" aria-label="Suggestions">
-                {suggestionChips.map((chip) => <button type="button" key={chip}>{chip}</button>)}
+                {suggestionChips.map((chip) => <button type="button" key={chip} onClick={() => handleSuggestionChip(chip)}>{chip}</button>)}
               </div>
             </section>
 
@@ -123,7 +158,7 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
                 <button type="button" onClick={runDestructiveEdit}>Apply destructive sample</button>
                 <button type="button" onClick={confirmPending} disabled={!confirmationPending}>Confirm</button>
                 <button type="button" onClick={rejectPending} disabled={!confirmationPending}>Reject</button>
-                {actionChips.filter((chip) => chip !== "Improve Design").map((chip) => <button type="button" key={chip}>{chip}</button>)}
+                {actionChips.filter((chip) => chip !== "Improve Design").map((chip) => <button type="button" key={chip} onClick={() => handleActionChip(chip)}>{chip}</button>)}
               </div>
             </section>
           </main>
@@ -182,7 +217,7 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
               <h3>One-Click Launch</h3>
               <p>{firstRunState.canLaunch ? "Launch prerequisites met" : "No launch proof yet"}</p>
               {!firstRunState.canLaunch ? <small>Launch proof missing</small> : null}
-              <button type="button" disabled={!firstRunState.canLaunch}>{firstRunState.canLaunch ? "Launch" : "Launch unavailable"}</button>
+              <button type="button" disabled={!firstRunState.canLaunch} onClick={() => { if (firstRunState.canLaunch) void handleLaunch(); }}>{firstRunState.canLaunch ? "Launch" : "Launch unavailable"}</button>
             </section>
           </aside>
         </div>
