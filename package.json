@@ -179,7 +179,7 @@
     "test:wave-040": "tsx packages/validation/src/tests/wave040PublicBetaReleaseGate.test.ts",
     "test:wave-041": "tsx packages/validation/src/tests/wave041PixelExactReferenceUi.test.ts",
     "test:commercial-cockpit": "node tests/commercial/commercial-cockpit-static.test.cjs",
-    "test:visual-commercial:capture": "playwright test tests/e2e/visual/commercial-cockpit-visual.spec.ts",
+    "test:visual-commercial:capture": "playwright test --config playwright.commercial-visual.config.ts",
     "test:visual-commercial:diff": "node tests/visual/scripts/compare-commercial-cockpit.cjs",
     "test:visual-commercial": "npm run -s test:visual-commercial:capture && npm run -s test:visual-commercial:diff"
   },
