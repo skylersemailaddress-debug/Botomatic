@@ -1,6 +1,33 @@
 {
-  "generatedAt": "2026-05-02T07:01:51.837Z",
+  "generatedAt": "2026-05-02T07:22:59.017Z",
   "runsIncluded": [
+    {
+      "runId": "smoke-20260502071912",
+      "mode": "smoke",
+      "selectedTotal": 25
+    },
+    {
+      "runId": "100-20260502071920",
+      "mode": "100",
+      "selectedTotal": 100
+    },
+    {
+      "runId": "200-20260502071948",
+      "mode": "200",
+      "selectedTotal": 200
+    },
+    {
+      "runId": "repair-20260502072055",
+      "mode": "repair",
+      "selectedTotal": 25
+    },
+    {
+      "runId": "extreme-20260502072105",
+      "mode": "extreme",
+      "selectedTotal": 25
+    }
+  ],
+  "allRunsDiscovered": [
     {
       "runId": "100-20260502065458",
       "mode": "100",
@@ -17,6 +44,16 @@
       "selectedTotal": 100
     },
     {
+      "runId": "100-20260502070821",
+      "mode": "100",
+      "selectedTotal": 100
+    },
+    {
+      "runId": "100-20260502071920",
+      "mode": "100",
+      "selectedTotal": 100
+    },
+    {
       "runId": "200-20260502065507",
       "mode": "200",
       "selectedTotal": 200
@@ -27,7 +64,27 @@
       "selectedTotal": 200
     },
     {
+      "runId": "200-20260502070854",
+      "mode": "200",
+      "selectedTotal": 200
+    },
+    {
+      "runId": "200-20260502071948",
+      "mode": "200",
+      "selectedTotal": 200
+    },
+    {
       "runId": "extreme-20260502065539",
+      "mode": "extreme",
+      "selectedTotal": 25
+    },
+    {
+      "runId": "extreme-20260502070956",
+      "mode": "extreme",
+      "selectedTotal": 25
+    },
+    {
+      "runId": "extreme-20260502072105",
       "mode": "extreme",
       "selectedTotal": 25
     },
@@ -42,6 +99,16 @@
       "selectedTotal": 25
     },
     {
+      "runId": "repair-20260502070949",
+      "mode": "repair",
+      "selectedTotal": 25
+    },
+    {
+      "runId": "repair-20260502072055",
+      "mode": "repair",
+      "selectedTotal": 25
+    },
+    {
       "runId": "smoke-20260502065458",
       "mode": "smoke",
       "selectedTotal": 25
@@ -50,53 +117,99 @@
       "runId": "smoke-20260502065954",
       "mode": "smoke",
       "selectedTotal": 25
+    },
+    {
+      "runId": "smoke-20260502070811",
+      "mode": "smoke",
+      "selectedTotal": 25
+    },
+    {
+      "runId": "smoke-20260502071912",
+      "mode": "smoke",
+      "selectedTotal": 25
     }
   ],
-  "totalPromptsTested": 825,
+  "totalPromptsTested": 375,
   "categoriesCovered": 40,
   "passRate": 0,
-  "passPlusPartialRate": 0,
+  "passPlusPartialRate": 100,
+  "promptsReachedBuilderRuntime": 375,
+  "promptsGeneratedArtifacts": 375,
+  "builtSuccessfully": 0,
+  "ranSuccessfully": 0,
+  "repairedSuccessfully": 0,
   "failRate": 0,
-  "unsupportedRate": 100,
+  "unsupportedRate": 0,
   "runtimeSuccessRate": 0,
-  "followupSuccessRate": 0,
+  "followupSuccessRate": 86.67,
   "repairSuccessRate": 0,
   "fakeContaminationRate": 0,
-  "ownerVerdict": "FAIL_PRIVATE_BETA",
-  "answer99Percent": "No. Measured PASS_REAL rate is 0% and PASS_REAL+PASS_PARTIAL is 0%, below a defensible 99% claim.",
+  "ownerVerdict": "PARTIAL_PRIVATE_BETA",
+  "answer99Percent": "No. Measured PASS_REAL rate is 0% and PASS_REAL+PASS_PARTIAL is 100%, below a defensible 99% claim.",
   "whatHandlesWell": [],
-  "whatHandlesPartially": [],
+  "whatHandlesPartially": [
+    "add-auth-payments-email-db-edit",
+    "admin-internal-ops",
+    "ai-writing-tool",
+    "analytics-reporting-app",
+    "api-integration-app",
+    "auth-heavy-app",
+    "booking-scheduling-app",
+    "chat-collab-app",
+    "contradictory-prompt",
+    "course-lms",
+    "crm",
+    "dirty-repo-repair-build-prompts",
+    "ecommerce-storefront",
+    "events-community",
+    "failure-recovery-prompts",
+    "file-upload-heavy-app",
+    "finance-budgeting",
+    "fitness-wellness",
+    "follow-up-edits-after-first-build",
+    "healthcare-intake-non-medical",
+    "huge-build-me-airbnb-uber-shopify",
+    "inventory-logistics",
+    "job-board",
+    "legal-intake-non-legal-advice",
+    "local-service-site",
+    "make-it-prettier-design-edit",
+    "marketplace",
+    "messy-typo-filled-prompt",
+    "mobile-first-app",
+    "multi-tenant-app",
+    "one-page-landing-page",
+    "payment-subscription-app",
+    "project-management",
+    "real-estate-listings",
+    "restaurant-order-app",
+    "role-based-app",
+    "saas-dashboard",
+    "social-community-app",
+    "support-ticketing",
+    "weird-vague-app"
+  ],
   "whatFails": [],
   "topBlockers": [
     {
       "rank": 1,
-      "blocker": "API unavailable or unreachable",
-      "count": 825
+      "blocker": "No generated project path returned for local build validation",
+      "count": 375
     },
     {
       "rank": 2,
-      "blocker": "No generated project path returned for local build validation",
-      "count": 825
+      "blocker": "Repair loop replay failed",
+      "count": 225
     },
     {
       "rank": 3,
       "blocker": "Repair loop not executed for this case",
-      "count": 600
+      "count": 150
     },
     {
       "rank": 4,
-      "blocker": "Follow-up edit API request failed",
-      "count": 425
-    },
-    {
-      "rank": 5,
       "blocker": "Follow-up edit path not executed for this case",
-      "count": 400
-    },
-    {
-      "rank": 6,
-      "blocker": "Repair loop replay failed",
-      "count": 225
+      "count": 50
     }
   ]
 }

@@ -93,7 +93,16 @@ function toScalar(value) {
 }
 
 function scoreCase(caseResult) {
-  const details = (caseResult.operator?.body?.operatorMessage || "") + "\n" + JSON.stringify(caseResult.status?.body || {});
+  const operatorHistory = Array.isArray(caseResult.operatorHistory) ? caseResult.operatorHistory : [];
+  const operatorRoutes = operatorHistory
+    .map((entry) => (entry && entry.body && typeof entry.body === "object" ? String(entry.body.route || "") : ""))
+    .filter(Boolean);
+  const details = [
+    caseResult.operator?.body?.operatorMessage || "",
+    JSON.stringify(caseResult.status?.body || {}),
+    JSON.stringify(caseResult.execution?.body || {}),
+    JSON.stringify(operatorRoutes),
+  ].join("\n");
   const lower = details.toLowerCase();
 
   const metrics = {
@@ -117,22 +126,30 @@ function scoreCase(caseResult) {
   const noPlaceholderFakeContent = !fakeSignal;
   const followupEditSuccess = Boolean(caseResult.followup?.ok);
   const repairLoopSuccess = Boolean(caseResult.repair?.ok);
+  const reachedBuilderRuntime = Boolean(caseResult.intake?.ok && operatorHistory.some((entry) => entry?.ok));
+  const generatedArtifacts = Boolean(
+    operatorRoutes.some((route) => ["plan", "execute_next", "autonomous_complex_build", "launch_promote"].includes(route)) ||
+      (caseResult.status?.body && typeof caseResult.status.body === "object" && caseResult.status.body.plan) ||
+      (caseResult.execution?.body && typeof caseResult.execution.body === "object" && caseResult.execution.body.runId)
+  );
 
   let commercialReadiness = "blocked";
   if (runtimeBuildSuccess && generatedAppSmokeSuccess && noPlaceholderFakeContent) commercialReadiness = "pass";
-  else if (caseResult.operator?.ok || caseResult.intake?.ok) commercialReadiness = "partial";
+  else if (reachedBuilderRuntime) commercialReadiness = "partial";
 
   let classification = classifications.FAIL_QUALITY;
   if (!caseResult.intake?.ok && caseResult.intake?.status === 0) classification = classifications.BLOCKED_UNSUPPORTED;
   else if (!caseResult.operator?.ok && caseResult.operator?.status >= 500) classification = classifications.FAIL_BUILDER;
   else if (fakeSignal) classification = classifications.FAIL_FAKE;
   else if (runtimeBuildSuccess && generatedAppSmokeSuccess && noPlaceholderFakeContent) classification = classifications.PASS_REAL;
-  else if (caseResult.operator?.ok || caseResult.intake?.ok) classification = classifications.PASS_PARTIAL;
+  else if (reachedBuilderRuntime) classification = classifications.PASS_PARTIAL;
   else if (caseResult.runtimeSmoke && !caseResult.runtimeSmoke.ok) classification = classifications.FAIL_RUNTIME;
 
   return {
     metrics,
     checks: {
+      reachedBuilderRuntime,
+      generatedArtifacts,
       runtimeBuildSuccess,
       generatedAppSmokeSuccess,
       testsGeneratedExecuted,
@@ -149,6 +166,8 @@ function scoreCase(caseResult) {
 function summarizeCases(cases) {
   const byCategory = {};
   const byClassification = {};
+  let reachedBuilderRuntime = 0;
+  let generatedArtifacts = 0;
   let runtimeSuccess = 0;
   let partial = 0;
   let unsupported = 0;
@@ -165,6 +184,8 @@ function summarizeCases(cases) {
     else if (c.score.classification === classifications.PASS_PARTIAL) byCategory[c.category].passPartial += 1;
     else byCategory[c.category].failed += 1;
 
+    if (c.score.checks.reachedBuilderRuntime) reachedBuilderRuntime += 1;
+    if (c.score.checks.generatedArtifacts) generatedArtifacts += 1;
     if (c.score.checks.runtimeBuildSuccess) runtimeSuccess += 1;
     if (c.score.classification === classifications.PASS_PARTIAL) partial += 1;
     if (c.score.classification === classifications.BLOCKED_UNSUPPORTED) unsupported += 1;
@@ -178,6 +199,8 @@ function summarizeCases(cases) {
     passReal: byClassification[classifications.PASS_REAL] || 0,
     passPartial: byClassification[classifications.PASS_PARTIAL] || 0,
     blockedUnsupported: byClassification[classifications.BLOCKED_UNSUPPORTED] || 0,
+    reachedBuilderRuntime,
+    generatedArtifacts,
     failBuilder: byClassification[classifications.FAIL_BUILDER] || 0,
     failRuntime: byClassification[classifications.FAIL_RUNTIME] || 0,
     failQuality: byClassification[classifications.FAIL_QUALITY] || 0,
@@ -234,6 +257,7 @@ async function executeCase(testCase, options) {
   });
 
   let operator = null;
+  const operatorHistory = [];
   let status = null;
   let runtime = null;
   let execution = null;
@@ -243,11 +267,26 @@ async function executeCase(testCase, options) {
   const projectId = intake.body && typeof intake.body === "object" ? intake.body.projectId : null;
 
   if (intake.ok && projectId) {
-    operator = await safeFetchJson(`${API_BASE_URL}/api/projects/${projectId}/operator/send`, {
-      method: "POST",
-      headers: authHeaders(),
-      body: JSON.stringify({ message: "continue current generated app build" }),
-    });
+    const operatorMessages = [
+      "continue current generated app build",
+      "continue current generated app build",
+      "continue current generated app build",
+      "continue current generated app build",
+    ];
+
+    for (const message of operatorMessages) {
+      const response = await safeFetchJson(`${API_BASE_URL}/api/projects/${projectId}/operator/send`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({ message }),
+      });
+      operatorHistory.push(response);
+      operator = response;
+
+      if (!response.ok) break;
+      const route = String((response.body && typeof response.body === "object" ? response.body.route : "") || "");
+      if (["execute_next", "autonomous_complex_build", "launch_promote", "execute_report", "build_blocked"].includes(route)) break;
+    }
 
     status = await safeFetchJson(`${API_BASE_URL}/api/projects/${projectId}/status`, {
       method: "GET",
@@ -327,6 +366,7 @@ async function executeCase(testCase, options) {
     projectId,
     intake,
     operator,
+    operatorHistory,
     status,
     runtime,
     execution,
@@ -358,6 +398,8 @@ function markdownSummary(run, summary) {
   lines.push(`FAIL_RUNTIME: ${summary.failRuntime}`);
   lines.push(`FAIL_QUALITY: ${summary.failQuality}`);
   lines.push(`FAIL_FAKE: ${summary.failFake}`);
+  lines.push(`Prompts reaching builder runtime: ${summary.reachedBuilderRuntime}`);
+  lines.push(`Prompts generating artifacts/plans: ${summary.generatedArtifacts}`);
   lines.push(`Runtime build success count: ${summary.runtimeSuccess}`);
   lines.push(`Follow-up success count: ${summary.followupSuccess}`);
   lines.push(`Repair success count: ${summary.repairSuccess}`);

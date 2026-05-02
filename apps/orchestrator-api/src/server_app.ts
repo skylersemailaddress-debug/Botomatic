@@ -1574,14 +1574,44 @@ export function buildApp(config: RuntimeConfig) {
     next();
   });
 
-  app.get("/api/health", async (req, res) => {
+  const buildHealthPayload = (
+    auth: { role: string | null; userId: string | null; issuer: string | null },
+    requestId: string | null
+  ) => ({
+    status: "ok",
+    appName: config.appName,
+    runtimeMode: config.runtimeMode,
+    repositoryMode: config.repository.mode,
+    repositoryImplementation: config.repository.implementation,
+    durableEnvPresent: config.durableEnvPresent,
+    authEnabled: config.auth.enabled,
+    authImplementation: config.auth.implementation,
+    commitSha: config.commitSha,
+    startupTimestamp: config.startupTimestamp,
+    queueEnabled: config.repository.mode === "durable",
+    activeWorkers,
+    workerConcurrency,
+    workerId,
+    leaseMs,
+    queueMode: "dedicated_jobs_table_parallel",
+    role: auth.role,
+    userId: auth.userId,
+    issuer: auth.issuer,
+    requestId,
+  });
+
+  const respondHealth = async (req: express.Request, res: express.Response) => {
+    const requestId = String((res.locals as any).requestId || "");
     try {
       const auth = await getVerifiedAuth(req, config);
-      return res.json({ status: "ok", appName: config.appName, runtimeMode: config.runtimeMode, repositoryMode: config.repository.mode, repositoryImplementation: config.repository.implementation, durableEnvPresent: config.durableEnvPresent, authEnabled: config.auth.enabled, authImplementation: config.auth.implementation, commitSha: config.commitSha, startupTimestamp: config.startupTimestamp, queueEnabled: config.repository.mode === "durable", activeWorkers, workerConcurrency, workerId, leaseMs, queueMode: "dedicated_jobs_table_parallel", role: auth.role, userId: auth.userId, issuer: auth.issuer || null, requestId: (res.locals as any).requestId });
+      return res.json(buildHealthPayload({ role: auth.role, userId: auth.userId, issuer: auth.issuer || null }, requestId));
     } catch {
-      return res.json({ status: "ok", appName: config.appName, runtimeMode: config.runtimeMode, repositoryMode: config.repository.mode, repositoryImplementation: config.repository.implementation, durableEnvPresent: config.durableEnvPresent, authEnabled: config.auth.enabled, authImplementation: config.auth.implementation, commitSha: config.commitSha, startupTimestamp: config.startupTimestamp, queueEnabled: config.repository.mode === "durable", activeWorkers, workerConcurrency, workerId, leaseMs, queueMode: "dedicated_jobs_table_parallel", role: null, userId: null, issuer: null, requestId: (res.locals as any).requestId });
+      return res.json(buildHealthPayload({ role: null, userId: null, issuer: null }, requestId));
     }
-  });
+  };
+
+  app.get("/health", respondHealth);
+  app.get("/api/health", respondHealth);
 
   app.use("/api/ops", requireApiAuth(config));
 

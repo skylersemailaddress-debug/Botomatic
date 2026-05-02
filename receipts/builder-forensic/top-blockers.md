@@ -1,17 +1,13 @@
 # Top Blockers To 99%
 
-1. API unavailable or unreachable
-2. No generated project path returned for local build validation
+1. No generated project path returned for local build validation
+2. Repair loop replay failed
 3. Repair loop not executed for this case
-4. Follow-up edit API request failed
-5. Follow-up edit path not executed for this case
-6. Repair loop replay failed
+4. Follow-up edit path not executed for this case
 
 ## Closure Work
 
-1. API unavailable or unreachable: implement targeted builder/runtime support and add regression tests for this failure class.
-2. No generated project path returned for local build validation: implement targeted builder/runtime support and add regression tests for this failure class.
-3. Repair loop not executed for this case: implement targeted builder/runtime support and add regression tests for this failure class.
-4. Follow-up edit API request failed: implement targeted builder/runtime support and add regression tests for this failure class.
-5. Follow-up edit path not executed for this case: implement targeted builder/runtime support and add regression tests for this failure class.
-6. Repair loop replay failed: implement targeted builder/runtime support and add regression tests for this failure class.
+1. No generated project path returned for local build validation: Persist generated artifact workspace path in project status/runtime payload and consume it in forensic harness for local build/smoke probes.
+2. Repair loop replay failed: Enable repair replay preconditions in harness (governance approvals and repairable packet state), then add regression test for replay success path.
+3. Repair loop not executed for this case: Implement targeted builder/runtime support and add regression tests for this failure class.
+4. Follow-up edit path not executed for this case: Implement targeted builder/runtime support and add regression tests for this failure class.

@@ -15,6 +15,28 @@ async function readJson(filePath) {
   return JSON.parse(raw);
 }
 
+function toEpoch(input) {
+  const t = Date.parse(String(input || ""));
+  return Number.isFinite(t) ? t : 0;
+}
+
+function selectLatestRunsByMode(runs) {
+  const targetModes = ["smoke", "100", "200", "repair", "extreme"];
+  const latest = new Map();
+
+  for (const run of runs) {
+    const mode = String(run.mode || "");
+    if (!targetModes.includes(mode)) continue;
+    const current = latest.get(mode);
+    if (!current || toEpoch(run.generatedAt) > toEpoch(current.generatedAt)) {
+      latest.set(mode, run);
+    }
+  }
+
+  const selected = targetModes.map((mode) => latest.get(mode)).filter(Boolean);
+  return selected.length > 0 ? selected : runs;
+}
+
 function collectTopBlockers(cases) {
   const counts = new Map();
   const push = (key) => counts.set(key, (counts.get(key) || 0) + 1);
@@ -22,6 +44,8 @@ function collectTopBlockers(cases) {
   for (const c of cases) {
     if (c.intake?.status === 0) push("API unavailable or unreachable");
     if (c.intake?.status === 401 || c.operator?.status === 401) push("Missing/invalid API auth token");
+    if (!c.score?.checks?.reachedBuilderRuntime) push("Prompt did not reach builder runtime path");
+    if (c.score?.checks?.reachedBuilderRuntime && !c.score?.checks?.generatedArtifacts) push("Builder did not progress to artifact/plan generation");
     if (c.score.classification === "FAIL_BUILDER") push("Builder/orchestrator internal error");
     if (!c.localBuild) push("No generated project path returned for local build validation");
     if (c.localBuild && !c.localBuild.ok) push("Generated app build command failed");
@@ -119,6 +143,11 @@ function mdReport(summary, blockers, rows) {
   lines.push(`Categories covered: ${summary.categoriesCovered}`);
   lines.push(`PASS_REAL rate: ${summary.passRate}%`);
   lines.push(`PASS_REAL + PASS_PARTIAL rate: ${summary.passPlusPartialRate}%`);
+  lines.push(`Prompts reaching builder runtime: ${summary.promptsReachedBuilderRuntime}`);
+  lines.push(`Prompts generating artifacts/plans: ${summary.promptsGeneratedArtifacts}`);
+  lines.push(`Built successfully: ${summary.builtSuccessfully}`);
+  lines.push(`Ran successfully: ${summary.ranSuccessfully}`);
+  lines.push(`Repaired successfully: ${summary.repairedSuccessfully}`);
   lines.push(`Fail rate: ${summary.failRate}%`);
   lines.push(`Unsupported rate: ${summary.unsupportedRate}%`);
   lines.push(`Runtime success rate: ${summary.runtimeSuccessRate}%`);
@@ -144,6 +173,28 @@ function mdReport(summary, blockers, rows) {
   });
 
   return lines.join("\n") + "\n";
+}
+
+function closureWorkFor(blocker) {
+  if (blocker === "Prompt did not reach builder runtime path") {
+    return "Auto-run spec analyze/build-contract approval sequence before planning and dispatch; add regression test for compile->plan->execute transition.";
+  }
+  if (blocker === "Builder did not progress to artifact/plan generation") {
+    return "Patch orchestration step routing to force plan generation and dispatch/execute-next when contract is ready; add runtime orchestration integration test.";
+  }
+  if (blocker === "No generated project path returned for local build validation") {
+    return "Persist generated artifact workspace path in project status/runtime payload and consume it in forensic harness for local build/smoke probes.";
+  }
+  if (blocker === "Repair loop replay failed") {
+    return "Enable repair replay preconditions in harness (governance approvals and repairable packet state), then add regression test for replay success path.";
+  }
+  if (blocker === "Follow-up edit API request failed") {
+    return "Harden follow-up prompts and role/auth context for operator route; add regression test asserting 2xx follow-up responses for edit corpus cases.";
+  }
+  if (blocker === "API unavailable or unreachable") {
+    return "Add preflight server boot+health check gate and fail-fast before corpus execution if API/UI endpoints are down.";
+  }
+  return "Implement targeted builder/runtime support and add regression tests for this failure class.";
 }
 
 async function main() {
@@ -181,7 +232,8 @@ async function main() {
     return;
   }
 
-  const allCases = runs.flatMap((run) => run.cases || []);
+  const selectedRuns = selectLatestRunsByMode(runs);
+  const allCases = selectedRuns.flatMap((run) => run.cases || []);
   const rows = capabilityRows(allCases);
   const blockers = collectTopBlockers(allCases);
 
@@ -189,18 +241,29 @@ async function main() {
   const passPartial = allCases.filter((c) => c.score.classification === "PASS_PARTIAL").length;
   const failCount = allCases.filter((c) => c.score.classification.startsWith("FAIL")).length;
   const unsupportedCount = allCases.filter((c) => c.score.classification === "BLOCKED_UNSUPPORTED").length;
-  const runtimeSuccess = allCases.filter((c) => c.score.checks.runtimeBuildSuccess).length;
+  const promptsReachedBuilderRuntime = allCases.filter((c) => c.score.checks.reachedBuilderRuntime).length;
+  const promptsGeneratedArtifacts = allCases.filter((c) => c.score.checks.generatedArtifacts).length;
+  const builtSuccessfully = allCases.filter((c) => c.score.checks.runtimeBuildSuccess).length;
+  const ranSuccessfully = allCases.filter((c) => c.score.checks.generatedAppSmokeSuccess).length;
+  const repairedSuccessfully = allCases.filter((c) => c.score.checks.repairLoopSuccess).length;
+  const runtimeSuccess = builtSuccessfully;
   const followupSuccess = allCases.filter((c) => c.score.checks.followupEditSuccess).length;
-  const repairSuccess = allCases.filter((c) => c.score.checks.repairLoopSuccess).length;
+  const repairSuccess = repairedSuccessfully;
   const fakeCount = allCases.filter((c) => c.score.fakeSignal).length;
 
   const summary = {
     generatedAt: new Date().toISOString(),
-    runsIncluded: runs.map((run) => ({ runId: run.runId, mode: run.mode, selectedTotal: run.selectedTotal })),
+    runsIncluded: selectedRuns.map((run) => ({ runId: run.runId, mode: run.mode, selectedTotal: run.selectedTotal })),
+    allRunsDiscovered: runs.map((run) => ({ runId: run.runId, mode: run.mode, selectedTotal: run.selectedTotal })),
     totalPromptsTested: allCases.length,
     categoriesCovered: new Set(allCases.map((c) => c.category)).size,
     passRate: pct(passReal, allCases.length),
     passPlusPartialRate: pct(passReal + passPartial, allCases.length),
+    promptsReachedBuilderRuntime,
+    promptsGeneratedArtifacts,
+    builtSuccessfully,
+    ranSuccessfully,
+    repairedSuccessfully,
     failRate: pct(failCount, allCases.length),
     unsupportedRate: pct(unsupportedCount, allCases.length),
     runtimeSuccessRate: pct(runtimeSuccess, allCases.length),
@@ -232,7 +295,7 @@ async function main() {
     "",
     "## Closure Work",
     "",
-    ...blockers.map((b) => `${b.rank}. ${b.blocker}: implement targeted builder/runtime support and add regression tests for this failure class.`),
+    ...blockers.map((b) => `${b.rank}. ${b.blocker}: ${closureWorkFor(b.blocker)}`),
     "",
   ].join("\n");
 
