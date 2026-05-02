@@ -1,0 +1,28 @@
+{
+  "capturedAt": "2026-05-02T05:07:45+00:00",
+  "phase": "baseline-preservation",
+  "branch": "main",
+  "commit": "43c8588be9cb910040c17c84295596984ef6ea8a",
+  "mainCleanBeforeVisual": true,
+  "visualCommand": "VISUAL_DIFF_THRESHOLD=0.01 npm run test:visual-commercial",
+  "visualThresholdPercent": 1.0,
+  "visualResult": "pass",
+  "testsPassed": 2,
+  "testsFailed": 0,
+  "diffs": {
+    "vibeDesktop": {
+      "mismatched": 13211,
+      "total": 2795520,
+      "ratioPercent": 0.473
+    },
+    "proDesktop": {
+      "mismatched": 14905,
+      "total": 2795520,
+      "ratioPercent": 0.533
+    }
+  },
+  "notes": [
+    "Visual artifact folders tests/visual/current and tests/visual/diff were cleaned after capture.",
+    "No source code modified during baseline capture."
+  ]
+}

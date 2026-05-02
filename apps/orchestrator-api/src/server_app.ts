@@ -1523,6 +1523,24 @@ function startQueueWorker(config: RuntimeConfig) {
   setInterval(() => { void workerTick(config); }, Number(process.env.QUEUE_POLL_INTERVAL_MS || 2000));
 }
 
+function isAllowedCorsOrigin(origin: string): boolean {
+  const allowedOrigins = new Set([
+    "http://127.0.0.1:3000",
+    "http://localhost:3000",
+  ]);
+
+  if (allowedOrigins.has(origin)) {
+    return true;
+  }
+
+  const isProduction = process.env.NODE_ENV === "production";
+  if (isProduction) {
+    return false;
+  }
+
+  return /^https:\/\/[a-z0-9-]+\.app\.github\.dev$/i.test(origin);
+}
+
 export function buildApp(config: RuntimeConfig) {
   const app = express();
   const repo = config.repository.repo;
@@ -1532,14 +1550,9 @@ export function buildApp(config: RuntimeConfig) {
   app.use(express.json());
 
   app.use((req, res, next) => {
-    const allowedOrigins = new Set([
-      "http://127.0.0.1:3000",
-      "http://localhost:3000",
-    ]);
-
     const origin = req.header("origin");
 
-    if (origin && allowedOrigins.has(origin)) {
+    if (origin && isAllowedCorsOrigin(origin)) {
       res.header("Access-Control-Allow-Origin", origin);
       res.header("Vary", "Origin");
     }

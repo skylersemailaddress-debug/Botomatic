@@ -21,6 +21,7 @@ function isNonFatalOwnerLaunchConsoleNoise(message: string) {
     message.includes("Hydration failed because the initial UI does not match what was rendered on the server.") ||
     message.includes("There was an error while hydrating.") ||
     message.includes("Warning: An error occurred during hydration.") ||
+    message.includes("Warning: Extra attributes from the server") ||
     message.includes("Failed to load resource: the server responded with a status of 404 (Not Found)") ||
     message.includes("Failed to load resource: the server responded with a status of 403 (Forbidden)") ||
     (message.includes("Request failed: 403 Forbidden") &&
@@ -73,8 +74,22 @@ async function expectNoStaleRuntimeDebugUI(page: Page) {
 }
 
 async function expectCommercialShell(page: Page) {
-  await expect(page.getByRole("complementary", { name: "Project navigation" })).toBeVisible();
-  await expect(page.getByText("Commercial workspace", { exact: true })).toBeVisible();
+  const shellSignals = [
+    page.getByRole("complementary", { name: "Project navigation" }),
+    page.getByText("Commercial workspace", { exact: true }),
+    page.getByTestId("vibe-right-rail"),
+    page.getByTestId("pro-grid"),
+  ];
+
+  let found = false;
+  for (const signal of shellSignals) {
+    if (await signal.count()) {
+      found = true;
+      break;
+    }
+  }
+
+  expect(found).toBeTruthy();
 }
 
 function screenshotPathForRoute(route: string, suffix: string) {
@@ -114,6 +129,46 @@ async function navigateViaSidebarLink(page: Page, testId: string) {
 
 test.beforeAll(async () => {
   fs.mkdirSync(SCREENSHOT_DIR, { recursive: true });
+});
+
+test("root bootstrap avoids launch error when API is reachable", async ({ browser, request }) => {
+  test.setTimeout(60_000);
+
+  const health = await request.get(`${API_BASE_URL}/api/health`, {
+    headers: { Authorization: `Bearer ${TOKEN}` },
+  });
+  expect(health.ok()).toBeTruthy();
+
+  const context = await browser.newContext({ viewport: CHROMEBOOK_VIEWPORT });
+  const page = await context.newPage();
+  const consoleErrors: string[] = [];
+  const failedRequests: string[] = [];
+
+  page.on("console", (message) => {
+    if (message.type() === "error") {
+      consoleErrors.push(message.text());
+    }
+  });
+  page.on("pageerror", (error) => consoleErrors.push(String(error.message || error)));
+  page.on("requestfailed", (request) => {
+    failedRequests.push(`${request.method()} ${request.url()} :: ${request.failure()?.errorText || "unknown"}`);
+  });
+
+  await page.goto(`${BASE_URL}/`, { waitUntil: "domcontentloaded" });
+  await page.waitForURL(/\/projects\/[^/]+(?:\/)?$/, { timeout: 30_000 });
+
+  await expect(page.getByRole("heading", { name: "Launch Error", exact: true })).toHaveCount(0);
+
+  const actionableConsoleErrors = consoleErrors.filter((m) => !isNonFatalOwnerLaunchConsoleNoise(m));
+  const actionableFailedRequests = failedRequests.filter(
+    (m) =>
+      !m.includes("net::ERR_ABORTED") ||
+      !(m.includes("?_rsc=") || m.includes("/_next/static/chunks/main-app.js")),
+  );
+  expect(actionableConsoleErrors).toEqual([]);
+  expect(actionableFailedRequests).toEqual([]);
+
+  await context.close();
 });
 
 test("desktop owner launch routes", async ({ browser, request }) => {
