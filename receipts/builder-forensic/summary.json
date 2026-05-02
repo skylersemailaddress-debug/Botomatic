@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-02T06:55:40.430Z",
+  "generatedAt": "2026-05-02T07:01:51.837Z",
   "runsIncluded": [
     {
       "runId": "100-20260502065458",
@@ -12,7 +12,17 @@
       "selectedTotal": 100
     },
     {
+      "runId": "100-20260502065955",
+      "mode": "100",
+      "selectedTotal": 100
+    },
+    {
       "runId": "200-20260502065507",
+      "mode": "200",
+      "selectedTotal": 200
+    },
+    {
+      "runId": "200-20260502070150",
       "mode": "200",
       "selectedTotal": 200
     },
@@ -27,12 +37,22 @@
       "selectedTotal": 25
     },
     {
+      "runId": "repair-20260502070151",
+      "mode": "repair",
+      "selectedTotal": 25
+    },
+    {
       "runId": "smoke-20260502065458",
+      "mode": "smoke",
+      "selectedTotal": 25
+    },
+    {
+      "runId": "smoke-20260502065954",
       "mode": "smoke",
       "selectedTotal": 25
     }
   ],
-  "totalPromptsTested": 475,
+  "totalPromptsTested": 825,
   "categoriesCovered": 40,
   "passRate": 0,
   "passPlusPartialRate": 0,
@@ -51,27 +71,32 @@
     {
       "rank": 1,
       "blocker": "API unavailable or unreachable",
-      "count": 475
+      "count": 825
     },
     {
       "rank": 2,
       "blocker": "No generated project path returned for local build validation",
-      "count": 475
+      "count": 825
     },
     {
       "rank": 3,
       "blocker": "Repair loop not executed for this case",
-      "count": 475
+      "count": 600
     },
     {
       "rank": 4,
-      "blocker": "Follow-up edit path not executed for this case",
-      "count": 375
+      "blocker": "Follow-up edit API request failed",
+      "count": 425
     },
     {
       "rank": 5,
-      "blocker": "Follow-up edit API request failed",
-      "count": 100
+      "blocker": "Follow-up edit path not executed for this case",
+      "count": 400
+    },
+    {
+      "rank": 6,
+      "blocker": "Repair loop replay failed",
+      "count": 225
     }
   ]
 }
