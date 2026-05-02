@@ -40,6 +40,7 @@ import { createPredictionLedger } from "../../../packages/prediction-ledger/src"
 import { runSimulation } from "../../../packages/simulation-engine/src";
 import { planInterventions } from "../../../packages/intervention-engine/src";
 import { defaultGovernanceRules } from "../../../packages/governance-engine/src";
+import { canAutoApprove, type ApprovalDecision } from "../../../packages/governance-engine/src/approvalPolicy";
 import { resolveAutonomyTier, allowedActionsForTier } from "../../../packages/autonomy-tiers/src";
 import { reflectAndRevise } from "../../../packages/reflection-engine/src";
 import { proposeEvolution } from "../../../packages/evolution-engine/src";
@@ -3164,7 +3165,21 @@ export function buildApp(config: RuntimeConfig) {
 
       if (!project.plan) {
         const buildBlockers = getBuildBlockers(project);
+        let autoApprovalDecision: ApprovalDecision | null = null;
         if (buildBlockers.length > 0) {
+          autoApprovalDecision = canAutoApprove(project, {
+            mode: project.approvalMode || "autopilot",
+            contractCompletenessThreshold: 0.7,
+            allowAutoApprovalWithoutIntake: true,
+            logAllApprovals: true,
+          });
+        }
+
+        const shouldBlock =
+          buildBlockers.length > 0 &&
+          (!autoApprovalDecision || !autoApprovalDecision.approved);
+
+        if (shouldBlock) {
           return res.json({
             ok: true,
             route: "build_blocked",
@@ -3178,76 +3193,48 @@ export function buildApp(config: RuntimeConfig) {
               blockers: buildBlockers,
               nextAction: "Resolve spec clarifications and approve build contract before planning.",
             }),
-            actionResult: { blocked: true },
+            actionResult: {
+              blocked: true,
+              reason: autoApprovalDecision?.reason || "Build blockers present",
+            },
           });
         }
+
+        if (autoApprovalDecision?.approved) {
+          project.approvalMode = autoApprovalDecision.mode;
+          project.autoApprovedAt = autoApprovalDecision.autoApprovedAt || now();
+          project.lastApprovalDecision = {
+            approved: autoApprovalDecision.approved,
+            mode: autoApprovalDecision.mode,
+            reason: autoApprovalDecision.reason,
+            conditions: autoApprovalDecision.conditions,
+            highRiskDecisions: autoApprovalDecision.highRiskDecisions,
+            createdAt: autoApprovalDecision.autoApprovedAt || now(),
+          };
+          emitEvent(project as any, {
+            id: `evt_${Date.now()}_auto_approve`,
+            projectId: project.projectId,
+            type: "auto_approval_granted",
+            actorId: actor.actorId,
+            role,
+            timestamp: now(),
+            metadata: {
+              approvalMode: autoApprovalDecision.mode,
+              reason: autoApprovalDecision.reason,
+              conditions: autoApprovalDecision.conditions,
+              highRiskDecisions: autoApprovalDecision.highRiskDecisions,
+            },
+          });
+        }
+
         route = "plan";
         const plan = generatePlan(project.masterTruth as any);
-        const updated = { ...project, plan, status: "queued", updatedAt: now() } as StoredProjectRecord;
-              if (!project.plan) {
-                const buildBlockers = getBuildBlockers(project);
-        
-                // PHASE 3: Check if we can auto-approve under approval policy
-                let autoApprovalDecision = null;
-                if (buildBlockers.length > 0) {
-                  const { canAutoApprove } = await import("../../../packages/governance-engine/src/approvalPolicy");
-                  autoApprovalDecision = canAutoApprove(project, {
-                    mode: project.approvalMode || "autopilot",
-                    contractCompletenessThreshold: 0.7,
-                    allowAutoApprovalWithoutIntake: true,
-                    logAllApprovals: true,
-                  });
-                }
-        
-                // If we have blockers but can auto-approve, override and proceed
-                const shouldBlock = buildBlockers.length > 0 && (!autoApprovalDecision || !autoApprovalDecision.approved);
-        
-                if (shouldBlock) {
-                  return res.json({
-                    ok: true,
-                    route: "build_blocked",
-                    status: project.status,
-                    blockers: buildBlockers,
-                    nextAction: "Resolve spec clarifications and approve build contract before planning.",
-                    actorId: actor.actorId,
-                    operatorMessage: formatOperatorVoice({
-                      direct: "Build is blocked until contract/spec requirements are complete.",
-                      status: project.status,
-                      blockers: buildBlockers,
-                      nextAction: "Resolve spec clarifications and approve build contract before planning.",
-                    }),
-                    actionResult: { 
-                      blocked: true,
-                      reason: autoApprovalDecision?.reason || "Build blockers present"
-                    },
-                  });
-                }
-        
-                // If we auto-approved, log it
-                if (autoApprovalDecision?.approved) {
-                  const { formatApprovalDecision } = await import("../../../packages/governance-engine/src/approvalPolicy");
-                  console.log(`[AUTO-APPROVAL] ${formatApprovalDecision(autoApprovalDecision)}`);
-                  project.approvalMode = autoApprovalDecision.mode;
-                  project.autoApprovedAt = autoApprovalDecision.autoApprovedAt;
-                  emitEvent(project as any, {
-                    id: `evt_${Date.now()}_auto_approve`,
-                    projectId: project.projectId,
-                    type: "auto_approval_granted",
-                    actorId: actor.actorId,
-                    role,
-                    timestamp: now(),
-                    metadata: { 
-                      approvalMode: autoApprovalDecision.mode,
-                      reason: autoApprovalDecision.reason,
-                      conditions: autoApprovalDecision.conditions,
-                      highRiskDecisions: autoApprovalDecision.highRiskDecisions,
-                    },
-                  });
-                }
-        
-                route = "plan";
-                const plan = generatePlan(project.masterTruth as any);
-                const updated = { ...project, plan, status: "queued", updatedAt: now() } as StoredProjectRecord;
+        const updated = {
+          ...project,
+          plan,
+          status: "queued",
+          updatedAt: now(),
+        } as StoredProjectRecord;
         emitEvent(updated as any, {
           id: `evt_${Date.now()}`,
           projectId: updated.projectId,
@@ -3255,7 +3242,11 @@ export function buildApp(config: RuntimeConfig) {
           actorId: actor.actorId,
           role,
           timestamp: now(),
-          metadata: { via: "operator_send" },
+          metadata: {
+            via: "operator_send",
+            autoApproval: autoApprovalDecision?.approved || false,
+            approvalMode: autoApprovalDecision?.mode || project.approvalMode || "autopilot",
+          },
         });
         emitEvent(updated as any, {
           id: `evt_${Date.now()}_op`,
@@ -3275,12 +3266,19 @@ export function buildApp(config: RuntimeConfig) {
           nextAction: "Dispatch next packet for execution.",
           actorId: actor.actorId,
           operatorMessage: formatOperatorVoice({
-            direct: "Plan generated and queued for execution.",
+            direct: autoApprovalDecision?.approved
+              ? "Build contract auto-approved under policy; plan generated and queued for execution."
+              : "Plan generated and queued for execution.",
             status: updated.status,
             blockers: buildOverview(updated).blockers,
             nextAction: "Dispatch next packet for execution.",
           }),
-          actionResult: { planned: true, packetCount: getPackets(updated).length },
+          actionResult: {
+            planned: true,
+            packetCount: getPackets(updated).length,
+            autoApproval: autoApprovalDecision?.approved || false,
+            approvalMode: autoApprovalDecision?.mode || project.approvalMode || "autopilot",
+          },
         });
       }
 

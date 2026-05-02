@@ -90,7 +90,13 @@ export function canAutoApprove(
 
   // Check High-Risk Decisions
   const spec = getMasterSpecFromProject(project);
-  const highRisk = identifyHighRiskDecisions(spec, contract);
+  const highRisk = identifyHighRiskDecisions(
+    {
+      ...spec,
+      request: spec?.request || project?.request || contract?.appSummary || "",
+    },
+    contract
+  );
   if (highRisk.length > 0) {
     decision.highRiskDecisions = highRisk;
     if (config.mode === 'autopilot') {
@@ -114,7 +120,7 @@ export function canAutoApprove(
   }
 
   // Check Blueprint Selected
-  if (!project.blueprint) {
+  if (!hasBlueprintSelected(project)) {
     decision.reason = 'No blueprint matched. Cannot proceed without architecture selection.';
     return decision;
   }
@@ -140,10 +146,10 @@ export function canAutoApprove(
  */
 function evaluateContractCompleteness(contract: any): number {
   if (!contract) return 0;
-  
-  const required = ['objective', 'safetyConstraints'];
+
+  const required = ['appSummary', 'acceptanceCriteria', 'launchCriteria', 'workflows', 'deploymentTarget'];
   const present = required.filter((key) => Boolean(contract[key])).length;
-  
+
   return present / required.length;
 }
 
@@ -217,11 +223,22 @@ function hasConflictingRequirements(spec: any): boolean {
 }
 
 function getContractFromProject(project: any): any {
-  return project?.buildContract || project?.contract;
+  return project?.buildContract || project?.contract || project?.runs?.__buildContract || null;
 }
 
 function getMasterSpecFromProject(project: any): any {
-  return project?.masterTruth || project?.spec;
+  return project?.masterTruth || project?.spec || project?.runs?.__masterSpec || null;
+}
+
+function hasBlueprintSelected(project: any): boolean {
+  return Boolean(
+    project?.blueprint ||
+    project?.masterTruth?.blueprint ||
+    project?.runs?.__masterSpec?.blueprint ||
+    project?.masterTruth?.canonicalSpec?.appType ||
+    project?.masterTruth?.appType ||
+    project?.runs?.__masterSpec?.appType
+  );
 }
 
 /**
