@@ -84,8 +84,16 @@ function testRouteSmokeAndWiring() {
   assert(rootRoute.includes("export default function Page()"), "Root route must export default Page");
   assert(rootRoute.includes("Initializing Launch Project"), "Root route should show launch bootstrap signal");
   assert(projectRoute.includes("<VibeBuilderSkeleton"), "Primary project route must stay chat-first via VibeBuilderSkeleton");
-  assert(vibeRoute.includes("<VibeDashboard"), "Vibe route must render VibeDashboard");
-  assert(advancedRoute.includes("<ProDashboard"), "Advanced route must render ProDashboard");
+  assert(
+    vibeRoute.includes("<VibeDashboard") ||
+      (vibeRoute.includes("<CommercialWorkspaceShell") && vibeRoute.includes("<CommercialVibeCockpit")),
+    "Vibe route must render VibeDashboard or dedicated commercial Vibe cockpit",
+  );
+  assert(
+    advancedRoute.includes("<ProDashboard") ||
+      (advancedRoute.includes("<CommercialWorkspaceShell") && advancedRoute.includes("<CommercialProCockpit")),
+    "Advanced route must render ProDashboard or dedicated commercial Pro cockpit",
+  );
 
   assertRouteUsesSharedShell("apps/control-plane/src/app/projects/[projectId]/settings/page.tsx", "settings");
   assertRouteUsesSharedShell("apps/control-plane/src/app/projects/[projectId]/deployment/page.tsx", "deployment");
