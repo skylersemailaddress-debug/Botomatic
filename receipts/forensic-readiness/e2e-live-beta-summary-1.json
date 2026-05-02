@@ -1,0 +1,15 @@
+{
+  "capturedAt": "2026-05-02T05:47:41.023Z",
+  "loopsRequested": 1,
+  "loopsExecuted": 1,
+  "grep": "root bootstrap avoids launch error when API is reachable",
+  "failedCount": 0,
+  "pass": true,
+  "iterations": [
+    {
+      "index": 1,
+      "exitCode": 0,
+      "receipt": "e2e-live-beta-loop-0001.json"
+    }
+  ]
+}
