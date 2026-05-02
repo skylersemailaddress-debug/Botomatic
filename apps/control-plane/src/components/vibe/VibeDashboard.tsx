@@ -172,7 +172,7 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
             <section className="vibe-rail-card" aria-label="Latest interaction summary">
               <h3>Latest Summary</h3>
               <p>{userFacingSummary}</p>
-              <pre>{JSON.stringify(latestReviewPayload ?? {}, null, 2)}</pre>
+              <small>{latestReviewPayload ? "Review payload captured" : "No review payload yet"}</small>
             </section>
             <section className="vibe-rail-card">
               <h3>Recent Activity</h3>

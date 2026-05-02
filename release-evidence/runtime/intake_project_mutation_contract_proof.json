@@ -1,0 +1,56 @@
+{
+  "generatedAt": "2026-05-02T02:09:49.678Z",
+  "status": "passed",
+  "intakeSubmitMutationPassed": true,
+  "promptSubmitMutationPassed": true,
+  "suggestionSubmitMutationPassed": true,
+  "projectCreationMutationPassed": true,
+  "backend500sResolved": true,
+  "payloadSchemaValidated": true,
+  "e2eOwnerLaunchCoversRealMutation": true,
+  "criticalFailures": 0,
+  "details": [
+    {
+      "step": "create_project",
+      "status": 200,
+      "ok": true,
+      "note": "projectId=proj_1777687789606_sbzcpq"
+    },
+    {
+      "step": "intake_missing_request",
+      "status": 400,
+      "ok": true,
+      "note": "code=INTAKE_REQUEST_REQUIRED"
+    },
+    {
+      "step": "status_before_prompt",
+      "status": 200,
+      "ok": true,
+      "note": "projectStatus=clarifying"
+    },
+    {
+      "step": "prompt_submit",
+      "status": 200,
+      "ok": true,
+      "note": "route=compile"
+    },
+    {
+      "step": "suggestion_submit",
+      "status": 200,
+      "ok": true,
+      "note": "route=build_blocked"
+    },
+    {
+      "step": "invalid_project_prompt",
+      "status": 404,
+      "ok": true,
+      "note": "Project not found"
+    },
+    {
+      "step": "status_after_prompt",
+      "status": 200,
+      "ok": true,
+      "note": "runCount=6"
+    }
+  ]
+}

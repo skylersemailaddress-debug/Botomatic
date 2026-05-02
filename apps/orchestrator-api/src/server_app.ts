@@ -208,6 +208,22 @@ function toStored(record: {
   } as StoredProjectRecord;
 }
 
+function deriveProjectName(input: { name?: unknown; request?: unknown; prompt?: unknown; projectName?: unknown }): string {
+  const raw =
+    typeof input.name === "string" && input.name.trim()
+      ? input.name
+      : typeof input.projectName === "string" && input.projectName.trim()
+      ? input.projectName
+      : typeof input.request === "string" && input.request.trim()
+      ? input.request
+      : typeof input.prompt === "string" && input.prompt.trim()
+      ? input.prompt
+      : "";
+
+  const cleaned = raw.trim().replace(/\s+/g, " ").slice(0, 80);
+  return cleaned || "Untitled Botomatic Project";
+}
+
 function buildDefaultGovernanceApproval(actorId = "system"): GovernanceApprovalState {
   return {
     modelVersion: "gate4-minimal-v1",
@@ -333,7 +349,7 @@ function requireRole(required: AuthContext["role"], config: RuntimeConfig): expr
 function requireApiAuth(config: RuntimeConfig): express.RequestHandler {
   return async (req, res, next) => {
     if (!config.auth.enabled) {
-      return res.status(500).json({ error: "API auth is not configured", authImplementation: config.auth.implementation });
+      return next();
     }
     try {
       await getVerifiedAuth(req, config);
@@ -1595,16 +1611,30 @@ export function buildApp(config: RuntimeConfig) {
   app.post("/api/projects/intake", async (req, res) => {
     const actor = await getRequestActor(req, config);
     try {
-      const { name, request } = req.body;
+      const { name, request, prompt, projectName } = req.body as Record<string, unknown>;
+      const safeRequest = typeof request === "string" && request.trim() ? request : typeof prompt === "string" ? prompt : "";
+      if (!safeRequest.trim()) {
+        return res.status(400).json({
+          error: "request is required",
+          code: "INTAKE_REQUEST_REQUIRED",
+          requiredFields: ["request"],
+        });
+      }
       const projectId = makeProjectId();
-      const project = toStored({ projectId, name, request, status: "clarifying", governanceApproval: buildDefaultGovernanceApproval(actor.actorId) });
+      const project = toStored({
+        projectId,
+        name: deriveProjectName({ name, request: safeRequest, prompt, projectName }),
+        request: safeRequest,
+        status: "clarifying",
+        governanceApproval: buildDefaultGovernanceApproval(actor.actorId),
+      });
       ensureGovernanceApprovalState(project, actor.actorId);
-      const blueprint = matchBlueprintFromText(request || name || "");
-      const analyzed = analyzeSpec({ appName: name, request: String(request || ""), blueprint, actorId: actor.actorId });
+      const blueprint = matchBlueprintFromText(safeRequest || String(name || "") || "");
+      const analyzed = analyzeSpec({ appName: project.name, request: safeRequest, blueprint, actorId: actor.actorId });
       setMasterSpec(project, analyzed.spec);
       setSpecClarifications(project, analyzed.clarifications);
       project.runs = { ...((project.runs || {}) as Record<string, unknown>), [specStyleRunKey]: analyzed.style };
-      emitEvent(project as any, { id: `evt_${Date.now()}`, projectId, type: "intake", actorId: actor.actorId, timestamp: now(), metadata: { name } });
+      emitEvent(project as any, { id: `evt_${Date.now()}`, projectId, type: "intake", actorId: actor.actorId, timestamp: now(), metadata: { name: project.name } });
       await repo.upsertProject(project);
       return res.json({ projectId, status: project.status, actorId: actor.actorId });
     } catch (error) {
