@@ -177,7 +177,11 @@
     "test:wave-038": "tsx packages/validation/src/tests/wave038LaunchProofDeployGating.test.ts",
     "test:wave-039": "tsx packages/validation/src/tests/wave039EndToEndBrowserAcceptance.test.ts",
     "test:wave-040": "tsx packages/validation/src/tests/wave040PublicBetaReleaseGate.test.ts",
-    "test:wave-041": "tsx packages/validation/src/tests/wave041PixelExactReferenceUi.test.ts"
+    "test:wave-041": "tsx packages/validation/src/tests/wave041PixelExactReferenceUi.test.ts",
+    "test:commercial-cockpit": "node tests/commercial/commercial-cockpit-static.test.cjs",
+    "test:visual-commercial:capture": "playwright test --config playwright.commercial-visual.config.ts",
+    "test:visual-commercial:diff": "node tests/visual/scripts/compare-commercial-cockpit.cjs",
+    "test:visual-commercial": "npm run -s test:visual-commercial:capture && npm run -s test:visual-commercial:diff"
   },
   "dependencies": {
     "@trigger.dev/sdk": "^4.4.4"
@@ -186,6 +190,8 @@
     "@playwright/test": "^1.59.1",
     "@trigger.dev/build": "^4.4.4",
     "concurrently": "^9.0.1",
-    "tsx": "^4.19.2"
+    "tsx": "^4.19.2",
+    "pixelmatch": "^5.3.0",
+    "pngjs": "^7.0.0"
   }
 }
