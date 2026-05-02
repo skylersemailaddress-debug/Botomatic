@@ -6,36 +6,50 @@ interface CommercialVibeCockpitProps {
   projectId: string;
 }
 
+const buildSteps = ["Design", "Features", "Data", "Testing", "Launch"];
+const nextActions = ["Describe app idea", "Add logo", "Payment setup", "Email notifications"];
+
 export function CommercialVibeCockpit({ projectId }: CommercialVibeCockpitProps) {
   return (
-    <div className="commercial-vibe" data-testid="commercial-vibe-cockpit" data-project-id={projectId}>
-      <header className="commercial-vibe-header">
-        <div>
+    <div className="commercial-vibe commercial-vibe-reference" data-testid="commercial-vibe-cockpit" data-project-id={projectId}>
+      <header className="commercial-vibe-header commercial-reference-header">
+        <div className="commercial-heading-stack">
           <span className="commercial-pill">VIBE</span>
-          <h1>Vibe Mode</h1>
-          <p>Chat. Design. Build. Launch. All in one flow.</p>
+          <div>
+            <h1>Vibe Mode</h1>
+            <p>Chat. Design. Build. Launch. All in one flow.</p>
+          </div>
         </div>
         <div className="commercial-device-switcher" role="tablist" aria-label="Device preview">
           <button type="button" className="is-active">Desktop</button>
           <button type="button">Tablet</button>
           <button type="button">Mobile</button>
         </div>
-        <div className="commercial-top-actions">
+        <div className="commercial-top-actions commercial-icon-actions">
+          <button type="button" aria-label="Undo">↶</button>
+          <button type="button" aria-label="Redo">↷</button>
+          <button type="button" aria-label="Help">?</button>
           <button type="button">Share</button>
           <button type="button" disabled>Launch unavailable</button>
         </div>
       </header>
 
-      <div className="commercial-vibe-grid">
+      <div className="commercial-vibe-grid commercial-vibe-reference-grid">
         <section className="commercial-vibe-center">
-          <div className="commercial-chat-card">
+          <section className="commercial-vibe-chat-flow" aria-label="Vibe build conversation">
             <div className="commercial-message is-user">Describe the app you want to build.</div>
-            <div className="commercial-message is-bot">
-              I can design the first screen, build the app structure, and prepare launch checks when you are ready.
+            <div className="commercial-message is-bot commercial-progress-message">
+              <p>I can design the first screen, build the app structure, and prepare launch checks when you are ready.</p>
+              <div className="commercial-progress-chips">
+                <span>Understand request</span>
+                <span>Design UI</span>
+                <span>Plan features</span>
+                <span>Prepare build</span>
+              </div>
             </div>
-          </div>
+          </section>
 
-          <section className="commercial-preview-card" data-testid="commercial-preview-card">
+          <section className="commercial-preview-card commercial-vibe-preview-frame" data-testid="commercial-preview-card">
             <div className="commercial-preview-toolbar">
               <button type="button">Edit</button>
               <div>
@@ -45,7 +59,7 @@ export function CommercialVibeCockpit({ projectId }: CommercialVibeCockpitProps)
               </div>
               <button type="button">Version</button>
             </div>
-            <div className="commercial-preview-empty">
+            <div className="commercial-preview-empty commercial-reference-preview-empty">
               <strong>No generated preview yet</strong>
               <p>Describe the app you want to build to generate the first screen.</p>
             </div>
@@ -59,7 +73,7 @@ export function CommercialVibeCockpit({ projectId }: CommercialVibeCockpitProps)
             <button type="button">Add testimonials</button>
           </div>
 
-          <section className="commercial-command-bar" data-testid="commercial-vibe-command-bar">
+          <section className="commercial-command-bar commercial-vibe-command-dock" data-testid="commercial-vibe-command-bar">
             <form>
               <input aria-label="Vibe prompt" placeholder="Ask anything... (e.g., add a pricing section, make the hero bolder, add dark mode)" />
               <button type="submit">Send</button>
@@ -75,10 +89,10 @@ export function CommercialVibeCockpit({ projectId }: CommercialVibeCockpitProps)
           </section>
         </section>
 
-        <aside className="commercial-vibe-rail" data-testid="commercial-vibe-right-rail">
+        <aside className="commercial-vibe-rail commercial-vibe-rail-grid" data-testid="commercial-vibe-right-rail">
           <CommercialPanel title="Build Map" eyebrow="View Audit →">
-            <div className="commercial-build-steps">
-              {["Design", "Features", "Data", "Testing", "Launch"].map((step) => (
+            <div className="commercial-build-steps commercial-build-map-reference">
+              {buildSteps.map((step) => (
                 <div key={step}>
                   <span />
                   <strong>{step}</strong>
@@ -99,10 +113,9 @@ export function CommercialVibeCockpit({ projectId }: CommercialVibeCockpitProps)
 
           <CommercialPanel title="What's Next">
             <div className="commercial-next-grid">
-              <button type="button">Describe app idea</button>
-              <button type="button">Add logo</button>
-              <button type="button" disabled>Payment setup</button>
-              <button type="button" disabled>Email notifications</button>
+              {nextActions.map((action, index) => (
+                <button type="button" key={action} disabled={index > 1}>{action}</button>
+              ))}
             </div>
           </CommercialPanel>
 
