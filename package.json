@@ -177,7 +177,8 @@
     "test:wave-038": "tsx packages/validation/src/tests/wave038LaunchProofDeployGating.test.ts",
     "test:wave-039": "tsx packages/validation/src/tests/wave039EndToEndBrowserAcceptance.test.ts",
     "test:wave-040": "tsx packages/validation/src/tests/wave040PublicBetaReleaseGate.test.ts",
-    "test:wave-041": "tsx packages/validation/src/tests/wave041PixelExactReferenceUi.test.ts"
+    "test:wave-041": "tsx packages/validation/src/tests/wave041PixelExactReferenceUi.test.ts",
+    "test:commercial-cockpit": "node tests/commercial/commercial-cockpit-static.test.cjs"
   },
   "dependencies": {
     "@trigger.dev/sdk": "^4.4.4"

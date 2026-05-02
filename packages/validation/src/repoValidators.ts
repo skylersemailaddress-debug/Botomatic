@@ -155,6 +155,11 @@ export function validateUIReadiness(root: string): RepoValidatorResult {
     "apps/control-plane/src/components/shell/ProductionPageShell.tsx",
     "apps/control-plane/src/components/vibe/VibeDashboard.tsx",
     "apps/control-plane/src/components/pro/ProDashboard.tsx",
+    "apps/control-plane/src/components/commercial/CommercialWorkspaceShell.tsx",
+    "apps/control-plane/src/components/commercial/CommercialVibeCockpit.tsx",
+    "apps/control-plane/src/components/commercial/CommercialProCockpit.tsx",
+    "apps/control-plane/src/components/commercial/CommercialPanel.tsx",
+    "apps/control-plane/src/styles/commercial-workspace.css",
     "apps/control-plane/src/styles/tokens.css",
     "apps/control-plane/src/styles/globals.css",
   ];
@@ -173,9 +178,39 @@ export function validateUIReadiness(root: string): RepoValidatorResult {
   const northStarShell = read(root, "apps/control-plane/src/components/builder/NorthStarBuilderShell.tsx");
   const globals = read(root, "apps/control-plane/src/styles/globals.css");
   const tokenCss = read(root, "apps/control-plane/src/styles/tokens.css");
+  const commercialShell = read(root, "apps/control-plane/src/components/commercial/CommercialWorkspaceShell.tsx");
+  const commercialVibe = read(root, "apps/control-plane/src/components/commercial/CommercialVibeCockpit.tsx");
+  const commercialPro = read(root, "apps/control-plane/src/components/commercial/CommercialProCockpit.tsx");
+  const commercialCss = read(root, "apps/control-plane/src/styles/commercial-workspace.css");
   const uiFiles = listFilesRecursive(path.join(root, "apps/control-plane/src"))
     .filter((p) => /\.(ts|tsx|css)$/.test(p));
   const uiText = uiFiles.map((filePath) => read(root, path.relative(root, filePath))).join("\n").toLowerCase();
+
+  const hasCommercialCockpitSignals =
+    vibePage.includes("<CommercialWorkspaceShell") &&
+    vibePage.includes("<CommercialVibeCockpit") &&
+    advancedPage.includes("<CommercialWorkspaceShell") &&
+    advancedPage.includes("<CommercialProCockpit") &&
+    commercialShell.includes("data-testid=\"commercial-shell\"") &&
+    commercialShell.includes("data-testid=\"commercial-product-sidebar\"") &&
+    commercialVibe.includes("data-testid=\"commercial-vibe-cockpit\"") &&
+    commercialVibe.includes("data-testid=\"commercial-vibe-right-rail\"") &&
+    commercialVibe.includes("data-testid=\"commercial-vibe-command-bar\"") &&
+    commercialPro.includes("data-testid=\"commercial-pro-cockpit\"") &&
+    commercialPro.includes("data-testid=\"commercial-pro-grid\"") &&
+    commercialCss.includes(".commercial-shell") &&
+    commercialCss.includes(".commercial-vibe-grid") &&
+    commercialCss.includes(".commercial-pro-grid") &&
+    commercialVibe.includes("No generated preview yet") &&
+    commercialPro.includes("No generated source yet") &&
+    commercialPro.includes("No database schema generated yet") &&
+    commercialPro.includes("No tests have run yet") &&
+    commercialPro.includes("No runtime logs yet") &&
+    commercialPro.includes("No commits yet") &&
+    !commercialVibe.includes("Luxora") &&
+    !commercialPro.includes("Luxora") &&
+    !commercialVibe.includes("Luxury Booking Site") &&
+    !commercialPro.includes("Luxury Booking Site");
 
   const hasDesignSystemSignals =
     tokenCss.includes("--space-") &&
@@ -195,19 +230,36 @@ export function validateUIReadiness(root: string): RepoValidatorResult {
     !uiText.includes("fixme") &&
     !uiText.includes("fake demo data");
 
-  const routeShellAlignment =
+  const legacyRouteShellAlignment =
     projectPage.includes("<VibeBuilderSkeleton") &&
     vibePage.includes("<VibeDashboard") &&
     advancedPage.includes("<ProDashboard");
 
-  const vibeSurfaceSignals =
+  const commercialRouteShellAlignment =
+    vibePage.includes("<CommercialWorkspaceShell") &&
+    vibePage.includes("<CommercialVibeCockpit") &&
+    advancedPage.includes("<CommercialWorkspaceShell") &&
+    advancedPage.includes("<CommercialProCockpit");
+
+  const routeShellAlignment = legacyRouteShellAlignment || commercialRouteShellAlignment;
+
+  const legacyVibeSurfaceSignals =
     vibeDashboard.includes("Vibe Mode") &&
     vibeDashboard.includes("Build Map") &&
     vibeDashboard.includes("One-Click Launch") &&
     vibeDashboard.includes("Improve Design") &&
     vibeDashboard.includes("Launch App");
 
-  const proSurfaceSignals =
+  const commercialVibeSurfaceSignals =
+    commercialVibe.includes("Vibe Mode") &&
+    commercialVibe.includes("Build Map") &&
+    commercialVibe.includes("One-Click Launch") &&
+    commercialVibe.includes("Improve Design") &&
+    commercialVibe.includes("Launch unavailable");
+
+  const vibeSurfaceSignals = legacyVibeSurfaceSignals || commercialVibeSurfaceSignals;
+
+  const legacyProSurfaceSignals =
     proDashboard.includes("Pro Mode") &&
     proDashboard.includes("Build Pipeline") &&
     proDashboard.includes("Code Changes") &&
@@ -219,6 +271,21 @@ export function validateUIReadiness(root: string): RepoValidatorResult {
     proDashboard.includes("Terminal") &&
     proDashboard.includes("AI Copilot") &&
     proDashboard.includes("Deploy");
+
+  const commercialProSurfaceSignals =
+    commercialPro.includes("Pro Mode") &&
+    commercialPro.includes("Build Pipeline") &&
+    commercialPro.includes("Code Changes") &&
+    commercialPro.includes("Live Application") &&
+    commercialPro.includes("System Health") &&
+    commercialPro.includes("Services") &&
+    commercialPro.includes("Database Schema") &&
+    commercialPro.includes("Test Results") &&
+    commercialPro.includes("Terminal") &&
+    commercialPro.includes("AI Copilot") &&
+    commercialPro.includes("Deploy");
+
+  const proSurfaceSignals = legacyProSurfaceSignals || commercialProSurfaceSignals;
 
   const shellToggleGuardText = `${productionShell}\n${northStarShell}`.toLowerCase();
   const hasNoGlobalModeToggleLanguage =
@@ -846,6 +913,9 @@ export function validateUIControlPlaneIntegration(root: string): RepoValidatorRe
   const checks = [
     "apps/control-plane/src/app/projects/[projectId]/page.tsx",
     "apps/control-plane/src/app/projects/[projectId]/advanced/page.tsx",
+    "apps/control-plane/src/components/commercial/CommercialWorkspaceShell.tsx",
+    "apps/control-plane/src/components/commercial/CommercialVibeCockpit.tsx",
+    "apps/control-plane/src/components/commercial/CommercialProCockpit.tsx",
     "apps/control-plane/src/app/projects/[projectId]/settings/page.tsx",
     "apps/control-plane/src/app/projects/[projectId]/evidence/page.tsx",
     "apps/control-plane/src/app/projects/[projectId]/deployment/page.tsx",
@@ -859,7 +929,11 @@ export function validateUIControlPlaneIntegration(root: string): RepoValidatorRe
   ];
   const fileOk = checks.every((p) => has(root, p));
   const page = fileOk ? read(root, "apps/control-plane/src/app/projects/[projectId]/page.tsx") : "";
+  const vibePage = fileOk ? read(root, "apps/control-plane/src/app/projects/[projectId]/vibe/page.tsx") : "";
   const advancedPage = fileOk ? read(root, "apps/control-plane/src/app/projects/[projectId]/advanced/page.tsx") : "";
+  const commercialShellIntegration = fileOk ? read(root, "apps/control-plane/src/components/commercial/CommercialWorkspaceShell.tsx") : "";
+  const commercialVibeIntegration = fileOk ? read(root, "apps/control-plane/src/components/commercial/CommercialVibeCockpit.tsx") : "";
+  const commercialProIntegration = fileOk ? read(root, "apps/control-plane/src/components/commercial/CommercialProCockpit.tsx") : "";
   const settingsPage = fileOk ? read(root, "apps/control-plane/src/app/projects/[projectId]/settings/page.tsx") : "";
   const evidencePage = fileOk ? read(root, "apps/control-plane/src/app/projects/[projectId]/evidence/page.tsx") : "";
   const deploymentPage = fileOk ? read(root, "apps/control-plane/src/app/projects/[projectId]/deployment/page.tsx") : "";
@@ -877,8 +951,12 @@ export function validateUIControlPlaneIntegration(root: string): RepoValidatorRe
     deploySvc.includes("/deploy/promote");
   const ok =
     fileOk &&
-    page.includes("<VibeBuilderSkeleton") &&
-    advancedPage.includes("<ProDashboard") &&
+    (page.includes("<VibeBuilderSkeleton") || (vibePage.includes("<CommercialWorkspaceShell") && vibePage.includes("<CommercialVibeCockpit"))) &&
+    (advancedPage.includes("<ProDashboard") || (advancedPage.includes("<CommercialWorkspaceShell") && advancedPage.includes("<CommercialProCockpit"))) &&
+    commercialShellIntegration.includes("commercial-product-sidebar") &&
+    commercialVibeIntegration.includes("commercial-vibe-right-rail") &&
+    commercialVibeIntegration.includes("commercial-vibe-command-bar") &&
+    commercialProIntegration.includes("commercial-pro-grid") &&
     settingsPage.includes("<GatePanel") &&
     settingsPage.includes("<LaunchReadinessPanel") &&
     evidencePage.includes("<ProofValidationPanel") &&
