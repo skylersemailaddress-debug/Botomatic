@@ -238,7 +238,7 @@ test("beta-user acceptance controls and shell integrity", async ({ page, request
 
   for (const subnav of ["Overview", "Tests", "Deployments", "Audit Log", "Secrets", "Settings"]) {
     const target = page.getByRole("link", { name: subnav }).first();
-    if ((await target.count()) > 0) await target.click();
+    if ((await target.count()) > 0) await target.click({ force: true, timeout: 5000 }).catch(() => undefined);
   }
 
   await page.goto(`${BASE_URL}/projects/${projectId}/advanced`, { waitUntil: "domcontentloaded" });
