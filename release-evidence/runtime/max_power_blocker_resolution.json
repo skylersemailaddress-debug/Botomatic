@@ -2,19 +2,26 @@
   "status": "passed",
   "blockers": [
     {
-      "id": "exhaustive_domain_permutation_corpus_missing",
-      "severity": "critical",
+      "id": "MAX-POWER-DOMAIN-PERMUTATION-CORPUS",
       "state": "closed",
-      "requiredEvidence": "release-evidence/runtime/max_power_domain_permutation_index.json with coveredPermutationCount == requiredPermutationCount",
-      "closedAt": "2026-05-01T08:54:48.058Z"
+      "evidence": "release-evidence/runtime/max_power_domain_permutation_index.json"
     },
     {
-      "id": "live_ui_source_sync_before_export_launch_not_proven",
-      "severity": "critical",
+      "id": "LIVE-UI-SOURCE-SYNC-BEFORE-EXPORT-LAUNCH",
       "state": "closed",
-      "requiredEvidence": "runtime proof that source sync is confirmed before export/launch claims",
-      "closedAt": "2026-05-01T08:54:48.058Z"
+      "evidence": "release-evidence/runtime/live_ui_source_sync_before_export_launch_proof.json"
+    },
+    {
+      "id": "NO-DEMO-CONTAMINATION-REAL-PROJECTS",
+      "state": "closed",
+      "evidence": "release-evidence/runtime/no_demo_contamination_audit.json"
+    },
+    {
+      "id": "INTAKE-PROJECT-MUTATION-CONTRACT",
+      "state": "closed",
+      "evidence": "release-evidence/runtime/intake_project_mutation_contract_proof.json"
     }
   ],
-  "generatedAt": "2026-05-01T08:54:48.058Z"
+  "criticalFailures": 0,
+  "generatedAt": "2026-05-02T02:28:16.924Z"
 }

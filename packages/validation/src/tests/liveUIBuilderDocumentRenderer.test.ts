@@ -8,12 +8,14 @@ const fx = createUIPreviewInteractionFixture();
 const rootNodeId = fx.doc.pages[0].rootNodeIds[0];
 const childNodeId = fx.doc.pages[0].nodes[rootNodeId].childIds[0];
 const html = renderToStaticMarkup(React.createElement(LiveUIBuilderDocumentRenderer, { editableDocument: fx.doc, selectedNodeId: childNodeId, changedNodeIds: [rootNodeId] }));
-assert(html.includes("Document-driven preview, not final production rendering."));
+assert(html.includes("data-testid=\"live-ui-builder-document-renderer\""));
+assert(html.includes("data-live-ui-renderer=\"document\""));
 assert(html.includes(`data-live-ui-node-id=\"${rootNodeId}\"`));
 assert(html.includes(`data-live-ui-node-id=\"${childNodeId}\"`));
 assert(html.includes("data-selectable=\"true\""));
 assert(html.includes(`data-selected=\"true\"`));
 assert(html.includes(`data-changed=\"true\"`));
+assert(!html.includes("Document-driven preview, not final production rendering."));
 
 const unknownDoc = JSON.parse(JSON.stringify(fx.doc));
 unknownDoc.pages[0].nodes[childNodeId].kind = "mystery";

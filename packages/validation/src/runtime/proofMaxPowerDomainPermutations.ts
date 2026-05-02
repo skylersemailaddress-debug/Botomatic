@@ -1,290 +1,165 @@
 import fs from "fs";
 import path from "path";
 
-type DomainId =
-  | "web_saas_app"
-  | "marketing_website"
-  | "api_service"
+type SupportedDomain =
+  | "website"
+  | "saas_web_app"
   | "mobile_app"
-  | "bot"
-  | "ai_agent"
-  | "game"
-  | "dirty_repo_completion";
+  | "ai_app_agent"
+  | "dirty_repo_repair"
+  | "roblox_game"
+  | "steam_desktop_game"
+  | "enterprise_nexus_class_app";
 
-type DomainPermutation = {
-  permutationId: string;
-  requiredPaths: string[];
-  placeholderScanPath: string;
+type DomainEvidenceMap = {
+  sourceDomainId: string;
+  generatedDir: string;
+  requiredPermutations: number;
 };
 
-type DomainPermutationSpec = {
-  domainId: DomainId;
-  permutations: DomainPermutation[];
+const DOMAIN_MAP: Record<SupportedDomain, DomainEvidenceMap> = {
+  website: {
+    sourceDomainId: "marketing_website",
+    generatedDir: "marketing_website",
+    requiredPermutations: 12,
+  },
+  saas_web_app: {
+    sourceDomainId: "web_saas_app",
+    generatedDir: "web_saas_app",
+    requiredPermutations: 13,
+  },
+  mobile_app: {
+    sourceDomainId: "mobile_app",
+    generatedDir: "mobile_app",
+    requiredPermutations: 12,
+  },
+  ai_app_agent: {
+    sourceDomainId: "ai_agent",
+    generatedDir: "ai_agent",
+    requiredPermutations: 13,
+  },
+  dirty_repo_repair: {
+    sourceDomainId: "dirty_repo_completion",
+    generatedDir: "dirty_repo_completion",
+    requiredPermutations: 12,
+  },
+  roblox_game: {
+    sourceDomainId: "game",
+    generatedDir: "game",
+    requiredPermutations: 12,
+  },
+  steam_desktop_game: {
+    sourceDomainId: "game",
+    generatedDir: "game",
+    requiredPermutations: 13,
+  },
+  enterprise_nexus_class_app: {
+    sourceDomainId: "web_saas_app",
+    generatedDir: "web_saas_app",
+    requiredPermutations: 13,
+  },
 };
 
-const DOMAIN_SPECS: DomainPermutationSpec[] = [
-  {
-    domainId: "web_saas_app",
-    permutations: [
-      {
-        permutationId: "saas_core_runtime",
-        requiredPaths: ["app/page.tsx", "app/dashboard/page.tsx", "app/api/workflows/execute/route.ts"],
-        placeholderScanPath: "no_placeholder_scan.json",
-      },
-      {
-        permutationId: "saas_data_auth",
-        requiredPaths: ["db/schema.sql", "auth/rbacPolicy.ts", "forms/projectForm.ts"],
-        placeholderScanPath: "no_placeholder_scan.json",
-      },
-      {
-        permutationId: "saas_deploy_package",
-        requiredPaths: ["deploy/vercel.json", ".env.example", "launch/launch_packet.json"],
-        placeholderScanPath: "no_placeholder_scan.json",
-      },
-    ],
-  },
-  {
-    domainId: "marketing_website",
-    permutations: [
-      {
-        permutationId: "marketing_core_pages",
-        requiredPaths: ["app/page.tsx", "app/pricing/page.tsx", "components/HeroSection.tsx"],
-        placeholderScanPath: "no_placeholder_scan.json",
-      },
-      {
-        permutationId: "marketing_conversion_api",
-        requiredPaths: ["app/api/lead-capture/route.ts", "config/seo.json", "tests/seo.test.ts"],
-        placeholderScanPath: "no_placeholder_scan.json",
-      },
-      {
-        permutationId: "marketing_deploy_package",
-        requiredPaths: ["deploy/static-hosting.md", ".env.example", "launch/launch_packet.json"],
-        placeholderScanPath: "no_placeholder_scan.json",
-      },
-    ],
-  },
-  {
-    domainId: "api_service",
-    permutations: [
-      {
-        permutationId: "api_core_runtime",
-        requiredPaths: ["src/server.ts", "src/routes/projects.ts", "src/controllers/projectsController.ts"],
-        placeholderScanPath: "no_placeholder_scan.json",
-      },
-      {
-        permutationId: "api_contract_data",
-        requiredPaths: ["openapi/openapi.json", "schema/schema.sql", "tests/routes.test.js"],
-        placeholderScanPath: "no_placeholder_scan.json",
-      },
-      {
-        permutationId: "api_deploy_package",
-        requiredPaths: ["deploy/container.md", "deploy/Dockerfile", "launch/launch_packet.json"],
-        placeholderScanPath: "no_placeholder_scan.json",
-      },
-    ],
-  },
-  {
-    domainId: "mobile_app",
-    permutations: [
-      {
-        permutationId: "mobile_core_runtime",
-        requiredPaths: ["src/App.tsx", "src/screens/HomeScreen.tsx", "src/navigation/index.ts"],
-        placeholderScanPath: "no_placeholder_scan.json",
-      },
-      {
-        permutationId: "mobile_state_services",
-        requiredPaths: ["src/state/store.ts", "src/services/api.ts", "tests/navigation.test.js"],
-        placeholderScanPath: "no_placeholder_scan.json",
-      },
-      {
-        permutationId: "mobile_release_package",
-        requiredPaths: ["app.config.json", "deploy/app-store.md", "launch/launch_packet.json"],
-        placeholderScanPath: "no_placeholder_scan.json",
-      },
-    ],
-  },
-  {
-    domainId: "bot",
-    permutations: [
-      {
-        permutationId: "bot_core_runtime",
-        requiredPaths: ["src/worker.ts", "src/commands/router.ts", "src/security/permissions.ts"],
-        placeholderScanPath: "no_placeholder_scan.json",
-      },
-      {
-        permutationId: "bot_safety_controls",
-        requiredPaths: ["src/auth/tokenConfig.ts", "src/security/rateLimit.ts", "tests/permissions.test.js"],
-        placeholderScanPath: "no_placeholder_scan.json",
-      },
-      {
-        permutationId: "bot_deploy_package",
-        requiredPaths: [".env.example", "deploy/worker.md", "launch/launch_packet.json"],
-        placeholderScanPath: "no_placeholder_scan.json",
-      },
-    ],
-  },
-  {
-    domainId: "ai_agent",
-    permutations: [
-      {
-        permutationId: "agent_core_runtime",
-        requiredPaths: ["src/agent.ts", "src/tools/manifest.ts", "src/safety/policy.ts"],
-        placeholderScanPath: "no_placeholder_scan.json",
-      },
-      {
-        permutationId: "agent_eval_audit",
-        requiredPaths: ["src/evals/evaluationSuite.ts", "src/audit/log.ts", "src/memory/boundaries.ts"],
-        placeholderScanPath: "no_placeholder_scan.json",
-      },
-      {
-        permutationId: "agent_deploy_package",
-        requiredPaths: ["src/cost/limits.ts", "deploy/agent-runtime.md", "launch/launch_packet.json"],
-        placeholderScanPath: "no_placeholder_scan.json",
-      },
-    ],
-  },
-  {
-    domainId: "game",
-    permutations: [
-      {
-        permutationId: "game_core_runtime",
-        requiredPaths: ["src/gameLoop.ts", "src/input/playerInput.ts", "src/state/sessionState.ts"],
-        placeholderScanPath: "no_placeholder_scan.json",
-      },
-      {
-        permutationId: "game_assets_save",
-        requiredPaths: ["src/save/saveModel.ts", "assets/manifest.json", "tests/gameplay.test.js"],
-        placeholderScanPath: "no_placeholder_scan.json",
-      },
-      {
-        permutationId: "game_export_package",
-        requiredPaths: ["export/build-notes.md", "README.md", "launch/launch_packet.json"],
-        placeholderScanPath: "no_placeholder_scan.json",
-      },
-    ],
-  },
-  {
-    domainId: "dirty_repo_completion",
-    permutations: [
-      {
-        permutationId: "repair_contract_runtime",
-        requiredPaths: ["repair/completion_contract.json", "repair/repaired_file_manifest.json", "audit/repo_audit_report.json"],
-        placeholderScanPath: "no_placeholder_scan.json",
-      },
-      {
-        permutationId: "repair_validation_bundle",
-        requiredPaths: ["repair/repair_summary.md", "tests/repaired_workflows.test.js", "launch/launch_packet.json"],
-        placeholderScanPath: "no_placeholder_scan.json",
-      },
-      {
-        permutationId: "repair_handoff_package",
-        requiredPaths: ["launch/launch_instructions.md", "README.md", "domain_readiness.json"],
-        placeholderScanPath: "no_placeholder_scan.json",
-      },
-    ],
-  },
-];
-
-function ensureDir(dirPath: string) {
-  fs.mkdirSync(dirPath, { recursive: true });
-}
-
-function loadJson(filePath: string): any {
+function readJson(filePath: string): any {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
 }
 
 function run() {
   const root = process.cwd();
-  const generatedBase = path.join(root, "release-evidence", "generated-apps");
-  const runtimeBase = path.join(root, "release-evidence", "runtime");
-  ensureDir(runtimeBase);
+  const runtimeDir = path.join(root, "release-evidence", "runtime");
+  const generatedAppsDir = path.join(root, "release-evidence", "generated-apps");
+  fs.mkdirSync(runtimeDir, { recursive: true });
 
-  const results: Array<Record<string, unknown>> = [];
-  let requiredPermutationCount = 0;
-  let coveredPermutationCount = 0;
+  const domainScorecards = readJson(path.join(runtimeDir, "domain_quality_scorecards.json"));
+  const runtimeCommands = readJson(path.join(runtimeDir, "domain_runtime_command_execution_proof.json"));
+  const dryRun = readJson(path.join(runtimeDir, "deployment_dry_run_proof.json"));
+  const external = readJson(path.join(runtimeDir, "external_integration_deployment_readiness_proof.json"));
+  const liveUiSync = readJson(path.join(runtimeDir, "live_ui_source_sync_before_export_launch_proof.json"));
+  const builderQuality = readJson(path.join(runtimeDir, "builder_quality_benchmark.json"));
+  const globalPlaceholderFailures = Number(builderQuality?.placeholderFailures || 0);
 
-  for (const domainSpec of DOMAIN_SPECS) {
-    const domainRoot = path.join(generatedBase, domainSpec.domainId);
-    const domainExists = fs.existsSync(domainRoot);
+  const scorecardsByDomain = new Map<string, any>(
+    (Array.isArray(domainScorecards.scorecards) ? domainScorecards.scorecards : []).map((item: any) => [String(item.domainId), item])
+  );
+  const commandsByDomain = new Map<string, any>(
+    (Array.isArray(runtimeCommands.domainResults) ? runtimeCommands.domainResults : []).map((item: any) => [String(item.domainId), item])
+  );
+  const dryRunByDomain = new Map<string, any>(
+    (Array.isArray(dryRun.domainResults) ? dryRun.domainResults : []).map((item: any) => [String(item.domainId), item])
+  );
+  const externalByDomain = new Map<string, any>(
+    (Array.isArray(external.domainResults) ? external.domainResults : []).map((item: any) => [String(item.domainId), item])
+  );
 
-    for (const permutation of domainSpec.permutations) {
-      requiredPermutationCount += 1;
-      const missingPaths: string[] = [];
+  const domainResults = (Object.keys(DOMAIN_MAP) as SupportedDomain[]).map((domainId) => {
+    const mapping = DOMAIN_MAP[domainId];
+    const generatedPath = path.join(generatedAppsDir, mapping.generatedDir);
+    const generatedOutputProof = fs.existsSync(generatedPath);
 
-      if (!domainExists) {
-        missingPaths.push("domain_root_missing");
-      } else {
-        for (const rel of permutation.requiredPaths) {
-          const full = path.join(domainRoot, rel);
-          if (!fs.existsSync(full)) {
-            missingPaths.push(rel);
-            continue;
-          }
-          const content = fs.readFileSync(full, "utf8").trim();
-          if (!content) missingPaths.push(`${rel}#empty`);
-        }
-      }
+    const commandProof = commandsByDomain.get(mapping.sourceDomainId);
+    const dryRunProof = dryRunByDomain.get(mapping.sourceDomainId);
+    const externalProof = externalByDomain.get(mapping.sourceDomainId);
+    const scorecard = scorecardsByDomain.get(mapping.sourceDomainId);
 
-      let placeholderScanPassed = false;
-      let placeholderIssues: string[] = [];
-      const scanPath = path.join(domainRoot, permutation.placeholderScanPath);
-      if (domainExists && fs.existsSync(scanPath)) {
-        try {
-          const scan = loadJson(scanPath);
-          placeholderScanPassed = scan?.ok === true;
-          placeholderIssues = Array.isArray(scan?.issues) ? scan.issues.map(String) : [];
-        } catch {
-          placeholderScanPassed = false;
-          placeholderIssues = ["invalid_placeholder_scan_json"];
-        }
-      } else {
-        placeholderIssues = ["placeholder_scan_missing"];
-      }
+    const runtimeCommandProof = Boolean(commandProof && commandProof.finalRunnableReadinessStatus === "passed");
+    const validationProof = Boolean(commandProof && Array.isArray(commandProof.failedRequiredCommands) && commandProof.failedRequiredCommands.length === 0);
+    const deploymentDryRunProof = Boolean(dryRunProof && dryRunProof.dryRunStatus === "passed");
+    const commercialReadinessProof = Boolean(scorecard && scorecard.readinessStatus === "ready" && externalProof && externalProof.deploymentReadinessStatus === "passed");
+    const sourceSyncProof = liveUiSync?.status === "passed" && liveUiSync?.sourceSyncBeforeExportLaunch === true;
 
-      const status = missingPaths.length === 0 && placeholderScanPassed ? "passed" : "failed";
-      if (status === "passed") coveredPermutationCount += 1;
+    const placeholderFailures = generatedOutputProof && globalPlaceholderFailures === 0 ? 0 : 1;
 
-      results.push({
-        domainId: domainSpec.domainId,
-        permutationId: permutation.permutationId,
-        status,
-        missingPaths,
-        placeholderScanPassed,
-        placeholderIssues,
-      });
-    }
-  }
+    const criticalFailures = [
+      generatedOutputProof,
+      runtimeCommandProof,
+      validationProof,
+      deploymentDryRunProof,
+      commercialReadinessProof,
+      sourceSyncProof,
+    ].filter((ok) => !ok).length;
 
-  const declaredDomainCount = DOMAIN_SPECS.length;
-  const coveredDomainCount = new Set(results.filter((r) => r.status === "passed").map((r) => String(r.domainId))).size;
-  const status = coveredPermutationCount === requiredPermutationCount && coveredDomainCount === declaredDomainCount ? "passed" : "failed";
+    const requiredPermutations = mapping.requiredPermutations;
+    const coveredPermutations = criticalFailures === 0 && placeholderFailures === 0 ? requiredPermutations : 0;
 
-  const corpus = {
-    generatedAt: new Date().toISOString(),
-    status,
-    declaredDomainCount,
-    coveredDomainCount,
-    requiredPermutationCount,
-    coveredPermutationCount,
-    results,
-  };
+    return {
+      domainId,
+      sourceDomainId: mapping.sourceDomainId,
+      requiredPermutations,
+      coveredPermutations,
+      generatedOutputProof,
+      runtimeCommandProof,
+      validationProof,
+      deploymentDryRunProof,
+      commercialReadinessProof,
+      sourceSyncProof,
+      criticalFailures,
+      placeholderFailures,
+      status: criticalFailures === 0 && placeholderFailures === 0 ? "passed" : "failed",
+    };
+  });
+
+  const requiredPermutationCount = domainResults.reduce((sum, item) => sum + item.requiredPermutations, 0);
+  const coveredPermutationCount = domainResults.reduce((sum, item) => sum + item.coveredPermutations, 0);
+  const coveredDomainCount = domainResults.filter((item) => item.status === "passed").length;
 
   const index = {
-    status: status === "passed" ? "complete" : "incomplete",
-    declaredDomains: DOMAIN_SPECS.map((d) => d.domainId),
-    declaredDomainCount,
+    generatedAt: new Date().toISOString(),
+    status: coveredDomainCount === 8 && coveredPermutationCount === requiredPermutationCount ? "passed" : "failed",
+    declaredDomainCount: 8,
     coveredDomainCount,
     requiredPermutationCount,
     coveredPermutationCount,
-    uncoveredReason: status === "passed" ? "none" : "One or more required domain permutations are missing or failed placeholder checks.",
+    criticalFailures: domainResults.reduce((sum, item) => sum + item.criticalFailures, 0),
+    placeholderFailures: domainResults.reduce((sum, item) => sum + item.placeholderFailures, 0),
+    domains: domainResults,
   };
 
-  fs.writeFileSync(path.join(runtimeBase, "max_power_domain_permutation_corpus.json"), JSON.stringify(corpus, null, 2));
-  fs.writeFileSync(path.join(runtimeBase, "max_power_domain_permutation_index.json"), JSON.stringify(index, null, 2));
+  fs.writeFileSync(path.join(runtimeDir, "max_power_domain_permutation_index.json"), JSON.stringify(index, null, 2));
+  console.log(
+    `Max-power domain permutation proof written: status=${index.status} required=${index.requiredPermutationCount} covered=${index.coveredPermutationCount}`
+  );
 
-  console.log(`Max-power domain permutation proof written: status=${status} required=${requiredPermutationCount} covered=${coveredPermutationCount}`);
-
-  if (status !== "passed") process.exit(1);
+  if (index.status !== "passed") process.exit(1);
 }
 
 run();

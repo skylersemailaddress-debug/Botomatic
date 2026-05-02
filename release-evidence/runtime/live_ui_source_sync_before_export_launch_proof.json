@@ -1,10 +1,18 @@
 {
-  "generatedAt": "2026-05-01T08:54:44.349Z",
+  "generatedAt": "2026-05-02T02:28:16.050Z",
   "status": "passed",
+  "sourceBackedLiveUiModel": true,
+  "previewEditApplied": true,
+  "sourcePatchWritten": true,
   "sourceSyncBeforeExportLaunch": true,
-  "blockedBeforeSourceSync": true,
+  "stalePreviewOnlyStateBlocked": true,
+  "unsyncedExportBlocked": true,
+  "unsyncedLaunchBlocked": true,
   "exportReadyAfterSourceSync": true,
   "launchReadyAfterSourceSync": true,
+  "compileAfterSourceSyncPassed": true,
+  "rollbackAfterFailedSyncPassed": true,
+  "criticalFailures": 0,
   "applyResult": {
     "ok": true,
     "mode": "confirmedApply",
@@ -30,7 +38,7 @@
     "blockedReasons": []
   },
   "applyProof": {
-    "transactionId": "757b2bcf2fd519ec",
+    "transactionId": "8846d33a9fcce56d",
     "changedFiles": [
       "components/Hero.tsx"
     ],

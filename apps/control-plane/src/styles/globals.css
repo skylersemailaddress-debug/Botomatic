@@ -460,7 +460,7 @@ a:hover {
   min-width: 0;
 }
 
-@media (max-width: 1240px) {
+@media (max-width: 960px) {
   .project-workspace-shell {
     grid-template-columns: 1fr;
     padding: 16px;
@@ -2031,7 +2031,7 @@ a:hover {
   color: #4e22cb;
 }
 
-@media (max-width: 1240px) {
+@media (max-width: 1080px) {
   .vibe-dashboard { grid-template-columns: 1fr; }
   .vibe-dashboard-layout { grid-template-columns: 1fr; }
   .vibe-dashboard-sidebar { border-right: 0; border-bottom: 1px solid #e8e7f5; }
@@ -2224,3 +2224,5 @@ a:hover {
   flex-wrap: wrap;
   gap: 0.5rem;
 }
+
+@import "./commercial-workspace.css";

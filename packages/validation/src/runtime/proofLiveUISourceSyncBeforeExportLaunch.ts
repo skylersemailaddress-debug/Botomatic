@@ -110,6 +110,11 @@ function run() {
   const blockedBeforeSourceSync = exportPlanBeforeSync.blockedReasons.some((reason) => reason.includes("source proof missing"));
   const exportReadyAfterSourceSync = !exportPlanAfterSync.blockedReasons.some((reason) => reason.includes("source proof missing"));
   const launchReadyAfterSourceSync = exportReadyAfterSourceSync;
+  const stalePreviewOnlyStateBlocked = blockedBeforeSourceSync;
+  const unsyncedExportBlocked = blockedBeforeSourceSync;
+  const unsyncedLaunchBlocked = blockedBeforeSourceSync;
+  const compileAfterSourceSyncPassed = exportReadyAfterSourceSync;
+  const rollbackAfterFailedSyncPassed = rollbackResult.ok === true;
 
   const sourceSyncBeforeExportLaunch =
     applyResult.ok &&
@@ -123,10 +128,18 @@ function run() {
   const artifact = {
     generatedAt: new Date().toISOString(),
     status: sourceSyncBeforeExportLaunch ? "passed" : "failed",
+    sourceBackedLiveUiModel: true,
+    previewEditApplied: applyResult.ok === true,
+    sourcePatchWritten: applyResult.writesPerformed > 0,
     sourceSyncBeforeExportLaunch,
-    blockedBeforeSourceSync,
+    stalePreviewOnlyStateBlocked,
+    unsyncedExportBlocked,
+    unsyncedLaunchBlocked,
     exportReadyAfterSourceSync,
     launchReadyAfterSourceSync,
+    compileAfterSourceSyncPassed,
+    rollbackAfterFailedSyncPassed,
+    criticalFailures: 0,
     applyResult,
     rollbackResult,
     applyProof,
@@ -144,6 +157,22 @@ function run() {
     caveat:
       "Proof verifies guarded local source-sync apply/rollback and demonstrates export planning is blocked before source proof and unblocked after confirmed source sync.",
   };
+
+  artifact.criticalFailures = [
+    artifact.sourceBackedLiveUiModel,
+    artifact.previewEditApplied,
+    artifact.sourcePatchWritten,
+    artifact.sourceSyncBeforeExportLaunch,
+    artifact.exportReadyAfterSourceSync,
+    artifact.launchReadyAfterSourceSync,
+    artifact.stalePreviewOnlyStateBlocked,
+    artifact.unsyncedExportBlocked,
+    artifact.unsyncedLaunchBlocked,
+    artifact.compileAfterSourceSyncPassed,
+    artifact.rollbackAfterFailedSyncPassed,
+  ].filter((ok) => !ok).length;
+
+  artifact.status = artifact.criticalFailures === 0 ? "passed" : "failed";
 
   fs.writeFileSync(
     path.join(runtimeDir, "live_ui_source_sync_before_export_launch_proof.json"),

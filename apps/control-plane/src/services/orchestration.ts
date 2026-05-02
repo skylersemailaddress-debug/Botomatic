@@ -55,8 +55,20 @@ function fromPayload(projectId: string, payloadRaw: unknown, fallbackRunId?: str
 }
 
 export async function submitVibeIntake(projectId: string, prompt: string): Promise<ApiResult<IntakeResponse>> {
+  const operatorEndpoint = `/api/projects/${encodeURIComponent(projectId)}/operator/send`;
+  const operatorBody = { message: prompt };
+  const operatorResult = await postJsonSafe<unknown, typeof operatorBody>(operatorEndpoint, operatorBody);
+  if (operatorResult.ok) {
+    const status = await getOrchestrationStatus(projectId);
+    if (status.ok) return { ok: true, data: status.data };
+    return { ok: true, data: fromPayload(projectId, operatorResult.data) };
+  }
+  if (operatorResult.status && operatorResult.status !== 404) {
+    return { ok: false, state: operatorResult.state, message: "Planner unavailable", status: operatorResult.status };
+  }
+
   const body: IntakeRequest & { request: string; message: string } = { projectId, prompt, request: prompt, message: prompt };
-  const candidates = [`/api/projects/${encodeURIComponent(projectId)}/intake`, "/api/projects/intake", "/api/orchestrate/action"];
+  const candidates = ["/api/projects/intake", "/api/orchestrate/action"];
   for (const endpoint of candidates) {
     const result = await postJsonSafe<unknown, typeof body>(endpoint, body);
     if (result.ok) return { ok: true, data: fromPayload(projectId, result.data) };

@@ -19,7 +19,7 @@ import { getFirstRunFallback, getFirstRunState, type FirstRunState } from "@/ser
 import { requestDeploy } from "@/services/launchProof";
 
 export function VibeDashboard({ projectId }: { projectId: string }) {
-  const { latestResult, userFacingSummary, latestReviewPayload, confirmationPending, runSampleEdit, runDestructiveEdit, runCommandText, resolveTarget, pendingResolution, confirmPending, rejectPending, editableDocument, selectedNodeId, selectedPageId, changedNodeIds, lastPreviewPatch, selectNode, runDirectManipulationAction, preConfirmDiff, sourceSyncDryRun, sourceSyncApply, sourceSyncResult, sourceSyncStatus, hasRealFileAdapter, appStructure, appStructureNeedsResolution, appStructureCandidates, selectPage, duplicatePage, renamePage, updateNavigation, extractReusableComponent, reuseComponent, addPage } = useLiveUIBuilderVibe();
+  const { latestResult, userFacingSummary, latestReviewPayload, confirmationPending, runSampleEdit, runCommandText, resolveTarget, pendingResolution, confirmPending, rejectPending, editableDocument, selectedNodeId, selectedPageId, changedNodeIds, lastPreviewPatch, selectNode, runDirectManipulationAction, preConfirmDiff, sourceSyncDryRun, sourceSyncApply, sourceSyncResult, sourceSyncStatus, hasRealFileAdapter, appStructure, appStructureNeedsResolution, appStructureCandidates, selectPage, duplicatePage, renamePage, updateNavigation, extractReusableComponent, reuseComponent, addPage } = useLiveUIBuilderVibe();
   const fallbackTargets: ResolutionTarget[] = Object.values(editableDocument.pages?.[0]?.nodes ?? {}).slice(0, 8).map((node: any) => ({ nodeId: node.id, label: node.identity?.semanticLabel ?? node.id, type: node.kind ?? "node", page: editableDocument.pages?.[0]?.id ?? "page", location: node.parentId ? `child of ${node.parentId}` : "root" }));
   const resolverTargets: ResolutionTarget[] = (pendingResolution?.candidates ?? []).map((nodeId: string) => ({ nodeId, label: nodeId, type: "resolver candidate", page: editableDocument.pages.find((page: any) => page.nodes[nodeId])?.id ?? "unknown", location: "resolver" }));
   const [runtimeState, setRuntimeState] = useState<{ status?: string; previewUrl?: string }>({});
@@ -122,7 +122,6 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
               </form>
               <div className="vibe-action-row">
                 <button type="button" onClick={runSampleEdit}>Improve Design</button>
-                <button type="button" onClick={runDestructiveEdit}>Apply destructive sample</button>
                 <button type="button" onClick={confirmPending} disabled={!confirmationPending}>Confirm</button>
                 <button type="button" onClick={rejectPending} disabled={!confirmationPending}>Reject</button>
                 {actionChips.filter((chip) => chip !== "Improve Design").map((chip) => <button type="button" key={chip} onClick={() => handleActionChip(chip)}>{chip}</button>)}
@@ -173,7 +172,7 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
             <section className="vibe-rail-card" aria-label="Latest interaction summary">
               <h3>Latest Summary</h3>
               <p>{userFacingSummary}</p>
-              <pre>{JSON.stringify(latestReviewPayload ?? {}, null, 2)}</pre>
+              <small>{latestReviewPayload ? "Review payload captured" : "No review payload yet"}</small>
             </section>
             <section className="vibe-rail-card">
               <h3>Recent Activity</h3>
