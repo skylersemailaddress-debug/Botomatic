@@ -1,0 +1,8 @@
+{
+  "projectId": "proj_1777707565013_wq5s1g",
+  "appName": "Builder Forensic bf-013",
+  "request": "Build a Restaurant/order app case 3 for private owner beta with messy requirements and hard complexity. Include realistic user journeys, admin operations, and explicit blockers for unsupported integrations. Include multi-role workflows, edge cases, and import/export flows.",
+  "generatedAt": "2026-05-02T07:39:25.318Z",
+  "reason": "compile",
+  "claimBoundary": "Generated workspace proves local build/run/smoke readiness for this artifact only; it does not prove production deployment readiness."
+}

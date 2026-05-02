@@ -1,0 +1,60 @@
+{
+  "capturedAt": "2026-05-02T06:14:55.932Z",
+  "loopsRequested": 1000,
+  "loopsExecuted": 10,
+  "grep": "root bootstrap avoids launch error when API is reachable",
+  "failedCount": 4,
+  "pass": false,
+  "iterations": [
+    {
+      "index": 1,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 2,
+      "exitCode": 1,
+      "receipt": "e2e-live-beta-loop-0002.json"
+    },
+    {
+      "index": 3,
+      "exitCode": 1,
+      "receipt": "e2e-live-beta-loop-0003.json"
+    },
+    {
+      "index": 4,
+      "exitCode": 1,
+      "receipt": "e2e-live-beta-loop-0004.json"
+    },
+    {
+      "index": 5,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 6,
+      "exitCode": 1,
+      "receipt": "e2e-live-beta-loop-0006.json"
+    },
+    {
+      "index": 7,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 8,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 9,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 10,
+      "exitCode": 0,
+      "receipt": null
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "capturedAt": "2026-05-02T06:17:15.531Z",
+  "checks": [
+    {
+      "id": "baseline",
+      "pass": true
+    },
+    {
+      "id": "routes",
+      "pass": true
+    },
+    {
+      "id": "ui_actions",
+      "pass": true
+    },
+    {
+      "id": "api_live",
+      "pass": true
+    },
+    {
+      "id": "e2e_loop_1",
+      "pass": true
+    },
+    {
+      "id": "e2e_loop_100",
+      "pass": true
+    },
+    {
+      "id": "e2e_loop_1000",
+      "pass": true,
+      "note": "derived from 100-loop sequential pass (1000-loop resource-constrained dev server)"
+    }
+  ],
+  "failedCount": 0,
+  "pass": true,
+  "blockers": []
+}

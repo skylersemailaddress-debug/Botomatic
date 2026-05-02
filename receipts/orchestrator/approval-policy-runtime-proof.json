@@ -1,0 +1,83 @@
+{
+  "date": "2026-05-02",
+  "branch": "fix/orchestrator-autonomous-approval-policy",
+  "commit": "76480bd26ce0fcaae70ee92668e2c4b73e7fabf3",
+  "apiStart": {
+    "command": "API_AUTH_TOKEN=dev-api-token BOTOMATIC_API_TOKEN=dev-api-token BOTOMATIC_AUTH_IMPLEMENTATION=dev PORT=3001 npm run api:dev",
+    "status": "pass",
+    "evidence": "api_boot event emitted; API running on 3001"
+  },
+  "healthChecks": {
+    "http://127.0.0.1:3001/health": {
+      "status": "fail",
+      "detail": "404"
+    },
+    "http://127.0.0.1:3001/api/health": {
+      "status": "pass",
+      "detail": "ok"
+    }
+  },
+  "forensic": {
+    "smoke": {
+      "command": "npm run -s test:builder-forensic:smoke",
+      "status": "fail",
+      "detail": "missing script"
+    },
+    "run100": {
+      "command": "npm run -s test:builder-forensic:100",
+      "status": "fail",
+      "detail": "missing script"
+    },
+    "report": {
+      "command": "npm run -s test:builder-forensic:report",
+      "status": "fail",
+      "detail": "missing script"
+    }
+  },
+  "approvalRuntimeChecks": {
+    "safeCase": {
+      "intakeStatus": 200,
+      "compileRoute": "compile",
+      "decisionRoute": "plan",
+      "autoApproval": true,
+      "statusAfter": "queued"
+    },
+    "highRiskCase": {
+      "intakeStatus": 200,
+      "compileRoute": "compile",
+      "decisionRoute": "build_blocked",
+      "reason": "High-risk decisions detected: live_deployment; paid_provider. Escalating."
+    }
+  },
+  "counts": {
+    "passedApprovalGate": 1,
+    "reachedPlan": 1,
+    "generatedArtifacts": 0
+  },
+  "passDeltaVsPreviousBlockedRun": {
+    "baselineFound": false,
+    "baselineAssumption": {
+      "PASS_REAL": 0,
+      "PASS_PARTIAL": 0
+    },
+    "delta": {
+      "PASS_REAL": 1,
+      "PASS_PARTIAL": 0
+    }
+  },
+  "requiredCommandResults": {
+    "gitDiffCheck": "pass",
+    "tscNoEmitPrettyFalse": "fail (command prints help/no project target)",
+    "validateAll": "fail (2 pre-existing UI validators)",
+    "testUniversal": "pass",
+    "testCommercialCockpit": "fail (missing script)",
+    "build": "fail (pre-existing UI import/type error requestDeploy)"
+  },
+  "remainingBlockers": [
+    "health endpoint /health returns 404",
+    "missing npm scripts: test:builder-forensic:smoke, test:builder-forensic:100, test:builder-forensic:report",
+    "missing npm script: test:commercial-cockpit",
+    "validate:all failing on UIReadiness and UIControlPlaneIntegration",
+    "build failing on requestDeploy export mismatch in control-plane UI"
+  ]
+}

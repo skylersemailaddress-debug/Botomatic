@@ -2,6 +2,38 @@ import type { ApiResult, TruthState } from "./truth";
 
 const DEFAULT_API_BASE_URL = "http://localhost:3001";
 
+function parseHostname(url: string): string | null {
+  try {
+    return new URL(url).hostname.toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
+function isLoopbackHostname(hostname: string | null): boolean {
+  if (!hostname) return false;
+  return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "0.0.0.0";
+}
+
+function isBrowserLocalHost(): boolean {
+  if (typeof window === "undefined") return false;
+  const host = window.location.hostname.toLowerCase();
+  return host === "localhost" || host === "127.0.0.1" || host === "0.0.0.0";
+}
+
+function shouldUseConfiguredBaseUrl(configuredBaseUrl: string): boolean {
+  if (typeof window === "undefined") {
+    return true;
+  }
+
+  // In remote browser contexts (for example Codespaces), loopback API base URLs are unreachable.
+  if (isLoopbackHostname(parseHostname(configuredBaseUrl)) && !isBrowserLocalHost()) {
+    return false;
+  }
+
+  return true;
+}
+
 function normalizeAppBaseUrl(url: string): string {
   return url.endsWith("/") ? url.slice(0, -1) : url;
 }
@@ -21,7 +53,7 @@ function normalizeApiBaseUrl(url: string): string {
 
 export function getApiBaseUrl(): string {
   const configuredBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-  if (configuredBaseUrl) {
+  if (configuredBaseUrl && shouldUseConfiguredBaseUrl(configuredBaseUrl)) {
     return normalizeApiBaseUrl(configuredBaseUrl);
   }
 
@@ -35,7 +67,7 @@ export function buildApiUrl(path: string): string {
 
   if (path.startsWith("/api/")) {
     const configuredBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-    if (configuredBaseUrl) {
+    if (configuredBaseUrl && shouldUseConfiguredBaseUrl(configuredBaseUrl)) {
       return `${normalizeApiBaseUrl(configuredBaseUrl)}${path}`;
     }
 

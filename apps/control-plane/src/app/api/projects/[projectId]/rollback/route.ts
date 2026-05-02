@@ -1,22 +1,93 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sanitizeProjectId } from "@/server/executionStore";
-import { loadLaunchProof } from "@/server/launchProofStore";
+import { getProofStore } from "@/server/launchProofStore";
 
-export async function POST(req: NextRequest, { params }: { params: { projectId: string } }) {
-  const projectId = sanitizeProjectId(params.projectId);
-  const body = await req.json().catch(() => ({}));
-  const deploymentId = typeof body?.deploymentId === "string" ? body.deploymentId : "";
+export const dynamic = "force-dynamic";
 
-  if (!deploymentId) {
-    return NextResponse.json({ error: { code: "bad_request", message: "deploymentId is required" } }, { status: 400 });
+/**
+ * WAVE-038: POST /api/projects/[projectId]/rollback
+ * 
+ * Enables deployment rollback for specified environment.
+ * Rollback gating: only allowed if launch proof is verified.
+ * 
+ * Hard rules:
+ * - Do not perform real external rollback
+ * - Do not add arbitrary shell execution
+ * - Keep rollback blocked unless verified launch proof exists
+ */
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { projectId: string } }
+) {
+  try {
+    const { projectId } = params;
+    
+    if (!projectId) {
+      return NextResponse.json(
+        { error: "projectId required" },
+        { status: 400 }
+      );
+    }
+
+    const body = await request.json();
+    const { environment } = body;
+
+    if (!environment) {
+      return NextResponse.json(
+        { error: "environment required (dev|staging|prod)" },
+        { status: 400 }
+      );
+    }
+
+    // Validate environment
+    const validEnvironments = ["dev", "staging", "prod"];
+    if (!validEnvironments.includes(environment)) {
+      return NextResponse.json(
+        { 
+          status: "blocked",
+          message: `Invalid environment: ${environment}. Valid values: ${validEnvironments.join(", ")}`,
+        },
+        { status: 400 }
+      );
+    }
+
+    // Check launch proof verification
+    const store = getProofStore();
+    const proof = await store.getProof(projectId);
+
+    if (!proof || !proof.verified) {
+      return NextResponse.json(
+        {
+          status: "blocked",
+          message: "Rollback blocked: launch proof not verified.",
+        },
+        { status: 403 }
+      );
+    }
+
+    // In production, this would trigger actual rollback orchestration.
+    // For WAVE-038, we gate the decision but do NOT perform real external rollback.
+
+    return NextResponse.json(
+      {
+        status: "gated",
+        environment,
+        message: `Rollback gating enabled for ${environment}. Ready for credentialed rollback (placeholder for WAVE upgrade).`,
+        launchProof: {
+          verified: proof.verified,
+          verificationMethod: proof.verificationMethod,
+          verifiedAt: proof.verifiedAt,
+        },
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("[rollback POST]", error);
+    return NextResponse.json(
+      { 
+        status: "error",
+        message: "Internal server error",
+      },
+      { status: 500 }
+    );
   }
-
-  const record = loadLaunchProof(projectId);
-  const exists = record?.deploymentRecords?.some((d) => d.deploymentId === deploymentId);
-
-  if (!exists) {
-    return NextResponse.json({ error: { code: "deployment_record_required", message: "Rollback requires deployment record" } }, { status: 409 });
-  }
-
-  return NextResponse.json({ status: "blocked", message: "Rollback action not connected" });
 }

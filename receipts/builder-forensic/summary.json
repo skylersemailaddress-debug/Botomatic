@@ -1,0 +1,608 @@
+{
+  "generatedAt": "2026-05-02T16:52:09.625Z",
+  "runtimeWindowId": "window-20260502T163900Z-b25ed564008734055fdf20b98e2de96cdf010e2f",
+  "gitSha": "b25ed564008734055fdf20b98e2de96cdf010e2f",
+  "apiPid": "3599",
+  "startedAt": "2026-05-02T16:39:00Z",
+  "finishedAt": "2026-05-02T16:51:11.866Z",
+  "modesIncluded": [
+    "100",
+    "200",
+    "extreme",
+    "repair",
+    "smoke"
+  ],
+  "runsIncluded": [
+    {
+      "runId": "100-20260502164159",
+      "mode": "100",
+      "selectedTotal": 100
+    },
+    {
+      "runId": "200-20260502164518",
+      "mode": "200",
+      "selectedTotal": 200
+    },
+    {
+      "runId": "extreme-20260502165044",
+      "mode": "extreme",
+      "selectedTotal": 25
+    },
+    {
+      "runId": "repair-20260502165010",
+      "mode": "repair",
+      "selectedTotal": 25
+    },
+    {
+      "runId": "smoke-20260502164120",
+      "mode": "smoke",
+      "selectedTotal": 25
+    }
+  ],
+  "allRunsDiscovered": [
+    {
+      "runId": "100-20260502065458",
+      "mode": "100",
+      "selectedTotal": 100
+    },
+    {
+      "runId": "100-20260502065539",
+      "mode": "100",
+      "selectedTotal": 100
+    },
+    {
+      "runId": "100-20260502065955",
+      "mode": "100",
+      "selectedTotal": 100
+    },
+    {
+      "runId": "100-20260502070821",
+      "mode": "100",
+      "selectedTotal": 100
+    },
+    {
+      "runId": "100-20260502071920",
+      "mode": "100",
+      "selectedTotal": 100
+    },
+    {
+      "runId": "100-20260502073624",
+      "mode": "100",
+      "selectedTotal": 100
+    },
+    {
+      "runId": "100-20260502164159",
+      "mode": "100",
+      "selectedTotal": 100
+    },
+    {
+      "runId": "200-20260502065507",
+      "mode": "200",
+      "selectedTotal": 200
+    },
+    {
+      "runId": "200-20260502070150",
+      "mode": "200",
+      "selectedTotal": 200
+    },
+    {
+      "runId": "200-20260502070854",
+      "mode": "200",
+      "selectedTotal": 200
+    },
+    {
+      "runId": "200-20260502071948",
+      "mode": "200",
+      "selectedTotal": 200
+    },
+    {
+      "runId": "200-20260502164518",
+      "mode": "200",
+      "selectedTotal": 200
+    },
+    {
+      "runId": "extreme-20260502065539",
+      "mode": "extreme",
+      "selectedTotal": 25
+    },
+    {
+      "runId": "extreme-20260502070956",
+      "mode": "extreme",
+      "selectedTotal": 25
+    },
+    {
+      "runId": "extreme-20260502072105",
+      "mode": "extreme",
+      "selectedTotal": 25
+    },
+    {
+      "runId": "extreme-20260502165044",
+      "mode": "extreme",
+      "selectedTotal": 25
+    },
+    {
+      "runId": "repair-20260502065508",
+      "mode": "repair",
+      "selectedTotal": 25
+    },
+    {
+      "runId": "repair-20260502070151",
+      "mode": "repair",
+      "selectedTotal": 25
+    },
+    {
+      "runId": "repair-20260502070949",
+      "mode": "repair",
+      "selectedTotal": 25
+    },
+    {
+      "runId": "repair-20260502072055",
+      "mode": "repair",
+      "selectedTotal": 25
+    },
+    {
+      "runId": "repair-20260502165010",
+      "mode": "repair",
+      "selectedTotal": 25
+    },
+    {
+      "runId": "smoke-20260502065458",
+      "mode": "smoke",
+      "selectedTotal": 25
+    },
+    {
+      "runId": "smoke-20260502065954",
+      "mode": "smoke",
+      "selectedTotal": 25
+    },
+    {
+      "runId": "smoke-20260502070811",
+      "mode": "smoke",
+      "selectedTotal": 25
+    },
+    {
+      "runId": "smoke-20260502071912",
+      "mode": "smoke",
+      "selectedTotal": 25
+    },
+    {
+      "runId": "smoke-20260502073603",
+      "mode": "smoke",
+      "selectedTotal": 25
+    },
+    {
+      "runId": "smoke-20260502073855",
+      "mode": "smoke",
+      "selectedTotal": 25
+    },
+    {
+      "runId": "smoke-20260502161359",
+      "mode": "smoke",
+      "selectedTotal": 25
+    },
+    {
+      "runId": "smoke-20260502164120",
+      "mode": "smoke",
+      "selectedTotal": 25
+    }
+  ],
+  "totalPromptsTested": 375,
+  "categoriesCovered": 40,
+  "passRate": 0,
+  "passPartialRate": 0,
+  "failBuilderRate": 0,
+  "failRuntimeRate": 0,
+  "blockedUnsupportedRate": 0,
+  "passPlusPartialRate": 0,
+  "promptsReachedBuilderRuntime": 375,
+  "promptsGeneratedArtifacts": 0,
+  "artifactsWithWorkspacePaths": 0,
+  "buildSuccesses": 0,
+  "runSuccesses": 0,
+  "smokeSuccesses": 0,
+  "repairSuccesses": 0,
+  "builtSuccessfully": 0,
+  "ranSuccessfully": 0,
+  "repairedSuccessfully": 0,
+  "failRate": 100,
+  "unsupportedRate": 0,
+  "runtimeSuccessRate": 0,
+  "followupSuccessRate": 86.67,
+  "repairSuccessRate": 0,
+  "fakeContaminationRate": 0,
+  "ownerVerdict": "FAIL_PRIVATE_BETA",
+  "answer99Percent": "No. Measured PASS_REAL rate is 0% and PASS_REAL+PASS_PARTIAL is 0%, below a defensible 99% claim.",
+  "categoryPassRates": [
+    {
+      "category": "add-auth-payments-email-db-edit",
+      "passRealRate": 0,
+      "passPartialRate": 0,
+      "failBuilderRate": 0,
+      "failRuntimeRate": 0,
+      "blockedUnsupportedRate": 0
+    },
+    {
+      "category": "admin-internal-ops",
+      "passRealRate": 0,
+      "passPartialRate": 0,
+      "failBuilderRate": 0,
+      "failRuntimeRate": 0,
+      "blockedUnsupportedRate": 0
+    },
+    {
+      "category": "ai-writing-tool",
+      "passRealRate": 0,
+      "passPartialRate": 0,
+      "failBuilderRate": 0,
+      "failRuntimeRate": 0,
+      "blockedUnsupportedRate": 0
+    },
+    {
+      "category": "analytics-reporting-app",
+      "passRealRate": 0,
+      "passPartialRate": 0,
+      "failBuilderRate": 0,
+      "failRuntimeRate": 0,
+      "blockedUnsupportedRate": 0
+    },
+    {
+      "category": "api-integration-app",
+      "passRealRate": 0,
+      "passPartialRate": 0,
+      "failBuilderRate": 0,
+      "failRuntimeRate": 0,
+      "blockedUnsupportedRate": 0
+    },
+    {
+      "category": "auth-heavy-app",
+      "passRealRate": 0,
+      "passPartialRate": 0,
+      "failBuilderRate": 0,
+      "failRuntimeRate": 0,
+      "blockedUnsupportedRate": 0
+    },
+    {
+      "category": "booking-scheduling-app",
+      "passRealRate": 0,
+      "passPartialRate": 0,
+      "failBuilderRate": 0,
+      "failRuntimeRate": 0,
+      "blockedUnsupportedRate": 0
+    },
+    {
+      "category": "chat-collab-app",
+      "passRealRate": 0,
+      "passPartialRate": 0,
+      "failBuilderRate": 0,
+      "failRuntimeRate": 0,
+      "blockedUnsupportedRate": 0
+    },
+    {
+      "category": "contradictory-prompt",
+      "passRealRate": 0,
+      "passPartialRate": 0,
+      "failBuilderRate": 0,
+      "failRuntimeRate": 0,
+      "blockedUnsupportedRate": 0
+    },
+    {
+      "category": "course-lms",
+      "passRealRate": 0,
+      "passPartialRate": 0,
+      "failBuilderRate": 0,
+      "failRuntimeRate": 0,
+      "blockedUnsupportedRate": 0
+    },
+    {
+      "category": "crm",
+      "passRealRate": 0,
+      "passPartialRate": 0,
+      "failBuilderRate": 0,
+      "failRuntimeRate": 0,
+      "blockedUnsupportedRate": 0
+    },
+    {
+      "category": "dirty-repo-repair-build-prompts",
+      "passRealRate": 0,
+      "passPartialRate": 0,
+      "failBuilderRate": 0,
+      "failRuntimeRate": 0,
+      "blockedUnsupportedRate": 0
+    },
+    {
+      "category": "ecommerce-storefront",
+      "passRealRate": 0,
+      "passPartialRate": 0,
+      "failBuilderRate": 0,
+      "failRuntimeRate": 0,
+      "blockedUnsupportedRate": 0
+    },
+    {
+      "category": "events-community",
+      "passRealRate": 0,
+      "passPartialRate": 0,
+      "failBuilderRate": 0,
+      "failRuntimeRate": 0,
+      "blockedUnsupportedRate": 0
+    },
+    {
+      "category": "failure-recovery-prompts",
+      "passRealRate": 0,
+      "passPartialRate": 0,
+      "failBuilderRate": 0,
+      "failRuntimeRate": 0,
+      "blockedUnsupportedRate": 0
+    },
+    {
+      "category": "file-upload-heavy-app",
+      "passRealRate": 0,
+      "passPartialRate": 0,
+      "failBuilderRate": 0,
+      "failRuntimeRate": 0,
+      "blockedUnsupportedRate": 0
+    },
+    {
+      "category": "finance-budgeting",
+      "passRealRate": 0,
+      "passPartialRate": 0,
+      "failBuilderRate": 0,
+      "failRuntimeRate": 0,
+      "blockedUnsupportedRate": 0
+    },
+    {
+      "category": "fitness-wellness",
+      "passRealRate": 0,
+      "passPartialRate": 0,
+      "failBuilderRate": 0,
+      "failRuntimeRate": 0,
+      "blockedUnsupportedRate": 0
+    },
+    {
+      "category": "follow-up-edits-after-first-build",
+      "passRealRate": 0,
+      "passPartialRate": 0,
+      "failBuilderRate": 0,
+      "failRuntimeRate": 0,
+      "blockedUnsupportedRate": 0
+    },
+    {
+      "category": "healthcare-intake-non-medical",
+      "passRealRate": 0,
+      "passPartialRate": 0,
+      "failBuilderRate": 0,
+      "failRuntimeRate": 0,
+      "blockedUnsupportedRate": 0
+    },
+    {
+      "category": "huge-build-me-airbnb-uber-shopify",
+      "passRealRate": 0,
+      "passPartialRate": 0,
+      "failBuilderRate": 0,
+      "failRuntimeRate": 0,
+      "blockedUnsupportedRate": 0
+    },
+    {
+      "category": "inventory-logistics",
+      "passRealRate": 0,
+      "passPartialRate": 0,
+      "failBuilderRate": 0,
+      "failRuntimeRate": 0,
+      "blockedUnsupportedRate": 0
+    },
+    {
+      "category": "job-board",
+      "passRealRate": 0,
+      "passPartialRate": 0,
+      "failBuilderRate": 0,
+      "failRuntimeRate": 0,
+      "blockedUnsupportedRate": 0
+    },
+    {
+      "category": "legal-intake-non-legal-advice",
+      "passRealRate": 0,
+      "passPartialRate": 0,
+      "failBuilderRate": 0,
+      "failRuntimeRate": 0,
+      "blockedUnsupportedRate": 0
+    },
+    {
+      "category": "local-service-site",
+      "passRealRate": 0,
+      "passPartialRate": 0,
+      "failBuilderRate": 0,
+      "failRuntimeRate": 0,
+      "blockedUnsupportedRate": 0
+    },
+    {
+      "category": "make-it-prettier-design-edit",
+      "passRealRate": 0,
+      "passPartialRate": 0,
+      "failBuilderRate": 0,
+      "failRuntimeRate": 0,
+      "blockedUnsupportedRate": 0
+    },
+    {
+      "category": "marketplace",
+      "passRealRate": 0,
+      "passPartialRate": 0,
+      "failBuilderRate": 0,
+      "failRuntimeRate": 0,
+      "blockedUnsupportedRate": 0
+    },
+    {
+      "category": "messy-typo-filled-prompt",
+      "passRealRate": 0,
+      "passPartialRate": 0,
+      "failBuilderRate": 0,
+      "failRuntimeRate": 0,
+      "blockedUnsupportedRate": 0
+    },
+    {
+      "category": "mobile-first-app",
+      "passRealRate": 0,
+      "passPartialRate": 0,
+      "failBuilderRate": 0,
+      "failRuntimeRate": 0,
+      "blockedUnsupportedRate": 0
+    },
+    {
+      "category": "multi-tenant-app",
+      "passRealRate": 0,
+      "passPartialRate": 0,
+      "failBuilderRate": 0,
+      "failRuntimeRate": 0,
+      "blockedUnsupportedRate": 0
+    },
+    {
+      "category": "one-page-landing-page",
+      "passRealRate": 0,
+      "passPartialRate": 0,
+      "failBuilderRate": 0,
+      "failRuntimeRate": 0,
+      "blockedUnsupportedRate": 0
+    },
+    {
+      "category": "payment-subscription-app",
+      "passRealRate": 0,
+      "passPartialRate": 0,
+      "failBuilderRate": 0,
+      "failRuntimeRate": 0,
+      "blockedUnsupportedRate": 0
+    },
+    {
+      "category": "project-management",
+      "passRealRate": 0,
+      "passPartialRate": 0,
+      "failBuilderRate": 0,
+      "failRuntimeRate": 0,
+      "blockedUnsupportedRate": 0
+    },
+    {
+      "category": "real-estate-listings",
+      "passRealRate": 0,
+      "passPartialRate": 0,
+      "failBuilderRate": 0,
+      "failRuntimeRate": 0,
+      "blockedUnsupportedRate": 0
+    },
+    {
+      "category": "restaurant-order-app",
+      "passRealRate": 0,
+      "passPartialRate": 0,
+      "failBuilderRate": 0,
+      "failRuntimeRate": 0,
+      "blockedUnsupportedRate": 0
+    },
+    {
+      "category": "role-based-app",
+      "passRealRate": 0,
+      "passPartialRate": 0,
+      "failBuilderRate": 0,
+      "failRuntimeRate": 0,
+      "blockedUnsupportedRate": 0
+    },
+    {
+      "category": "saas-dashboard",
+      "passRealRate": 0,
+      "passPartialRate": 0,
+      "failBuilderRate": 0,
+      "failRuntimeRate": 0,
+      "blockedUnsupportedRate": 0
+    },
+    {
+      "category": "social-community-app",
+      "passRealRate": 0,
+      "passPartialRate": 0,
+      "failBuilderRate": 0,
+      "failRuntimeRate": 0,
+      "blockedUnsupportedRate": 0
+    },
+    {
+      "category": "support-ticketing",
+      "passRealRate": 0,
+      "passPartialRate": 0,
+      "failBuilderRate": 0,
+      "failRuntimeRate": 0,
+      "blockedUnsupportedRate": 0
+    },
+    {
+      "category": "weird-vague-app",
+      "passRealRate": 0,
+      "passPartialRate": 0,
+      "failBuilderRate": 0,
+      "failRuntimeRate": 0,
+      "blockedUnsupportedRate": 0
+    }
+  ],
+  "whatHandlesWell": [],
+  "whatHandlesPartially": [],
+  "whatFails": [
+    "add-auth-payments-email-db-edit",
+    "admin-internal-ops",
+    "ai-writing-tool",
+    "analytics-reporting-app",
+    "api-integration-app",
+    "auth-heavy-app",
+    "booking-scheduling-app",
+    "chat-collab-app",
+    "contradictory-prompt",
+    "course-lms",
+    "crm",
+    "dirty-repo-repair-build-prompts",
+    "ecommerce-storefront",
+    "events-community",
+    "failure-recovery-prompts",
+    "file-upload-heavy-app",
+    "finance-budgeting",
+    "fitness-wellness",
+    "follow-up-edits-after-first-build",
+    "healthcare-intake-non-medical",
+    "huge-build-me-airbnb-uber-shopify",
+    "inventory-logistics",
+    "job-board",
+    "legal-intake-non-legal-advice",
+    "local-service-site",
+    "make-it-prettier-design-edit",
+    "marketplace",
+    "messy-typo-filled-prompt",
+    "mobile-first-app",
+    "multi-tenant-app",
+    "one-page-landing-page",
+    "payment-subscription-app",
+    "project-management",
+    "real-estate-listings",
+    "restaurant-order-app",
+    "role-based-app",
+    "saas-dashboard",
+    "social-community-app",
+    "support-ticketing",
+    "weird-vague-app"
+  ],
+  "topBlockers": [
+    {
+      "rank": 1,
+      "blocker": "Builder did not progress to artifact/plan generation",
+      "count": 375
+    },
+    {
+      "rank": 2,
+      "blocker": "No generated project path returned for local build validation",
+      "count": 375
+    },
+    {
+      "rank": 3,
+      "blocker": "Repair loop replay failed",
+      "count": 225
+    },
+    {
+      "rank": 4,
+      "blocker": "Repair loop not executed for this case",
+      "count": 150
+    },
+    {
+      "rank": 5,
+      "blocker": "Follow-up edit path not executed for this case",
+      "count": 50
+    }
+  ]
+}

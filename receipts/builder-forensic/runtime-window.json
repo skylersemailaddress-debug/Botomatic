@@ -1,0 +1,41 @@
+{
+  "runtimeWindowId": "window-20260502T163900Z-b25ed564008734055fdf20b98e2de96cdf010e2f",
+  "gitSha": "b25ed564008734055fdf20b98e2de96cdf010e2f",
+  "apiPid": "3599",
+  "startedAt": "2026-05-02T16:39:00Z",
+  "finishedAt": "2026-05-02T16:51:11.866Z",
+  "nodeVersion": "v24.14.0",
+  "npmVersion": "11.9.0",
+  "packageVersion": "undefined",
+  "healthChecks": {
+    "health": "http://127.0.0.1:3001/health",
+    "apiHealth": "http://127.0.0.1:3001/api/health"
+  },
+  "runs": [
+    {
+      "runId": "smoke-20260502164120",
+      "mode": "smoke",
+      "finishedAt": "2026-05-02T16:41:52.604Z"
+    },
+    {
+      "runId": "100-20260502164159",
+      "mode": "100",
+      "finishedAt": "2026-05-02T16:44:02.094Z"
+    },
+    {
+      "runId": "200-20260502164518",
+      "mode": "200",
+      "finishedAt": "2026-05-02T16:49:18.787Z"
+    },
+    {
+      "runId": "repair-20260502165010",
+      "mode": "repair",
+      "finishedAt": "2026-05-02T16:50:37.584Z"
+    },
+    {
+      "runId": "extreme-20260502165044",
+      "mode": "extreme",
+      "finishedAt": "2026-05-02T16:51:11.866Z"
+    }
+  ]
+}

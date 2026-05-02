@@ -1,0 +1,8 @@
+{
+  "projectId": "proj_1777738501489_c5936f",
+  "appName": "Builder Forensic bf-022",
+  "request": "Build a Ecommerce storefront case 2 for private owner beta with normal requirements and medium complexity. Include realistic user journeys, admin operations, and explicit blockers for unsupported integrations. Include realistic auth, CRUD, and operational workflows.",
+  "generatedAt": "2026-05-02T16:15:01.977Z",
+  "reason": "compile",
+  "claimBoundary": "Generated workspace proves local build/run/smoke readiness for this artifact only; it does not prove production deployment readiness."
+}
