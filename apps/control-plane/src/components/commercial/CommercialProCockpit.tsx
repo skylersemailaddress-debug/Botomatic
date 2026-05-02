@@ -26,11 +26,12 @@ export function CommercialProCockpit({ projectId }: CommercialProCockpitProps) {
         </div>
       </header>
 
-      <nav className="commercial-pro-subnav" aria-label="Pro navigation">
-        {subnav.map((item) => <a key={item} className={item === "Overview" ? "is-active" : ""}>{item}</a>)}
-      </nav>
+      <div className="commercial-pro-body">
+        <nav className="commercial-pro-subnav commercial-pro-side-nav" aria-label="Pro navigation">
+          {subnav.map((item) => <a key={item} className={item === "Overview" ? "is-active" : ""}>{item}</a>)}
+        </nav>
 
-      <section className="commercial-pro-grid" data-testid="commercial-pro-grid">
+        <section className="commercial-pro-grid commercial-pro-dashboard-grid" data-testid="commercial-pro-grid">
         <CommercialPanel title="Build Pipeline" className="span-7">
           <div className="commercial-pipeline">
             {["Design", "Features", "Data", "Logic", "Tests", "Launch", "Deploy"].map((step) => (
@@ -93,9 +94,10 @@ export function CommercialProCockpit({ projectId }: CommercialProCockpitProps) {
         <CommercialPanel title="Recent Commits" className="span-3">
           <CommercialEmptyState title="No commits yet" detail="Real repository commits will appear here when connected." />
         </CommercialPanel>
-      </section>
+        </section>
+      </div>
 
-      <footer className="commercial-status-bar">
+      <footer className="commercial-status-bar commercial-pro-status-dock">
         <span>Project Status: Draft</span>
         <span>Environment: Development</span>
         <span>Build: Not started</span>

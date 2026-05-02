@@ -7,16 +7,16 @@ const root = process.cwd();
 
 const cases = [
   {
-    name: "vibe-chromebook",
-    reference: "tests/visual/reference/vibe-chromebook.png",
-    current: "tests/visual/current/vibe-chromebook.png",
-    diff: "tests/visual/diff/vibe-chromebook.diff.png",
+    name: "vibe-desktop",
+    reference: "tests/visual/reference/vibe-desktop.png",
+    current: "tests/visual/current/vibe-desktop.png",
+    diff: "tests/visual/diff/vibe-desktop.diff.png",
   },
   {
-    name: "pro-chromebook",
-    reference: "tests/visual/reference/pro-chromebook.png",
-    current: "tests/visual/current/pro-chromebook.png",
-    diff: "tests/visual/diff/pro-chromebook.diff.png",
+    name: "pro-desktop",
+    reference: "tests/visual/reference/pro-desktop.png",
+    current: "tests/visual/current/pro-desktop.png",
+    diff: "tests/visual/diff/pro-desktop.diff.png",
   },
 ];
 

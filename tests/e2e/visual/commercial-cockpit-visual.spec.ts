@@ -12,7 +12,7 @@ type VisualRoute = {
 
 const routes: VisualRoute[] = [
   {
-    name: "vibe-chromebook",
+    name: "vibe-desktop",
     path: `/projects/${PROJECT_ID}/vibe`,
     required: [
       "[data-testid='commercial-shell']",
@@ -24,7 +24,7 @@ const routes: VisualRoute[] = [
     forbidden: ["Luxora", "Luxury Booking Site", "Your Escape Awaits", "Alex Johnson", "92%"],
   },
   {
-    name: "pro-chromebook",
+    name: "pro-desktop",
     path: `/projects/${PROJECT_ID}/advanced`,
     required: [
       "[data-testid='commercial-shell']",
@@ -72,8 +72,8 @@ test.describe("commercial cockpit visual clone harness", () => {
       expect(metrics.docScrollWidth).toBeLessThanOrEqual(metrics.viewportWidth + 2);
       expect(metrics.shellRight).toBeLessThanOrEqual(metrics.viewportWidth + 2);
       expect(metrics.mainRight).toBeLessThanOrEqual(metrics.viewportWidth + 2);
-      expect(metrics.sidebarWidth).toBeGreaterThanOrEqual(160);
-      expect(metrics.sidebarWidth).toBeLessThanOrEqual(190);
+      expect(metrics.sidebarWidth).toBeGreaterThanOrEqual(220);
+      expect(metrics.sidebarWidth).toBeLessThanOrEqual(250);
 
       await page.screenshot({
         path: `tests/visual/current/${route.name}.png`,
