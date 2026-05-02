@@ -15,18 +15,17 @@ interface ProjectWorkspaceShellProps {
 interface ProductNavItem {
   label: string;
   href: string;
-  icon: string;
   testId?: string;
 }
 
 const productNav: ProductNavItem[] = [
-  { label: "Home", href: "/", icon: "Home", testId: "nav-home" },
-  { label: "Projects", href: "/projects/new", icon: "Projects", testId: "nav-projects" },
-  { label: "Templates", href: "/projects/new?template=1", icon: "Templates", testId: "nav-templates" },
-  { label: "Design Studio", href: "/projects/new?studio=design", icon: "Studio", testId: "nav-design-studio" },
-  { label: "Brand Kit", href: "/projects/new?brand=kit", icon: "Brand", testId: "nav-brand-kit" },
-  { label: "Launch", href: "/projects/new?launch=1", icon: "Launch", testId: "nav-launch" },
-  { label: "Learn", href: "/projects/new?learn=1", icon: "Learn", testId: "nav-learn" },
+  { label: "Home", href: "/", testId: "nav-home" },
+  { label: "Projects", href: "/projects/new", testId: "nav-projects" },
+  { label: "Templates", href: "/projects/new?template=1", testId: "nav-templates" },
+  { label: "Design Studio", href: "/projects/new?studio=design", testId: "nav-design-studio" },
+  { label: "Brand Kit", href: "/projects/new?brand=kit", testId: "nav-brand-kit" },
+  { label: "Launch", href: "/projects/new?launch=1", testId: "nav-launch" },
+  { label: "Learn", href: "/projects/new?learn=1", testId: "nav-learn" },
 ];
 
 function getWorkspaceVariant(mode: ProjectWorkspaceMode): "vibe" | "pro" {
@@ -34,8 +33,7 @@ function getWorkspaceVariant(mode: ProjectWorkspaceMode): "vibe" | "pro" {
 }
 
 function getProjectLabel(projectId: string): string {
-  if (!projectId) return "Current Project";
-  return `Project ${projectId.slice(-6)}`;
+  return projectId ? `Project ${projectId.slice(-6)}` : "Current Project";
 }
 
 export default function ProjectWorkspaceShell({ projectId, mode, children }: ProjectWorkspaceShellProps) {
@@ -44,64 +42,33 @@ export default function ProjectWorkspaceShell({ projectId, mode, children }: Pro
   const projectLabel = getProjectLabel(projectId);
 
   return (
-    <section
-      className={`northstar-shell project-workspace-shell project-workspace-shell--${workspaceVariant}`}
-      data-project-id={projectId}
-      data-workspace-mode={mode}
-      aria-label="Project workspace"
-    >
-      <aside className="northstar-global-sidebar northstar-sidebar project-workspace-sidebar" aria-label="Product navigation" data-testid="commercial-product-sidebar">
+    <section className={`project-workspace-shell project-workspace-shell--${workspaceVariant}`} data-project-id={projectId} data-workspace-mode={mode} aria-label="Project workspace">
+      <aside className="project-workspace-sidebar" aria-label="Product navigation" data-testid="commercial-product-sidebar">
         <Link href="/" className="northstar-brand" aria-label="Botomatic home">
           <span className="northstar-brand-mark">B</span>
-          <span>
-            <strong>Botomatic</strong>
-            <small>NEXUS</small>
-          </span>
+          <span><strong>Botomatic</strong><small>NEXUS</small></span>
         </Link>
-
-        <Link href="/projects/new" className="northstar-new-project" data-testid="new-project-action">
-          + New Project
-        </Link>
-
+        <Link href="/projects/new" className="northstar-new-project" data-testid="new-project-action">+ New Project</Link>
         <nav className="northstar-nav northstar-product-nav" aria-label="Main product navigation">
-          {productNav.map((item) => {
-            const isActive = item.label === "Home" ? pathname === "/" || pathname?.startsWith(`/projects/${projectId}`) : false;
-            return (
-              <Link key={item.label} href={item.href} className={isActive ? "is-active" : ""} data-testid={item.testId}>
-                <span className="northstar-nav-icon" aria-hidden="true">{item.icon.slice(0, 1)}</span>
-                <strong>{item.label}</strong>
-              </Link>
-            );
-          })}
+          {productNav.map((item) => (
+            <Link key={item.label} href={item.href} className={item.label === "Home" && pathname?.startsWith(`/projects/${projectId}`) ? "is-active" : ""} data-testid={item.testId}>
+              <span className="northstar-nav-icon" aria-hidden="true">{item.label.slice(0, 1)}</span><strong>{item.label}</strong>
+            </Link>
+          ))}
         </nav>
-
         <section className="project-workspace-recent" aria-label="Recent projects" data-testid="recent-projects-block">
           <small className="project-workspace-sidebar-eyebrow">Recent Projects</small>
-          <div className="project-workspace-recent-empty">
-            <strong>{projectLabel}</strong>
-            <span>Current workspace</span>
-          </div>
+          <div className="project-workspace-recent-empty"><strong>{projectLabel}</strong><span>Current workspace</span></div>
           <Link href="/projects/new">View all projects</Link>
         </section>
-
         <section className="project-workspace-upgrade-card" data-testid="go-pro-card">
-          <strong>Go Pro Anytime</strong>
-          <p>Unlock advanced features, team collaboration, and priority support.</p>
-          <button type="button">Upgrade to Pro</button>
+          <strong>Go Pro Anytime</strong><p>Unlock advanced features, team collaboration, and priority support.</p><button type="button">Upgrade to Pro</button>
         </section>
-
         <section className="project-workspace-account" aria-label="Account" data-testid="account-strip">
-          <div className="project-workspace-avatar" aria-hidden="true">B</div>
-          <div>
-            <strong>Botomatic User</strong>
-            <small>Signed in workspace</small>
-          </div>
+          <div className="project-workspace-avatar" aria-hidden="true">B</div><div><strong>Botomatic User</strong><small>Signed in workspace</small></div>
         </section>
       </aside>
-
-      <div className="northstar-main project-workspace-main">
-        {children}
-      </div>
+      <main className="project-workspace-main">{children}</main>
     </section>
   );
 }
