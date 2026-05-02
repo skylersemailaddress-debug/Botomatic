@@ -1,4 +1,5 @@
 import fs from "fs/promises";
+import fsSync from "fs";
 import path from "path";
 import { spawn } from "child_process";
 import { buildCorpus, scoringRubric } from "./corpus.mjs";
@@ -6,6 +7,7 @@ import { buildCorpus, scoringRubric } from "./corpus.mjs";
 const ROOT = process.cwd();
 const RECEIPT_ROOT = path.join(ROOT, "receipts", "builder-forensic");
 const RUN_ROOT = path.join(RECEIPT_ROOT, "runs");
+const WINDOW_FILE = path.join(RECEIPT_ROOT, "runtime-window.json");
 const API_BASE_URL = process.env.API_BASE_URL || "http://127.0.0.1:3001";
 const TOKEN = process.env.BOTOMATIC_API_TOKEN || process.env.NEXT_PUBLIC_BOTOMATIC_API_TOKEN || "dev-api-token";
 
@@ -35,6 +37,20 @@ function now() {
 
 function runId(mode) {
   return `${mode}-${new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14)}`;
+}
+
+async function registerRunInWindow(runIdValue, mode) {
+  try {
+    const raw = await fs.readFile(WINDOW_FILE, "utf8");
+    const parsed = JSON.parse(raw);
+    const runs = Array.isArray(parsed.runs) ? parsed.runs : [];
+    runs.push({ runId: runIdValue, mode, finishedAt: now() });
+    parsed.runs = runs;
+    parsed.finishedAt = now();
+    await fs.writeFile(WINDOW_FILE, JSON.stringify(parsed, null, 2), "utf8");
+  } catch {
+    // Window file is optional; do not fail a run if it does not exist.
+  }
 }
 
 function pickCases(corpus, mode) {
@@ -92,7 +108,7 @@ function toScalar(value) {
   return Math.max(0, Math.min(5, Number(value || 0)));
 }
 
-function scoreCase(caseResult) {
+export function scoreCase(caseResult) {
   const operatorHistory = Array.isArray(caseResult.operatorHistory) ? caseResult.operatorHistory : [];
   const operatorRoutes = operatorHistory
     .map((entry) => (entry && entry.body && typeof entry.body === "object" ? String(entry.body.route || "") : ""))
@@ -128,21 +144,27 @@ function scoreCase(caseResult) {
   const repairLoopSuccess = Boolean(caseResult.repair?.ok);
   const reachedBuilderRuntime = Boolean(caseResult.intake?.ok && operatorHistory.some((entry) => entry?.ok));
   const generatedArtifacts = Boolean(
+    Boolean(caseResult.generatedProjectPath) ||
+      Boolean(caseResult.evidenceArtifactId) ||
     operatorRoutes.some((route) => ["plan", "execute_next", "autonomous_complex_build", "launch_promote"].includes(route)) ||
       (caseResult.status?.body && typeof caseResult.status.body === "object" && caseResult.status.body.plan) ||
       (caseResult.execution?.body && typeof caseResult.execution.body === "object" && caseResult.execution.body.runId)
   );
+  const hasWorkspacePath = Boolean(caseResult.generatedProjectPath);
+  const runtimeFailedWithWorkspace = hasWorkspacePath && (!runtimeBuildSuccess || !generatedAppSmokeSuccess);
 
   let commercialReadiness = "blocked";
   if (runtimeBuildSuccess && generatedAppSmokeSuccess && noPlaceholderFakeContent) commercialReadiness = "pass";
-  else if (reachedBuilderRuntime) commercialReadiness = "partial";
+  else if (reachedBuilderRuntime && generatedArtifacts) commercialReadiness = "partial";
 
   let classification = classifications.FAIL_QUALITY;
   if (!caseResult.intake?.ok && caseResult.intake?.status === 0) classification = classifications.BLOCKED_UNSUPPORTED;
+  else if (generatedArtifacts && !hasWorkspacePath) classification = classifications.FAIL_BUILDER;
+  else if (runtimeFailedWithWorkspace) classification = classifications.FAIL_RUNTIME;
   else if (!caseResult.operator?.ok && caseResult.operator?.status >= 500) classification = classifications.FAIL_BUILDER;
   else if (fakeSignal) classification = classifications.FAIL_FAKE;
   else if (runtimeBuildSuccess && generatedAppSmokeSuccess && noPlaceholderFakeContent) classification = classifications.PASS_REAL;
-  else if (reachedBuilderRuntime) classification = classifications.PASS_PARTIAL;
+  else if (reachedBuilderRuntime && generatedArtifacts) classification = classifications.PASS_PARTIAL;
   else if (caseResult.runtimeSmoke && !caseResult.runtimeSmoke.ok) classification = classifications.FAIL_RUNTIME;
 
   return {
@@ -244,7 +266,103 @@ async function runCommand(command, args, cwd, timeoutMs = 180000) {
   });
 }
 
-async function executeCase(testCase, options) {
+async function probeUrl(url, timeoutMs = 20000) {
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    try {
+      const response = await fetch(url, { method: "GET" });
+      if (response.status >= 200 && response.status < 500) {
+        return { ok: true, status: response.status };
+      }
+    } catch {
+      // keep probing until timeout
+    }
+    await new Promise((resolve) => setTimeout(resolve, 400));
+  }
+  return { ok: false, status: 0 };
+}
+
+function packageManagerFor(projectPath) {
+  if (fsSync.existsSync(path.join(projectPath, "pnpm-lock.yaml"))) return "pnpm";
+  if (fsSync.existsSync(path.join(projectPath, "yarn.lock"))) return "yarn";
+  return "npm";
+}
+
+function managerArgs(manager, script) {
+  if (manager === "pnpm") return ["run", script];
+  if (manager === "yarn") return [script];
+  return ["run", "-s", script];
+}
+
+export async function runGeneratedAppBuildRunSmoke(projectPath) {
+  const manager = packageManagerFor(projectPath);
+  const validationLogs = [];
+  const installCommand = manager === "npm" ? "npm install" : manager === "pnpm" ? "pnpm install" : "yarn install";
+  const installArgs = manager === "npm" ? ["install"] : manager === "pnpm" ? ["install"] : ["install"];
+  const installResult = await runCommand(manager, installArgs, projectPath, 300000);
+  validationLogs.push(`install:${installResult.ok ? "ok" : "failed"}`);
+  if (!installResult.ok) {
+    return {
+      packageManager: manager,
+      buildCommand: `${manager} ${managerArgs(manager, "build").join(" ")}`,
+      runCommand: `${manager} ${managerArgs(manager, "start").join(" ")}`,
+      installResult,
+      buildResult: { ok: false, code: 1, timedOut: false, stdout: "", stderr: "install_failed" },
+      runResult: { ok: false, status: "not_started" },
+      smokeResult: { ok: false, status: 0 },
+      previewUrl: null,
+      validationLogs,
+    };
+  }
+
+  const buildArgs = managerArgs(manager, "build");
+  const buildResult = await runCommand(manager, buildArgs, projectPath, 300000);
+  validationLogs.push(`build:${buildResult.ok ? "ok" : "failed"}`);
+  if (!buildResult.ok) {
+    return {
+      packageManager: manager,
+      buildCommand: `${manager} ${buildArgs.join(" ")}`,
+      runCommand: `${manager} ${managerArgs(manager, "start").join(" ")}`,
+      installResult,
+      buildResult,
+      runResult: { ok: false, status: "not_started" },
+      smokeResult: { ok: false, status: 0 },
+      previewUrl: null,
+      validationLogs,
+    };
+  }
+
+  const port = 4300 + Math.floor(Math.random() * 400);
+  const previewUrl = `http://127.0.0.1:${port}/`;
+  const runArgs = managerArgs(manager, "start");
+  const child = spawn(manager, runArgs, {
+    cwd: projectPath,
+    env: { ...process.env, PORT: String(port) },
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+
+  const runtimeLines = [];
+  child.stdout.on("data", (d) => runtimeLines.push(String(d)));
+  child.stderr.on("data", (d) => runtimeLines.push(String(d)));
+
+  const smokeResult = await probeUrl(previewUrl, 30000);
+  validationLogs.push(`smoke:${smokeResult.ok ? "ok" : "failed"}`);
+  child.kill("SIGTERM");
+
+  return {
+    packageManager: manager,
+    buildCommand: `${manager} ${buildArgs.join(" ")}`,
+    runCommand: `${manager} ${runArgs.join(" ")}`,
+    installResult,
+    buildResult,
+    runResult: { ok: smokeResult.ok, status: smokeResult.ok ? "started" : "failed", lines: runtimeLines.join("").slice(0, 6000) },
+    smokeResult,
+    previewUrl,
+    validationLogs,
+  };
+}
+
+export async function executeCase(testCase, options) {
   const intakePayload = {
     name: `Builder Forensic ${testCase.id}`,
     request: testCase.prompt,
@@ -267,6 +385,17 @@ async function executeCase(testCase, options) {
   const projectId = intake.body && typeof intake.body === "object" ? intake.body.projectId : null;
 
   if (intake.ok && projectId) {
+    await safeFetchJson(`${API_BASE_URL}/api/projects/${projectId}/spec/analyze`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ message: testCase.prompt }),
+    });
+    await safeFetchJson(`${API_BASE_URL}/api/projects/${projectId}/spec/build-contract`, {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({}),
+    });
+
     const operatorMessages = [
       "continue current generated app build",
       "continue current generated app build",
@@ -285,7 +414,14 @@ async function executeCase(testCase, options) {
 
       if (!response.ok) break;
       const route = String((response.body && typeof response.body === "object" ? response.body.route : "") || "");
-      if (["execute_next", "autonomous_complex_build", "launch_promote", "execute_report", "build_blocked"].includes(route)) break;
+      if (["execute_next", "autonomous_complex_build", "launch_promote", "execute_report"].includes(route)) break;
+      if (route === "build_blocked") {
+        await safeFetchJson(`${API_BASE_URL}/api/projects/${projectId}/compile`, {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({}),
+        });
+      }
     }
 
     status = await safeFetchJson(`${API_BASE_URL}/api/projects/${projectId}/status`, {
@@ -344,18 +480,39 @@ async function executeCase(testCase, options) {
 
   // Local runtime/build/test probes are only attempted when explicit project paths are returned.
   const projectPath =
-    (status?.body && typeof status.body === "object" && (status.body.projectPath || status.body.workspacePath)) ||
-    (runtime?.body && typeof runtime.body === "object" && runtime.body.projectPath) ||
+    (status?.body && typeof status.body === "object" && (status.body.generatedProjectPath || status.body.projectPath || status.body.workspacePath)) ||
+    (runtime?.body && typeof runtime.body === "object" && (runtime.body.generatedProjectPath || runtime.body.projectPath || runtime.body.workspacePath)) ||
+    null;
+  const evidenceArtifactId =
+    (status?.body && typeof status.body === "object" && (status.body.evidenceArtifactId || null)) ||
+    (runtime?.body && typeof runtime.body === "object" && (runtime.body.evidenceArtifactId || null)) ||
     null;
 
   let localBuild = null;
   let localTests = null;
   let runtimeSmoke = null;
+  let runCommandResult = null;
+  let buildCommand = null;
+  let runCommandText = null;
+  let previewUrl = null;
+  let validationLogs = [];
 
   if (projectPath && typeof projectPath === "string") {
-    localBuild = await runCommand("npm", ["run", "-s", "build"], projectPath, 300000);
-    localTests = await runCommand("npm", ["run", "-s", "test"], projectPath, 300000);
-    runtimeSmoke = await runCommand("npm", ["run", "-s", "test:generated-app-runtime-smoke-runner"], ROOT, 300000);
+    const proof = await runGeneratedAppBuildRunSmoke(projectPath);
+    localBuild = proof.buildResult;
+    localTests = await runCommand("npm", ["run", "-s", "test"], projectPath, 180000);
+    runtimeSmoke = {
+      ok: proof.smokeResult.ok,
+      code: proof.smokeResult.ok ? 0 : 1,
+      timedOut: false,
+      stdout: proof.smokeResult.ok ? "smoke_ok" : "",
+      stderr: proof.smokeResult.ok ? "" : "smoke_failed",
+    };
+    runCommandResult = proof.runResult;
+    buildCommand = proof.buildCommand;
+    runCommandText = proof.runCommand;
+    previewUrl = proof.previewUrl;
+    validationLogs = proof.validationLogs;
   }
 
   const result = {
@@ -370,6 +527,14 @@ async function executeCase(testCase, options) {
     status,
     runtime,
     execution,
+    generatedProjectPath: projectPath,
+    workspacePath: projectPath,
+    evidenceArtifactId,
+    buildCommand,
+    runCommand: runCommandText,
+    previewUrl,
+    validationLogs,
+    runCommandResult,
     followup,
     repair,
     localBuild,
@@ -417,7 +582,7 @@ function markdownSummary(run, summary) {
   return lines.join("\n") + "\n";
 }
 
-async function main() {
+export async function main() {
   const corpus = buildCorpus();
   const rubric = scoringRubric();
   const selected = pickCases(corpus, MODE);
@@ -470,6 +635,7 @@ async function main() {
   await fs.writeFile(path.join(outDir, "run.json"), JSON.stringify(run, null, 2), "utf8");
   await fs.writeFile(path.join(outDir, "run.md"), markdownSummary(run, summary), "utf8");
   await fs.writeFile(path.join(outDir, "classification.json"), JSON.stringify(summary.byClassification, null, 2), "utf8");
+  await registerRunInWindow(id, MODE);
 
   const latestPath = path.join(RECEIPT_ROOT, "latest-run.json");
   await fs.mkdir(RECEIPT_ROOT, { recursive: true });
@@ -478,7 +644,9 @@ async function main() {
   process.stdout.write(`builder-forensic run complete: ${outDir}\n`);
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main().catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
+}

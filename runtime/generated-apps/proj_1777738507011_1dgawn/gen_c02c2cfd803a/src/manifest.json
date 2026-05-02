@@ -1,0 +1,8 @@
+{
+  "projectId": "proj_1777738507011_1dgawn",
+  "appName": "Builder Forensic bf-024",
+  "request": "Build a Ecommerce storefront case 4 for private owner beta with ambiguous requirements and extreme complexity. Include realistic user journeys, admin operations, and explicit blockers for unsupported integrations. Handle contradictory asks honestly and block unsupported claims without faking.",
+  "generatedAt": "2026-05-02T16:15:07.420Z",
+  "reason": "compile",
+  "claimBoundary": "Generated workspace proves local build/run/smoke readiness for this artifact only; it does not prove production deployment readiness."
+}

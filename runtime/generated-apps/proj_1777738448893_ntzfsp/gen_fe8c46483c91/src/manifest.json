@@ -1,0 +1,8 @@
+{
+  "projectId": "proj_1777738448893_ntzfsp",
+  "appName": "Builder Forensic bf-004",
+  "request": "Build a One-page landing page case 4 for private owner beta with ambiguous requirements and extreme complexity. Include realistic user journeys, admin operations, and explicit blockers for unsupported integrations. Handle contradictory asks honestly and block unsupported claims without faking.",
+  "generatedAt": "2026-05-02T16:14:09.345Z",
+  "reason": "compile",
+  "claimBoundary": "Generated workspace proves local build/run/smoke readiness for this artifact only; it does not prove production deployment readiness."
+}

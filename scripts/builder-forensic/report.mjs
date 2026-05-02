@@ -4,6 +4,7 @@ import path from "path";
 const ROOT = process.cwd();
 const RECEIPT_ROOT = path.join(ROOT, "receipts", "builder-forensic");
 const RUN_ROOT = path.join(RECEIPT_ROOT, "runs");
+const WINDOW_FILE = path.join(RECEIPT_ROOT, "runtime-window.json");
 
 function pct(num, den) {
   if (!den) return 0;
@@ -35,6 +36,20 @@ function selectLatestRunsByMode(runs) {
 
   const selected = targetModes.map((mode) => latest.get(mode)).filter(Boolean);
   return selected.length > 0 ? selected : runs;
+}
+
+async function loadRuntimeWindow() {
+  try {
+    return await readJson(WINDOW_FILE);
+  } catch {
+    return null;
+  }
+}
+
+function selectRunsFromWindow(runs, windowMeta) {
+  if (!windowMeta || !Array.isArray(windowMeta.runs) || windowMeta.runs.length === 0) return null;
+  const idSet = new Set(windowMeta.runs.map((entry) => String(entry.runId || "")));
+  return runs.filter((run) => idSet.has(String(run.runId || "")));
 }
 
 function collectTopBlockers(cases) {
@@ -134,14 +149,42 @@ function answer99(summary) {
   return `No. Measured PASS_REAL rate is ${summary.passRate}% and PASS_REAL+PASS_PARTIAL is ${summary.passPlusPartialRate}%, below a defensible 99% claim.`;
 }
 
+function categoryPassRates(rows) {
+  return rows.map((row) => ({
+    category: row.category,
+    passRealRate: pct(row.passReal, row.total),
+    passPartialRate: pct(row.passPartial, row.total),
+    failBuilderRate: pct(row.failBuilder, row.total),
+    failRuntimeRate: pct(row.failRuntime, row.total),
+    blockedUnsupportedRate: pct(row.blockedUnsupported, row.total),
+  }));
+}
+
 function mdReport(summary, blockers, rows) {
   const lines = [];
   lines.push("# Builder Forensic Capability Report");
   lines.push("");
   lines.push(`Generated: ${summary.generatedAt}`);
+  lines.push(`Runtime window ID: ${summary.runtimeWindowId || "none"}`);
+  lines.push(`Git SHA: ${summary.gitSha || "unknown"}`);
+  lines.push(`API PID: ${summary.apiPid || "unknown"}`);
+  lines.push(`Window started: ${summary.startedAt || "unknown"}`);
+  lines.push(`Window finished: ${summary.finishedAt || "unknown"}`);
+  lines.push(`Modes included: ${(summary.modesIncluded || []).join(", ")}`);
   lines.push(`Total prompts tested: ${summary.totalPromptsTested}`);
+  lines.push(`Prompts reached runtime: ${summary.promptsReachedBuilderRuntime}`);
+  lines.push(`Generated artifacts: ${summary.promptsGeneratedArtifacts}`);
+  lines.push(`Artifacts with workspace paths: ${summary.artifactsWithWorkspacePaths}`);
+  lines.push(`Build successes: ${summary.buildSuccesses}`);
+  lines.push(`Run successes: ${summary.runSuccesses}`);
+  lines.push(`Smoke successes: ${summary.smokeSuccesses}`);
+  lines.push(`Repair successes: ${summary.repairSuccesses}`);
   lines.push(`Categories covered: ${summary.categoriesCovered}`);
   lines.push(`PASS_REAL rate: ${summary.passRate}%`);
+  lines.push(`PASS_PARTIAL rate: ${summary.passPartialRate}%`);
+  lines.push(`FAIL_BUILDER rate: ${summary.failBuilderRate}%`);
+  lines.push(`FAIL_RUNTIME rate: ${summary.failRuntimeRate}%`);
+  lines.push(`BLOCKED_UNSUPPORTED rate: ${summary.blockedUnsupportedRate}%`);
   lines.push(`PASS_REAL + PASS_PARTIAL rate: ${summary.passPlusPartialRate}%`);
   lines.push(`Prompts reaching builder runtime: ${summary.promptsReachedBuilderRuntime}`);
   lines.push(`Prompts generating artifacts/plans: ${summary.promptsGeneratedArtifacts}`);
@@ -163,6 +206,14 @@ function mdReport(summary, blockers, rows) {
   lines.push("## Top 10 Blockers");
   lines.push("");
   blockers.forEach((b) => lines.push(`${b.rank}. ${b.blocker} (${b.count})`));
+  lines.push("");
+  lines.push("## Category Pass Rates");
+  lines.push("");
+  lines.push("| Category | PASS_REAL % | PASS_PARTIAL % | FAIL_BUILDER % | FAIL_RUNTIME % | BLOCKED_UNSUPPORTED % |");
+  lines.push("|---|---:|---:|---:|---:|---:|");
+  (summary.categoryPassRates || []).forEach((r) => {
+    lines.push(`| ${r.category} | ${r.passRealRate}% | ${r.passPartialRate}% | ${r.failBuilderRate}% | ${r.failRuntimeRate}% | ${r.blockedUnsupportedRate}% |`);
+  });
   lines.push("");
   lines.push("## Category Capability Matrix");
   lines.push("");
@@ -232,17 +283,21 @@ async function main() {
     return;
   }
 
-  const selectedRuns = selectLatestRunsByMode(runs);
+  const windowMeta = await loadRuntimeWindow();
+  const selectedRuns = selectRunsFromWindow(runs, windowMeta) || selectLatestRunsByMode(runs);
   const allCases = selectedRuns.flatMap((run) => run.cases || []);
   const rows = capabilityRows(allCases);
   const blockers = collectTopBlockers(allCases);
 
   const passReal = allCases.filter((c) => c.score.classification === "PASS_REAL").length;
   const passPartial = allCases.filter((c) => c.score.classification === "PASS_PARTIAL").length;
+  const failBuilderCount = allCases.filter((c) => c.score.classification === "FAIL_BUILDER").length;
+  const failRuntimeCount = allCases.filter((c) => c.score.classification === "FAIL_RUNTIME").length;
   const failCount = allCases.filter((c) => c.score.classification.startsWith("FAIL")).length;
   const unsupportedCount = allCases.filter((c) => c.score.classification === "BLOCKED_UNSUPPORTED").length;
   const promptsReachedBuilderRuntime = allCases.filter((c) => c.score.checks.reachedBuilderRuntime).length;
   const promptsGeneratedArtifacts = allCases.filter((c) => c.score.checks.generatedArtifacts).length;
+  const artifactsWithWorkspacePaths = allCases.filter((c) => Boolean(c.generatedProjectPath || c.workspacePath)).length;
   const builtSuccessfully = allCases.filter((c) => c.score.checks.runtimeBuildSuccess).length;
   const ranSuccessfully = allCases.filter((c) => c.score.checks.generatedAppSmokeSuccess).length;
   const repairedSuccessfully = allCases.filter((c) => c.score.checks.repairLoopSuccess).length;
@@ -253,14 +308,29 @@ async function main() {
 
   const summary = {
     generatedAt: new Date().toISOString(),
+    runtimeWindowId: windowMeta?.runtimeWindowId || null,
+    gitSha: windowMeta?.gitSha || process.env.FORENSIC_GIT_SHA || null,
+    apiPid: windowMeta?.apiPid || process.env.FORENSIC_API_PID || null,
+    startedAt: windowMeta?.startedAt || null,
+    finishedAt: windowMeta?.finishedAt || new Date().toISOString(),
+    modesIncluded: Array.from(new Set(selectedRuns.map((run) => String(run.mode || "")))).filter(Boolean),
     runsIncluded: selectedRuns.map((run) => ({ runId: run.runId, mode: run.mode, selectedTotal: run.selectedTotal })),
     allRunsDiscovered: runs.map((run) => ({ runId: run.runId, mode: run.mode, selectedTotal: run.selectedTotal })),
     totalPromptsTested: allCases.length,
     categoriesCovered: new Set(allCases.map((c) => c.category)).size,
     passRate: pct(passReal, allCases.length),
+    passPartialRate: pct(passPartial, allCases.length),
+    failBuilderRate: pct(failBuilderCount, allCases.length),
+    failRuntimeRate: pct(failRuntimeCount, allCases.length),
+    blockedUnsupportedRate: pct(unsupportedCount, allCases.length),
     passPlusPartialRate: pct(passReal + passPartial, allCases.length),
     promptsReachedBuilderRuntime,
     promptsGeneratedArtifacts,
+    artifactsWithWorkspacePaths,
+    buildSuccesses: builtSuccessfully,
+    runSuccesses: ranSuccessfully,
+    smokeSuccesses: ranSuccessfully,
+    repairSuccesses: repairedSuccessfully,
     builtSuccessfully,
     ranSuccessfully,
     repairedSuccessfully,
@@ -272,6 +342,7 @@ async function main() {
     fakeContaminationRate: pct(fakeCount, allCases.length),
     ownerVerdict: "",
     answer99Percent: "",
+    categoryPassRates: categoryPassRates(rows),
     whatHandlesWell: rows.filter((r) => r.passReal > 0).map((r) => r.category),
     whatHandlesPartially: rows.filter((r) => r.passPartial > 0).map((r) => r.category),
     whatFails: rows.filter((r) => r.failBuilder + r.failRuntime + r.failQuality + r.failFake > 0).map((r) => r.category),

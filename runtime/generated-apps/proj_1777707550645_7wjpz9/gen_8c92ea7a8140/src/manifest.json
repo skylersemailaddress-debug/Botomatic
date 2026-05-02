@@ -1,0 +1,8 @@
+{
+  "projectId": "proj_1777707550645_7wjpz9",
+  "appName": "Builder Forensic bf-007",
+  "request": "Build a Local service site case 2 for private owner beta with normal requirements and medium complexity. Include realistic user journeys, admin operations, and explicit blockers for unsupported integrations. Include realistic auth, CRUD, and operational workflows.",
+  "generatedAt": "2026-05-02T07:39:10.909Z",
+  "reason": "compile",
+  "claimBoundary": "Generated workspace proves local build/run/smoke readiness for this artifact only; it does not prove production deployment readiness."
+}

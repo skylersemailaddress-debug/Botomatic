@@ -18,17 +18,7 @@ import {
 } from "../../../packages/spec-engine/src";
 import { matchBlueprintFromText } from "../../../packages/blueprints/src/registry";
 import { planSelfUpgrade, detectArchitectureDrift, runRegressionGuard, SelfUpgradeSpec } from "../../../packages/self-upgrade-engine/src";
-import {
-  classifyRepo,
-  detectFrameworks,
-  detectLanguages,
-  mapArchitecture,
-  inferDomain,
-  scanRepoRisk,
-  createDirtyRepoEvidenceSnapshot,
-  addDirtyRepoEvidenceEntry,
-  deriveDirtyRepoCompletionBlockers,
-} from "../../../packages/repo-intake/src";
+import { classifyRepo, detectFrameworks, detectLanguages, mapArchitecture, inferDomain, scanRepoRisk } from "../../../packages/repo-intake/src";
 import {
   repoHealthAudit,
   buildFailureAudit,
@@ -151,10 +141,6 @@ function makeRequestId(): string {
   return `req_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
-function makeProjectId(): string {
-  return `proj_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-}
-
 function updateTelemetryTimestamp() {
   telemetryUpdatedAt = now();
 }
@@ -206,22 +192,6 @@ function toStored(record: {
     ...(record.deployments ? { deployments: record.deployments } : {}),
     ...(record.auditEvents ? { auditEvents: record.auditEvents } : {}),
   } as StoredProjectRecord;
-}
-
-function deriveProjectName(input: { name?: unknown; request?: unknown; prompt?: unknown; projectName?: unknown }): string {
-  const raw =
-    typeof input.name === "string" && input.name.trim()
-      ? input.name
-      : typeof input.projectName === "string" && input.projectName.trim()
-      ? input.projectName
-      : typeof input.request === "string" && input.request.trim()
-      ? input.request
-      : typeof input.prompt === "string" && input.prompt.trim()
-      ? input.prompt
-      : "";
-
-  const cleaned = raw.trim().replace(/\s+/g, " ").slice(0, 80);
-  return cleaned || "Untitled Botomatic Project";
 }
 
 function buildDefaultGovernanceApproval(actorId = "system"): GovernanceApprovalState {
@@ -349,7 +319,7 @@ function requireRole(required: AuthContext["role"], config: RuntimeConfig): expr
 function requireApiAuth(config: RuntimeConfig): express.RequestHandler {
   return async (req, res, next) => {
     if (!config.auth.enabled) {
-      return next();
+      return res.status(500).json({ error: "API auth is not configured", authImplementation: config.auth.implementation });
     }
     try {
       await getVerifiedAuth(req, config);
@@ -1523,24 +1493,6 @@ function startQueueWorker(config: RuntimeConfig) {
   setInterval(() => { void workerTick(config); }, Number(process.env.QUEUE_POLL_INTERVAL_MS || 2000));
 }
 
-function isAllowedCorsOrigin(origin: string): boolean {
-  const allowedOrigins = new Set([
-    "http://127.0.0.1:3000",
-    "http://localhost:3000",
-  ]);
-
-  if (allowedOrigins.has(origin)) {
-    return true;
-  }
-
-  const isProduction = process.env.NODE_ENV === "production";
-  if (isProduction) {
-    return false;
-  }
-
-  return /^https:\/\/[a-z0-9-]+\.app\.github\.dev$/i.test(origin);
-}
-
 export function buildApp(config: RuntimeConfig) {
   const app = express();
   const repo = config.repository.repo;
@@ -1548,25 +1500,6 @@ export function buildApp(config: RuntimeConfig) {
     startQueueWorker(config);
   }
   app.use(express.json());
-
-  app.use((req, res, next) => {
-    const origin = req.header("origin");
-
-    if (origin && isAllowedCorsOrigin(origin)) {
-      res.header("Access-Control-Allow-Origin", origin);
-      res.header("Vary", "Origin");
-    }
-
-    res.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
-    res.header("Access-Control-Allow-Headers", "Authorization,Content-Type,x-actor-id,x-user-email");
-
-    if (req.method === "OPTIONS") {
-      return res.sendStatus(204);
-    }
-
-    return next();
-  });
-
   app.use((req, res, next) => {
     const requestId = req.header("x-request-id") || makeRequestId();
     (res.locals as any).requestId = requestId;
@@ -1574,44 +1507,14 @@ export function buildApp(config: RuntimeConfig) {
     next();
   });
 
-  const buildHealthPayload = (
-    auth: { role: string | null; userId: string | null; issuer: string | null },
-    requestId: string | null
-  ) => ({
-    status: "ok",
-    appName: config.appName,
-    runtimeMode: config.runtimeMode,
-    repositoryMode: config.repository.mode,
-    repositoryImplementation: config.repository.implementation,
-    durableEnvPresent: config.durableEnvPresent,
-    authEnabled: config.auth.enabled,
-    authImplementation: config.auth.implementation,
-    commitSha: config.commitSha,
-    startupTimestamp: config.startupTimestamp,
-    queueEnabled: config.repository.mode === "durable",
-    activeWorkers,
-    workerConcurrency,
-    workerId,
-    leaseMs,
-    queueMode: "dedicated_jobs_table_parallel",
-    role: auth.role,
-    userId: auth.userId,
-    issuer: auth.issuer,
-    requestId,
-  });
-
-  const respondHealth = async (req: express.Request, res: express.Response) => {
-    const requestId = String((res.locals as any).requestId || "");
+  app.get("/api/health", async (req, res) => {
     try {
       const auth = await getVerifiedAuth(req, config);
-      return res.json(buildHealthPayload({ role: auth.role, userId: auth.userId, issuer: auth.issuer || null }, requestId));
+      return res.json({ status: "ok", appName: config.appName, runtimeMode: config.runtimeMode, repositoryMode: config.repository.mode, repositoryImplementation: config.repository.implementation, durableEnvPresent: config.durableEnvPresent, authEnabled: config.auth.enabled, authImplementation: config.auth.implementation, commitSha: config.commitSha, startupTimestamp: config.startupTimestamp, queueEnabled: config.repository.mode === "durable", activeWorkers, workerConcurrency, workerId, leaseMs, queueMode: "dedicated_jobs_table_parallel", role: auth.role, userId: auth.userId, issuer: auth.issuer || null, requestId: (res.locals as any).requestId });
     } catch {
-      return res.json(buildHealthPayload({ role: null, userId: null, issuer: null }, requestId));
+      return res.json({ status: "ok", appName: config.appName, runtimeMode: config.runtimeMode, repositoryMode: config.repository.mode, repositoryImplementation: config.repository.implementation, durableEnvPresent: config.durableEnvPresent, authEnabled: config.auth.enabled, authImplementation: config.auth.implementation, commitSha: config.commitSha, startupTimestamp: config.startupTimestamp, queueEnabled: config.repository.mode === "durable", activeWorkers, workerConcurrency, workerId, leaseMs, queueMode: "dedicated_jobs_table_parallel", role: null, userId: null, issuer: null, requestId: (res.locals as any).requestId });
     }
-  };
-
-  app.get("/health", respondHealth);
-  app.get("/api/health", respondHealth);
+  });
 
   app.use("/api/ops", requireApiAuth(config));
 
@@ -1654,30 +1557,16 @@ export function buildApp(config: RuntimeConfig) {
   app.post("/api/projects/intake", async (req, res) => {
     const actor = await getRequestActor(req, config);
     try {
-      const { name, request, prompt, projectName } = req.body as Record<string, unknown>;
-      const safeRequest = typeof request === "string" && request.trim() ? request : typeof prompt === "string" ? prompt : "";
-      if (!safeRequest.trim()) {
-        return res.status(400).json({
-          error: "request is required",
-          code: "INTAKE_REQUEST_REQUIRED",
-          requiredFields: ["request"],
-        });
-      }
-      const projectId = makeProjectId();
-      const project = toStored({
-        projectId,
-        name: deriveProjectName({ name, request: safeRequest, prompt, projectName }),
-        request: safeRequest,
-        status: "clarifying",
-        governanceApproval: buildDefaultGovernanceApproval(actor.actorId),
-      });
+      const { name, request } = req.body;
+      const projectId = `proj_${Date.now()}`;
+      const project = toStored({ projectId, name, request, status: "clarifying", governanceApproval: buildDefaultGovernanceApproval(actor.actorId) });
       ensureGovernanceApprovalState(project, actor.actorId);
-      const blueprint = matchBlueprintFromText(safeRequest || String(name || "") || "");
-      const analyzed = analyzeSpec({ appName: project.name, request: safeRequest, blueprint, actorId: actor.actorId });
+      const blueprint = matchBlueprintFromText(request || name || "");
+      const analyzed = analyzeSpec({ appName: name, request: String(request || ""), blueprint, actorId: actor.actorId });
       setMasterSpec(project, analyzed.spec);
       setSpecClarifications(project, analyzed.clarifications);
       project.runs = { ...((project.runs || {}) as Record<string, unknown>), [specStyleRunKey]: analyzed.style };
-      emitEvent(project as any, { id: `evt_${Date.now()}`, projectId, type: "intake", actorId: actor.actorId, timestamp: now(), metadata: { name: project.name } });
+      emitEvent(project as any, { id: `evt_${Date.now()}`, projectId, type: "intake", actorId: actor.actorId, timestamp: now(), metadata: { name } });
       await repo.upsertProject(project);
       return res.json({ projectId, status: project.status, actorId: actor.actorId });
     } catch (error) {
@@ -2834,37 +2723,7 @@ export function buildApp(config: RuntimeConfig) {
       const project = await repo.getProject(req.params.projectId);
       if (!project) return res.status(404).json({ error: "Project not found" });
       const run = getAutonomousBuildRun(project);
-      if (!run) {
-        const timestamp = now();
-        return res.json({
-          ok: true,
-          run: {
-            runId: `${project.projectId}_autonomous_idle`,
-            status: "idle",
-            milestoneGraph: [],
-            checkpoint: {
-              runId: `${project.projectId}_autonomous_idle`,
-              currentMilestone: "none",
-              completedMilestones: [],
-              failedMilestone: null,
-              repairAttempts: 0,
-              repairAttemptsBySignature: {},
-              repairAttemptsByMilestoneCategory: {},
-              repairHistory: [],
-              lastFailure: null,
-              artifactPaths: [],
-              logs: [],
-              resumeCommand: "Start an autonomous run",
-              nextAction: "Start autonomous build",
-            },
-            humanBlockers: [],
-            finalReleaseAssembled: false,
-            startedAt: timestamp,
-            updatedAt: timestamp,
-          } as any,
-          actorId: actor.actorId,
-        });
-      }
+      if (!run) return res.status(404).json({ error: "No autonomous build run found" });
       return res.json({ ok: true, run, actorId: actor.actorId });
     } catch (error) {
       return handleRouteError(res, config, error, "GET /api/projects/:projectId/autonomous-build/status", actor);
@@ -3325,6 +3184,70 @@ export function buildApp(config: RuntimeConfig) {
         route = "plan";
         const plan = generatePlan(project.masterTruth as any);
         const updated = { ...project, plan, status: "queued", updatedAt: now() } as StoredProjectRecord;
+              if (!project.plan) {
+                const buildBlockers = getBuildBlockers(project);
+        
+                // PHASE 3: Check if we can auto-approve under approval policy
+                let autoApprovalDecision = null;
+                if (buildBlockers.length > 0) {
+                  const { canAutoApprove } = await import("../../../packages/governance-engine/src/approvalPolicy");
+                  autoApprovalDecision = canAutoApprove(project, {
+                    mode: project.approvalMode || "autopilot",
+                    contractCompletenessThreshold: 0.7,
+                    allowAutoApprovalWithoutIntake: true,
+                    logAllApprovals: true,
+                  });
+                }
+        
+                // If we have blockers but can auto-approve, override and proceed
+                const shouldBlock = buildBlockers.length > 0 && (!autoApprovalDecision || !autoApprovalDecision.approved);
+        
+                if (shouldBlock) {
+                  return res.json({
+                    ok: true,
+                    route: "build_blocked",
+                    status: project.status,
+                    blockers: buildBlockers,
+                    nextAction: "Resolve spec clarifications and approve build contract before planning.",
+                    actorId: actor.actorId,
+                    operatorMessage: formatOperatorVoice({
+                      direct: "Build is blocked until contract/spec requirements are complete.",
+                      status: project.status,
+                      blockers: buildBlockers,
+                      nextAction: "Resolve spec clarifications and approve build contract before planning.",
+                    }),
+                    actionResult: { 
+                      blocked: true,
+                      reason: autoApprovalDecision?.reason || "Build blockers present"
+                    },
+                  });
+                }
+        
+                // If we auto-approved, log it
+                if (autoApprovalDecision?.approved) {
+                  const { formatApprovalDecision } = await import("../../../packages/governance-engine/src/approvalPolicy");
+                  console.log(`[AUTO-APPROVAL] ${formatApprovalDecision(autoApprovalDecision)}`);
+                  project.approvalMode = autoApprovalDecision.mode;
+                  project.autoApprovedAt = autoApprovalDecision.autoApprovedAt;
+                  emitEvent(project as any, {
+                    id: `evt_${Date.now()}_auto_approve`,
+                    projectId: project.projectId,
+                    type: "auto_approval_granted",
+                    actorId: actor.actorId,
+                    role,
+                    timestamp: now(),
+                    metadata: { 
+                      approvalMode: autoApprovalDecision.mode,
+                      reason: autoApprovalDecision.reason,
+                      conditions: autoApprovalDecision.conditions,
+                      highRiskDecisions: autoApprovalDecision.highRiskDecisions,
+                    },
+                  });
+                }
+        
+                route = "plan";
+                const plan = generatePlan(project.masterTruth as any);
+                const updated = { ...project, plan, status: "queued", updatedAt: now() } as StoredProjectRecord;
         emitEvent(updated as any, {
           id: `evt_${Date.now()}`,
           projectId: updated.projectId,
@@ -3624,140 +3547,6 @@ export function buildApp(config: RuntimeConfig) {
       return res.json({ ...project, intakeArtifacts, actorId: actor.actorId, workerId });
     } catch (error) {
       return handleRouteError(res, config, error, "GET /api/projects/:projectId/status", actor);
-    }
-  });
-
-  app.get("/api/projects/:projectId/state", async (req, res) => {
-    const actor = await getRequestActor(req, config);
-    try {
-      const project = await repo.getProject(req.params.projectId);
-      if (!project) return res.status(404).json({ error: "Project not found" });
-      const overview = buildOverview(project);
-      const nextStep = overview.blockers.length > 0 ? overview.blockers[0] : "Continue build pipeline";
-      const stageStatus = project.status || "idle";
-      return res.json({
-        projectId: project.projectId,
-        objective: project.request || project.name,
-        nextStep,
-        runId: project.projectId,
-        latestRunId: project.projectId,
-        activeRunId: project.projectId,
-        latestRun: {
-          runId: project.projectId,
-          status: stageStatus,
-          stages: [{ id: "project_status", label: "Project status", status: stageStatus, updatedAt: (project as any).updatedAt || now() }],
-        },
-        orchestration: {
-          runId: project.projectId,
-          status: stageStatus,
-          stages: [{ id: "project_status", label: "Project status", status: stageStatus, updatedAt: (project as any).updatedAt || now() }],
-        },
-        activity: overview.activity,
-        actorId: actor.actorId,
-        workerId,
-      });
-    } catch (error) {
-      return handleRouteError(res, config, error, "GET /api/projects/:projectId/state", actor);
-    }
-  });
-
-  app.get("/api/projects/:projectId/resume", async (req, res) => {
-    const actor = await getRequestActor(req, config);
-    try {
-      const project = await repo.getProject(req.params.projectId);
-      if (!project) return res.status(404).json({ error: "Project not found" });
-      const overview = buildOverview(project);
-      return res.json({
-        projectId: project.projectId,
-        objective: project.request || project.name,
-        nextStep: overview.blockers[0] || "Continue build pipeline",
-        activeRunId: project.projectId,
-        latestRunId: project.projectId,
-        latestPrompt: project.request,
-        stages: [{ id: "project_status", label: "Project status", status: project.status || "idle", updatedAt: (project as any).updatedAt || now() }],
-        updatedAt: (project as any).updatedAt || now(),
-        actorId: actor.actorId,
-        workerId,
-      });
-    } catch (error) {
-      return handleRouteError(res, config, error, "GET /api/projects/:projectId/resume", actor);
-    }
-  });
-
-  app.get("/api/projects/:projectId/runtime", async (req, res) => {
-    const actor = await getRequestActor(req, config);
-    try {
-      const project = await repo.getProject(req.params.projectId);
-      if (!project) return res.status(404).json({ error: "Project not found" });
-      const status = project.status || "idle";
-      return res.json({
-        projectId: project.projectId,
-        status,
-        state: status,
-        previewUrl: null,
-        verifiedPreviewUrl: null,
-        derivedPreviewUrl: null,
-        actorId: actor.actorId,
-        workerId,
-      });
-    } catch (error) {
-      return handleRouteError(res, config, error, "GET /api/projects/:projectId/runtime", actor);
-    }
-  });
-
-  app.get("/api/projects/:projectId/execution", async (req, res) => {
-    const actor = await getRequestActor(req, config);
-    try {
-      const project = await repo.getProject(req.params.projectId);
-      if (!project) return res.status(404).json({ error: "Project not found" });
-      const jobs = buildPacketList(project).map((packet: any) => ({
-        id: packet.packetId,
-        runId: project.projectId,
-        projectId: project.projectId,
-        type: "build",
-        label: packet.title || packet.packetId,
-        status: packet.status,
-      }));
-      return res.json({
-        runId: project.projectId,
-        projectId: project.projectId,
-        status: project.status || "idle",
-        jobs,
-        logs: [],
-        updatedAt: (project as any).updatedAt || now(),
-        actorId: actor.actorId,
-        workerId,
-      });
-    } catch (error) {
-      return handleRouteError(res, config, error, "GET /api/projects/:projectId/execution", actor);
-    }
-  });
-
-  app.get("/api/projects/:projectId/execution/:runId", async (req, res) => {
-    const actor = await getRequestActor(req, config);
-    try {
-      const project = await repo.getProject(req.params.projectId);
-      if (!project) return res.status(404).json({ error: "Project not found" });
-      const jobs = buildPacketList(project).map((packet: any) => ({
-        id: packet.packetId,
-        runId: req.params.runId,
-        projectId: project.projectId,
-        type: "build",
-        label: packet.title || packet.packetId,
-        status: packet.status,
-      }));
-      return res.json({
-        runId: req.params.runId,
-        projectId: project.projectId,
-        status: project.status || "idle",
-        jobs,
-        logs: [],
-        updatedAt: (project as any).updatedAt || now(),
-        actorId: actor.actorId,
-        workerId,
-      });
-    } catch (error) {
-      return handleRouteError(res, config, error, "GET /api/projects/:projectId/execution/:runId", actor);
     }
   });
 

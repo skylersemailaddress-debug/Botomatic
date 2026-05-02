@@ -1,0 +1,8 @@
+{
+  "projectId": "proj_1777738486609_7zkqj2",
+  "appName": "Builder Forensic bf-017",
+  "request": "Build a Booking/scheduling app case 2 for private owner beta with normal requirements and medium complexity. Include realistic user journeys, admin operations, and explicit blockers for unsupported integrations. Include realistic auth, CRUD, and operational workflows.",
+  "generatedAt": "2026-05-02T16:14:46.924Z",
+  "reason": "compile",
+  "claimBoundary": "Generated workspace proves local build/run/smoke readiness for this artifact only; it does not prove production deployment readiness."
+}
