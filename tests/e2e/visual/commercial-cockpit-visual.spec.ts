@@ -1,11 +1,14 @@
 import { test, expect } from "@playwright/test";
 
-const PROJECT_ID = process.env.VISUAL_PROJECT_ID || "proj_1777688837431_f0qgn4";
 const BASE_URL = process.env.VISUAL_BASE_URL || "http://127.0.0.1:3000";
+const API_BASE_URL = process.env.API_BASE_URL || "http://127.0.0.1:3001";
+const API_TOKEN = process.env.BOTOMATIC_API_TOKEN || process.env.NEXT_PUBLIC_BOTOMATIC_API_TOKEN || "dev-api-token";
+
+let PROJECT_ID = process.env.VISUAL_PROJECT_ID || "";
 
 type VisualRoute = {
   name: string;
-  path: string;
+  path: (projectId: string) => string;
   required: string[];
   forbidden: string[];
 };
@@ -13,7 +16,7 @@ type VisualRoute = {
 const routes: VisualRoute[] = [
   {
     name: "vibe-desktop",
-    path: `/projects/${PROJECT_ID}/vibe`,
+    path: (projectId: string) => `/projects/${projectId}/vibe`,
     required: [
       "[data-testid='commercial-shell']",
       "[data-testid='commercial-product-sidebar']",
@@ -25,7 +28,7 @@ const routes: VisualRoute[] = [
   },
   {
     name: "pro-desktop",
-    path: `/projects/${PROJECT_ID}/advanced`,
+    path: (projectId: string) => `/projects/${projectId}/advanced`,
     required: [
       "[data-testid='commercial-shell']",
       "[data-testid='commercial-product-sidebar']",
@@ -39,9 +42,31 @@ const routes: VisualRoute[] = [
 test.describe("commercial cockpit visual clone harness", () => {
   test.use({ viewport: { width: 2048, height: 1365 }, deviceScaleFactor: 1 });
 
+  test.beforeAll(async ({ request }) => {
+    if (PROJECT_ID) {
+      return;
+    }
+
+    const intake = await request.post(`${API_BASE_URL}/api/projects/intake`, {
+      headers: {
+        Authorization: `Bearer ${API_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      data: {
+        name: `Visual Contract ${Date.now()}`,
+        request: "Build a private-beta project shell for visual contract verification.",
+      },
+    });
+
+    expect(intake.ok()).toBeTruthy();
+    const body = await intake.json();
+    PROJECT_ID = String(body.projectId || "");
+    expect(PROJECT_ID.length).toBeGreaterThan(0);
+  });
+
   for (const route of routes) {
     test(`${route.name} commercial DOM and screenshot contract`, async ({ page }) => {
-      await page.goto(`${BASE_URL}${route.path}`, { waitUntil: "networkidle" });
+      await page.goto(`${BASE_URL}${route.path(PROJECT_ID)}`, { waitUntil: "networkidle" });
 
       for (const selector of route.required) {
         await expect(page.locator(selector)).toBeVisible();
