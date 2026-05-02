@@ -9,16 +9,17 @@ export function LiveUIBuilderPreviewSurface({ editableDocument, selectedNodeId, 
     return <article data-testid="live-ui-builder-preview-surface" data-preview-status="fallback"><p>Document-driven preview unavailable; using structural fallback only.</p></article>;
   }
 
+  const hasPreviewPatch = Boolean(previewPatch && typeof previewPatch === "object" && Object.keys(previewPatch as Record<string, unknown>).length > 0);
+
   return (
     <article className="vibe-live-preview" aria-label="Live editable preview" data-testid="live-ui-builder-preview-surface" data-preview-status="document-driven">
       <header>
-        <p>Document-driven preview, not final production rendering.</p>
-        <p>Structural bridge caveat: preview model only; no source rewrite/export/deploy claims.</p>
+        <p>Live Preview Canvas</p>
+        <p>{hasPreviewPatch ? "Preview updates ready" : "Awaiting next command"}</p>
       </header>
       <LiveUIBuilderDocumentRenderer editableDocument={editableDocument} selectedNodeId={selectedNodeId} changedNodeIds={changedNodeIds} onSelectNode={onSelectNode} />
       <LiveUIBuilderInspectOverlay selectedNodeId={selectedNodeId} changedNodeIds={changedNodeIds} onSelectNode={onSelectNode} />
       {onDirectAction && selectedPageId ? <LiveUIBuilderDirectManipulationOverlay selectedNodeId={selectedNodeId} pageId={selectedPageId} onAction={onDirectAction} /> : null}
-      <pre>{JSON.stringify(previewPatch ?? {}, null, 2)}</pre>
     </article>
   );
 }
