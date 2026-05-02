@@ -37,7 +37,7 @@ const routes: VisualRoute[] = [
 ];
 
 test.describe("commercial cockpit visual clone harness", () => {
-  test.use({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1 });
+  test.use({ viewport: { width: 2048, height: 1365 }, deviceScaleFactor: 1 });
 
   for (const route of routes) {
     test(`${route.name} commercial DOM and screenshot contract`, async ({ page }) => {

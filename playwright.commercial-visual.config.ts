@@ -13,7 +13,7 @@ export default defineConfig({
   },
   use: {
     baseURL: process.env.VISUAL_BASE_URL || "http://127.0.0.1:3000",
-    viewport: { width: 1280, height: 800 },
+    viewport: { width: 2048, height: 1365 },
     deviceScaleFactor: 1,
     screenshot: "only-on-failure",
   },
