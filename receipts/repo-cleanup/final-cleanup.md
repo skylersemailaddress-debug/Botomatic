@@ -2,7 +2,8 @@
 
 Generated: 2026-05-02
 Branch: fix/repo-pr-stack-cleanup
-Base commit: 43c8588
+Commit: 606a9b9
+PR: https://github.com/skylersemailaddress-debug/Botomatic/pull/1252
 
 ## PR Triage
 - PRs reviewed: 660 open PRs
@@ -10,7 +11,7 @@ Base commit: 43c8588
 - Generated packet PRs classified: 655 as SUPERSEDED_CLOSE (build/proj_*)
 - PRs merged in this run: none
 - PRs preserved in this branch: approval-policy flow, forensic harness/runtime scripts, compact forensic receipts, regression tests, autonomous builder registry/tests
-- PRs closed in this run: none (deferred until cleanup PR is open/green)
+- PRs closed in this run: none (deferred until cleanup PR is green)
 
 ## Junk Removed
 - Removed generated runtime folders and screenshot/diff spam from working tree:
@@ -63,6 +64,6 @@ Added/normalized scripts in package.json:
 - This does not block repo-cleanup merge mechanics, but blocks any 99% quality claim.
 
 ## Final Merge Recommendation
-- Open and merge this cleanup PR as the single clean integration path.
+- Merge cleanup PR #1252 as the single clean integration path once checks are green.
 - After this PR is green, close superseded packet PRs with linkage comment.
 - Keep non-build PRs open only if they retain unique unpreserved work.

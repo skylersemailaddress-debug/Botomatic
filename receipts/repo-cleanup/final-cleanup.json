@@ -1,7 +1,9 @@
 {
   "generatedAt": "2026-05-02T23:12:00Z",
   "branch": "fix/repo-pr-stack-cleanup",
-  "baseCommit": "43c8588",
+  "commit": "606a9b9",
+  "cleanupPr": 1252,
+  "cleanupPrUrl": "https://github.com/skylersemailaddress-debug/Botomatic/pull/1252",
   "prsReviewed": 660,
   "prsDetailed": [1230, 1229, 1228, 1227, 1223],
   "prsGeneratedSupersededCount": 655,
