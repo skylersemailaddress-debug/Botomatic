@@ -1,0 +1,1247 @@
+{
+  "runId": "smoke-20260502065458",
+  "mode": "smoke",
+  "generatedAt": "2026-05-02T06:54:58.358Z",
+  "apiBaseUrl": "http://127.0.0.1:3001",
+  "tokenSource": "default-dev-api-token",
+  "corpusTotal": 200,
+  "selectedTotal": 25,
+  "rubric": {
+    "rubricVersion": "1",
+    "generatedAt": "2026-05-02T06:54:58.357Z",
+    "scalarScores": [
+      "spec relevance: 0-5",
+      "architecture completeness: 0-5",
+      "UI completeness: 0-5",
+      "data/state model: 0-5",
+      "API/backend wiring: 0-5",
+      "auth/payment/external service honesty: 0-5"
+    ],
+    "binaryChecks": [
+      "runtime build success: pass/fail",
+      "generated app smoke success: pass/fail",
+      "tests generated/executed: pass/fail",
+      "no placeholder/fake content: pass/fail",
+      "follow-up edit success: pass/fail",
+      "repair loop success: pass/fail"
+    ],
+    "readinessBand": "commercial readiness: blocked/partial/pass",
+    "classifications": [
+      "PASS_REAL",
+      "PASS_PARTIAL",
+      "BLOCKED_UNSUPPORTED",
+      "FAIL_BUILDER",
+      "FAIL_RUNTIME",
+      "FAIL_QUALITY",
+      "FAIL_FAKE"
+    ]
+  },
+  "notes": [
+    "Harness uses the same intake/operator API path as control-plane chat where reachable.",
+    "If API or credentials are unavailable, cases are classified BLOCKED_UNSUPPORTED with exact blocker evidence.",
+    "No fake pass is emitted for unreachable runtime/build/test stages."
+  ],
+  "summary": {
+    "total": 25,
+    "passReal": 0,
+    "passPartial": 0,
+    "blockedUnsupported": 25,
+    "failBuilder": 0,
+    "failRuntime": 0,
+    "failQuality": 0,
+    "failFake": 0,
+    "runtimeSuccess": 0,
+    "partial": 0,
+    "unsupported": 25,
+    "followupSuccess": 0,
+    "repairSuccess": 0,
+    "fakeCount": 0,
+    "byCategory": {
+      "one-page-landing-page": {
+        "total": 5,
+        "passReal": 0,
+        "passPartial": 0,
+        "failed": 5
+      },
+      "local-service-site": {
+        "total": 5,
+        "passReal": 0,
+        "passPartial": 0,
+        "failed": 5
+      },
+      "restaurant-order-app": {
+        "total": 5,
+        "passReal": 0,
+        "passPartial": 0,
+        "failed": 5
+      },
+      "booking-scheduling-app": {
+        "total": 5,
+        "passReal": 0,
+        "passPartial": 0,
+        "failed": 5
+      },
+      "ecommerce-storefront": {
+        "total": 5,
+        "passReal": 0,
+        "passPartial": 0,
+        "failed": 5
+      }
+    },
+    "byClassification": {
+      "BLOCKED_UNSUPPORTED": 25
+    }
+  },
+  "cases": [
+    {
+      "id": "bf-001",
+      "category": "one-page-landing-page",
+      "complexity": "easy",
+      "prompt": "Build a One-page landing page case 1 for private owner beta with clear requirements and easy complexity. Include realistic user journeys, admin operations, and explicit blockers for unsupported integrations. Keep scope tight and production-realistic for private owner beta.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 93,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": null,
+      "repair": null,
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T06:54:58.451Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-002",
+      "category": "one-page-landing-page",
+      "complexity": "medium",
+      "prompt": "Build a One-page landing page case 2 for private owner beta with normal requirements and medium complexity. Include realistic user journeys, admin operations, and explicit blockers for unsupported integrations. Include realistic auth, CRUD, and operational workflows.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 2,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": null,
+      "repair": null,
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T06:54:58.455Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-003",
+      "category": "one-page-landing-page",
+      "complexity": "hard",
+      "prompt": "Build a One-page landing page case 3 for private owner beta with messy requirements and hard complexity. Include realistic user journeys, admin operations, and explicit blockers for unsupported integrations. Include multi-role workflows, edge cases, and import/export flows.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 4,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": null,
+      "repair": null,
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T06:54:58.459Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-004",
+      "category": "one-page-landing-page",
+      "complexity": "extreme",
+      "prompt": "Build a One-page landing page case 4 for private owner beta with ambiguous requirements and extreme complexity. Include realistic user journeys, admin operations, and explicit blockers for unsupported integrations. Handle contradictory asks honestly and block unsupported claims without faking.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 5,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": null,
+      "repair": null,
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T06:54:58.465Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-005",
+      "category": "one-page-landing-page",
+      "complexity": "hard",
+      "prompt": "Build a One-page landing page case 5 for private owner beta with followup requirements and hard complexity. Include realistic user journeys, admin operations, and explicit blockers for unsupported integrations. Assume this is an iterative follow-up requiring safe edits on an existing generated app.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 5,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": null,
+      "repair": null,
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T06:54:58.470Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-006",
+      "category": "local-service-site",
+      "complexity": "easy",
+      "prompt": "Build a Local service site case 1 for private owner beta with clear requirements and easy complexity. Include realistic user journeys, admin operations, and explicit blockers for unsupported integrations. Keep scope tight and production-realistic for private owner beta.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 1,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": null,
+      "repair": null,
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T06:54:58.471Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-007",
+      "category": "local-service-site",
+      "complexity": "medium",
+      "prompt": "Build a Local service site case 2 for private owner beta with normal requirements and medium complexity. Include realistic user journeys, admin operations, and explicit blockers for unsupported integrations. Include realistic auth, CRUD, and operational workflows.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 3,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": null,
+      "repair": null,
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T06:54:58.476Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-008",
+      "category": "local-service-site",
+      "complexity": "hard",
+      "prompt": "Build a Local service site case 3 for private owner beta with messy requirements and hard complexity. Include realistic user journeys, admin operations, and explicit blockers for unsupported integrations. Include multi-role workflows, edge cases, and import/export flows.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 3,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": null,
+      "repair": null,
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T06:54:58.479Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-009",
+      "category": "local-service-site",
+      "complexity": "extreme",
+      "prompt": "Build a Local service site case 4 for private owner beta with ambiguous requirements and extreme complexity. Include realistic user journeys, admin operations, and explicit blockers for unsupported integrations. Handle contradictory asks honestly and block unsupported claims without faking.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 4,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": null,
+      "repair": null,
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T06:54:58.484Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-010",
+      "category": "local-service-site",
+      "complexity": "hard",
+      "prompt": "Build a Local service site case 5 for private owner beta with followup requirements and hard complexity. Include realistic user journeys, admin operations, and explicit blockers for unsupported integrations. Assume this is an iterative follow-up requiring safe edits on an existing generated app.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 2,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": null,
+      "repair": null,
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T06:54:58.487Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-011",
+      "category": "restaurant-order-app",
+      "complexity": "easy",
+      "prompt": "Build a Restaurant/order app case 1 for private owner beta with clear requirements and easy complexity. Include realistic user journeys, admin operations, and explicit blockers for unsupported integrations. Keep scope tight and production-realistic for private owner beta.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 1,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": null,
+      "repair": null,
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T06:54:58.488Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-012",
+      "category": "restaurant-order-app",
+      "complexity": "medium",
+      "prompt": "Build a Restaurant/order app case 2 for private owner beta with normal requirements and medium complexity. Include realistic user journeys, admin operations, and explicit blockers for unsupported integrations. Include realistic auth, CRUD, and operational workflows.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 1,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": null,
+      "repair": null,
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T06:54:58.489Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-013",
+      "category": "restaurant-order-app",
+      "complexity": "hard",
+      "prompt": "Build a Restaurant/order app case 3 for private owner beta with messy requirements and hard complexity. Include realistic user journeys, admin operations, and explicit blockers for unsupported integrations. Include multi-role workflows, edge cases, and import/export flows.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 1,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": null,
+      "repair": null,
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T06:54:58.490Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-014",
+      "category": "restaurant-order-app",
+      "complexity": "extreme",
+      "prompt": "Build a Restaurant/order app case 4 for private owner beta with ambiguous requirements and extreme complexity. Include realistic user journeys, admin operations, and explicit blockers for unsupported integrations. Handle contradictory asks honestly and block unsupported claims without faking.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 1,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": null,
+      "repair": null,
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T06:54:58.491Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-015",
+      "category": "restaurant-order-app",
+      "complexity": "hard",
+      "prompt": "Build a Restaurant/order app case 5 for private owner beta with followup requirements and hard complexity. Include realistic user journeys, admin operations, and explicit blockers for unsupported integrations. Assume this is an iterative follow-up requiring safe edits on an existing generated app.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 4,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": null,
+      "repair": null,
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T06:54:58.495Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-016",
+      "category": "booking-scheduling-app",
+      "complexity": "easy",
+      "prompt": "Build a Booking/scheduling app case 1 for private owner beta with clear requirements and easy complexity. Include realistic user journeys, admin operations, and explicit blockers for unsupported integrations. Keep scope tight and production-realistic for private owner beta.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": null,
+      "repair": null,
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T06:54:58.495Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-017",
+      "category": "booking-scheduling-app",
+      "complexity": "medium",
+      "prompt": "Build a Booking/scheduling app case 2 for private owner beta with normal requirements and medium complexity. Include realistic user journeys, admin operations, and explicit blockers for unsupported integrations. Include realistic auth, CRUD, and operational workflows.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 1,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": null,
+      "repair": null,
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T06:54:58.496Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-018",
+      "category": "booking-scheduling-app",
+      "complexity": "hard",
+      "prompt": "Build a Booking/scheduling app case 3 for private owner beta with messy requirements and hard complexity. Include realistic user journeys, admin operations, and explicit blockers for unsupported integrations. Include multi-role workflows, edge cases, and import/export flows.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": null,
+      "repair": null,
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T06:54:58.496Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-019",
+      "category": "booking-scheduling-app",
+      "complexity": "extreme",
+      "prompt": "Build a Booking/scheduling app case 4 for private owner beta with ambiguous requirements and extreme complexity. Include realistic user journeys, admin operations, and explicit blockers for unsupported integrations. Handle contradictory asks honestly and block unsupported claims without faking.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 1,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": null,
+      "repair": null,
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T06:54:58.497Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-020",
+      "category": "booking-scheduling-app",
+      "complexity": "hard",
+      "prompt": "Build a Booking/scheduling app case 5 for private owner beta with followup requirements and hard complexity. Include realistic user journeys, admin operations, and explicit blockers for unsupported integrations. Assume this is an iterative follow-up requiring safe edits on an existing generated app.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 1,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": null,
+      "repair": null,
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T06:54:58.498Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-021",
+      "category": "ecommerce-storefront",
+      "complexity": "easy",
+      "prompt": "Build a Ecommerce storefront case 1 for private owner beta with clear requirements and easy complexity. Include realistic user journeys, admin operations, and explicit blockers for unsupported integrations. Keep scope tight and production-realistic for private owner beta.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": null,
+      "repair": null,
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T06:54:58.498Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-022",
+      "category": "ecommerce-storefront",
+      "complexity": "medium",
+      "prompt": "Build a Ecommerce storefront case 2 for private owner beta with normal requirements and medium complexity. Include realistic user journeys, admin operations, and explicit blockers for unsupported integrations. Include realistic auth, CRUD, and operational workflows.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 1,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": null,
+      "repair": null,
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T06:54:58.499Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-023",
+      "category": "ecommerce-storefront",
+      "complexity": "hard",
+      "prompt": "Build a Ecommerce storefront case 3 for private owner beta with messy requirements and hard complexity. Include realistic user journeys, admin operations, and explicit blockers for unsupported integrations. Include multi-role workflows, edge cases, and import/export flows.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 1,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": null,
+      "repair": null,
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T06:54:58.500Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-024",
+      "category": "ecommerce-storefront",
+      "complexity": "extreme",
+      "prompt": "Build a Ecommerce storefront case 4 for private owner beta with ambiguous requirements and extreme complexity. Include realistic user journeys, admin operations, and explicit blockers for unsupported integrations. Handle contradictory asks honestly and block unsupported claims without faking.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 1,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": null,
+      "repair": null,
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T06:54:58.501Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-025",
+      "category": "ecommerce-storefront",
+      "complexity": "hard",
+      "prompt": "Build a Ecommerce storefront case 5 for private owner beta with followup requirements and hard complexity. Include realistic user journeys, admin operations, and explicit blockers for unsupported integrations. Assume this is an iterative follow-up requiring safe edits on an existing generated app.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": null,
+      "repair": null,
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T06:54:58.501Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    }
+  ]
+}

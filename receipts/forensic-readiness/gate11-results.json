@@ -1,0 +1,17 @@
+{
+  "capturedAt": "2026-05-02T05:41:20+00:00",
+  "results": [
+    {"index": 1, "command": "npm run validate:all", "exitCode": 0, "log": "receipts/forensic-readiness/gates/gate11-01.log"},
+    {"index": 2, "command": "npm run -s test:universal", "exitCode": 0, "log": "receipts/forensic-readiness/gates/gate11-02.log"},
+    {"index": 3, "command": "npm run test:commercial-cockpit", "exitCode": 0, "log": "receipts/forensic-readiness/gates/gate11-03.log"},
+    {"index": 4, "command": "npm run build", "exitCode": 0, "log": "receipts/forensic-readiness/gates/gate11-04.log"},
+    {"index": 5, "command": "VISUAL_DIFF_THRESHOLD=0.01 npm run test:visual-commercial", "exitCode": 1, "log": "receipts/forensic-readiness/gates/gate11-05.log"},
+    {"index": 6, "command": "npm run audit:routes-commercial", "exitCode": 1, "log": "receipts/forensic-readiness/gates/gate11-06.log"},
+    {"index": 7, "command": "npm run audit:ui-actions", "exitCode": 1, "log": "receipts/forensic-readiness/gates/gate11-07.log"},
+    {"index": 8, "command": "npm run test:api-live-beta", "exitCode": 0, "log": "receipts/forensic-readiness/gates/gate11-08.log"},
+    {"index": 9, "command": "npm run test:e2e:live-beta", "exitCode": 1, "log": "receipts/forensic-readiness/gates/gate11-09.log"},
+    {"index": 10, "command": "npm run test:e2e:live-beta:100", "exitCode": 1, "log": "receipts/forensic-readiness/gates/gate11-10.log"},
+    {"index": 11, "command": "npm run audit:forensic-private-beta", "exitCode": 1, "log": "receipts/forensic-readiness/gates/gate11-11.log"}
+  ],
+  "failedCount": 6
+}
