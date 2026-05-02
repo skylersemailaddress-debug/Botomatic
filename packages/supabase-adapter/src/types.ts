@@ -11,6 +11,22 @@ validations?: Record<string, unknown> | null;
 gitOperations?: Record<string, unknown> | null;
 gitResults?: Record<string, unknown> | null;
 auditEvents?: unknown[] | null;
+	approvalMode?: 'strict' | 'guided' | 'autopilot' | 'enterprise';
+	autoApprovedAt?: string | null;
+	lastApprovalDecision?: {
+		approved: boolean;
+		mode: 'strict' | 'guided' | 'autopilot' | 'enterprise';
+		reason: string;
+		conditions: {
+			contractComplete: boolean;
+			noHighRiskDecisions: boolean;
+			blueprintSelected: boolean;
+			noConflicts: boolean;
+		};
+		highRiskDecisions: string[];
+		createdAt: string;
+	} | null;
+	blueprint?: string | null;
 createdAt: string;
 updatedAt: string;
 }

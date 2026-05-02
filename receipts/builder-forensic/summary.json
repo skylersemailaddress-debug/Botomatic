@@ -1,0 +1,60 @@
+{
+  "generatedAt": "2026-05-02T23:10:44.787Z",
+  "runsIncluded": [
+    {
+      "runId": "--mode-20260502231031",
+      "mode": "--mode",
+      "selectedTotal": 25
+    }
+  ],
+  "allRunsDiscovered": [
+    {
+      "runId": "--mode-20260502231031",
+      "mode": "--mode",
+      "selectedTotal": 25
+    }
+  ],
+  "totalPromptsTested": 25,
+  "categoriesCovered": 5,
+  "passRate": 0,
+  "passPlusPartialRate": 100,
+  "promptsReachedBuilderRuntime": 25,
+  "promptsGeneratedArtifacts": 25,
+  "builtSuccessfully": 0,
+  "ranSuccessfully": 0,
+  "repairedSuccessfully": 0,
+  "failRate": 0,
+  "unsupportedRate": 0,
+  "runtimeSuccessRate": 0,
+  "followupSuccessRate": 0,
+  "repairSuccessRate": 0,
+  "fakeContaminationRate": 0,
+  "ownerVerdict": "PARTIAL_PRIVATE_BETA",
+  "answer99Percent": "No. Measured PASS_REAL rate is 0% and PASS_REAL+PASS_PARTIAL is 100%, below a defensible 99% claim.",
+  "whatHandlesWell": [],
+  "whatHandlesPartially": [
+    "booking-scheduling-app",
+    "ecommerce-storefront",
+    "local-service-site",
+    "one-page-landing-page",
+    "restaurant-order-app"
+  ],
+  "whatFails": [],
+  "topBlockers": [
+    {
+      "rank": 1,
+      "blocker": "Follow-up edit path not executed for this case",
+      "count": 25
+    },
+    {
+      "rank": 2,
+      "blocker": "No generated project path returned for local build validation",
+      "count": 25
+    },
+    {
+      "rank": 3,
+      "blocker": "Repair loop not executed for this case",
+      "count": 25
+    }
+  ]
+}
