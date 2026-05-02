@@ -1,0 +1,598 @@
+/* Clean commercial workspace layer.
+   Purpose: make project routes match the premium Vibe/Pro cockpit direction
+   while preserving real-data/no-demo rules. */
+
+html,
+body {
+  overflow: hidden;
+  background: #f4f1ff;
+}
+
+.project-workspace-shell {
+  display: grid !important;
+  grid-template-columns: 220px minmax(0, 1fr) !important;
+  gap: 18px !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  min-height: 100vh !important;
+  padding: 18px !important;
+  overflow: hidden !important;
+  color: #211733;
+  background:
+    radial-gradient(circle at 8% 4%, rgba(124, 77, 255, 0.13), transparent 28%),
+    radial-gradient(circle at 92% 95%, rgba(76, 196, 172, 0.12), transparent 24%),
+    linear-gradient(180deg, #fcfbff 0%, #f2eeff 100%) !important;
+}
+
+.project-workspace-sidebar {
+  grid-column: 1 !important;
+  width: 220px !important;
+  min-width: 220px !important;
+  max-width: 220px !important;
+  height: calc(100vh - 36px) !important;
+  min-height: 0 !important;
+  position: sticky !important;
+  top: 18px !important;
+  z-index: 20 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 14px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(116, 88, 220, 0.16) !important;
+  border-radius: 28px !important;
+  padding: 16px 14px !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 22px 50px rgba(55, 40, 120, 0.09) !important;
+  backdrop-filter: blur(18px);
+}
+
+.project-workspace-main,
+.northstar-main.project-workspace-main {
+  grid-column: 2 !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  height: calc(100vh - 36px) !important;
+  overflow: auto !important;
+  display: block !important;
+}
+
+.northstar-brand {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  color: #241a42 !important;
+}
+
+.northstar-brand-mark {
+  display: grid !important;
+  place-items: center !important;
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 14px !important;
+  color: #fff !important;
+  background: linear-gradient(135deg, #7b4dff, #4f26d9) !important;
+  box-shadow: 0 12px 22px rgba(98, 57, 255, 0.26) !important;
+}
+
+.northstar-brand strong,
+.northstar-brand small {
+  display: block !important;
+}
+
+.northstar-brand small {
+  color: #7a6c98 !important;
+  font-size: 10px !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+}
+
+.northstar-new-project {
+  display: block !important;
+  border: 0 !important;
+  border-radius: 14px !important;
+  text-align: center !important;
+  padding: 11px 12px !important;
+  font-weight: 800 !important;
+  color: #fff !important;
+  background: linear-gradient(135deg, #7c4dff, #5b2be0) !important;
+  box-shadow: 0 14px 26px rgba(98, 57, 255, 0.25) !important;
+}
+
+.northstar-nav {
+  display: grid !important;
+  gap: 7px !important;
+}
+
+.northstar-nav a {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  border-radius: 12px !important;
+  padding: 9px 10px !important;
+  color: #594a78 !important;
+  font-weight: 700 !important;
+}
+
+.northstar-nav a.is-active {
+  color: #5b2be0 !important;
+  background: rgba(107, 76, 255, 0.11) !important;
+}
+
+.northstar-nav-icon {
+  width: 18px;
+  text-align: center;
+  color: #7c6ba1;
+}
+
+.project-workspace-recent {
+  display: grid !important;
+  gap: 8px !important;
+  font-size: 12px !important;
+}
+
+.project-workspace-sidebar-eyebrow {
+  width: max-content !important;
+  border-radius: 999px !important;
+  padding: 4px 8px !important;
+  color: #5b2be0 !important;
+  background: rgba(91, 43, 224, 0.10) !important;
+  font-size: 10px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+}
+
+.project-workspace-recent-empty {
+  display: grid !important;
+  gap: 2px !important;
+  border-radius: 12px !important;
+  padding: 9px !important;
+  background: #f8f5ff !important;
+}
+
+.project-workspace-recent-empty span,
+.project-workspace-account small {
+  color: #75698f !important;
+}
+
+.project-workspace-upgrade-card {
+  margin-top: auto !important;
+  border: 1px solid rgba(116, 88, 220, 0.16) !important;
+  border-radius: 18px !important;
+  padding: 12px !important;
+  background: linear-gradient(180deg, rgba(112, 83, 230, 0.10), rgba(255, 255, 255, 0.96)) !important;
+}
+
+.project-workspace-upgrade-card p {
+  margin: 6px 0 10px !important;
+  color: #6a5e85 !important;
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+}
+
+.project-workspace-upgrade-card button {
+  width: 100% !important;
+  border: 0 !important;
+  border-radius: 12px !important;
+  padding: 9px !important;
+  color: #fff !important;
+  background: linear-gradient(135deg, #7c4dff, #5b2be0) !important;
+  font-weight: 800 !important;
+}
+
+.project-workspace-account {
+  border-top: 1px solid #eee8ff !important;
+  padding-top: 10px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.project-workspace-avatar {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 999px !important;
+  display: grid !important;
+  place-items: center !important;
+  color: #fff !important;
+  background: #5b2be0 !important;
+}
+
+/* Vibe cockpit */
+.vibe-dashboard-main,
+.pro-dashboard-main {
+  display: grid !important;
+  gap: 14px !important;
+}
+
+.vibe-dashboard-header,
+.pro-topbar {
+  border: 1px solid rgba(116, 88, 220, 0.16) !important;
+  border-radius: 28px !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 18px 42px rgba(55, 40, 120, 0.08) !important;
+  padding: 18px !important;
+  display: grid !important;
+  grid-template-columns: auto minmax(220px, 1fr) auto auto !important;
+  align-items: center !important;
+  gap: 12px !important;
+}
+
+.vibe-dashboard-header h1,
+.pro-topbar h1 {
+  margin: 0 !important;
+  font-size: 28px !important;
+  letter-spacing: -0.03em !important;
+  color: #241a42 !important;
+}
+
+.vibe-dashboard-header p,
+.pro-topbar p {
+  margin: 0 !important;
+  color: #6f6386 !important;
+}
+
+.vibe-mode-pill,
+.pro-topbar h1 span {
+  width: max-content !important;
+  border-radius: 999px !important;
+  padding: 4px 9px !important;
+  color: #5b2be0 !important;
+  background: rgba(91, 43, 224, 0.10) !important;
+  font-size: 12px !important;
+  font-weight: 900 !important;
+}
+
+.vibe-dashboard-device-switcher,
+.vibe-dashboard-cta-group,
+.pro-toolbar {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+}
+
+.vibe-dashboard-device-switcher button,
+.vibe-dashboard-share,
+.pro-toolbar button,
+.pro-select {
+  border: 1px solid #e9e6f8 !important;
+  border-radius: 14px !important;
+  background: #fff !important;
+  padding: 10px 14px !important;
+  font-weight: 800 !important;
+  color: #241a42 !important;
+}
+
+.vibe-dashboard-device-switcher .is-active,
+.pro-toolbar .is-primary {
+  color: #fff !important;
+  background: linear-gradient(135deg, #7c4dff, #5b2be0) !important;
+}
+
+.vibe-dashboard-launch {
+  border: 0 !important;
+  border-radius: 14px !important;
+  padding: 11px 16px !important;
+  color: #fff !important;
+  background: linear-gradient(135deg, #9b7cff, #6d3df2) !important;
+  font-weight: 900 !important;
+}
+
+.vibe-dashboard-layout {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 360px !important;
+  gap: 18px !important;
+  align-items: start !important;
+}
+
+.vibe-dashboard-layout > main {
+  min-width: 0 !important;
+  display: grid !important;
+  gap: 14px !important;
+}
+
+.vibe-chat-timeline,
+.vibe-input-shell,
+.vibe-rail-card,
+.pro-panel,
+.pro-subnav {
+  border: 1px solid rgba(116, 88, 220, 0.16) !important;
+  border-radius: 24px !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 18px 42px rgba(55, 40, 120, 0.08) !important;
+  padding: 16px !important;
+}
+
+.vibe-command-input,
+.vibe-input-row {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 10px !important;
+}
+
+.vibe-command-input input,
+.vibe-input-row input {
+  border: 1px solid #e4def7 !important;
+  border-radius: 14px !important;
+  padding: 12px !important;
+  font-size: 15px !important;
+  background: #fff !important;
+}
+
+.vibe-command-input button,
+.vibe-input-row button,
+.vibe-action-row button,
+.vibe-suggestion-chips button,
+.vibe-next-grid button {
+  border: 1px solid #e4def7 !important;
+  border-radius: 14px !important;
+  background: #fff !important;
+  padding: 10px 14px !important;
+  font-weight: 800 !important;
+  color: #1d2b44 !important;
+}
+
+.vibe-live-preview {
+  margin-top: 14px !important;
+  border: 1px solid #e4def7 !important;
+  border-radius: 22px !important;
+  min-height: 385px !important;
+  background: linear-gradient(180deg, #fff, #faf8ff) !important;
+  overflow: hidden !important;
+}
+
+.vibe-live-preview header {
+  display: flex !important;
+  justify-content: space-between !important;
+  padding: 14px 16px !important;
+  color: #34264f !important;
+}
+
+.vibe-live-preview [data-live-ui-renderer],
+.vibe-live-preview [data-testid="live-ui-builder-document-renderer"],
+.vibe-live-preview [data-testid="live-ui-builder-inspect-overlay"],
+.vibe-live-preview [data-testid="live-ui-direct-manipulation-overlay"] {
+  display: none !important;
+}
+
+.vibe-live-preview::after {
+  content: "No generated preview yet\A Describe the app you want to build to generate the first screen.";
+  white-space: pre-line;
+  min-height: 318px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  color: #6f6386;
+  font-weight: 800;
+  background:
+    radial-gradient(circle at 50% 20%, rgba(123, 77, 255, 0.12), transparent 28%),
+    #fbf9ff;
+}
+
+.vibe-suggestion-chips,
+.vibe-action-row,
+.vibe-next-grid {
+  display: flex !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+  margin-top: 12px !important;
+}
+
+.vibe-input-shell {
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 3 !important;
+}
+
+.vibe-right-rail {
+  display: grid !important;
+  gap: 14px !important;
+  align-content: start !important;
+}
+
+.vibe-rail-card h3,
+.pro-panel h2 {
+  margin: 0 0 10px !important;
+}
+
+.vibe-rail-row,
+.pro-health-row,
+.pro-service-row,
+.pro-commit-row {
+  display: flex !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  padding: 8px 0 !important;
+  border-bottom: 1px solid #eee8ff !important;
+}
+
+.vibe-rail-two-up {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 14px !important;
+}
+
+.vibe-mini-preview {
+  min-height: 120px !important;
+  border-radius: 16px !important;
+  padding: 14px !important;
+  color: #fff !important;
+  background: linear-gradient(135deg, #12183f, #6d3df2) !important;
+}
+
+.vibe-health,
+.pro-health-ring {
+  width: 132px !important;
+  height: 132px !important;
+  border: 10px solid #35b970 !important;
+  border-radius: 999px !important;
+  display: grid !important;
+  place-items: center !important;
+  text-align: center !important;
+  font-size: 28px !important;
+  font-weight: 900 !important;
+}
+
+.vibe-launch-card {
+  background: linear-gradient(135deg, #7c4dff, #5b2be0) !important;
+  color: #fff !important;
+}
+
+.vibe-launch-card button {
+  width: 100% !important;
+  border: 0 !important;
+  border-radius: 14px !important;
+  padding: 11px !important;
+  font-weight: 900 !important;
+}
+
+/* Pro cockpit */
+.pro-topbar {
+  grid-template-columns: minmax(220px, 1fr) auto !important;
+}
+
+.pro-toolbar {
+  justify-content: flex-end !important;
+}
+
+.pro-select {
+  display: grid !important;
+  min-width: 150px !important;
+}
+
+.pro-select small {
+  color: #75698f !important;
+}
+
+.pro-subnav {
+  display: flex !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+  padding: 8px !important;
+}
+
+.pro-subnav a {
+  border-radius: 12px !important;
+  padding: 10px 14px !important;
+  color: #5c4d78 !important;
+  font-weight: 800 !important;
+}
+
+.pro-subnav a.is-active {
+  color: #5b2be0 !important;
+  background: rgba(107, 76, 255, 0.11) !important;
+}
+
+.pro-grid {
+  display: grid !important;
+  grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+}
+
+.pro-panel {
+  min-height: 190px !important;
+}
+
+.pro-panel:nth-child(1),
+.pro-panel:nth-child(2),
+.pro-panel:nth-child(3),
+.pro-panel:nth-child(4) {
+  grid-column: span 6 !important;
+}
+
+.pro-panel:nth-child(n+5) {
+  grid-column: span 4 !important;
+}
+
+.pro-panel header {
+  display: flex !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+}
+
+.pro-health {
+  display: grid !important;
+  grid-template-columns: 150px minmax(0, 1fr) !important;
+  gap: 24px !important;
+  align-items: center !important;
+}
+
+.pro-pipeline {
+  display: grid !important;
+  grid-template-columns: repeat(6, 1fr) !important;
+  gap: 8px !important;
+}
+
+.pro-pipeline-step {
+  border: 1px solid #eee8ff !important;
+  border-radius: 16px !important;
+  padding: 10px !important;
+  background: #fbf9ff !important;
+}
+
+.pro-terminal {
+  border-radius: 16px !important;
+  padding: 14px !important;
+  background: #18142d !important;
+  color: #d8fff0 !important;
+  min-height: 120px !important;
+  overflow: auto !important;
+}
+
+.pro-test-total {
+  font-size: 28px !important;
+  font-weight: 900 !important;
+}
+
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+@media (max-width: 1180px) {
+  .project-workspace-shell {
+    grid-template-columns: 220px minmax(900px, 1fr) !important;
+    overflow-x: auto !important;
+  }
+
+  .vibe-dashboard-layout {
+    grid-template-columns: minmax(0, 1fr) 330px !important;
+  }
+}
+
+@media (max-width: 860px) {
+  .project-workspace-shell {
+    grid-template-columns: 1fr !important;
+    overflow: auto !important;
+  }
+
+  .project-workspace-sidebar {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: auto !important;
+    position: relative !important;
+  }
+
+  .project-workspace-main {
+    height: auto !important;
+  }
+
+  .vibe-dashboard-layout,
+  .pro-topbar {
+    grid-template-columns: 1fr !important;
+  }
+
+  .pro-panel,
+  .pro-panel:nth-child(n) {
+    grid-column: span 12 !important;
+  }
+}
