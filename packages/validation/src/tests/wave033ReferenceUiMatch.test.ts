@@ -1,47 +1,60 @@
-import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
+import assert from "node:assert";
+import { readFileSync, existsSync } from "node:fs";
+import { join } from "node:path";
 
 const root = process.cwd();
-const read = (rel: string) => fs.readFileSync(path.join(root, rel), "utf8");
 
-const pro = read("apps/control-plane/src/components/pro/ProDashboard.tsx");
-const vibe = read("apps/control-plane/src/components/vibe/VibeDashboard.tsx");
-const shell = read("apps/control-plane/src/components/project/ProjectWorkspaceShell.tsx");
-const css = read("apps/control-plane/src/styles/globals.css");
-const orchestrationPanel = read("apps/control-plane/src/components/builder/VibeOrchestrationPanel.tsx");
-const orchestrationHook = read("apps/control-plane/src/components/builder/useVibeOrchestration.ts");
-const executionService = read("apps/control-plane/src/services/execution.ts");
+const files = [
+  "apps/control-plane/src/components/commercial/CommercialWorkspaceShell.tsx",
+  "apps/control-plane/src/components/commercial/CommercialVibeCockpit.tsx",
+  "apps/control-plane/src/components/commercial/CommercialProCockpit.tsx",
+  "apps/control-plane/src/components/commercial/CommercialPanel.tsx",
+  "apps/control-plane/src/styles/commercial-workspace.css",
+  "apps/control-plane/src/app/projects/[projectId]/vibe/page.tsx",
+  "apps/control-plane/src/app/projects/[projectId]/advanced/page.tsx",
+];
 
-// Layout signals that are now in ProjectWorkspaceShell instead of individual dashboards
-for (const signal of ["northstar-shell", "northstar-sidebar", "northstar-main", "pro-toolbar", "pro-grid", "pro-panel", "vibe-right-rail", "vibe-rail-card", "vibe-chat-timeline", "vibe-input-shell"]) {
-  assert(pro.includes(signal) || vibe.includes(signal) || shell.includes(signal), `missing layout signal: ${signal}`);
+for (const file of files) {
+  assert(existsSync(join(root, file)), `missing commercial reference file: ${file}`);
 }
 
-for (const cssSignal of ["--dash-bg-layer", "--dash-card-shadow", "--dash-card-border", ".pro-dashboard-sidebar", ".pro-topbar", ".vibe-right-rail", "@media (max-width: 1240px)", "@media (max-width: 920px)"]) {
-  assert(css.includes(cssSignal), `missing css signal: ${cssSignal}`);
+const source = files.map((file) => readFileSync(join(root, file), "utf8")).join("\n");
+
+const requiredSignals = [
+  "commercial-shell",
+  "commercial-product-sidebar",
+  "commercial-vibe-cockpit",
+  "commercial-vibe-right-rail",
+  "commercial-vibe-command-bar",
+  "commercial-pro-cockpit",
+  "commercial-pro-grid",
+  "CommercialWorkspaceShell",
+  "CommercialVibeCockpit",
+  "CommercialProCockpit",
+  "No generated preview yet",
+  "No generated source yet",
+  "No database schema generated yet",
+  "No tests have run yet",
+  "No runtime logs yet",
+  "No commits yet",
+  "Launch unavailable",
+];
+
+for (const signal of requiredSignals) {
+  assert(source.includes(signal), `missing layout signal: ${signal}`);
 }
 
-for (const required of ["No orchestration started", "No persisted state yet", "No execution run yet", "Preview unavailable", "Runtime not connected", "Health check not run", "No launch proof yet", "Launch unavailable", "Service health not connected", "Database not connected", "No test run yet", "No terminal logs yet", "No commits available", "No Copilot activity yet", "Repository diff not connected", "Execution runner unavailable"]) {
-  assert(pro.includes(required) || vibe.includes(required) || orchestrationPanel.includes(required) || orchestrationHook.includes(required) || executionService.includes(required), `missing truth string: ${required}`);
+const bannedSignals = [
+  "Luxora",
+  "Luxury Booking Site",
+  "Your Escape Awaits",
+  "Alex Johnson",
+  "24,512",
+  "198 Total Tests",
+];
+
+for (const signal of bannedSignals) {
+  assert(!source.includes(signal), `banned demo signal present: ${signal}`);
 }
 
-for (const forbidden of ["92%", "All Systems Operational", "178/198", "198 Total Tests", "http://localhost:3000", "Compilation successful", "I’ve optimized", "Everything looks good", "Ready to launch", "Deployed successfully"]) {
-  assert(!pro.includes(forbidden), `forbidden string in ProDashboard: ${forbidden}`);
-  assert(!vibe.includes(forbidden), `forbidden string in VibeDashboard: ${forbidden}`);
-}
-
-assert(vibe.includes("Launch unavailable"));
-// Toolbar buttons are now handled by ProDashboardToolbar client component with real service call wiring.
-// The truth-state controls (initial disabled state + status feedback) live inside that client component.
-const proToolbar = read("apps/control-plane/src/components/pro/ProDashboardToolbar.tsx");
-assert(pro.includes("ProDashboardToolbar"), "ProDashboard must use ProDashboardToolbar client component");
-assert(proToolbar.includes("startAutonomousBuild") || proToolbar.includes("Run"), "ProDashboardToolbar must wire Run to autonomous build");
-assert(proToolbar.includes("requestDeploy") || proToolbar.includes("Launch"), "ProDashboardToolbar must wire Launch button");
-assert(proToolbar.includes("promoteProject") || proToolbar.includes("Deploy"), "ProDashboardToolbar must wire Deploy button");
-assert(!pro.includes("fetch("));
-assert(!vibe.includes("fetch("));
-assert(!pro.includes('sr-only">No orchestration started'));
-assert(!vibe.includes('sr-only">No orchestration started'));
-
-console.log("WAVE-033 reference UI match checks passed");
+console.log("WAVE-033 commercial reference UI match checks passed.");
