@@ -1,0 +1,1597 @@
+{
+  "runId": "repair-20260502070151",
+  "mode": "repair",
+  "generatedAt": "2026-05-02T07:01:51.164Z",
+  "apiBaseUrl": "http://127.0.0.1:3001",
+  "tokenSource": "default-dev-api-token",
+  "corpusTotal": 200,
+  "selectedTotal": 25,
+  "rubric": {
+    "rubricVersion": "1",
+    "generatedAt": "2026-05-02T07:01:51.162Z",
+    "scalarScores": [
+      "spec relevance: 0-5",
+      "architecture completeness: 0-5",
+      "UI completeness: 0-5",
+      "data/state model: 0-5",
+      "API/backend wiring: 0-5",
+      "auth/payment/external service honesty: 0-5"
+    ],
+    "binaryChecks": [
+      "runtime build success: pass/fail",
+      "generated app smoke success: pass/fail",
+      "tests generated/executed: pass/fail",
+      "no placeholder/fake content: pass/fail",
+      "follow-up edit success: pass/fail",
+      "repair loop success: pass/fail"
+    ],
+    "readinessBand": "commercial readiness: blocked/partial/pass",
+    "classifications": [
+      "PASS_REAL",
+      "PASS_PARTIAL",
+      "BLOCKED_UNSUPPORTED",
+      "FAIL_BUILDER",
+      "FAIL_RUNTIME",
+      "FAIL_QUALITY",
+      "FAIL_FAKE"
+    ]
+  },
+  "notes": [
+    "Harness uses the same intake/operator API path as control-plane chat where reachable.",
+    "If API or credentials are unavailable, cases are classified BLOCKED_UNSUPPORTED with exact blocker evidence.",
+    "No fake pass is emitted for unreachable runtime/build/test stages."
+  ],
+  "summary": {
+    "total": 25,
+    "passReal": 0,
+    "passPartial": 0,
+    "blockedUnsupported": 25,
+    "failBuilder": 0,
+    "failRuntime": 0,
+    "failQuality": 0,
+    "failFake": 0,
+    "runtimeSuccess": 0,
+    "partial": 0,
+    "unsupported": 25,
+    "followupSuccess": 0,
+    "repairSuccess": 0,
+    "fakeCount": 0,
+    "byCategory": {
+      "follow-up-edits-after-first-build": {
+        "total": 5,
+        "passReal": 0,
+        "passPartial": 0,
+        "failed": 5
+      },
+      "make-it-prettier-design-edit": {
+        "total": 5,
+        "passReal": 0,
+        "passPartial": 0,
+        "failed": 5
+      },
+      "add-auth-payments-email-db-edit": {
+        "total": 5,
+        "passReal": 0,
+        "passPartial": 0,
+        "failed": 5
+      },
+      "failure-recovery-prompts": {
+        "total": 5,
+        "passReal": 0,
+        "passPartial": 0,
+        "failed": 5
+      },
+      "dirty-repo-repair-build-prompts": {
+        "total": 5,
+        "passReal": 0,
+        "passPartial": 0,
+        "failed": 5
+      }
+    },
+    "byClassification": {
+      "BLOCKED_UNSUPPORTED": 25
+    }
+  },
+  "cases": [
+    {
+      "id": "bf-176",
+      "category": "follow-up-edits-after-first-build",
+      "complexity": "easy",
+      "prompt": "Follow-up edit case 1: after initial build, add a pricing page, analytics dashboard, and audit log while preserving existing flows and file structure. Keep scope tight and production-realistic for private owner beta.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 106,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: follow-up skipped because intake did not return projectId"
+      },
+      "repair": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: repair skipped because intake did not return projectId"
+      },
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T07:01:51.271Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-177",
+      "category": "follow-up-edits-after-first-build",
+      "complexity": "medium",
+      "prompt": "Follow-up edit case 2: after initial build, add a pricing page, analytics dashboard, and audit log while preserving existing flows and file structure. Include realistic auth, CRUD, and operational workflows.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 2,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: follow-up skipped because intake did not return projectId"
+      },
+      "repair": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: repair skipped because intake did not return projectId"
+      },
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T07:01:51.275Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-178",
+      "category": "follow-up-edits-after-first-build",
+      "complexity": "hard",
+      "prompt": "Follow-up edit case 3: after initial build, add a pricing page, analytics dashboard, and audit log while preserving existing flows and file structure. Include multi-role workflows, edge cases, and import/export flows.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 3,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: follow-up skipped because intake did not return projectId"
+      },
+      "repair": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: repair skipped because intake did not return projectId"
+      },
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T07:01:51.279Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-179",
+      "category": "follow-up-edits-after-first-build",
+      "complexity": "extreme",
+      "prompt": "Follow-up edit case 4: after initial build, add a pricing page, analytics dashboard, and audit log while preserving existing flows and file structure. Handle contradictory asks honestly and block unsupported claims without faking.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 6,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: follow-up skipped because intake did not return projectId"
+      },
+      "repair": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: repair skipped because intake did not return projectId"
+      },
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T07:01:51.287Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-180",
+      "category": "follow-up-edits-after-first-build",
+      "complexity": "hard",
+      "prompt": "Follow-up edit case 5: after initial build, add a pricing page, analytics dashboard, and audit log while preserving existing flows and file structure. Assume this is an iterative follow-up requiring safe edits on an existing generated app.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 2,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: follow-up skipped because intake did not return projectId"
+      },
+      "repair": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: repair skipped because intake did not return projectId"
+      },
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T07:01:51.289Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-181",
+      "category": "make-it-prettier-design-edit",
+      "complexity": "easy",
+      "prompt": "Follow-up design edit case 1: keep current layout semantics but improve visual quality and spacing without breaking existing routes or behavior. Keep scope tight and production-realistic for private owner beta.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 1,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: follow-up skipped because intake did not return projectId"
+      },
+      "repair": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: repair skipped because intake did not return projectId"
+      },
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T07:01:51.290Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-182",
+      "category": "make-it-prettier-design-edit",
+      "complexity": "medium",
+      "prompt": "Follow-up design edit case 2: keep current layout semantics but improve visual quality and spacing without breaking existing routes or behavior. Include realistic auth, CRUD, and operational workflows.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 1,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: follow-up skipped because intake did not return projectId"
+      },
+      "repair": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: repair skipped because intake did not return projectId"
+      },
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T07:01:51.291Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-183",
+      "category": "make-it-prettier-design-edit",
+      "complexity": "hard",
+      "prompt": "Follow-up design edit case 3: keep current layout semantics but improve visual quality and spacing without breaking existing routes or behavior. Include multi-role workflows, edge cases, and import/export flows.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 1,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: follow-up skipped because intake did not return projectId"
+      },
+      "repair": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: repair skipped because intake did not return projectId"
+      },
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T07:01:51.293Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-184",
+      "category": "make-it-prettier-design-edit",
+      "complexity": "extreme",
+      "prompt": "Follow-up design edit case 4: keep current layout semantics but improve visual quality and spacing without breaking existing routes or behavior. Handle contradictory asks honestly and block unsupported claims without faking.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 1,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: follow-up skipped because intake did not return projectId"
+      },
+      "repair": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: repair skipped because intake did not return projectId"
+      },
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T07:01:51.294Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-185",
+      "category": "make-it-prettier-design-edit",
+      "complexity": "hard",
+      "prompt": "Follow-up design edit case 5: keep current layout semantics but improve visual quality and spacing without breaking existing routes or behavior. Assume this is an iterative follow-up requiring safe edits on an existing generated app.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 2,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: follow-up skipped because intake did not return projectId"
+      },
+      "repair": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: repair skipped because intake did not return projectId"
+      },
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T07:01:51.296Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-186",
+      "category": "add-auth-payments-email-db-edit",
+      "complexity": "easy",
+      "prompt": "Follow-up capability edit case 1: add auth, subscription billing, email notifications, and database CRUD with honest blockers when credentials are missing. Keep scope tight and production-realistic for private owner beta.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 1,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: follow-up skipped because intake did not return projectId"
+      },
+      "repair": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: repair skipped because intake did not return projectId"
+      },
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T07:01:51.297Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-187",
+      "category": "add-auth-payments-email-db-edit",
+      "complexity": "medium",
+      "prompt": "Follow-up capability edit case 2: add auth, subscription billing, email notifications, and database CRUD with honest blockers when credentials are missing. Include realistic auth, CRUD, and operational workflows.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 1,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: follow-up skipped because intake did not return projectId"
+      },
+      "repair": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: repair skipped because intake did not return projectId"
+      },
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T07:01:51.298Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-188",
+      "category": "add-auth-payments-email-db-edit",
+      "complexity": "hard",
+      "prompt": "Follow-up capability edit case 3: add auth, subscription billing, email notifications, and database CRUD with honest blockers when credentials are missing. Include multi-role workflows, edge cases, and import/export flows.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: follow-up skipped because intake did not return projectId"
+      },
+      "repair": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: repair skipped because intake did not return projectId"
+      },
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T07:01:51.299Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-189",
+      "category": "add-auth-payments-email-db-edit",
+      "complexity": "extreme",
+      "prompt": "Follow-up capability edit case 4: add auth, subscription billing, email notifications, and database CRUD with honest blockers when credentials are missing. Handle contradictory asks honestly and block unsupported claims without faking.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: follow-up skipped because intake did not return projectId"
+      },
+      "repair": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: repair skipped because intake did not return projectId"
+      },
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T07:01:51.300Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-190",
+      "category": "add-auth-payments-email-db-edit",
+      "complexity": "hard",
+      "prompt": "Follow-up capability edit case 5: add auth, subscription billing, email notifications, and database CRUD with honest blockers when credentials are missing. Assume this is an iterative follow-up requiring safe edits on an existing generated app.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 1,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: follow-up skipped because intake did not return projectId"
+      },
+      "repair": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: repair skipped because intake did not return projectId"
+      },
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T07:01:51.302Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-191",
+      "category": "failure-recovery-prompts",
+      "complexity": "easy",
+      "prompt": "Recovery case 1: the previous generated app build now fails compile/runtime. Diagnose, classify, repair, rerun, and document exact root cause and rollback path. Keep scope tight and production-realistic for private owner beta.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 1,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: follow-up skipped because intake did not return projectId"
+      },
+      "repair": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: repair skipped because intake did not return projectId"
+      },
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T07:01:51.303Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-192",
+      "category": "failure-recovery-prompts",
+      "complexity": "medium",
+      "prompt": "Recovery case 2: the previous generated app build now fails compile/runtime. Diagnose, classify, repair, rerun, and document exact root cause and rollback path. Include realistic auth, CRUD, and operational workflows.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 1,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: follow-up skipped because intake did not return projectId"
+      },
+      "repair": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: repair skipped because intake did not return projectId"
+      },
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T07:01:51.304Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-193",
+      "category": "failure-recovery-prompts",
+      "complexity": "hard",
+      "prompt": "Recovery case 3: the previous generated app build now fails compile/runtime. Diagnose, classify, repair, rerun, and document exact root cause and rollback path. Include multi-role workflows, edge cases, and import/export flows.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 1,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: follow-up skipped because intake did not return projectId"
+      },
+      "repair": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: repair skipped because intake did not return projectId"
+      },
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T07:01:51.305Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-194",
+      "category": "failure-recovery-prompts",
+      "complexity": "extreme",
+      "prompt": "Recovery case 4: the previous generated app build now fails compile/runtime. Diagnose, classify, repair, rerun, and document exact root cause and rollback path. Handle contradictory asks honestly and block unsupported claims without faking.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: follow-up skipped because intake did not return projectId"
+      },
+      "repair": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: repair skipped because intake did not return projectId"
+      },
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T07:01:51.305Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-195",
+      "category": "failure-recovery-prompts",
+      "complexity": "hard",
+      "prompt": "Recovery case 5: the previous generated app build now fails compile/runtime. Diagnose, classify, repair, rerun, and document exact root cause and rollback path. Assume this is an iterative follow-up requiring safe edits on an existing generated app.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 1,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: follow-up skipped because intake did not return projectId"
+      },
+      "repair": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: repair skipped because intake did not return projectId"
+      },
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T07:01:51.306Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-196",
+      "category": "dirty-repo-repair-build-prompts",
+      "complexity": "easy",
+      "prompt": "Dirty-repo case 1: continue from a partially broken repository with merge artifacts, missing scripts, and placeholder text. Repair safely and preserve user changes. Keep scope tight and production-realistic for private owner beta.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: follow-up skipped because intake did not return projectId"
+      },
+      "repair": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: repair skipped because intake did not return projectId"
+      },
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T07:01:51.306Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-197",
+      "category": "dirty-repo-repair-build-prompts",
+      "complexity": "medium",
+      "prompt": "Dirty-repo case 2: continue from a partially broken repository with merge artifacts, missing scripts, and placeholder text. Repair safely and preserve user changes. Include realistic auth, CRUD, and operational workflows.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 1,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: follow-up skipped because intake did not return projectId"
+      },
+      "repair": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: repair skipped because intake did not return projectId"
+      },
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T07:01:51.307Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-198",
+      "category": "dirty-repo-repair-build-prompts",
+      "complexity": "hard",
+      "prompt": "Dirty-repo case 3: continue from a partially broken repository with merge artifacts, missing scripts, and placeholder text. Repair safely and preserve user changes. Include multi-role workflows, edge cases, and import/export flows.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 1,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: follow-up skipped because intake did not return projectId"
+      },
+      "repair": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: repair skipped because intake did not return projectId"
+      },
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T07:01:51.308Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-199",
+      "category": "dirty-repo-repair-build-prompts",
+      "complexity": "extreme",
+      "prompt": "Dirty-repo case 4: continue from a partially broken repository with merge artifacts, missing scripts, and placeholder text. Repair safely and preserve user changes. Handle contradictory asks honestly and block unsupported claims without faking.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: follow-up skipped because intake did not return projectId"
+      },
+      "repair": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: repair skipped because intake did not return projectId"
+      },
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T07:01:51.308Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    },
+    {
+      "id": "bf-200",
+      "category": "dirty-repo-repair-build-prompts",
+      "complexity": "hard",
+      "prompt": "Dirty-repo case 5: continue from a partially broken repository with merge artifacts, missing scripts, and placeholder text. Repair safely and preserve user changes. Assume this is an iterative follow-up requiring safe edits on an existing generated app.",
+      "projectId": null,
+      "intake": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 1,
+        "headers": {},
+        "body": null,
+        "networkError": "fetch failed"
+      },
+      "operator": null,
+      "status": null,
+      "runtime": null,
+      "execution": null,
+      "followup": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: follow-up skipped because intake did not return projectId"
+      },
+      "repair": {
+        "ok": false,
+        "status": 0,
+        "latencyMs": 0,
+        "headers": {},
+        "body": null,
+        "networkError": "blocked: repair skipped because intake did not return projectId"
+      },
+      "localBuild": null,
+      "localTests": null,
+      "runtimeSmoke": null,
+      "capturedAt": "2026-05-02T07:01:51.309Z",
+      "score": {
+        "metrics": {
+          "specRelevance": 2,
+          "architectureCompleteness": 1,
+          "uiCompleteness": 1,
+          "dataStateModel": 1,
+          "apiBackendWiring": 1,
+          "honestyAuthPaymentExternal": 2
+        },
+        "checks": {
+          "runtimeBuildSuccess": false,
+          "generatedAppSmokeSuccess": false,
+          "testsGeneratedExecuted": false,
+          "noPlaceholderFakeContent": true,
+          "followupEditSuccess": false,
+          "repairLoopSuccess": false,
+          "commercialReadiness": "blocked"
+        },
+        "classification": "BLOCKED_UNSUPPORTED",
+        "fakeSignal": false
+      }
+    }
+  ]
+}

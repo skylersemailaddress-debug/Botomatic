@@ -1,0 +1,260 @@
+{
+  "capturedAt": "2026-05-02T05:43:39.087Z",
+  "uiBaseUrl": "http://127.0.0.1:3000",
+  "apiBaseUrl": "http://127.0.0.1:3001",
+  "checkCount": 7,
+  "failedCount": 0,
+  "passed": true,
+  "checks": [
+    {
+      "id": "api_health_direct",
+      "method": "GET",
+      "url": "http://127.0.0.1:3001/api/health",
+      "auth": true,
+      "result": {
+        "ok": true,
+        "status": 200,
+        "statusText": "OK",
+        "latencyMs": 74,
+        "headers": {
+          "access-control-allow-headers": "Authorization,Content-Type,x-actor-id,x-user-email",
+          "access-control-allow-methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+          "connection": "keep-alive",
+          "content-length": "542",
+          "content-type": "application/json; charset=utf-8",
+          "date": "Sat, 02 May 2026 05:43:38 GMT",
+          "etag": "W/\"21e-00jIgSIEBLVmv8k3HVlYGbD8eMM\"",
+          "keep-alive": "timeout=5",
+          "x-powered-by": "Express",
+          "x-request-id": "req_1777700618347_wi7x13"
+        },
+        "body": {
+          "status": "ok",
+          "appName": "botomatic-orchestrator-api",
+          "runtimeMode": "development",
+          "repositoryMode": "durable",
+          "repositoryImplementation": "DurableProjectRepository",
+          "durableEnvPresent": true,
+          "authEnabled": false,
+          "authImplementation": "disabled",
+          "commitSha": null,
+          "startupTimestamp": "2026-05-02T05:39:03.218Z",
+          "queueEnabled": true,
+          "activeWorkers": 0,
+          "workerConcurrency": 2,
+          "workerId": "worker_2cpy5i",
+          "leaseMs": 30000,
+          "queueMode": "dedicated_jobs_table_parallel",
+          "role": "operator",
+          "userId": "anonymous",
+          "issuer": null,
+          "requestId": "req_1777700618347_wi7x13"
+        }
+      },
+      "pass": true
+    },
+    {
+      "id": "api_health_via_ui_proxy",
+      "method": "GET",
+      "url": "http://127.0.0.1:3000/api/health",
+      "auth": true,
+      "result": {
+        "ok": true,
+        "status": 200,
+        "statusText": "OK",
+        "latencyMs": 478,
+        "headers": {
+          "access-control-allow-headers": "Authorization,Content-Type,x-actor-id,x-user-email",
+          "access-control-allow-methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+          "connection": "keep-alive",
+          "content-length": "542",
+          "content-type": "application/json; charset=utf-8",
+          "date": "Sat, 02 May 2026 05:43:38 GMT",
+          "etag": "W/\"21e-e4f8Sm5ZydiffUw05LxIt8HDb7U\"",
+          "keep-alive": "timeout=5",
+          "vary": "RSC, Next-Router-State-Tree, Next-Router-Prefetch",
+          "x-powered-by": "Express",
+          "x-request-id": "req_1777700618830_r8b0us"
+        },
+        "body": {
+          "status": "ok",
+          "appName": "botomatic-orchestrator-api",
+          "runtimeMode": "development",
+          "repositoryMode": "durable",
+          "repositoryImplementation": "DurableProjectRepository",
+          "durableEnvPresent": true,
+          "authEnabled": false,
+          "authImplementation": "disabled",
+          "commitSha": null,
+          "startupTimestamp": "2026-05-02T05:39:03.218Z",
+          "queueEnabled": true,
+          "activeWorkers": 0,
+          "workerConcurrency": 2,
+          "workerId": "worker_2cpy5i",
+          "leaseMs": 30000,
+          "queueMode": "dedicated_jobs_table_parallel",
+          "role": "operator",
+          "userId": "anonymous",
+          "issuer": null,
+          "requestId": "req_1777700618830_r8b0us"
+        }
+      },
+      "pass": true
+    },
+    {
+      "id": "cors_preflight_http://localhost:3000",
+      "method": "OPTIONS",
+      "url": "http://127.0.0.1:3001/api/health",
+      "origin": "http://localhost:3000",
+      "result": {
+        "ok": true,
+        "status": 204,
+        "statusText": "No Content",
+        "latencyMs": 6,
+        "headers": {
+          "access-control-allow-headers": "Authorization,Content-Type,x-actor-id,x-user-email",
+          "access-control-allow-methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+          "access-control-allow-origin": "http://localhost:3000",
+          "connection": "keep-alive",
+          "date": "Sat, 02 May 2026 05:43:38 GMT",
+          "etag": "W/\"a-bAsFyilMr4Ra1hIU5PyoyFRunpI\"",
+          "keep-alive": "timeout=5",
+          "vary": "Origin",
+          "x-powered-by": "Express"
+        },
+        "body": null
+      },
+      "pass": true
+    },
+    {
+      "id": "cors_preflight_http://127.0.0.1:3000",
+      "method": "OPTIONS",
+      "url": "http://127.0.0.1:3001/api/health",
+      "origin": "http://127.0.0.1:3000",
+      "result": {
+        "ok": true,
+        "status": 204,
+        "statusText": "No Content",
+        "latencyMs": 4,
+        "headers": {
+          "access-control-allow-headers": "Authorization,Content-Type,x-actor-id,x-user-email",
+          "access-control-allow-methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+          "access-control-allow-origin": "http://127.0.0.1:3000",
+          "connection": "keep-alive",
+          "date": "Sat, 02 May 2026 05:43:38 GMT",
+          "etag": "W/\"a-bAsFyilMr4Ra1hIU5PyoyFRunpI\"",
+          "keep-alive": "timeout=5",
+          "vary": "Origin",
+          "x-powered-by": "Express"
+        },
+        "body": null
+      },
+      "pass": true
+    },
+    {
+      "id": "cors_preflight_https://glorious-guacamole-v69rq49vpxqx26x64-3000.app.github.dev",
+      "method": "OPTIONS",
+      "url": "http://127.0.0.1:3001/api/health",
+      "origin": "https://glorious-guacamole-v69rq49vpxqx26x64-3000.app.github.dev",
+      "result": {
+        "ok": true,
+        "status": 204,
+        "statusText": "No Content",
+        "latencyMs": 5,
+        "headers": {
+          "access-control-allow-headers": "Authorization,Content-Type,x-actor-id,x-user-email",
+          "access-control-allow-methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+          "access-control-allow-origin": "https://glorious-guacamole-v69rq49vpxqx26x64-3000.app.github.dev",
+          "connection": "keep-alive",
+          "date": "Sat, 02 May 2026 05:43:38 GMT",
+          "etag": "W/\"a-bAsFyilMr4Ra1hIU5PyoyFRunpI\"",
+          "keep-alive": "timeout=5",
+          "vary": "Origin",
+          "x-powered-by": "Express"
+        },
+        "body": null
+      },
+      "pass": true
+    },
+    {
+      "id": "projects_intake_direct",
+      "method": "POST",
+      "url": "http://127.0.0.1:3001/api/projects/intake",
+      "auth": true,
+      "requestShape": {
+        "name": "string",
+        "request": "string"
+      },
+      "responseShapeExpected": {
+        "projectId": "string"
+      },
+      "result": {
+        "ok": true,
+        "status": 200,
+        "statusText": "OK",
+        "latencyMs": 104,
+        "headers": {
+          "access-control-allow-headers": "Authorization,Content-Type,x-actor-id,x-user-email",
+          "access-control-allow-methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+          "connection": "keep-alive",
+          "content-length": "85",
+          "content-type": "application/json; charset=utf-8",
+          "date": "Sat, 02 May 2026 05:43:38 GMT",
+          "etag": "W/\"55-BkMHm5uWxdMD+T8jzswP5drB3sE\"",
+          "keep-alive": "timeout=5",
+          "x-powered-by": "Express",
+          "x-request-id": "req_1777700618859_setagk"
+        },
+        "body": {
+          "projectId": "proj_1777700618859_qpintk",
+          "status": "clarifying",
+          "actorId": "anonymous"
+        }
+      },
+      "pass": true
+    },
+    {
+      "id": "operator_send_direct",
+      "method": "POST",
+      "url": "http://127.0.0.1:3001/api/projects/proj_1777700618859_qpintk/operator/send",
+      "auth": true,
+      "requestShape": {
+        "message": "string"
+      },
+      "result": {
+        "ok": true,
+        "status": 200,
+        "statusText": "OK",
+        "latencyMs": 128,
+        "headers": {
+          "access-control-allow-headers": "Authorization,Content-Type,x-actor-id,x-user-email",
+          "access-control-allow-methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+          "connection": "keep-alive",
+          "content-length": "490",
+          "content-type": "application/json; charset=utf-8",
+          "date": "Sat, 02 May 2026 05:43:39 GMT",
+          "etag": "W/\"1ea-q8LkqdPzrAdXzx430tLVQwW4304\"",
+          "keep-alive": "timeout=5",
+          "x-powered-by": "Express",
+          "x-request-id": "req_1777700618960_f5sxe3"
+        },
+        "body": {
+          "ok": true,
+          "route": "compile",
+          "status": "awaiting_architecture_approval",
+          "blockers": [
+            "Plan has not completed.",
+            "Validation has not run."
+          ],
+          "nextAction": "Generate an execution plan.",
+          "actorId": "anonymous",
+          "operatorMessage": "Direct: Compiled updated project spec from operator input and uploaded artifacts.\nStatus: awaiting_architecture_approval\nExact blockers: Plan has not completed.; Validation has not run.\nExact next action: Generate an execution plan.",
+          "actionResult": {
+            "compiled": true
+          }
+        }
+      },
+      "pass": true
+    }
+  ]
+}

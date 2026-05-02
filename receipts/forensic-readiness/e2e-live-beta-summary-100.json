@@ -1,0 +1,510 @@
+{
+  "capturedAt": "2026-05-02T05:54:26.745Z",
+  "loopsRequested": 100,
+  "loopsExecuted": 100,
+  "grep": "root bootstrap avoids launch error when API is reachable",
+  "failedCount": 0,
+  "pass": true,
+  "iterations": [
+    {
+      "index": 1,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 2,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 3,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 4,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 5,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 6,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 7,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 8,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 9,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 10,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 11,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 12,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 13,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 14,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 15,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 16,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 17,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 18,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 19,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 20,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 21,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 22,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 23,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 24,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 25,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 26,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 27,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 28,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 29,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 30,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 31,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 32,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 33,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 34,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 35,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 36,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 37,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 38,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 39,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 40,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 41,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 42,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 43,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 44,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 45,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 46,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 47,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 48,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 49,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 50,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 51,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 52,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 53,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 54,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 55,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 56,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 57,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 58,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 59,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 60,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 61,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 62,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 63,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 64,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 65,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 66,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 67,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 68,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 69,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 70,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 71,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 72,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 73,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 74,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 75,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 76,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 77,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 78,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 79,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 80,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 81,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 82,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 83,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 84,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 85,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 86,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 87,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 88,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 89,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 90,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 91,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 92,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 93,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 94,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 95,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 96,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 97,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 98,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 99,
+      "exitCode": 0,
+      "receipt": null
+    },
+    {
+      "index": 100,
+      "exitCode": 0,
+      "receipt": null
+    }
+  ]
+}
