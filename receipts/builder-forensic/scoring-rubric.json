@@ -1,0 +1,30 @@
+{
+  "rubricVersion": "1",
+  "generatedAt": "2026-05-02T06:52:29.572Z",
+  "scalarScores": [
+    "spec relevance: 0-5",
+    "architecture completeness: 0-5",
+    "UI completeness: 0-5",
+    "data/state model: 0-5",
+    "API/backend wiring: 0-5",
+    "auth/payment/external service honesty: 0-5"
+  ],
+  "binaryChecks": [
+    "runtime build success: pass/fail",
+    "generated app smoke success: pass/fail",
+    "tests generated/executed: pass/fail",
+    "no placeholder/fake content: pass/fail",
+    "follow-up edit success: pass/fail",
+    "repair loop success: pass/fail"
+  ],
+  "readinessBand": "commercial readiness: blocked/partial/pass",
+  "classifications": [
+    "PASS_REAL",
+    "PASS_PARTIAL",
+    "BLOCKED_UNSUPPORTED",
+    "FAIL_BUILDER",
+    "FAIL_RUNTIME",
+    "FAIL_QUALITY",
+    "FAIL_FAKE"
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "generatedAt": "2026-05-02T06:55:40.430Z",
+  "runsIncluded": [
+    {
+      "runId": "100-20260502065458",
+      "mode": "100",
+      "selectedTotal": 100
+    },
+    {
+      "runId": "100-20260502065539",
+      "mode": "100",
+      "selectedTotal": 100
+    },
+    {
+      "runId": "200-20260502065507",
+      "mode": "200",
+      "selectedTotal": 200
+    },
+    {
+      "runId": "extreme-20260502065539",
+      "mode": "extreme",
+      "selectedTotal": 25
+    },
+    {
+      "runId": "repair-20260502065508",
+      "mode": "repair",
+      "selectedTotal": 25
+    },
+    {
+      "runId": "smoke-20260502065458",
+      "mode": "smoke",
+      "selectedTotal": 25
+    }
+  ],
+  "totalPromptsTested": 475,
+  "categoriesCovered": 40,
+  "passRate": 0,
+  "passPlusPartialRate": 0,
+  "failRate": 0,
+  "unsupportedRate": 100,
+  "runtimeSuccessRate": 0,
+  "followupSuccessRate": 0,
+  "repairSuccessRate": 0,
+  "fakeContaminationRate": 0,
+  "ownerVerdict": "FAIL_PRIVATE_BETA",
+  "answer99Percent": "No. Measured PASS_REAL rate is 0% and PASS_REAL+PASS_PARTIAL is 0%, below a defensible 99% claim.",
+  "whatHandlesWell": [],
+  "whatHandlesPartially": [],
+  "whatFails": [],
+  "topBlockers": [
+    {
+      "rank": 1,
+      "blocker": "API unavailable or unreachable",
+      "count": 475
+    },
+    {
+      "rank": 2,
+      "blocker": "No generated project path returned for local build validation",
+      "count": 475
+    },
+    {
+      "rank": 3,
+      "blocker": "Repair loop not executed for this case",
+      "count": 475
+    },
+    {
+      "rank": 4,
+      "blocker": "Follow-up edit path not executed for this case",
+      "count": 375
+    },
+    {
+      "rank": 5,
+      "blocker": "Follow-up edit API request failed",
+      "count": 100
+    }
+  ]
+}

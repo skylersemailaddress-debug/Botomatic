@@ -1,0 +1,320 @@
+{
+  "inventoryVersion": "2",
+  "generatedAt": "2026-05-02T06:56:00Z",
+  "branch": "fix/builder-forensic-capability-stress",
+  "stages": [
+    {
+      "id": "prompt_intake",
+      "name": "User prompt intake",
+      "codePath": [
+        "apps/control-plane/src/components/chat/ConversationPane.tsx",
+        "apps/control-plane/src/components/chat/chatCommandExecutor.ts"
+      ],
+      "apiEndpoint": [
+        "POST /api/projects/intake",
+        "POST /api/projects/:projectId/operator/send"
+      ],
+      "persistenceState": [
+        "project record",
+        "project runs/execution state"
+      ],
+      "expectedSuccessOutput": [
+        "projectId created",
+        "operator command accepted"
+      ],
+      "currentTestCoverage": [
+        "test:chat-driven-control",
+        "test:chat-routing-validator",
+        "test:chat-behavior-execution-validator"
+      ],
+      "failureModes": [
+        "api unavailable",
+        "auth rejection",
+        "invalid payload"
+      ]
+    },
+    {
+      "id": "spec_extraction",
+      "name": "Spec extraction",
+      "codePath": [
+        "packages/spec-engine/src/specAnalyzer.ts",
+        "packages/spec-engine/src/completeness.ts"
+      ],
+      "apiEndpoint": [
+        "POST /api/projects/:projectId/spec/analyze",
+        "POST /api/projects/:projectId/spec/clarify"
+      ],
+      "persistenceState": [
+        "project spec snapshot"
+      ],
+      "expectedSuccessOutput": [
+        "structured spec with completeness"
+      ],
+      "currentTestCoverage": [
+        "test:spec-engine"
+      ],
+      "failureModes": [
+        "vague prompt low completeness",
+        "contradictory requirements"
+      ]
+    },
+    {
+      "id": "build_contract",
+      "name": "Build contract creation",
+      "codePath": [
+        "packages/spec-engine/src/buildContract.ts",
+        "apps/orchestrator-api/src/server_app.ts"
+      ],
+      "apiEndpoint": [
+        "POST /api/projects/:projectId/spec/build-contract",
+        "POST /api/projects/:projectId/spec/approve"
+      ],
+      "persistenceState": [
+        "approved contract in project status"
+      ],
+      "expectedSuccessOutput": [
+        "readyToBuild contract or blockers"
+      ],
+      "currentTestCoverage": [
+        "test:build-contract"
+      ],
+      "failureModes": [
+        "unresolved blockers",
+        "missing master truth"
+      ]
+    },
+    {
+      "id": "planning",
+      "name": "Compile + planning",
+      "codePath": [
+        "compile and plan handlers in apps/orchestrator-api/src/server_app.ts"
+      ],
+      "apiEndpoint": [
+        "POST /api/projects/:projectId/compile",
+        "POST /api/projects/:projectId/plan"
+      ],
+      "persistenceState": [
+        "planned packets/milestones"
+      ],
+      "expectedSuccessOutput": [
+        "ordered milestone plan"
+      ],
+      "currentTestCoverage": [
+        "test:upload-plan-handoff"
+      ],
+      "failureModes": [
+        "compile-plan sequence errors",
+        "no master truth"
+      ]
+    },
+    {
+      "id": "code_generation",
+      "name": "Code generation/execution",
+      "codePath": [
+        "packages/autonomous-build/src",
+        "packages/executor-adapters/src"
+      ],
+      "apiEndpoint": [
+        "POST /api/projects/:projectId/autonomous-build/start",
+        "POST /api/projects/:projectId/dispatch/execute-next"
+      ],
+      "persistenceState": [
+        "run checkpoint in project.runs"
+      ],
+      "expectedSuccessOutput": [
+        "execution run id",
+        "progress graph"
+      ],
+      "currentTestCoverage": [
+        "test:ui-live-builder-orchestration-model",
+        "test:ui-live-builder-orchestration-planner"
+      ],
+      "failureModes": [
+        "provider unavailable",
+        "repair budget exhausted"
+      ]
+    },
+    {
+      "id": "file_output_source_sync",
+      "name": "File output + source sync",
+      "codePath": [
+        "packages/ui-preview-engine/src/uiSourceApply.ts",
+        "packages/ui-preview-engine/src/uiSourceApplyTransaction.ts"
+      ],
+      "apiEndpoint": [
+        "GET /api/projects/:projectId/ui/overview",
+        "GET /api/projects/:projectId/ui/artifacts"
+      ],
+      "persistenceState": [
+        "generated source files",
+        "artifact references"
+      ],
+      "expectedSuccessOutput": [
+        "source apply transaction success"
+      ],
+      "currentTestCoverage": [
+        "test:ui-source-apply",
+        "test:ui-source-apply-transaction",
+        "test:ui-source-round-trip"
+      ],
+      "failureModes": [
+        "patch conflict",
+        "rollback required"
+      ]
+    },
+    {
+      "id": "runtime_preview",
+      "name": "Runtime preview/smoke",
+      "codePath": [
+        "packages/validation/src/runtime/generatedAppRuntimeSmokeRunner.ts"
+      ],
+      "apiEndpoint": [
+        "GET /api/projects/:projectId/runtime",
+        "GET /api/projects/:projectId/execution"
+      ],
+      "persistenceState": [
+        "runtime logs and status"
+      ],
+      "expectedSuccessOutput": [
+        "runtime reachable checks"
+      ],
+      "currentTestCoverage": [
+        "test:generated-app-runtime-smoke-runner"
+      ],
+      "failureModes": [
+        "runtime unreachable",
+        "missing start command/path"
+      ]
+    },
+    {
+      "id": "followup_edit",
+      "name": "Follow-up edit",
+      "codePath": [
+        "apps/control-plane/src/components/chat/chatCommandExecutor.ts"
+      ],
+      "apiEndpoint": [
+        "POST /api/projects/:projectId/operator/send"
+      ],
+      "persistenceState": [
+        "source edit history and run state"
+      ],
+      "expectedSuccessOutput": [
+        "safe follow-up mutation"
+      ],
+      "currentTestCoverage": [
+        "test:ui-multi-file-edit-plan",
+        "test:ui-cross-component-edit-planner"
+      ],
+      "failureModes": [
+        "target resolution miss",
+        "unsafe edit blocked"
+      ]
+    },
+    {
+      "id": "tests_validation",
+      "name": "Tests and validators",
+      "codePath": [
+        "packages/validation/src/cli.ts"
+      ],
+      "apiEndpoint": [
+        "GET /api/projects/:projectId/ui/gate",
+        "GET /api/projects/:projectId/ui/proof-status"
+      ],
+      "persistenceState": [
+        "validator receipts"
+      ],
+      "expectedSuccessOutput": [
+        "pass/fail with blockers"
+      ],
+      "currentTestCoverage": [
+        "validate:all",
+        "test:universal"
+      ],
+      "failureModes": [
+        "placeholder/fake detection",
+        "missing proof evidence"
+      ]
+    },
+    {
+      "id": "repair_loop",
+      "name": "Runtime repair loop",
+      "codePath": [
+        "packages/autonomous-build/src/autonomousRepairLoop.ts",
+        "packages/repo-completion/src/dirtyRepoRepairLoop.ts"
+      ],
+      "apiEndpoint": [
+        "POST /api/projects/:projectId/repair/replay",
+        "POST /api/projects/:projectId/autonomous-build/resume"
+      ],
+      "persistenceState": [
+        "repair history and adaptive repair memory"
+      ],
+      "expectedSuccessOutput": [
+        "failure classified and rerun attempted"
+      ],
+      "currentTestCoverage": [
+        "test:adaptive-repair-strategy",
+        "test:dirty-repo-repair-loop-proof"
+      ],
+      "failureModes": [
+        "repair budget exhausted",
+        "escalation required"
+      ]
+    },
+    {
+      "id": "export_deploy_readiness",
+      "name": "Export/deploy readiness",
+      "codePath": [
+        "deploy handlers in apps/orchestrator-api/src/server_app.ts",
+        "ui export/deploy planners"
+      ],
+      "apiEndpoint": [
+        "POST /api/projects/:projectId/deploy/promote",
+        "POST /api/projects/:projectId/deploy/rollback",
+        "GET /api/projects/:projectId/ui/deployments"
+      ],
+      "persistenceState": [
+        "deployment history"
+      ],
+      "expectedSuccessOutput": [
+        "governed deploy decision"
+      ],
+      "currentTestCoverage": [
+        "test:deploy-route-gates"
+      ],
+      "failureModes": [
+        "credential missing",
+        "role or gate denial"
+      ]
+    },
+    {
+      "id": "evidence_receipts",
+      "name": "Evidence and receipts",
+      "codePath": [
+        "scripts/builder-forensic/run.mjs",
+        "scripts/builder-forensic/report.mjs"
+      ],
+      "apiEndpoint": [
+        "GET /api/projects/:projectId/ui/audit"
+      ],
+      "persistenceState": [
+        "receipts/builder-forensic"
+      ],
+      "expectedSuccessOutput": [
+        "summary.json",
+        "summary.md",
+        "capability-matrix.csv",
+        "top-blockers.md",
+        "claim-boundary.md"
+      ],
+      "currentTestCoverage": [
+        "test:builder-forensic:smoke",
+        "test:builder-forensic:report"
+      ],
+      "failureModes": [
+        "missing run receipts",
+        "aggregation drift"
+      ]
+    }
+  ]
+}
