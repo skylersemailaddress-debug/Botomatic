@@ -35,5 +35,5 @@ export function LiveUIBuilderDocumentRenderer({ editableDocument, selectedNodeId
     const nodeId = resolveLiveUINodeIdFromTarget(event.target as unknown as LiveUIBuilderNodeSelectionTarget);
     if (nodeId) onSelectNode(nodeId);
   };
-  return <section data-testid="live-ui-builder-document-renderer" onClickCapture={onClickCapture}><p>Document-driven preview, not final production rendering.</p>{editableDocument.pages.map((page) => <section key={page.id} data-live-ui-page-id={page.id}><h3>{page.title}</h3>{page.rootNodeIds.map((id) => page.nodes[id] ? <NodeView key={id} node={page.nodes[id]} nodes={page.nodes} selectedNodeId={selectedNodeId} changedNodeIds={changedSet} /> : null)}</section>)}</section>;
+  return <section data-testid="live-ui-builder-document-renderer" data-live-ui-renderer="document" onClickCapture={onClickCapture}>{editableDocument.pages.map((page) => <section key={page.id} data-live-ui-page-id={page.id}><h3>{page.title}</h3>{page.rootNodeIds.map((id) => page.nodes[id] ? <NodeView key={id} node={page.nodes[id]} nodes={page.nodes} selectedNodeId={selectedNodeId} changedNodeIds={changedSet} /> : null)}</section>)}</section>;
 }

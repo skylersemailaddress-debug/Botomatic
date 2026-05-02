@@ -136,7 +136,7 @@ export default function IntakeHubPanel({ projectId }: { projectId: string }) {
           <div style={{ marginTop: 8 }}>
             <label>
               Upload file/zip/pdf
-              <input type="file" accept={ACCEPTED_UPLOAD_ACCEPT_ATTR} onChange={(event) => void onUploadFile(event)} disabled={busy} />
+              <input suppressHydrationWarning type="file" accept={ACCEPTED_UPLOAD_ACCEPT_ATTR} onChange={(event) => void onUploadFile(event)} disabled={busy} />
             </label>
             {busy && uploadProgress > 0 ? <div className="proof-status-detail">Upload progress: {uploadProgress}%</div> : null}
           </div>
@@ -146,7 +146,7 @@ export default function IntakeHubPanel({ projectId }: { projectId: string }) {
           <div className="proof-status-title">GitHub source</div>
           <label>
             GitHub URL
-            <input value={githubUrl} onChange={(event) => setGithubUrl(event.target.value)} placeholder="https://github.com/owner/repo or /tree/branch or /pull/123" />
+            <input suppressHydrationWarning value={githubUrl} onChange={(event) => setGithubUrl(event.target.value)} placeholder="https://github.com/owner/repo or /tree/branch or /pull/123" />
           </label>
           <div style={{ marginTop: 8 }}>
             <button
@@ -166,13 +166,13 @@ export default function IntakeHubPanel({ projectId }: { projectId: string }) {
           <div className="proof-status-title">Cloud link source</div>
           <label>
             Cloud URL
-            <input value={cloudUrl} onChange={(event) => setCloudUrl(event.target.value)} placeholder="https://drive.google.com/... or https://dropbox.com/..." />
+            <input suppressHydrationWarning value={cloudUrl} onChange={(event) => setCloudUrl(event.target.value)} placeholder="https://drive.google.com/... or https://dropbox.com/..." />
           </label>
           <label style={{ marginTop: 8, display: "block" }}>
-            <input type="checkbox" checked={cloudHasCredentials} onChange={(event) => setCloudHasCredentials(event.target.checked)} /> I have connector credentials
+            <input suppressHydrationWarning type="checkbox" checked={cloudHasCredentials} onChange={(event) => setCloudHasCredentials(event.target.checked)} /> I have connector credentials
           </label>
           <label style={{ marginTop: 4, display: "block" }}>
-            <input type="checkbox" checked={cloudLargeApproval} onChange={(event) => setCloudLargeApproval(event.target.checked)} /> Approve large download
+            <input suppressHydrationWarning type="checkbox" checked={cloudLargeApproval} onChange={(event) => setCloudLargeApproval(event.target.checked)} /> Approve large download
           </label>
           <div style={{ marginTop: 8 }}>
             <button
@@ -196,7 +196,7 @@ export default function IntakeHubPanel({ projectId }: { projectId: string }) {
           <div className="proof-status-title">Pasted text source</div>
           <label>
             Pasted spec / notes
-            <textarea value={pastedText} onChange={(event) => setPastedText(event.target.value)} rows={7} placeholder="Paste spec text, requirements, or implementation notes." />
+            <textarea suppressHydrationWarning value={pastedText} onChange={(event) => setPastedText(event.target.value)} rows={7} placeholder="Paste spec text, requirements, or implementation notes." />
           </label>
           <div style={{ marginTop: 8 }}>
             <button
@@ -214,7 +214,7 @@ export default function IntakeHubPanel({ projectId }: { projectId: string }) {
           <div className="proof-status-title">Local folder manifest</div>
           <label>
             botomatic-intake.json payload
-            <textarea value={localManifestText} onChange={(event) => setLocalManifestText(event.target.value)} rows={10} />
+            <textarea suppressHydrationWarning value={localManifestText} onChange={(event) => setLocalManifestText(event.target.value)} rows={10} />
           </label>
           <div style={{ marginTop: 8 }}>
             <button
@@ -236,6 +236,7 @@ export default function IntakeHubPanel({ projectId }: { projectId: string }) {
           <label>
             Existing project URI
             <input
+              suppressHydrationWarning
               value={existingProjectRef}
               onChange={(event) => setExistingProjectRef(event.target.value)}
               placeholder="project://legacy-system or https://internal.example/project/123"

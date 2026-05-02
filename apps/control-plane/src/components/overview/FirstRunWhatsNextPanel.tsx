@@ -79,11 +79,11 @@ export default function FirstRunWhatsNextPanel({ projectId }: { projectId: strin
           <div className="proof-status-detail">Max upload: {formatMaxUploadLabel()}</div>
           <label>
             Upload spec zip
-            <input type="file" accept={ACCEPTED_UPLOAD_ACCEPT_ATTR} onChange={(event) => void onUpload(event, "spec")} />
+            <input suppressHydrationWarning type="file" accept={ACCEPTED_UPLOAD_ACCEPT_ATTR} onChange={(event) => void onUpload(event, "spec")} />
           </label>
           <label style={{ marginTop: 8, display: "block" }}>
             Upload dirty repo
-            <input type="file" accept={ACCEPTED_UPLOAD_ACCEPT_ATTR} onChange={(event) => void onUpload(event, "repo")} />
+            <input suppressHydrationWarning type="file" accept={ACCEPTED_UPLOAD_ACCEPT_ATTR} onChange={(event) => void onUpload(event, "repo")} />
           </label>
           {busy ? <div className="proof-status-detail">Upload progress: {uploadProgress}%</div> : null}
           <div className="state-callout warning" style={{ marginTop: 8 }}>
