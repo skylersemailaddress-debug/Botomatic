@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-02T02:09:49.678Z",
+  "generatedAt": "2026-05-02T02:28:16.879Z",
   "status": "passed",
   "intakeSubmitMutationPassed": true,
   "promptSubmitMutationPassed": true,
@@ -14,7 +14,7 @@
       "step": "create_project",
       "status": 200,
       "ok": true,
-      "note": "projectId=proj_1777687789606_sbzcpq"
+      "note": "projectId=proj_1777688896859_biu3od"
     },
     {
       "step": "intake_missing_request",
