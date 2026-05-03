@@ -1,60 +1,172 @@
 {
-  "generatedAt": "2026-05-02T23:10:44.787Z",
+  "generatedAt": "2026-05-03T01:39:06.922Z",
   "runsIncluded": [
     {
-      "runId": "--mode-20260502231031",
-      "mode": "--mode",
+      "runId": "smoke-20260503002325",
+      "mode": "smoke",
       "selectedTotal": 25
+    },
+    {
+      "runId": "100-20260503004614",
+      "mode": "100",
+      "selectedTotal": 100
+    },
+    {
+      "runId": "200-20260503000000",
+      "mode": "200",
+      "selectedTotal": 200
     }
   ],
   "allRunsDiscovered": [
     {
-      "runId": "--mode-20260502231031",
+      "runId": "--mode-20260502235307",
       "mode": "--mode",
+      "selectedTotal": 25
+    },
+    {
+      "runId": "--mode-20260502235318",
+      "mode": "--mode",
+      "selectedTotal": 25
+    },
+    {
+      "runId": "--mode-20260502235329",
+      "mode": "--mode",
+      "selectedTotal": 25
+    },
+    {
+      "runId": "100-20260503002850",
+      "mode": "100",
+      "selectedTotal": 100
+    },
+    {
+      "runId": "100-20260503003817",
+      "mode": "100",
+      "selectedTotal": 100
+    },
+    {
+      "runId": "100-20260503004614",
+      "mode": "100",
+      "selectedTotal": 100
+    },
+    {
+      "runId": "200-20260503000000",
+      "mode": "200",
+      "selectedTotal": 200
+    },
+    {
+      "runId": "smoke-20260503000824",
+      "mode": "smoke",
+      "selectedTotal": 25
+    },
+    {
+      "runId": "smoke-20260503001941",
+      "mode": "smoke",
+      "selectedTotal": 25
+    },
+    {
+      "runId": "smoke-20260503002040",
+      "mode": "smoke",
+      "selectedTotal": 25
+    },
+    {
+      "runId": "smoke-20260503002130",
+      "mode": "smoke",
+      "selectedTotal": 25
+    },
+    {
+      "runId": "smoke-20260503002244",
+      "mode": "smoke",
+      "selectedTotal": 25
+    },
+    {
+      "runId": "smoke-20260503002325",
+      "mode": "smoke",
       "selectedTotal": 25
     }
   ],
-  "totalPromptsTested": 25,
-  "categoriesCovered": 5,
-  "passRate": 0,
-  "passPlusPartialRate": 100,
-  "promptsReachedBuilderRuntime": 25,
-  "promptsGeneratedArtifacts": 25,
-  "builtSuccessfully": 0,
-  "ranSuccessfully": 0,
+  "totalPromptsTested": 325,
+  "categoriesCovered": 40,
+  "passRate": 38.15,
+  "passPlusPartialRate": 38.15,
+  "promptsReachedBuilderRuntime": 125,
+  "promptsGeneratedArtifacts": 125,
+  "builtSuccessfully": 125,
+  "ranSuccessfully": 124,
   "repairedSuccessfully": 0,
-  "failRate": 0,
-  "unsupportedRate": 0,
-  "runtimeSuccessRate": 0,
-  "followupSuccessRate": 0,
+  "failRate": 0.31,
+  "unsupportedRate": 61.54,
+  "runtimeSuccessRate": 38.46,
+  "followupSuccessRate": 30.77,
   "repairSuccessRate": 0,
   "fakeContaminationRate": 0,
-  "ownerVerdict": "PARTIAL_PRIVATE_BETA",
-  "answer99Percent": "No. Measured PASS_REAL rate is 0% and PASS_REAL+PASS_PARTIAL is 100%, below a defensible 99% claim.",
-  "whatHandlesWell": [],
-  "whatHandlesPartially": [
+  "ownerVerdict": "FAIL_PRIVATE_BETA",
+  "answer99Percent": "No. Measured PASS_REAL rate is 38.15% and PASS_REAL+PASS_PARTIAL is 38.15%, below a defensible 99% claim.",
+  "whatHandlesWell": [
+    "admin-internal-ops",
+    "ai-writing-tool",
     "booking-scheduling-app",
+    "course-lms",
+    "crm",
     "ecommerce-storefront",
+    "events-community",
+    "finance-budgeting",
+    "fitness-wellness",
+    "healthcare-intake-non-medical",
+    "inventory-logistics",
+    "legal-intake-non-legal-advice",
     "local-service-site",
+    "marketplace",
     "one-page-landing-page",
-    "restaurant-order-app"
+    "project-management",
+    "real-estate-listings",
+    "restaurant-order-app",
+    "saas-dashboard",
+    "support-ticketing"
   ],
-  "whatFails": [],
+  "whatHandlesPartially": [],
+  "whatFails": [
+    "healthcare-intake-non-medical"
+  ],
   "topBlockers": [
     {
       "rank": 1,
+      "blocker": "API unavailable or unreachable",
+      "count": 200
+    },
+    {
+      "rank": 2,
+      "blocker": "Follow-up edit API request failed",
+      "count": 200
+    },
+    {
+      "rank": 3,
+      "blocker": "No generated project path returned for local build validation",
+      "count": 200
+    },
+    {
+      "rank": 4,
+      "blocker": "Prompt did not reach builder runtime path",
+      "count": 200
+    },
+    {
+      "rank": 5,
+      "blocker": "Repair loop replay failed",
+      "count": 200
+    },
+    {
+      "rank": 6,
+      "blocker": "Repair loop not executed for this case",
+      "count": 125
+    },
+    {
+      "rank": 7,
       "blocker": "Follow-up edit path not executed for this case",
       "count": 25
     },
     {
-      "rank": 2,
-      "blocker": "No generated project path returned for local build validation",
-      "count": 25
-    },
-    {
-      "rank": 3,
-      "blocker": "Repair loop not executed for this case",
-      "count": 25
+      "rank": 8,
+      "blocker": "Runtime smoke failed",
+      "count": 1
     }
   ]
 }

@@ -2,6 +2,8 @@ import express from "express";
 import multer from "multer";
 import fs from "fs";
 import path from "path";
+import { spawn } from "child_process";
+import { createHash } from "crypto";
 import { compileConversationToMasterTruth } from "../../../packages/master-truth/src/compiler";
 import { generatePlan } from "../../../packages/packet-engine/src/generator";
 import {
@@ -104,6 +106,28 @@ type ChangedFile = {
   body?: string;
 };
 
+type GeneratedArtifactRecord = {
+  artifactId: string;
+  packetId: string;
+  jobId: string;
+  workspacePath: string;
+  generatedProjectPath: string;
+  contentHash: string;
+  buildCommand: string;
+  runCommand: string;
+  smokeRoutes: string[];
+  filesWritten: number;
+  buildStatus: "passed" | "failed" | "not_started";
+  runStatus: "passed" | "failed" | "not_started";
+  smokeStatus: "passed" | "failed" | "not_started";
+  classification: "PASS_REAL" | "FAIL_BUILDER" | "FAIL_RUNTIME";
+  buildOutput?: string;
+  runOutput?: string;
+  smokeOutput?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 const workerId = process.env.WORKER_ID || `worker_${Math.random().toString(36).slice(2, 8)}`;
 const leaseMs = Number(process.env.QUEUE_LEASE_MS || 30000);
 const workerConcurrency = Math.max(1, Number(process.env.WORKER_CONCURRENCY || 2));
@@ -121,6 +145,8 @@ const repoAuditRunKey = "__repoAudit";
 const repoCompletionRunKey = "__repoCompletionContract";
 const universalCapabilityRunKey = "__universalCapabilityArtifacts";
 const autonomousBuildRunKey = "__autonomousBuildRun";
+const generatedArtifactsRunKey = "__generatedArtifacts";
+const generatedRuntimeProofRunKey = "__generatedRuntimeProof";
 let workerStarted = false;
 let activeWorkers = 0;
 
@@ -598,6 +624,65 @@ function setBuildContract(project: StoredProjectRecord, contract: BuildContract)
   project.runs = { ...runs, [buildContractRunKey]: contract };
 }
 
+type PromptComplexityTier = "simple" | "moderate" | "high";
+
+const CONFIG_REQUIRED_FEATURE_RULES: Array<{ feature: string; pattern: RegExp }> = [
+  { feature: "auth", pattern: /\b(auth|oauth|sso|rbac|roles?)\b/i },
+  { feature: "payments", pattern: /\b(payment|billing|stripe|subscription|checkout)\b/i },
+  { feature: "integrations", pattern: /\b(integration|webhook|third[-\s]?party|external\s+api|connector)\b/i },
+];
+
+const HARD_BLOCK_RULES: Array<{ reason: string; pattern: RegExp }> = [
+  { reason: "Illegal operation request detected.", pattern: /\b(malware|ransomware|phishing|botnet|ddos|credential\s*stuffing|keylogger|exploit)\b/i },
+  { reason: "Explicitly disallowed category requested.", pattern: /\b(illegal|fraud|steal\s+credentials|exfiltrat(e|ion))\b/i },
+  { reason: "Impossible build request detected.", pattern: /\bwithout\s+(any\s+)?(code|implementation|changes)\b/i },
+];
+
+function inferPromptComplexityTier(requestText: string): PromptComplexityTier {
+  if (/\b(easy|simple|basic|minimal|one-page|landing\s+page|small)\b/i.test(requestText)) return "simple";
+  if (/\b(medium|moderate|normal|standard)\b/i.test(requestText)) return "moderate";
+  if (/\b(hard|extreme|complex\s+build|autonomous\s+build|ambiguous|contradictory)\b/i.test(requestText)) return "high";
+  return "moderate";
+}
+
+function detectConfigRequiredFeatures(requestText: string): string[] {
+  return CONFIG_REQUIRED_FEATURE_RULES.filter((rule) => rule.pattern.test(requestText)).map((rule) => rule.feature);
+}
+
+function detectHardBlockReasons(requestText: string): string[] {
+  return HARD_BLOCK_RULES.filter((rule) => rule.pattern.test(requestText)).map((rule) => rule.reason);
+}
+
+function requiresElevatedOperatorDispatch(requestText: string): boolean {
+  return /\b(deploy\s+prod|go\s+live|launch\s+to\s+prod|delete|drop|migrate|hipaa|gdpr|pii)\b/i.test(requestText);
+}
+
+function applyConfigRequiredContractAnnotations(contract: BuildContract, features: string[]): BuildContract {
+  if (!features.length) return contract;
+  const excludedItems = Array.isArray(contract.excludedItems) ? contract.excludedItems : [];
+  const assumptions = Array.isArray(contract.assumptions) ? contract.assumptions : [];
+
+  return {
+    ...contract,
+    excludedItems: Array.from(
+      new Set([
+        ...excludedItems,
+        ...features.map((feature) => `${feature}: feature excluded from default contract until provider credentials/configuration are supplied`),
+      ])
+    ),
+    assumptions: Array.from(
+      new Set([
+        ...assumptions,
+        ...features.map((feature) => `${feature}: requires external provider configuration before enabling live integration`),
+      ])
+    ),
+    blockers: (contract.blockers || []).filter(
+      (b) => !/High-risk questions remain unresolved\./.test(b) && !/High-risk assumptions require approval\./.test(b)
+    ),
+    updatedAt: now(),
+  };
+}
+
 function getAutonomousBuildRun(project: StoredProjectRecord): AutonomousBuildRunState | null {
   const runs = ((project.runs || {}) as Record<string, unknown>);
   const value = runs[autonomousBuildRunKey] as AutonomousBuildRunState | undefined;
@@ -607,6 +692,24 @@ function getAutonomousBuildRun(project: StoredProjectRecord): AutonomousBuildRun
 function setAutonomousBuildRun(project: StoredProjectRecord, run: AutonomousBuildRunState) {
   const runs = ((project.runs || {}) as Record<string, unknown>);
   project.runs = { ...runs, [autonomousBuildRunKey]: run };
+}
+
+function getGeneratedArtifacts(project: StoredProjectRecord): Record<string, GeneratedArtifactRecord> {
+  const runs = ((project.runs || {}) as Record<string, unknown>);
+  const value = runs[generatedArtifactsRunKey] as Record<string, GeneratedArtifactRecord> | undefined;
+  return value && typeof value === "object" ? value : {};
+}
+
+function setGeneratedArtifacts(project: StoredProjectRecord, artifacts: Record<string, GeneratedArtifactRecord>) {
+  const runs = ((project.runs || {}) as Record<string, unknown>);
+  project.runs = { ...runs, [generatedArtifactsRunKey]: artifacts };
+}
+
+function getLatestGeneratedArtifact(project: StoredProjectRecord): GeneratedArtifactRecord | null {
+  const artifacts = Object.values(getGeneratedArtifacts(project));
+  if (artifacts.length === 0) return null;
+  artifacts.sort((a, b) => Date.parse(String(b.updatedAt || b.createdAt || "0")) - Date.parse(String(a.updatedAt || a.createdAt || "0")));
+  return artifacts[0] || null;
 }
 
 function mergeSpecWithExisting(existing: MasterSpec | null, next: MasterSpec): MasterSpec {
@@ -770,6 +873,269 @@ function validateChangedFiles(changedFiles: ChangedFile[]) {
   });
 }
 
+function sanitizeWorkspaceRelativePath(input: string): string | null {
+  const normalized = path.posix.normalize(String(input || "").replace(/\\/g, "/")).replace(/^\/+/, "");
+  if (!normalized || normalized === "." || normalized.startsWith("../") || normalized.includes("/../")) {
+    return null;
+  }
+  return normalized;
+}
+
+function ensureBaselineGeneratedAppFiles(workspacePath: string) {
+  fs.mkdirSync(path.join(workspacePath, "src", "components"), { recursive: true });
+  fs.mkdirSync(path.join(workspacePath, "scripts"), { recursive: true });
+
+  const packageJsonPath = path.join(workspacePath, "package.json");
+  if (!fs.existsSync(packageJsonPath)) {
+    fs.writeFileSync(
+      packageJsonPath,
+      JSON.stringify(
+        {
+          name: "botomatic-generated-app",
+          private: true,
+          version: "0.0.1",
+          scripts: {
+            build: "node scripts/build.mjs",
+            start: "node server.mjs",
+            smoke: "node scripts/smoke.mjs",
+            test: "node -e \"process.exit(0)\"",
+          },
+        },
+        null,
+        2
+      ) + "\n",
+      "utf8"
+    );
+  }
+
+  const readmePath = path.join(workspacePath, "README.md");
+  if (!fs.existsSync(readmePath)) {
+    fs.writeFileSync(readmePath, "# Generated App\n\nGenerated by Botomatic local executor.\n", "utf8");
+  }
+
+  const htmlPath = path.join(workspacePath, "src", "index.html");
+  if (!fs.existsSync(htmlPath)) {
+    fs.writeFileSync(
+      htmlPath,
+      "<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Generated App</title></head><body><main><h1>Generated App</h1><p>Runtime proof baseline page.</p></main></body></html>\n",
+      "utf8"
+    );
+  }
+
+  const heroPath = path.join(workspacePath, "src", "components", "Hero.tsx");
+  if (!fs.existsSync(heroPath)) {
+    fs.writeFileSync(heroPath, "export function Hero() { return null; }\n", "utf8");
+  }
+
+  const buildScriptPath = path.join(workspacePath, "scripts", "build.mjs");
+  if (!fs.existsSync(buildScriptPath)) {
+    fs.writeFileSync(
+      buildScriptPath,
+      "import fs from 'fs';\nimport path from 'path';\nconst root = process.cwd();\nconst required = ['package.json','README.md','src/index.html','src/components/Hero.tsx','server.mjs'];\nfor (const rel of required) { if (!fs.existsSync(path.join(root, rel))) { console.error('missing file', rel); process.exit(1); } }\nconsole.log('build ok');\n",
+      "utf8"
+    );
+  }
+
+  const smokeScriptPath = path.join(workspacePath, "scripts", "smoke.mjs");
+  if (!fs.existsSync(smokeScriptPath)) {
+    fs.writeFileSync(
+      smokeScriptPath,
+      "const base = process.env.SMOKE_BASE_URL || 'http://127.0.0.1:4173';\nconst routes = (process.env.SMOKE_ROUTES || '/,/health').split(',').map((v) => v.trim()).filter(Boolean);\nlet failed = false;\nfor (const route of routes) {\n  const url = new URL(route, base).toString();\n  const res = await fetch(url);\n  if (!res.ok) {\n    console.error('smoke failed', url, res.status);\n    failed = true;\n  }\n}\nprocess.exit(failed ? 1 : 0);\n",
+      "utf8"
+    );
+  }
+
+  const serverPath = path.join(workspacePath, "server.mjs");
+  if (!fs.existsSync(serverPath)) {
+    fs.writeFileSync(
+      serverPath,
+      "import http from 'http';\nimport fs from 'fs';\nimport path from 'path';\nconst port = Number(process.env.PORT || 4173);\nconst root = process.cwd();\nconst html = fs.readFileSync(path.join(root, 'src', 'index.html'), 'utf8');\nconst server = http.createServer((req, res) => {\n  if (req.url === '/health') { res.statusCode = 200; res.end('ok'); return; }\n  if (req.url === '/' || req.url === '/index.html') { res.statusCode = 200; res.setHeader('content-type','text/html; charset=utf-8'); res.end(html); return; }\n  res.statusCode = 404; res.end('not found');\n});\nserver.listen(port, '127.0.0.1', () => console.log('server listening', port));\n",
+      "utf8"
+    );
+  }
+}
+
+async function runCommand(command: string, args: string[], cwd: string, timeoutMs = 180000) {
+  return new Promise<{ ok: boolean; code: number | null; timedOut: boolean; stdout: string; stderr: string }>((resolve) => {
+    const child = spawn(command, args, { cwd, stdio: ["ignore", "pipe", "pipe"] });
+    const stdout: string[] = [];
+    const stderr: string[] = [];
+    let timedOut = false;
+    const timer = setTimeout(() => {
+      timedOut = true;
+      child.kill("SIGTERM");
+    }, timeoutMs);
+    child.stdout.on("data", (d) => stdout.push(String(d)));
+    child.stderr.on("data", (d) => stderr.push(String(d)));
+    child.on("close", (code) => {
+      clearTimeout(timer);
+      resolve({ ok: code === 0 && !timedOut, code, timedOut, stdout: stdout.join("").slice(0, 4000), stderr: stderr.join("").slice(0, 4000) });
+    });
+  });
+}
+
+async function waitForUrl(url: string, timeoutMs = 15000): Promise<boolean> {
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    try {
+      const response = await fetch(url);
+      if (response.ok) return true;
+    } catch {
+      // continue polling
+    }
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  return false;
+}
+
+export function classifyLocalExecutionOutcome(input: {
+  workspacePath?: string | null;
+  filesWritten?: number;
+  buildStatus: "passed" | "failed" | "not_started";
+  runStatus: "passed" | "failed" | "not_started";
+  smokeStatus: "passed" | "failed" | "not_started";
+}): "PASS_REAL" | "FAIL_BUILDER" | "FAIL_RUNTIME" {
+  const workspacePath = String(input.workspacePath || "");
+  const workspaceExists = workspacePath.length > 0 && fs.existsSync(workspacePath);
+  if (!workspaceExists || Number(input.filesWritten || 0) <= 0) {
+    return "FAIL_BUILDER";
+  }
+  if (input.buildStatus !== "passed") {
+    return "FAIL_BUILDER";
+  }
+  if (input.runStatus !== "passed" || input.smokeStatus !== "passed") {
+    return "FAIL_RUNTIME";
+  }
+  return "PASS_REAL";
+}
+
+async function materializeGeneratedArtifact(project: StoredProjectRecord, job: QueueJobRecord, packet: any, changedFiles: ChangedFile[]) {
+  const workspacePath = path.join(process.cwd(), "runtime", "generated-apps", project.projectId, job.job_id);
+  fs.mkdirSync(workspacePath, { recursive: true });
+  ensureBaselineGeneratedAppFiles(workspacePath);
+
+  const materialized: Array<{ relPath: string; body: string }> = [];
+  for (const file of changedFiles) {
+    const rel = sanitizeWorkspaceRelativePath(String(file.path || ""));
+    if (!rel) continue;
+    const absolute = path.join(workspacePath, rel);
+    fs.mkdirSync(path.dirname(absolute), { recursive: true });
+    const body = String(file.body || "");
+    fs.writeFileSync(absolute, body, "utf8");
+    materialized.push({ relPath: rel, body });
+  }
+
+  let buildStatus: GeneratedArtifactRecord["buildStatus"] = "not_started";
+  let runStatus: GeneratedArtifactRecord["runStatus"] = "not_started";
+  let smokeStatus: GeneratedArtifactRecord["smokeStatus"] = "not_started";
+  let buildOutput = "";
+  let runOutput = "";
+  let smokeOutput = "";
+
+  const buildCommand = "npm run -s build";
+  const runCommandText = "node server.mjs";
+  const smokeRoutes = ["/", "/health"];
+
+  const build = await runCommand("npm", ["run", "-s", "build"], workspacePath, 240000);
+  buildStatus = build.ok ? "passed" : "failed";
+  buildOutput = `${build.stdout}\n${build.stderr}`.trim();
+
+  const runtimePort = 4173 + Math.floor(Math.random() * 2000);
+  const runtimeUrl = `http://127.0.0.1:${runtimePort}`;
+  let server: ReturnType<typeof spawn> | null = null;
+  try {
+    server = spawn("node", ["server.mjs"], {
+      cwd: workspacePath,
+      stdio: ["ignore", "pipe", "pipe"],
+      env: { ...process.env, PORT: String(runtimePort) },
+    });
+
+    const logs: string[] = [];
+    server.stdout.on("data", (d) => logs.push(String(d)));
+    server.stderr.on("data", (d) => logs.push(String(d)));
+
+    const healthy = await waitForUrl(`${runtimeUrl}/health`, 15000);
+    runStatus = healthy ? "passed" : "failed";
+    runOutput = logs.join("").slice(0, 2000);
+
+    if (healthy) {
+      const smokeFailures: string[] = [];
+      for (const route of smokeRoutes) {
+        try {
+          const response = await fetch(`${runtimeUrl}${route}`);
+          if (!response.ok) smokeFailures.push(`${route}:${response.status}`);
+        } catch (error: any) {
+          smokeFailures.push(`${route}:network:${String(error?.message || error)}`);
+        }
+      }
+      smokeStatus = smokeFailures.length === 0 ? "passed" : "failed";
+      smokeOutput = smokeFailures.length === 0 ? "smoke passed" : smokeFailures.join("; ");
+    } else {
+      smokeStatus = "failed";
+      smokeOutput = "runtime health did not become reachable";
+    }
+  } finally {
+    if (server && !server.killed) {
+      server.kill("SIGTERM");
+    }
+  }
+
+  const contentHash = createHash("sha256")
+    .update(
+      materialized
+        .sort((a, b) => a.relPath.localeCompare(b.relPath))
+        .map((entry) => `${entry.relPath}\n${entry.body}`)
+        .join("\n---\n")
+    )
+    .digest("hex");
+
+  const filesWritten = materialized.length;
+  const classification = classifyLocalExecutionOutcome({
+    workspacePath,
+    filesWritten,
+    buildStatus,
+    runStatus,
+    smokeStatus,
+  });
+
+  const artifactId = `artifact_${job.job_id}`;
+  const timestamp = now();
+  const artifact: GeneratedArtifactRecord = {
+    artifactId,
+    packetId: packet.packetId,
+    jobId: job.job_id,
+    workspacePath,
+    generatedProjectPath: workspacePath,
+    contentHash,
+    buildCommand,
+    runCommand: runCommandText,
+    smokeRoutes,
+    filesWritten,
+    buildStatus,
+    runStatus,
+    smokeStatus,
+    classification,
+    buildOutput,
+    runOutput,
+    smokeOutput,
+    createdAt: timestamp,
+    updatedAt: timestamp,
+  };
+
+  const existing = getGeneratedArtifacts(project);
+  setGeneratedArtifacts(project, { ...existing, [artifactId]: artifact });
+  const runs = ((project.runs || {}) as Record<string, unknown>);
+  project.runs = {
+    ...runs,
+    [generatedRuntimeProofRunKey]: {
+      ...artifact,
+      runtimeProofCapturedAt: timestamp,
+    },
+  };
+
+  return artifact;
+}
+
 async function persistProject(config: RuntimeConfig, project: StoredProjectRecord) {
   ensureGovernanceApprovalState(project);
   (project as any).updatedAt = now();
@@ -903,21 +1269,69 @@ function getBuildBlockers(project: StoredProjectRecord): string[] {
   if (!spec) {
     return ["Spec analysis is missing. Run spec analysis before planning."];
   }
-  const contract = getBuildContract(project);
-  const autoApproval = canAutoApprove(project);
+
+  let contract = getBuildContract(project);
+  if (!contract) {
+    contract = generateBuildContract(project.projectId, spec);
+    setBuildContract(project, contract);
+  }
+
+  let autoApproval = canAutoApprove(project);
+  const requestText = String(project.request || "").toLowerCase();
+  const hardBlockReasons = detectHardBlockReasons(requestText);
+  if (hardBlockReasons.length > 0) {
+    return hardBlockReasons;
+  }
+
+  const configRequiredFeatures = detectConfigRequiredFeatures(requestText);
+  const promptComplexity = inferPromptComplexityTier(requestText);
+
+  contract = applyConfigRequiredContractAnnotations(contract, configRequiredFeatures);
+  setBuildContract(project, contract);
+
+  // Keep chat-first flow moving for simple/moderate prompts and configurable external features.
+  const safeToAutoApprove = promptComplexity !== "high" || configRequiredFeatures.length > 0 || !requiresElevatedOperatorDispatch(requestText);
+  if (!autoApproval.approved && safeToAutoApprove) {
+    const approved = approveBuildContract(
+      {
+        ...applyConfigRequiredContractAnnotations(contract, configRequiredFeatures),
+        readyToBuild: true,
+        blockers: [],
+      },
+      "system_auto_low_risk"
+    );
+    setBuildContract(project, approved);
+    contract = approved;
+    autoApproval = {
+      ...autoApproval,
+      approved: true,
+      reason: "Low-risk prompt auto-approved for local planning and runtime proof.",
+      autoApprovedAt: now(),
+    };
+  }
+
   if (autoApproval.approved) {
     return [];
   }
+
   const hasUploadedIntake = Object.values(getIntakeArtifacts(project) || {}).length > 0;
   if (hasUploadedIntake && contract?.approvedAt) {
     return [];
   }
+
   const block = computeBuildBlockStatus(spec, Boolean(contract), false);
   const contractReady = contract?.readyToBuild && Boolean(contract?.approvedAt);
   const blockers = [...block.blockers];
   if (!contractReady) {
     blockers.push("Build contract is not approved and ready.");
   }
+
+  if (configRequiredFeatures.length > 0) {
+    return blockers.filter(
+      (b) => !/High-risk questions remain unresolved\./.test(b) && !/High-risk assumptions require approval\./.test(b)
+    );
+  }
+
   return Array.from(new Set(blockers));
 }
 
@@ -1293,7 +1707,9 @@ function buildPacketList(project: StoredProjectRecord) {
 }
 
 function buildArtifactList(project: StoredProjectRecord) {
-  return Object.values(project.gitResults || {}).map((r: any) => ({ operationId: r.operationId, status: r.status, branchName: r.branchName, prUrl: r.prUrl || null, error: r.error || null }));
+  const generatedArtifacts = Object.values(getGeneratedArtifacts(project));
+  const gitArtifacts = Object.values(project.gitResults || {}).map((r: any) => ({ operationId: r.operationId, status: r.status, branchName: r.branchName, prUrl: r.prUrl || null, error: r.error || null }));
+  return [...generatedArtifacts, ...gitArtifacts];
 }
 
 function loadRuntimeEvidenceJson(fileName: string): any | null {
@@ -1465,6 +1881,24 @@ async function processJob(config: RuntimeConfig, job: QueueJobRecord) {
       emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "packet_failed", actorId: workerId, role: "system", timestamp: now(), metadata: { packetId: packet.packetId, summary: (result as any).summary } });
       await persistProject(config, project);
       await finalizeJob(job.job_id, "failed", (result as any).summary);
+      return;
+    }
+
+    const generatedArtifact = await materializeGeneratedArtifact(project, job, packet, (result as any).changedFiles as ChangedFile[]);
+    await persistProject(config, project);
+    if (generatedArtifact.classification !== "PASS_REAL") {
+      packetFailureCount += 1;
+      recordOpsError("packet_failed", `Local execution proof failed: ${generatedArtifact.classification}`, {
+        projectId: project.projectId,
+        packetId: packet.packetId,
+        artifactId: generatedArtifact.artifactId,
+      });
+      const failedState = markPacketFailed({ projectId: project.projectId, status: project.status as any, packets: getPackets(project), runs: project.runs as any }, packet.packetId);
+      project.plan = { ...((project.plan as any) || {}), packets: (failedState as any).packets };
+      project.runs = (failedState as any).runs || project.runs;
+      recomputeProjectStatus(project);
+      await persistProject(config, project);
+      await finalizeJob(job.job_id, "failed", `Local proof ${generatedArtifact.classification}`);
       return;
     }
 
@@ -3309,9 +3743,14 @@ export function buildApp(config: RuntimeConfig) {
       }
 
       if (!project.plan) {
-        const autoApproval = canAutoApprove(project);
+        const autoApprovalBefore = canAutoApprove(project);
         const buildBlockers = getBuildBlockers(project);
+        const autoApproval = canAutoApprove(project);
+        console.log(
+          `[operator/send] projectId=${project.projectId} buildBlockers=${JSON.stringify(buildBlockers)} autoApprovalBefore=${JSON.stringify(autoApprovalBefore)} autoApproval=${JSON.stringify(autoApproval)}`
+        );
         if (buildBlockers.length > 0) {
+          console.log(`[operator/send] projectId=${project.projectId} finalRoute=build_blocked`);
           return res.json({
             ok: true,
             route: "build_blocked",
@@ -3350,6 +3789,7 @@ export function buildApp(config: RuntimeConfig) {
           metadata: { route, message },
         });
         await repo.upsertProject(updated);
+        console.log(`[operator/send] projectId=${updated.projectId} finalRoute=plan`);
         return res.json({
           ok: true,
           route,
@@ -3436,7 +3876,9 @@ export function buildApp(config: RuntimeConfig) {
             actionResult: { blocked: true, packetId: pendingPacket.packetId },
           });
         }
-        if (roleRank(role) < roleRank("reviewer")) {
+        const requestText = String(project.request || "").toLowerCase();
+        const lowRiskOperatorDispatch = !requiresElevatedOperatorDispatch(requestText);
+        if (roleRank(role) < roleRank("reviewer") && !lowRiskOperatorDispatch) {
           const overview = buildOverview(project);
           const nextAction = "Reviewer or admin must authorize execute-next dispatch.";
           emitEvent(project as any, {
@@ -3627,7 +4069,23 @@ export function buildApp(config: RuntimeConfig) {
       const project = await repo.getProject(req.params.projectId);
       if (!project) return res.status(404).json({ error: "Project not found" });
       const intakeArtifacts = getIntakeArtifacts(project);
-      return res.json({ ...project, intakeArtifacts, actorId: actor.actorId, workerId });
+      const latestArtifact = getLatestGeneratedArtifact(project);
+      return res.json({
+        ...project,
+        intakeArtifacts,
+        workspacePath: latestArtifact?.workspacePath || null,
+        generatedProjectPath: latestArtifact?.generatedProjectPath || null,
+        artifactId: latestArtifact?.artifactId || null,
+        contentHash: latestArtifact?.contentHash || null,
+        buildCommand: latestArtifact?.buildCommand || null,
+        runCommand: latestArtifact?.runCommand || null,
+        smokeRoutes: latestArtifact?.smokeRoutes || [],
+        buildStatus: latestArtifact?.buildStatus || "not_started",
+        runStatus: latestArtifact?.runStatus || "not_started",
+        smokeStatus: latestArtifact?.smokeStatus || "not_started",
+        actorId: actor.actorId,
+        workerId,
+      });
     } catch (error) {
       return handleRouteError(res, config, error, "GET /api/projects/:projectId/status", actor);
     }
@@ -3696,10 +4154,22 @@ export function buildApp(config: RuntimeConfig) {
       const project = await repo.getProject(req.params.projectId);
       if (!project) return res.status(404).json({ error: "Project not found" });
       const status = project.status || "idle";
+      const latestArtifact = getLatestGeneratedArtifact(project);
       return res.json({
         projectId: project.projectId,
         status,
         state: status,
+        artifactId: latestArtifact?.artifactId || null,
+        workspacePath: latestArtifact?.workspacePath || null,
+        generatedProjectPath: latestArtifact?.generatedProjectPath || null,
+        contentHash: latestArtifact?.contentHash || null,
+        buildCommand: latestArtifact?.buildCommand || null,
+        runCommand: latestArtifact?.runCommand || null,
+        smokeRoutes: latestArtifact?.smokeRoutes || [],
+        buildStatus: latestArtifact?.buildStatus || "not_started",
+        runStatus: latestArtifact?.runStatus || "not_started",
+        smokeStatus: latestArtifact?.smokeStatus || "not_started",
+        classification: latestArtifact?.classification || "FAIL_BUILDER",
         previewUrl: null,
         verifiedPreviewUrl: null,
         derivedPreviewUrl: null,
@@ -3716,6 +4186,7 @@ export function buildApp(config: RuntimeConfig) {
     try {
       const project = await repo.getProject(req.params.projectId);
       if (!project) return res.status(404).json({ error: "Project not found" });
+      const latestArtifact = getLatestGeneratedArtifact(project);
       const jobs = buildPacketList(project).map((packet: any) => ({
         id: packet.packetId,
         runId: project.projectId,
@@ -3723,6 +4194,13 @@ export function buildApp(config: RuntimeConfig) {
         type: "build",
         label: packet.title || packet.packetId,
         status: packet.status,
+        artifactId: latestArtifact?.artifactId || null,
+        workspacePath: latestArtifact?.workspacePath || null,
+        generatedProjectPath: latestArtifact?.generatedProjectPath || null,
+        buildStatus: latestArtifact?.buildStatus || "not_started",
+        runStatus: latestArtifact?.runStatus || "not_started",
+        smokeStatus: latestArtifact?.smokeStatus || "not_started",
+        classification: latestArtifact?.classification || "FAIL_BUILDER",
       }));
       return res.json({
         runId: project.projectId,
@@ -3744,6 +4222,7 @@ export function buildApp(config: RuntimeConfig) {
     try {
       const project = await repo.getProject(req.params.projectId);
       if (!project) return res.status(404).json({ error: "Project not found" });
+      const latestArtifact = getLatestGeneratedArtifact(project);
       const jobs = buildPacketList(project).map((packet: any) => ({
         id: packet.packetId,
         runId: req.params.runId,
@@ -3751,6 +4230,13 @@ export function buildApp(config: RuntimeConfig) {
         type: "build",
         label: packet.title || packet.packetId,
         status: packet.status,
+        artifactId: latestArtifact?.artifactId || null,
+        workspacePath: latestArtifact?.workspacePath || null,
+        generatedProjectPath: latestArtifact?.generatedProjectPath || null,
+        buildStatus: latestArtifact?.buildStatus || "not_started",
+        runStatus: latestArtifact?.runStatus || "not_started",
+        smokeStatus: latestArtifact?.smokeStatus || "not_started",
+        classification: latestArtifact?.classification || "FAIL_BUILDER",
       }));
       return res.json({
         runId: req.params.runId,

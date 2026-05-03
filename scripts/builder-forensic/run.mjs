@@ -1,4 +1,5 @@
 import fs from "fs/promises";
+import fsSync from "fs";
 import path from "path";
 import { spawn } from "child_process";
 import { buildCorpus, scoringRubric } from "./corpus.mjs";
@@ -6,17 +7,45 @@ import { buildCorpus, scoringRubric } from "./corpus.mjs";
 const ROOT = process.cwd();
 const RECEIPT_ROOT = path.join(ROOT, "receipts", "builder-forensic");
 const RUN_ROOT = path.join(RECEIPT_ROOT, "runs");
-const API_BASE_URL = process.env.API_BASE_URL || "http://127.0.0.1:3001";
+let API_BASE_URL = "http://127.0.0.1:3001";
 const TOKEN = process.env.BOTOMATIC_API_TOKEN || process.env.NEXT_PUBLIC_BOTOMATIC_API_TOKEN || "dev-api-token";
+const TOKEN_SOURCE = process.env.BOTOMATIC_API_TOKEN
+  ? "BOTOMATIC_API_TOKEN"
+  : process.env.NEXT_PUBLIC_BOTOMATIC_API_TOKEN
+    ? "NEXT_PUBLIC_BOTOMATIC_API_TOKEN"
+    : "default-dev-api-token";
 
-const MODE = (process.argv[2] || "smoke").toLowerCase();
+const allowedModes = new Set(["smoke", "100", "200", "repair", "extreme"]);
+
+function parseMode(argv) {
+  const args = argv.slice(2);
+
+  for (let i = 0; i < args.length; i += 1) {
+    const arg = String(args[i] || "").toLowerCase();
+    if (arg === "--mode" && args[i + 1]) {
+      const candidate = String(args[i + 1]).toLowerCase();
+      if (allowedModes.has(candidate)) return candidate;
+    }
+    if (arg.startsWith("--mode=")) {
+      const candidate = arg.slice("--mode=".length);
+      if (allowedModes.has(candidate)) return candidate;
+    }
+  }
+
+  for (const arg of args) {
+    const candidate = String(arg || "").toLowerCase();
+    if (!candidate.startsWith("--") && allowedModes.has(candidate)) return candidate;
+  }
+
+  return "smoke";
+}
+
+const MODE = parseMode(process.argv);
 
 const modeLimit = {
   smoke: 25,
   "100": 100,
   "200": 200,
-  repair: 50,
-  extreme: 25,
 };
 
 const classifications = {
@@ -38,47 +67,187 @@ function runId(mode) {
 }
 
 function pickCases(corpus, mode) {
-  const limit = modeLimit[mode] || 25;
-  if (mode === "extreme") {
-    return corpus.items.filter((item) => item.complexity === "hard" || item.complexity === "extreme").slice(0, limit);
-  }
   if (mode === "repair") {
-    return corpus.items
-      .filter((item) => item.category.includes("follow-up") || item.category.includes("edit") || item.category.includes("recovery") || item.category.includes("dirty-repo"))
-      .slice(0, limit);
+    return corpus.items.filter(
+      (item) =>
+        item.category.includes("follow-up") ||
+        item.category.includes("edit") ||
+        item.category.includes("recovery") ||
+        item.category.includes("dirty-repo")
+    );
   }
+
+  if (mode === "extreme") {
+    return corpus.items.filter((item) => item.complexity === "extreme");
+  }
+
+  const limit = modeLimit[mode] || modeLimit.smoke;
   return corpus.items.slice(0, limit);
 }
 
 async function safeFetchJson(url, options = {}) {
-  const startedAt = Date.now();
-  try {
-    const response = await fetch(url, options);
-    const text = await response.text();
-    let body = text;
+  const { timeoutMs = 8000, retries = 1, retryDelayMs = 300, ...fetchOptions } = options;
+  let lastResult = null;
+
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    const startedAt = Date.now();
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
     try {
-      body = text ? JSON.parse(text) : null;
-    } catch {
-      // keep raw body
+      const response = await fetch(url, { ...fetchOptions, signal: controller.signal });
+      const text = await response.text();
+      let body = text;
+      try {
+        body = text ? JSON.parse(text) : null;
+      } catch {
+        // keep raw body
+      }
+      clearTimeout(timeout);
+
+      const responseSnippet = toSnippet(body || text);
+      const result = {
+        ok: response.ok,
+        status: response.status,
+        latencyMs: Date.now() - startedAt,
+        headers: Object.fromEntries(response.headers.entries()),
+        body,
+        responseSnippet,
+        networkError: null,
+        url,
+      };
+      lastResult = result;
+
+      const retryableHttp = !response.ok && response.status >= 500;
+      if (retryableHttp && attempt < retries) {
+        await sleep(retryDelayMs);
+        continue;
+      }
+      return result;
+    } catch (error) {
+      clearTimeout(timeout);
+      const result = {
+        ok: false,
+        status: 0,
+        latencyMs: Date.now() - startedAt,
+        headers: {},
+        body: null,
+        responseSnippet: "",
+        networkError: String(error?.message || error),
+        url,
+      };
+      lastResult = result;
+
+      if (attempt < retries) {
+        await sleep(retryDelayMs);
+        continue;
+      }
+      return result;
     }
-    return {
-      ok: response.ok,
-      status: response.status,
-      latencyMs: Date.now() - startedAt,
-      headers: Object.fromEntries(response.headers.entries()),
-      body,
-      networkError: null,
-    };
-  } catch (error) {
-    return {
-      ok: false,
-      status: 0,
-      latencyMs: Date.now() - startedAt,
-      headers: {},
-      body: null,
-      networkError: String(error?.message || error),
-    };
   }
+
+  return lastResult;
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function toSnippet(input, maxLen = 280) {
+  if (input == null) return "";
+  const raw = typeof input === "string" ? input : JSON.stringify(input);
+  return raw.length > maxLen ? `${raw.slice(0, maxLen)}...` : raw;
+}
+
+let apiBaseUrlResolutionPromise = null;
+
+function normalizeBaseCandidate(candidate) {
+  if (!candidate) return null;
+  const raw = String(candidate || "").trim();
+  if (!raw) return null;
+  try {
+    const parsed = new URL(raw);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
+    return `${parsed.protocol}//${parsed.host}`;
+  } catch {
+    return null;
+  }
+}
+
+function apiBaseCandidates() {
+  const explicit = normalizeBaseCandidate(process.env.NEXT_PUBLIC_API_BASE_URL);
+  return Array.from(new Set([explicit, "http://127.0.0.1:3001", "http://localhost:3001"].filter(Boolean)));
+}
+
+async function probeApiBase(base) {
+  const attempts = [];
+  const endpoints = ["/api/health", "/health"];
+  for (const endpoint of endpoints) {
+    const result = await safeFetchJson(`${base}${endpoint}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${TOKEN}` },
+      timeoutMs: 2500,
+      retries: 0,
+    });
+    attempts.push({
+      endpoint,
+      ok: result.ok,
+      status: result.status,
+      latencyMs: result.latencyMs,
+      networkError: result.networkError,
+      responseSnippet: result.responseSnippet,
+      url: result.url,
+    });
+    if (result.ok) {
+      return { ok: true, health: result, attempts };
+    }
+  }
+  return { ok: false, health: null, attempts };
+}
+
+async function resolveApiBaseUrl() {
+  if (apiBaseUrlResolutionPromise) return apiBaseUrlResolutionPromise;
+
+  apiBaseUrlResolutionPromise = (async () => {
+    const candidates = apiBaseCandidates();
+    const startedAt = Date.now();
+    const timeoutMs = 30000;
+    const candidateAttempts = [];
+
+    while (Date.now() - startedAt < timeoutMs) {
+      for (const base of candidates) {
+        const probe = await probeApiBase(base);
+        candidateAttempts.push({ apiBaseUrl: base, ok: probe.ok, attempts: probe.attempts });
+        if (probe.ok) {
+          return {
+            apiBaseUrl: base,
+            health: probe.health,
+            candidates,
+            candidateAttempts,
+          };
+        }
+      }
+      await sleep(500);
+    }
+
+    const failed = candidateAttempts[candidateAttempts.length - 1] || {
+      apiBaseUrl: candidates[0] || "http://127.0.0.1:3001",
+      ok: false,
+      attempts: [],
+    };
+    const failedAttempt = failed.attempts[failed.attempts.length - 1] || {
+      status: 0,
+      networkError: "unreachable",
+    };
+    throw new Error(
+      `API preflight failed. apiBaseUrl=${failed.apiBaseUrl} status=${failedAttempt.status || 0} networkError=${failedAttempt.networkError || "none"}`
+    );
+  })().catch((error) => {
+    apiBaseUrlResolutionPromise = null;
+    throw error;
+  });
+
+  return apiBaseUrlResolutionPromise;
 }
 
 function authHeaders() {
@@ -90,6 +259,35 @@ function authHeaders() {
 
 function toScalar(value) {
   return Math.max(0, Math.min(5, Number(value || 0)));
+}
+
+function normalizeBlockers(value) {
+  if (Array.isArray(value)) return value.map((item) => String(item || "").trim()).filter(Boolean);
+  if (typeof value === "string" && value.trim()) return [value.trim()];
+  return [];
+}
+
+function collectCaseBlockers(caseResult) {
+  const blockers = [];
+  blockers.push(...normalizeBlockers(caseResult.intake?.body?.blockers));
+  blockers.push(...normalizeBlockers(caseResult.operator?.body?.blockers));
+  blockers.push(...normalizeBlockers(caseResult.status?.body?.blockers));
+  blockers.push(...normalizeBlockers(caseResult.execution?.body?.blockers));
+  if (!caseResult.intake?.ok && caseResult.intake?.status === 0 && caseResult.intake?.networkError) {
+    blockers.push(`intake_network_error:${String(caseResult.intake.networkError)}`);
+  }
+  return Array.from(new Set(blockers));
+}
+
+function classificationReasonText(caseResult, blockers) {
+  const route = String(caseResult.operator?.body?.route || "").trim();
+  const direct = String(caseResult.operator?.body?.operatorMessage || "").trim();
+  const intakeError = String(caseResult.intake?.networkError || "").trim();
+  return [route ? `route=${route}` : "", direct, intakeError, blockers.join("; ")].filter(Boolean).join(" | ");
+}
+
+function isExplicitUnsupported(reasonText) {
+  return /(illegal operation|disallowed category|impossible build|explicitly disallowed|unsupported category|policy violation)/i.test(reasonText);
 }
 
 function scoreCase(caseResult) {
@@ -120,7 +318,9 @@ function scoreCase(caseResult) {
 
   const fakeSignal = /(fake success|fake generated|demo-only|lorem ipsum|placeholder implementation|not implemented)/i.test(details);
 
+  const workspaceExists = Boolean(caseResult.workspace?.exists);
   const runtimeBuildSuccess = Boolean(caseResult.localBuild?.ok);
+  const runtimeRunSuccess = Boolean(caseResult.localRun?.ok);
   const generatedAppSmokeSuccess = Boolean(caseResult.runtimeSmoke?.ok);
   const testsGeneratedExecuted = Boolean(caseResult.localTests?.ok);
   const noPlaceholderFakeContent = !fakeSignal;
@@ -134,23 +334,32 @@ function scoreCase(caseResult) {
   );
 
   let commercialReadiness = "blocked";
-  if (runtimeBuildSuccess && generatedAppSmokeSuccess && noPlaceholderFakeContent) commercialReadiness = "pass";
+  if (workspaceExists && runtimeBuildSuccess && runtimeRunSuccess && generatedAppSmokeSuccess && noPlaceholderFakeContent) commercialReadiness = "pass";
   else if (reachedBuilderRuntime) commercialReadiness = "partial";
 
+  const blockers = collectCaseBlockers(caseResult);
+  const classificationReason = classificationReasonText(caseResult, blockers);
+
   let classification = classifications.FAIL_QUALITY;
-  if (!caseResult.intake?.ok && caseResult.intake?.status === 0) classification = classifications.BLOCKED_UNSUPPORTED;
+  if (isExplicitUnsupported(classificationReason)) classification = classifications.BLOCKED_UNSUPPORTED;
+  else if (!caseResult.intake?.ok && caseResult.intake?.status === 0) classification = classifications.FAIL_BUILDER;
   else if (!caseResult.operator?.ok && caseResult.operator?.status >= 500) classification = classifications.FAIL_BUILDER;
+  else if (!workspaceExists && reachedBuilderRuntime) classification = classifications.FAIL_BUILDER;
   else if (fakeSignal) classification = classifications.FAIL_FAKE;
-  else if (runtimeBuildSuccess && generatedAppSmokeSuccess && noPlaceholderFakeContent) classification = classifications.PASS_REAL;
+  else if (workspaceExists && runtimeBuildSuccess && runtimeRunSuccess && generatedAppSmokeSuccess && noPlaceholderFakeContent) classification = classifications.PASS_REAL;
+  else if ((workspaceExists && !runtimeBuildSuccess) || (!workspaceExists && reachedBuilderRuntime)) classification = classifications.FAIL_BUILDER;
+  else if (workspaceExists && runtimeBuildSuccess && (!runtimeRunSuccess || !generatedAppSmokeSuccess)) classification = classifications.FAIL_RUNTIME;
   else if (reachedBuilderRuntime) classification = classifications.PASS_PARTIAL;
   else if (caseResult.runtimeSmoke && !caseResult.runtimeSmoke.ok) classification = classifications.FAIL_RUNTIME;
 
   return {
     metrics,
     checks: {
+      workspaceExists,
       reachedBuilderRuntime,
       generatedArtifacts,
       runtimeBuildSuccess,
+      runtimeRunSuccess,
       generatedAppSmokeSuccess,
       testsGeneratedExecuted,
       noPlaceholderFakeContent,
@@ -160,6 +369,8 @@ function scoreCase(caseResult) {
     },
     classification,
     fakeSignal,
+    blockers,
+    classificationReason,
   };
 }
 
@@ -244,17 +455,161 @@ async function runCommand(command, args, cwd, timeoutMs = 180000) {
   });
 }
 
+async function runShellCommand(commandText, cwd, timeoutMs = 180000) {
+  return runCommand("bash", ["-lc", commandText], cwd, timeoutMs);
+}
+
+async function waitForUrl(url, timeoutMs = 15000) {
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    try {
+      const response = await fetch(url);
+      if (response.ok) return true;
+    } catch {
+      // keep waiting
+    }
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  return false;
+}
+
+async function runWorkspaceRuntimeSmoke(projectPath, runCommandText, smokeRoutes) {
+  const port = 6100 + Math.floor(Math.random() * 1000);
+  const baseUrl = `http://127.0.0.1:${port}`;
+
+  const parts = String(runCommandText || "").trim().split(/\s+/).filter(Boolean);
+  const command = parts[0] || "node";
+  const args = parts.slice(1).length > 0 ? parts.slice(1) : ["server.mjs"];
+
+  const child = spawn(command, args, {
+    cwd: projectPath,
+    stdio: ["ignore", "pipe", "pipe"],
+    env: { ...process.env, PORT: String(port) },
+  });
+
+  const logs = [];
+  child.stdout.on("data", (d) => logs.push(String(d)));
+  child.stderr.on("data", (d) => logs.push(String(d)));
+
+  try {
+    const runOk = await waitForUrl(`${baseUrl}/health`, 15000);
+    const localRun = {
+      ok: runOk,
+      code: runOk ? 0 : 1,
+      timedOut: false,
+      stdout: logs.join("").slice(0, 6000),
+      stderr: runOk ? "" : "runtime health endpoint not reachable",
+    };
+
+    if (!runOk) {
+      return {
+        localRun,
+        runtimeSmoke: {
+          ok: false,
+          code: 1,
+          timedOut: false,
+          stdout: "",
+          stderr: "runtime start failed; smoke skipped",
+        },
+      };
+    }
+
+    const routes = Array.isArray(smokeRoutes) && smokeRoutes.length > 0 ? smokeRoutes : ["/", "/health"];
+    const failures = [];
+    for (const route of routes) {
+      try {
+        const response = await fetch(`${baseUrl}${route}`);
+        if (!response.ok) failures.push(`${route}:${response.status}`);
+      } catch (error) {
+        failures.push(`${route}:network:${String(error?.message || error)}`);
+      }
+    }
+
+    return {
+      localRun,
+      runtimeSmoke: {
+        ok: failures.length === 0,
+        code: failures.length === 0 ? 0 : 1,
+        timedOut: false,
+        stdout: failures.length === 0 ? `smoke ok ${routes.join(",")}` : "",
+        stderr: failures.join("; "),
+      },
+    };
+  } finally {
+    if (!child.killed) {
+      child.kill("SIGTERM");
+    }
+  }
+}
+
+async function pollForRuntimeArtifact(projectId, timeoutMs = 45000) {
+  const started = Date.now();
+  let latestStatus = null;
+  let latestRuntime = null;
+  let latestExecution = null;
+
+  while (Date.now() - started < timeoutMs) {
+    latestStatus = await safeFetchJson(`${API_BASE_URL}/api/projects/${projectId}/status`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${TOKEN}` },
+    });
+    latestRuntime = await safeFetchJson(`${API_BASE_URL}/api/projects/${projectId}/runtime`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${TOKEN}` },
+    });
+    latestExecution = await safeFetchJson(`${API_BASE_URL}/api/projects/${projectId}/execution`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${TOKEN}` },
+    });
+
+    const runtimePath =
+      (latestRuntime?.body && typeof latestRuntime.body === "object" && (latestRuntime.body.generatedProjectPath || latestRuntime.body.workspacePath)) ||
+      (latestStatus?.body && typeof latestStatus.body === "object" && (latestStatus.body.generatedProjectPath || latestStatus.body.workspacePath)) ||
+      null;
+
+    if (runtimePath) {
+      return { status: latestStatus, runtime: latestRuntime, execution: latestExecution };
+    }
+
+    const jobs = latestExecution?.body && typeof latestExecution.body === "object" && Array.isArray(latestExecution.body.jobs)
+      ? latestExecution.body.jobs
+      : [];
+    const anyTerminal = jobs.some((job) => ["failed", "blocked", "complete", "succeeded"].includes(String(job?.status || "").toLowerCase()));
+    if (jobs.length > 0 && anyTerminal) {
+      break;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+
+  return { status: latestStatus, runtime: latestRuntime, execution: latestExecution };
+}
+
 async function executeCase(testCase, options) {
   const intakePayload = {
     name: `Builder Forensic ${testCase.id}`,
     request: testCase.prompt,
   };
 
-  const intake = await safeFetchJson(`${API_BASE_URL}/api/projects/intake`, {
+  const intakeUrl = `${API_BASE_URL}/api/projects/intake`;
+  const intake = await safeFetchJson(intakeUrl, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify(intakePayload),
   });
+
+  let failureDiagnostic = null;
+  if (!intake.ok) {
+    failureDiagnostic = {
+      caseId: testCase.id,
+      apiBaseUrl: API_BASE_URL,
+      endpointUrl: intake.url || intakeUrl,
+      statusCode: intake.status,
+      exceptionMessage: intake.networkError || null,
+      responseBodySnippet: intake.responseSnippet || "",
+      tokenSource: TOKEN_SOURCE,
+    };
+  }
 
   let operator = null;
   const operatorHistory = [];
@@ -275,13 +630,26 @@ async function executeCase(testCase, options) {
     ];
 
     for (const message of operatorMessages) {
-      const response = await safeFetchJson(`${API_BASE_URL}/api/projects/${projectId}/operator/send`, {
+      const operatorUrl = `${API_BASE_URL}/api/projects/${projectId}/operator/send`;
+      const response = await safeFetchJson(operatorUrl, {
         method: "POST",
         headers: authHeaders(),
         body: JSON.stringify({ message }),
       });
       operatorHistory.push(response);
       operator = response;
+
+      if (!failureDiagnostic && !response.ok) {
+        failureDiagnostic = {
+          caseId: testCase.id,
+          apiBaseUrl: API_BASE_URL,
+          endpointUrl: response.url || operatorUrl,
+          statusCode: response.status,
+          exceptionMessage: response.networkError || null,
+          responseBodySnippet: response.responseSnippet || "",
+          tokenSource: TOKEN_SOURCE,
+        };
+      }
 
       if (!response.ok) break;
       const route = String((response.body && typeof response.body === "object" ? response.body.route : "") || "");
@@ -302,6 +670,11 @@ async function executeCase(testCase, options) {
       method: "GET",
       headers: { Authorization: `Bearer ${TOKEN}` },
     });
+
+    const polled = await pollForRuntimeArtifact(projectId, 45000);
+    status = polled.status || status;
+    runtime = polled.runtime || runtime;
+    execution = polled.execution || execution;
 
     if (options.runFollowup) {
       followup = await safeFetchJson(`${API_BASE_URL}/api/projects/${projectId}/operator/send`, {
@@ -344,18 +717,45 @@ async function executeCase(testCase, options) {
 
   // Local runtime/build/test probes are only attempted when explicit project paths are returned.
   const projectPath =
-    (status?.body && typeof status.body === "object" && (status.body.projectPath || status.body.workspacePath)) ||
-    (runtime?.body && typeof runtime.body === "object" && runtime.body.projectPath) ||
+    (status?.body && typeof status.body === "object" && (status.body.generatedProjectPath || status.body.workspacePath || status.body.projectPath)) ||
+    (runtime?.body && typeof runtime.body === "object" && (runtime.body.generatedProjectPath || runtime.body.workspacePath || runtime.body.projectPath)) ||
     null;
 
+  const buildCommandText =
+    (status?.body && typeof status.body === "object" && status.body.buildCommand) ||
+    (runtime?.body && typeof runtime.body === "object" && runtime.body.buildCommand) ||
+    "npm run -s build";
+
+  const runCommandText =
+    (status?.body && typeof status.body === "object" && status.body.runCommand) ||
+    (runtime?.body && typeof runtime.body === "object" && runtime.body.runCommand) ||
+    "node server.mjs";
+
+  const smokeRoutes =
+    (status?.body && typeof status.body === "object" && status.body.smokeRoutes) ||
+    (runtime?.body && typeof runtime.body === "object" && runtime.body.smokeRoutes) ||
+    ["/", "/health"];
+
+  const workspace = {
+    path: projectPath,
+    exists: Boolean(projectPath && fsSync.existsSync(projectPath)),
+  };
+
   let localBuild = null;
+  let localRun = null;
   let localTests = null;
   let runtimeSmoke = null;
 
-  if (projectPath && typeof projectPath === "string") {
-    localBuild = await runCommand("npm", ["run", "-s", "build"], projectPath, 300000);
+  if (workspace.exists && typeof projectPath === "string") {
+    localBuild = await runShellCommand(buildCommandText, projectPath, 300000);
     localTests = await runCommand("npm", ["run", "-s", "test"], projectPath, 300000);
-    runtimeSmoke = await runCommand("npm", ["run", "-s", "test:generated-app-runtime-smoke-runner"], ROOT, 300000);
+    const runtimeProof = await runWorkspaceRuntimeSmoke(projectPath, runCommandText, smokeRoutes);
+    localRun = runtimeProof.localRun;
+    runtimeSmoke = runtimeProof.runtimeSmoke;
+  } else {
+    localBuild = { ok: false, code: 1, timedOut: false, stdout: "", stderr: "workspace missing" };
+    localRun = { ok: false, code: 1, timedOut: false, stdout: "", stderr: "workspace missing" };
+    runtimeSmoke = { ok: false, code: 1, timedOut: false, stdout: "", stderr: "workspace missing" };
   }
 
   const result = {
@@ -372,9 +772,12 @@ async function executeCase(testCase, options) {
     execution,
     followup,
     repair,
+    workspace,
     localBuild,
+    localRun,
     localTests,
     runtimeSmoke,
+    failureDiagnostic,
     capturedAt: now(),
   };
 
@@ -418,9 +821,19 @@ function markdownSummary(run, summary) {
 }
 
 async function main() {
+  const preflight = await resolveApiBaseUrl();
+  API_BASE_URL = preflight.apiBaseUrl;
+
   const corpus = buildCorpus();
   const rubric = scoringRubric();
   const selected = pickCases(corpus, MODE);
+  process.stdout.write(`[builder-forensic] mode=${MODE}\n`);
+  process.stdout.write(`[builder-forensic] apiBaseUrl=${API_BASE_URL}\n`);
+  process.stdout.write(`[builder-forensic] apiBaseUrlCandidates=${JSON.stringify(preflight.candidates)}\n`);
+  process.stdout.write(`[builder-forensic] apiBaseUrlAttempts=${JSON.stringify(preflight.candidateAttempts)}\n`);
+  process.stdout.write(`[builder-forensic] tokenSource=${TOKEN_SOURCE}\n`);
+  process.stdout.write(`[builder-forensic] apiHealth status=${preflight.health.status} latencyMs=${preflight.health.latencyMs}\n`);
+  process.stdout.write(`[builder-forensic] selectedTotal=${selected.length}\n`);
   const id = runId(MODE);
   const outDir = path.join(RUN_ROOT, id);
   await fs.mkdir(outDir, { recursive: true });
@@ -430,18 +843,19 @@ async function main() {
     mode: MODE,
     generatedAt: now(),
     apiBaseUrl: API_BASE_URL,
-    tokenSource: process.env.BOTOMATIC_API_TOKEN ? "BOTOMATIC_API_TOKEN" : process.env.NEXT_PUBLIC_BOTOMATIC_API_TOKEN ? "NEXT_PUBLIC_BOTOMATIC_API_TOKEN" : "default-dev-api-token",
+    tokenSource: TOKEN_SOURCE,
     corpusTotal: corpus.totalPrompts,
     selectedTotal: selected.length,
     rubric,
     notes: [
       "Harness uses the same intake/operator API path as control-plane chat where reachable.",
-      "If API or credentials are unavailable, cases are classified BLOCKED_UNSUPPORTED with exact blocker evidence.",
+      "API/credential outages are classified as FAIL_BUILDER; BLOCKED_UNSUPPORTED is reserved for explicit disallowed/impossible categories.",
       "No fake pass is emitted for unreachable runtime/build/test stages.",
     ],
   };
 
   const cases = [];
+  let firstFailureDiagnostic = null;
   for (let i = 0; i < selected.length; i += 1) {
     const testCase = selected[i];
     const runFollowup = MODE === "repair" || MODE === "100" || MODE === "200";
@@ -461,11 +875,15 @@ async function main() {
 
     const result = await executeCase(testCase, { runFollowup, runRepair, followupPrompt });
     cases.push(result);
+    if (!firstFailureDiagnostic && result.failureDiagnostic) {
+      firstFailureDiagnostic = result.failureDiagnostic;
+      process.stdout.write(`[builder-forensic] firstFailureDiagnostic=${JSON.stringify(firstFailureDiagnostic)}\n`);
+    }
     process.stdout.write(`[builder-forensic] ${i + 1}/${selected.length} ${testCase.id} => ${result.score.classification}\n`);
   }
 
   const summary = summarizeCases(cases);
-  const run = { ...runMeta, summary, cases };
+  const run = { ...runMeta, firstFailureDiagnostic, summary, cases };
 
   await fs.writeFile(path.join(outDir, "run.json"), JSON.stringify(run, null, 2), "utf8");
   await fs.writeFile(path.join(outDir, "run.md"), markdownSummary(run, summary), "utf8");
