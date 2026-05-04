@@ -161,35 +161,45 @@ function identifyHighRiskDecisions(spec: any, contract: any): string[] {
 
   if (!spec || !contract) return risks;
 
+  // Use spec.request (MasterSpec) or spec.coreValue (MasterTruth) — whichever is available
+  const req = (spec.request || spec.coreValue || '').toLowerCase();
+
   // Live deployment risk — require actionable deployment phrases, not adjectives like "production-realistic"
-  const req = (spec.request || '').toLowerCase();
   if (/\bdeploy\s+(to\s+)?prod|\blaunch\s+to\s+prod|\bgo\s+live\b|\bproduction\s+deploy|\bdeploy\s+live\b/.test(req) ||
       /\bto\s+production\b|\bin\s+production\b/.test(req)) {
     risks.push('live_deployment');
   }
 
-  // Paid provider risk — flag explicit external payment processor integrations only
-  if (/\bstripe\b|\bpaypal\b|\bbraintree\b|\bsquare\b|\badyen\b/.test(req)) {
+  // Paid provider risk — keyword match on request text or spec.payments array
+  if (/\bstripe\b|\bpaypal\b|\bbraintree\b|\bsquare\b|\badyen\b/.test(req) ||
+      (Array.isArray(spec.payments) && spec.payments.length > 0)) {
     risks.push('paid_provider');
   }
 
   // Destructive operations risk
-  if (spec.request?.toLowerCase().includes('delete') ||
-      spec.request?.toLowerCase().includes('migrate') ||
-      spec.request?.toLowerCase().includes('drop')) {
+  if (req.includes('delete') || req.includes('migrate') || req.includes('drop')) {
     risks.push('destructive_rewrite');
   }
 
-  // Unresolved security questions
-  if (Array.isArray(spec.unresolvedSecurityDecisions) && 
-      spec.unresolvedSecurityDecisions.length > 0) {
+  // Unresolved spec questions — only when spec has openQuestions at top level (MasterSpec path)
+  const openQuestions: string[] = Array.isArray(spec.openQuestions) ? spec.openQuestions
+    : Array.isArray(spec.unresolvedSecurityDecisions) ? spec.unresolvedSecurityDecisions
+    : [];
+  if (openQuestions.length > 0) {
+    risks.push('unresolved_spec_questions');
+  }
+
+  // Unresolved high-risk assumptions — only when assumptions are structured objects (MasterSpec path)
+  const assumptions: any[] = Array.isArray(spec.assumptions) ? spec.assumptions : [];
+  const unresolvedHighRisk = assumptions.filter(
+    (a) => typeof a === 'object' && a !== null && a.risk === 'high' && a.requiresApproval && !a.approved
+  );
+  if (unresolvedHighRisk.length > 0) {
     risks.push('unresolved_security');
   }
 
-  // Privacy/compliance
-  if (spec.request?.toLowerCase().includes('pii') ||
-      spec.request?.toLowerCase().includes('gdpr') ||
-      spec.request?.toLowerCase().includes('hipaa')) {
+  // Privacy/compliance signals in request text
+  if (req.includes('pii') || req.includes('gdpr') || req.includes('hipaa')) {
     risks.push('privacy_compliance');
   }
 

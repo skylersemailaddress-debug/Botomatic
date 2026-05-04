@@ -857,18 +857,39 @@ function compileProjectWithIntake(project: StoredProjectRecord): StoredProjectRe
     ...spec,
     assumptions: (spec.assumptions || []).map((assumption) => ({
       ...assumption,
-      approved: true,
-      requiresApproval: false,
+      // Never auto-approve high-risk assumptions; they require explicit human sign-off
+      approved: assumption.risk === "high" ? (assumption.approved ?? false) : true,
+      requiresApproval: assumption.risk === "high" ? true : false,
     })),
-    openQuestions: hasUploadedIntake ? [] : spec.openQuestions,
+    // Never clear high-risk open questions — uploaded intake doesn't resolve security/auth gaps
+    openQuestions: hasUploadedIntake
+      ? (spec.openQuestions || []).filter((q: string) => {
+          const lower = q.toLowerCase();
+          return (
+            lower.includes("auth") ||
+            lower.includes("security") ||
+            lower.includes("payment") ||
+            lower.includes("compliance") ||
+            lower.includes("permission") ||
+            lower.includes("gdpr") ||
+            lower.includes("hipaa") ||
+            lower.includes("pci")
+          );
+        })
+      : spec.openQuestions,
   };
+
+  const hasUnresolvedHighRisk =
+    (resolvedSpec.assumptions || []).some((a: any) => a.risk === "high" && !a.approved) ||
+    (resolvedSpec.openQuestions || []).length > 0;
 
   const generatedContract = generateBuildContract(project.projectId, resolvedSpec);
   const approvedContract = approveBuildContract(
     {
       ...generatedContract,
-      readyToBuild: hasUploadedIntake ? true : generatedContract.readyToBuild,
-      blockers: hasUploadedIntake ? [] : generatedContract.blockers,
+      // Only clear blockers and mark ready if no unresolved high-risk items remain
+      readyToBuild: hasUploadedIntake && !hasUnresolvedHighRisk ? true : generatedContract.readyToBuild,
+      blockers: hasUploadedIntake && !hasUnresolvedHighRisk ? [] : generatedContract.blockers,
     },
     "system_compile"
   );
@@ -907,17 +928,36 @@ function getBuildBlockers(project: StoredProjectRecord): string[] {
     return ["Spec analysis is missing. Run spec analysis before planning."];
   }
   const contract = getBuildContract(project);
+
+  // For intake-uploaded projects: run full safety checks — intake does not bypass governance
+  const hasUploadedIntake = Object.values(getIntakeArtifacts(project) || {}).length > 0;
+  if (hasUploadedIntake) {
+    const block = computeBuildBlockStatus(spec, Boolean(contract), false);
+    const blockers = [...block.blockers];
+    const autoApproval = canAutoApprove(project);
+    if (!autoApproval.approved && autoApproval.highRiskDecisions.length > 0) {
+      blockers.push(`High-risk decisions require approval before building: ${autoApproval.highRiskDecisions.join(", ")}`);
+    }
+    const contractReady = contract?.readyToBuild && Boolean(contract?.approvedAt);
+    if (!contractReady) {
+      blockers.push("Build contract is not approved and ready.");
+    }
+    return Array.from(new Set(blockers.filter(Boolean)));
+  }
+
+  // Normal path: use canAutoApprove as the primary governance gate
   const autoApproval = canAutoApprove(project);
   if (autoApproval.approved) {
     return [];
   }
-  const hasUploadedIntake = Object.values(getIntakeArtifacts(project) || {}).length > 0;
-  if (hasUploadedIntake && contract?.approvedAt) {
-    return [];
-  }
+
+  // Not approved — gather completeness blockers and surface high-risk decisions
   const block = computeBuildBlockStatus(spec, Boolean(contract), false);
-  const contractReady = contract?.readyToBuild && Boolean(contract?.approvedAt);
   const blockers = [...block.blockers];
+  if (autoApproval.highRiskDecisions.length > 0) {
+    blockers.push(`High-risk decisions require approval: ${autoApproval.highRiskDecisions.join(", ")}`);
+  }
+  const contractReady = contract?.readyToBuild && Boolean(contract?.approvedAt);
   if (!contractReady) {
     blockers.push("Build contract is not approved and ready.");
   }
@@ -3456,11 +3496,24 @@ export function buildApp(config: RuntimeConfig) {
         const autoApproval = canAutoApprove(project);
         const buildBlockers = getBuildBlockers(project);
         if (buildBlockers.length > 0) {
+          const blockedSpec = getMasterSpec(project);
           return res.json({
             ok: true,
             route: "build_blocked",
             status: project.status,
             blockers: buildBlockers,
+            spec: blockedSpec
+              ? {
+                  authModel: blockedSpec.authModel,
+                  tenancyModel: blockedSpec.tenancyModel,
+                  deploymentTarget: blockedSpec.deploymentTarget,
+                  openQuestions: blockedSpec.openQuestions,
+                  readinessScore: blockedSpec.readinessScore,
+                  completeness: blockedSpec.completeness,
+                }
+              : null,
+            assumptions: (blockedSpec?.assumptions || []).filter((a: any) => a.requiresApproval || a.risk === "high"),
+            questions: blockedSpec?.openQuestions || [],
             nextAction: "Resolve spec clarifications and approve build contract before planning.",
             actorId: actor.actorId,
             operatorMessage: formatOperatorVoice({
