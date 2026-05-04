@@ -40,4 +40,9 @@ const PORT = parseInt(process.env.PORT ?? "4000", 10);
 app.listen(PORT, "127.0.0.1", () => {
   console.log(`[claude-runner] Listening on http://127.0.0.1:${PORT}`);
   console.log(`[claude-runner] ANTHROPIC_API_KEY: ${process.env.ANTHROPIC_API_KEY ? "set" : "MISSING"}`);
+  console.log(`[claude-runner] OPENAI_API_KEY:    ${process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== "replace_me" ? "set" : "not set"}`);
+  console.log(`[claude-runner] Model tiers:`);
+  console.log(`  flagship → ${process.env.NEXUS_MODEL_FLAGSHIP_PROVIDER ?? "anthropic"}/${process.env.NEXUS_MODEL_FLAGSHIP ?? "claude-sonnet-4-6"}`);
+  console.log(`  general  → ${process.env.NEXUS_MODEL_GENERAL_PROVIDER  ?? "anthropic"}/${process.env.NEXUS_MODEL_GENERAL  ?? "claude-sonnet-4-6"}`);
+  console.log(`  utility  → ${process.env.NEXUS_MODEL_UTILITY_PROVIDER  ?? "anthropic"}/${process.env.NEXUS_MODEL_UTILITY  ?? "claude-sonnet-4-6"}`);
 });
