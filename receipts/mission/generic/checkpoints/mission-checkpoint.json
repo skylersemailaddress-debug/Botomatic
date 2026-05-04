@@ -155,9 +155,28 @@
         "migrations apply cleanly",
         "no schema gaps"
       ],
-      "status": "pending",
-      "evidence": [],
-      "waveType": "api_schema"
+      "status": "failed",
+      "evidence": [
+        {
+          "evidenceId": "ev_api_schema_intake",
+          "waveId": "api_schema",
+          "evidenceType": "checkpoint",
+          "passed": true,
+          "detail": "Intake accepted — waveProjectId=proj_1777872996575_nfa6kz",
+          "capturedAt": "2026-05-04T05:36:36.582Z"
+        },
+        {
+          "evidenceId": "ev_api_schema_build",
+          "waveId": "api_schema",
+          "evidenceType": "build",
+          "passed": false,
+          "detail": "Build status: clarifying",
+          "capturedAt": "2026-05-04T05:41:37.045Z",
+          "contentHash": "sha256_project_proj_17778729965"
+        }
+      ],
+      "waveType": "api_schema",
+      "failedAt": "2026-05-04T05:41:37.045Z"
     },
     {
       "waveId": "spec_compiler",
@@ -711,7 +730,7 @@
   "status": "in_progress",
   "claimLevel": "SYSTEM_PARTIAL",
   "compiledAt": "2026-05-04T05:20:49.402Z",
-  "lastUpdatedAt": "2026-05-04T05:20:50.399Z",
+  "lastUpdatedAt": "2026-05-04T05:41:37.045Z",
   "checkpoints": [
     {
       "checkpointId": "cp_repo_layout_1777872050399",
@@ -749,6 +768,47 @@
       ],
       "nextWaveId": "api_schema",
       "blockers": []
+    },
+    {
+      "checkpointId": "cp_api_schema_1777873297046",
+      "missionId": "mission_benchmark_enterprise_saas_v1_e9251c98fa50",
+      "waveId": "api_schema",
+      "waveIndex": 1,
+      "status": "failed",
+      "evidence": [
+        {
+          "evidenceId": "ev_api_schema_intake",
+          "waveId": "api_schema",
+          "evidenceType": "checkpoint",
+          "passed": true,
+          "detail": "Intake accepted — waveProjectId=proj_1777872996575_nfa6kz",
+          "capturedAt": "2026-05-04T05:36:36.582Z"
+        },
+        {
+          "evidenceId": "ev_api_schema_build",
+          "waveId": "api_schema",
+          "evidenceType": "build",
+          "passed": false,
+          "detail": "Build status: clarifying",
+          "capturedAt": "2026-05-04T05:41:37.045Z",
+          "contentHash": "sha256_project_proj_17778729965"
+        }
+      ],
+      "savedAt": "2026-05-04T05:41:37.045Z",
+      "contentHash": "sha256_project_proj_17778729965",
+      "buildStatus": "failed",
+      "runStatus": "skipped",
+      "smokeStatus": "skipped",
+      "validatorsRun": [
+        "validate:api-contracts",
+        "validate:data-model"
+      ],
+      "repairAttempts": 0,
+      "proofRefs": [],
+      "nextWaveId": "spec_compiler",
+      "blockers": [
+        "Wave validation did not pass"
+      ]
     }
   ],
   "totalWaves": 9,
