@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const { PNG } = require("pngjs");
-const pixelmatch = require("pixelmatch");
+const pixelmatch = require("pixelmatch").default ?? require("pixelmatch");
 
 const root = process.cwd();
 
