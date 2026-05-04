@@ -40,62 +40,113 @@ export default function ConversationPane({ projectId }: { projectId: string }) {
   const lastStatusRef = useRef<string | null>(null);
 
   useEffect(() => {
-    let active = true;
+    if (!projectId) return;
 
-    async function poll() {
+    // SSE — real-time push from the orchestrator
+    const es = new EventSource(`/api/projects/${projectId}/stream`);
+    let sseConnected = false;
+
+    es.addEventListener("open", () => {
+      sseConnected = true;
+    });
+
+    es.addEventListener("packet_complete", (e: MessageEvent) => {
       try {
-        const runtime = await fetchRuntimeContext(projectId);
-        const nextStatus = [
-          runtime.projectStatus,
-          runtime.validationStatus,
-          runtime.launchGateStatus,
-          runtime.currentMilestone || "none",
-          runtime.repairAttempts,
-          runtime.blockers.join("|"),
-        ].join(":");
-        setRouteStatus(runtime.projectStatus || "idle");
+        const data = JSON.parse(e.data) as { packetId: string; status: string };
+        setRouteStatus("executing");
+        appendSystemMessage(`Packet complete: ${data.packetId} — status: ${data.status}`);
+      } catch { /* ignore parse errors */ }
+    });
 
-        if (active && lastStatusRef.current !== nextStatus) {
-          lastStatusRef.current = nextStatus;
-          const content = buildPartnerEnvelope(
-            runtime,
-            "show current system state and next best action",
-            "Telemetry refreshed from build and validation state."
-          );
+    es.addEventListener("packet_failed", (e: MessageEvent) => {
+      try {
+        const data = JSON.parse(e.data) as { packetId: string; error: string };
+        setRouteStatus("blocked");
+        setMode("validating");
+        appendSystemMessage(`Packet failed: ${data.packetId} — ${data.error}`);
+      } catch { /* ignore */ }
+    });
 
-          setMode(
-            runtime.projectStatus === "executing"
-              ? "executing"
-              : runtime.projectStatus === "blocked"
-              ? "validating"
-              : runtime.validationStatus === "ready"
-              ? "validating"
-                : "analyzing"
-          );
+    es.addEventListener("ui_mutation", (e: MessageEvent) => {
+      try {
+        const data = JSON.parse(e.data) as { command: string; patch: unknown };
+        appendSystemMessage(`UI updated: "${data.command}"`);
+      } catch { /* ignore */ }
+    });
 
-          setMessages((m) => [
-            ...m,
-            {
-              id: `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-              role: "system",
-              content,
-              timestamp: new Date().toISOString(),
-            },
-          ]);
-        }
-      } catch {
-        // ignore polling errors in chat loop
+    es.addEventListener("capability_synthesized", (e: MessageEvent) => {
+      try {
+        const data = JSON.parse(e.data) as { id: string; domain: string };
+        appendSystemMessage(`New capability synthesized: ${data.domain} (id: ${data.id})`);
+      } catch { /* ignore */ }
+    });
+
+    es.addEventListener("status", (e: MessageEvent) => {
+      try {
+        const data = JSON.parse(e.data) as { projectStatus: string; validationStatus?: string };
+        setRouteStatus(data.projectStatus || "idle");
+        setMode(
+          data.projectStatus === "executing"
+            ? "executing"
+            : data.projectStatus === "blocked"
+            ? "validating"
+            : data.validationStatus === "ready"
+            ? "validating"
+            : "analyzing"
+        );
+      } catch { /* ignore */ }
+    });
+
+    es.onerror = () => {
+      // SSE connection dropped — fall back to a single poll to refresh state
+      if (sseConnected) {
+        void fetchRuntimeContext(projectId).then((runtime) => {
+          setRouteStatus(runtime.projectStatus || "idle");
+        }).catch(() => { /* ignore */ });
       }
-    }
+    };
 
-    void poll();
-    const timer = setInterval(() => {
-      void poll();
-    }, 3000);
+    // Initial state fetch (SSE carries deltas; we need the current snapshot on mount)
+    void fetchRuntimeContext(projectId).then((runtime) => {
+      setRouteStatus(runtime.projectStatus || "idle");
+      setMode(
+        runtime.projectStatus === "executing"
+          ? "executing"
+          : runtime.projectStatus === "blocked"
+          ? "validating"
+          : runtime.validationStatus === "ready"
+          ? "validating"
+          : "analyzing"
+      );
+      const content = buildPartnerEnvelope(
+        runtime,
+        "show current system state and next best action",
+        "Telemetry refreshed from build and validation state."
+      );
+      const statusKey = [
+        runtime.projectStatus,
+        runtime.validationStatus,
+        runtime.launchGateStatus,
+        runtime.currentMilestone || "none",
+        runtime.repairAttempts,
+        runtime.blockers.join("|"),
+      ].join(":");
+      if (lastStatusRef.current !== statusKey) {
+        lastStatusRef.current = statusKey;
+        setMessages((m) => [
+          ...m,
+          {
+            id: `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+            role: "system",
+            content,
+            timestamp: new Date().toISOString(),
+          },
+        ]);
+      }
+    }).catch(() => { /* ignore initial fetch errors */ });
 
     return () => {
-      active = false;
-      clearInterval(timer);
+      es.close();
     };
   }, [projectId]);
 

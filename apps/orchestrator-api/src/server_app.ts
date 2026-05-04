@@ -3410,12 +3410,29 @@ export function buildApp(config: RuntimeConfig) {
 
       await repo.upsertProject(compiled);
 
+      // ── Enqueue wave-0 (root) packets immediately so the build starts ─────────
+      // Without this, projects sit in "queued" forever. Root packets have no
+      // dependencies so they are runnable the moment the build is confirmed.
       const packets = (plan as any)?.packets ?? [];
+      const rootPackets = packets.filter((p: any) => !p.dependencies || (p.dependencies as string[]).length === 0);
+      const enqueueErrors: string[] = [];
+      for (const rootPacket of rootPackets) {
+        try {
+          await enqueueJob(compiled.projectId, rootPacket.packetId);
+        } catch (e: any) {
+          enqueueErrors.push(`${rootPacket.packetId}: ${String(e?.message ?? e)}`);
+        }
+      }
+      if (enqueueErrors.length > 0) {
+        console.warn(JSON.stringify({ event: "enqueue_warning", projectId: compiled.projectId, errors: enqueueErrors }));
+      }
+
       return res.json({
         ok: true,
         projectId: compiled.projectId,
         status: "queued",
         packetCount: packets.length,
+        rootPacketsEnqueued: rootPackets.length,
         packets: packets.map((p: any) => ({ packetId: p.packetId, goal: p.goal, waveType: p.waveType, dependencies: p.dependencies, riskLevel: p.riskLevel })),
         gateWarning,
         actorId: actor.actorId,

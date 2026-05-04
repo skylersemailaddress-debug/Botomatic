@@ -1,0 +1,10 @@
+{
+  "name": "@botomatic/capability-synthesizer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Gap detection, AI synthesis, and persistence for dynamically expanding build capabilities",
+  "main": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}
