@@ -260,7 +260,7 @@ function testCompileFromUploadedV11BindsMasterTruthAndContract() {
   assert(server.includes("masterTruth: truth"), "compile path must persist project.masterTruth");
   assert(server.includes("[buildContractRunKey]: approvedContract"), "compile path must persist a build contract");
   assert(server.includes("approveBuildContract"), "compile path should approve build contract for uploaded-source compile");
-  assert(server.includes("if (hasUploadedIntake && contract?.approvedAt)"), "build blocker check should allow planning after uploaded-source compile");
+  assert(server.includes("if (hasUploadedIntake)"), "intake path must run full safety checks in getBuildBlockers");
 }
 
 async function testBatchUploadsAllFilesBeforeCompile() {

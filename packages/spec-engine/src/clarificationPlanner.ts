@@ -19,7 +19,7 @@ export function planClarifications(spec: MasterSpec, userDelegated: boolean): Cl
   const qs: ClarificationItem[] = [];
   if (!spec.authModel) qs.push(item("auth/security", "Which authentication model is required in production (OIDC, SSO, passwordless, mixed)?", 10, "high", userDelegated));
   if (!spec.tenancyModel) qs.push(item("tenancy", "Is this single-tenant, multi-tenant, or hybrid?", 9, "high", userDelegated));
-  if (spec.payments.length > 0 && !spec.pricingModel) qs.push(item("payments", "Which pricing model and billing cadence should be enforced?", 10, "high", userDelegated));
+  if (spec.payments.length > 0 && (!spec.pricingModel || spec.pricingModel === "pending_confirmation" || spec.pricingModel === "")) qs.push(item("payments", "Which pricing model and billing cadence should be enforced?", 10, "high", userDelegated));
   if (!spec.deploymentTarget) qs.push(item("deployment", "Where should production deploy and who owns env secrets?", 8, "medium", userDelegated));
   if (spec.permissions.length === 0) qs.push(item("permissions", "Define role permissions matrix for critical actions.", 9, "high", userDelegated));
   if (spec.workflows.length < 2) qs.push(item("workflows", "What are the top 3 user workflows that must ship in V1?", 8, "medium", userDelegated));
