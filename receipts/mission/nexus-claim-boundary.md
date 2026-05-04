@@ -1,0 +1,13 @@
+Mission: mission_nexus_1777866319399_2fa030e7210a
+Status: proven
+Proven waves: 12/12
+Current claim level: SYSTEM_LAUNCH_READY
+
+Claim Boundary Table:
+  ✅ MISSION_COMPILED
+  ✅ WAVE_READY
+  ✅ WAVE_PROVEN
+  ✅ SYSTEM_PARTIAL
+  ✅ SYSTEM_BUILDABLE
+  ✅ SYSTEM_RUNTIME_PROVEN
+  ✅ SYSTEM_LAUNCH_READY

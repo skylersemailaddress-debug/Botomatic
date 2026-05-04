@@ -1,0 +1,13 @@
+index,waveId,name,dependsOn,packetCount,validators
+0,repo_layout,"Repo Layout + Scaffold","",3,"validate:spec-contract|validate:repo-structure"
+1,api_schema,"API + Data Schema","repo_layout",3,"validate:api-contracts|validate:data-model"
+2,spec_compiler,"DAS / IBC Spec Compiler","repo_layout|api_schema",4,"validate:spec-contract|validate:spec-completeness"
+3,execution_runtime,"Execution DAG + Runtime","repo_layout|api_schema",3,"validate:execution-runtime|validate:job-idempotency"
+4,builder_factory,"Builder / Factory Engine","repo_layout|api_schema|spec_compiler|execution_runtime",4,"validate:builder-output|validate:no-placeholders"
+5,repair_replay,"Repair + Replay Engine","builder_factory",3,"validate:repair-engine|validate:rollback"
+6,truth_memory,"Truth + Memory Engine","repo_layout|api_schema|execution_runtime",3,"validate:truth-engine|validate:memory-influence"
+7,intelligence_shell,"Synthetic Intelligence Shell","builder_factory|truth_memory",3,"validate:ui-shell|validate:command-spine"
+8,governance_security,"Governance + Security","repo_layout|api_schema|execution_runtime",3,"validate:rbac|validate:tenant-isolation|validate:secrets"
+9,deployment_rollback,"Deployment + Rollback","builder_factory|governance_security",3,"validate:deployment-gates|validate:rollback"
+10,validation_proof,"Validation + Proof System","repo_layout|builder_factory",3,"validate:all|validate:claim-boundary"
+11,fresh_clone_proof,"Fresh-Clone End-to-End Proof","repo_layout|api_schema|spec_compiler|execution_runtime|builder_factory|repair_replay|truth_memory|governance_security|deployment_rollback|validation_proof",3,"validate:all|test:universal|build"
