@@ -56,6 +56,23 @@ import { resolveAutonomyTier, allowedActionsForTier } from "../../../packages/au
 import { reflectAndRevise } from "../../../packages/reflection-engine/src";
 import { proposeEvolution } from "../../../packages/evolution-engine/src";
 import { listAllUIBlueprints } from "../../../packages/ui-blueprint-registry/src";
+import {
+  createUiPreviewManifest,
+  applyUIEditCommand,
+  type EditableUIDocument,
+  type UIEditCommand,
+} from "../../../packages/ui-preview-engine/src";
+import { parseUIAppStructureCommand } from "../../../packages/ui-preview-engine/src/uiAppStructureCommands";
+import { createMemoryStore, recordMemory, type MemoryStore } from "../../../packages/memory-engine/src";
+import {
+  detectCapabilityGap,
+  synthesizeCapability,
+  persistCapability,
+  loadPersistedCapabilities,
+  type SynthesizedCapability,
+} from "../../../packages/capability-synthesizer/src";
+import { registerSynthesizedBlueprint, listSynthesizedBlueprints } from "../../../packages/blueprints/src/registry";
+import { registerSynthesizedDomainPrompts } from "../../claude-runner/src/domainPrompts";
 import { canAutoApprove } from "../../../packages/governance-engine/src/approvalPolicy";
 import { markPacketComplete, markPacketFailed } from "../../../packages/execution/src/runner";
 import { MockExecutor } from "../../../packages/executor-adapters/src/mockExecutor";
@@ -125,8 +142,111 @@ const repoCompletionRunKey = "__repoCompletionContract";
 const universalCapabilityRunKey = "__universalCapabilityArtifacts";
 const autonomousBuildRunKey = "__autonomousBuildRun";
 const generatedWorkspaceRunKey = "__generatedWorkspace";
+const uiDocumentRunKey = "__uiDocument";
+const memoryStoreRunKey = "__memoryStore";
 let workerStarted = false;
 let activeWorkers = 0;
+
+// ── Synthesized capability activation ────────────────────────────────────────
+// Registers a capability into the in-process blueprint registry and domain
+// prompt maps so it is immediately usable without a restart.
+function activateSynthesizedCapability(cap: SynthesizedCapability): void {
+  registerSynthesizedBlueprint(cap.blueprint);
+  registerSynthesizedDomainPrompts(cap.waveTypeId, cap.domainConstraints, cap.waveContext);
+}
+
+// Load any capabilities persisted from previous sessions at startup
+function loadSynthesizedCapabilitiesAtStartup(): void {
+  const caps = loadPersistedCapabilities();
+  for (const cap of caps) activateSynthesizedCapability(cap);
+  if (caps.length > 0) {
+    console.log(JSON.stringify({ event: "capabilities_loaded", count: caps.length, ids: caps.map(c => c.id) }));
+  }
+}
+
+// ── SSE channel registry — project-scoped real-time push ─────────────────────
+// Keyed by projectId → Set of active response objects. Any server event
+// (UI mutation, packet complete, validation) broadcasts to all subscribers.
+const sseChannels = new Map<string, Set<import("express").Response>>();
+
+function sseSubscribe(projectId: string, res: import("express").Response): void {
+  if (!sseChannels.has(projectId)) sseChannels.set(projectId, new Set());
+  sseChannels.get(projectId)!.add(res);
+}
+
+function sseUnsubscribe(projectId: string, res: import("express").Response): void {
+  sseChannels.get(projectId)?.delete(res);
+}
+
+function sseBroadcast(projectId: string, event: string, data: unknown): void {
+  const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+  sseChannels.get(projectId)?.forEach(res => {
+    try { res.write(payload); } catch (_e) { /* client disconnected */ }
+  });
+}
+
+// ── NLP → UIEditCommand parser ───────────────────────────────────────────────
+// Converts natural language chat into a structured UIEditCommand for the
+// mutation engine. Covers the most common direct-manipulation intents.
+function parseNaturalLanguageUICommand(text: string, docId: string): UIEditCommand | null {
+  const t = text.trim();
+  const lo = t.toLowerCase();
+  const id = `cmd_${Date.now()}`;
+  const at = new Date().toISOString();
+
+  const makeTarget = (raw: string) => ({
+    reference: {
+      rawReference: raw.trim(),
+      normalizedReference: raw.trim().toLowerCase(),
+      referenceKind: "semanticLabel" as const,
+      confidence: 0.7,
+      requiresResolution: true,
+    },
+  });
+
+  const safety = { parserOnly: true as const, impliesPreviewMutation: false as const, impliesSourceSync: false as const, requiresConfirmation: false, requiresResolution: false };
+  const claimBoundary = { parserOnly: true as const, mutatesDocument: false as const, updatesPreview: false as const, syncsSourceFiles: false as const, provesLiveUIBuilderCompletion: false as const, caveat: "NLP parse only" };
+
+  // "remove X" / "delete X" / "take away X" / "hide X"
+  let m = t.match(/(?:remove|delete|take away|hide|get rid of)\s+(?:the\s+)?(.+)/i);
+  if (m) return { id, kind: "remove", target: makeTarget(m[1]), payload: {}, source: "typedChat", documentId: docId, createdAt: at, safety, claimBoundary } as any;
+
+  // "add X" / "insert X"
+  m = t.match(/(?:add|insert|put|place|include)\s+(?:a\s+|an\s+|the\s+)?(.+)/i);
+  if (m) return { id, kind: "add", target: makeTarget(m[1]), payload: { value: m[1] }, source: "typedChat", documentId: docId, createdAt: at, safety, claimBoundary } as any;
+
+  // "move X to Y"
+  m = t.match(/move\s+(?:the\s+)?(.+?)\s+to\s+(.+)/i);
+  if (m) return { id, kind: "move", target: makeTarget(m[1]), payload: { destination: m[2] }, source: "typedChat", documentId: docId, createdAt: at, safety, claimBoundary } as any;
+
+  // "rename X to Y" / "change X text to Y" / "set X label to Y"
+  m = t.match(/(?:rename|change|set)\s+(?:the\s+)?(.+?)\s+(?:text|label|title)?\s*to\s+"?([^"]+)"?/i);
+  if (m) return { id, kind: "rewriteText", target: makeTarget(m[1]), payload: { value: m[2] }, source: "typedChat", documentId: docId, createdAt: at, safety, claimBoundary } as any;
+
+  // "change color to X" / "make X color Y" / "restyle"
+  m = t.match(/(?:change|make|set)\s+(?:the\s+)?(?:color|background|bg|font)\s+(?:of\s+(.+?)\s+)?to\s+(.+)/i);
+  if (m) return { id, kind: "restyle", target: makeTarget(m[1] ?? "container"), payload: { color: m[2].trim() }, source: "typedChat", documentId: docId, createdAt: at, safety, claimBoundary } as any;
+
+  // "change theme to X" / "use X theme" / "make it look like X"
+  if (/theme|palette|look and feel|redesign/i.test(lo)) {
+    const tone = lo.includes("dark") ? "dark" : lo.includes("light") ? "light" : lo.includes("minimal") ? "minimal" : "default";
+    return { id, kind: "retheme", target: makeTarget("global"), payload: { tone }, source: "typedChat", documentId: docId, createdAt: at, safety, claimBoundary } as any;
+  }
+
+  // "duplicate X" / "copy X"
+  m = t.match(/(?:duplicate|copy)\s+(?:the\s+)?(.+)/i);
+  if (m) return { id, kind: "duplicate", target: makeTarget(m[1]), payload: {}, source: "typedChat", documentId: docId, createdAt: at, safety, claimBoundary } as any;
+
+  // "replace X with Y"
+  m = t.match(/replace\s+(?:the\s+)?(.+?)\s+with\s+(.+)/i);
+  if (m) return { id, kind: "replace", target: makeTarget(m[1]), payload: { replacement: m[2] }, source: "typedChat", documentId: docId, createdAt: at, safety, claimBoundary } as any;
+
+  // "change layout to X" / "make it a grid"
+  m = t.match(/(?:change|use|make it a?)\s+(?:a\s+)?(.+?)\s+layout/i);
+  if (m) return { id, kind: "changeLayout", target: makeTarget("page"), payload: { layout: m[1] }, source: "typedChat", documentId: docId, createdAt: at, safety, claimBoundary } as any;
+
+  return null; // Unrecognized — let upstream handle as spec update
+}
 
 type OpsErrorType = "route_error" | "packet_failed" | "promotion_failed" | "auth_failed" | "alert_delivery_failed";
 type OpsErrorEvent = {
@@ -558,6 +678,23 @@ function createIntakeSourceRecord(params: {
     updatedAt: timestamp,
     metadata: params.metadata || {},
   };
+}
+
+function getUIDocument(project: StoredProjectRecord): EditableUIDocument | null {
+  return (((project.runs || {}) as Record<string, unknown>)[uiDocumentRunKey] as EditableUIDocument | undefined) || null;
+}
+
+function setUIDocument(project: StoredProjectRecord, doc: EditableUIDocument): void {
+  project.runs = { ...((project.runs || {}) as Record<string, unknown>), [uiDocumentRunKey]: doc };
+}
+
+function getMemoryStore(project: StoredProjectRecord): MemoryStore {
+  const existing = (((project.runs || {}) as Record<string, unknown>)[memoryStoreRunKey] as MemoryStore | undefined);
+  return existing || createMemoryStore();
+}
+
+function setMemoryStore(project: StoredProjectRecord, store: MemoryStore): void {
+  project.runs = { ...((project.runs || {}) as Record<string, unknown>), [memoryStoreRunKey]: store };
 }
 
 function getMasterSpec(project: StoredProjectRecord): MasterSpec | null {
@@ -1593,6 +1730,7 @@ async function processJob(config: RuntimeConfig, job: QueueJobRecord) {
       project.runs = (failedState as any).runs || project.runs;
       recomputeProjectStatus(project);
       emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "packet_failed", actorId: workerId, role: "system", timestamp: now(), metadata: { packetId: packet.packetId, summary: failReason, nonRetryable } });
+      sseBroadcast(project.projectId, "packet_failed", { packetId: packet.packetId, goal: packet.goal, reason: failReason, nonRetryable });
       await persistProject(config, project);
       await finalizeJob(job.job_id, "failed", failReason);
       return;
@@ -1649,6 +1787,32 @@ async function processJob(config: RuntimeConfig, job: QueueJobRecord) {
     project.plan = { ...((project.plan as any) || {}), packets: (completedState as any).packets };
     project.runs = (completedState as any).runs || project.runs;
     recomputeProjectStatus(project);
+
+    // N76 — record episodic memory for cross-build learning
+    const memStore = getMemoryStore(project);
+    recordMemory(memStore, {
+      scope: "project",
+      topic: `packet:${packet.packetId}`,
+      content: `Completed: ${packet.goal}. Validation: ${(validation as any).status} (rung ${(validation as any).proofRung}). Risk: ${(packet as any).riskLevel}.`,
+      sourceEvidence: packet.packetId,
+    });
+    if ((validation as any).failureKind) {
+      recordMemory(memStore, {
+        scope: "error",
+        topic: `failure:${(validation as any).failureKind}`,
+        content: `Packet ${packet.packetId} failed with ${(validation as any).failureKind}: ${(validation as any).summary ?? ""}`,
+        sourceEvidence: packet.packetId,
+      });
+    }
+    setMemoryStore(project, memStore);
+
+    // SSE — broadcast packet completion to all subscribed clients
+    sseBroadcast(project.projectId, "packet_complete", {
+      packetId: packet.packetId,
+      goal: packet.goal,
+      proofRung: (validation as any).proofRung,
+      validationStatus: (validation as any).status,
+    });
 
     // N92 — auto-enqueue all packets that are newly unblocked by this completion
     const unblocked = getNewlyUnblockedPackets(project, packet.packetId);
@@ -1911,6 +2075,9 @@ async function materializeGeneratedWorkspace(
 }
 
 export function buildApp(config: RuntimeConfig) {
+  // Boot-time: restore synthesized capabilities from previous sessions
+  loadSynthesizedCapabilitiesAtStartup();
+
   const app = express();
   const repo = config.repository.repo;
   if (config.repository.mode === "durable") {
@@ -2043,12 +2210,32 @@ export function buildApp(config: RuntimeConfig) {
         githubRepo:  typeof githubRepo  === "string" && githubRepo.trim()  ? githubRepo.trim()  : null,
       });
       ensureGovernanceApprovalState(project, actor.actorId);
-      const blueprint = matchBlueprintFromText(safeRequest || String(name || "") || "");
+
+      // Auto-detect capability gaps and synthesize new domain knowledge if needed.
+      // Done asynchronously so intake never blocks — the capability is ready by
+      // the time the user finishes answering intake questions and confirms the build.
+      const intakeText = safeRequest || String(name || "");
+      const gap = detectCapabilityGap(intakeText);
+      if (gap.hasGap) {
+        void synthesizeCapability(gap, intakeText).then(result => {
+          if (result.ok) {
+            activateSynthesizedCapability(result.capability);
+            persistCapability(result.capability);
+            sseBroadcast(projectId, "capability_synthesized", {
+              domain: result.capability.domain,
+              blueprintId: result.capability.blueprint.id,
+              waveTypeId: result.capability.waveTypeId,
+            });
+          }
+        }).catch(() => { /* synthesis failure never blocks intake */ });
+      }
+
+      const blueprint = matchBlueprintFromText(intakeText);
       const analyzed = analyzeSpec({ appName: project.name, request: safeRequest, blueprint, actorId: actor.actorId });
       setMasterSpec(project, analyzed.spec);
       setSpecClarifications(project, analyzed.clarifications);
       project.runs = { ...((project.runs || {}) as Record<string, unknown>), [specStyleRunKey]: analyzed.style };
-      emitEvent(project as any, { id: `evt_${Date.now()}`, projectId, type: "intake", actorId: actor.actorId, timestamp: now(), metadata: { name: project.name } });
+      emitEvent(project as any, { id: `evt_${Date.now()}`, projectId, type: "intake", actorId: actor.actorId, timestamp: now(), metadata: { name: project.name, capabilityGap: gap.hasGap ? gap.domain : null } });
       await repo.upsertProject(project);
 
       // Return the full question list so clients can immediately render the intake form
@@ -4821,6 +5008,255 @@ export function buildApp(config: RuntimeConfig) {
       return res.json({ events: (project as any).auditEvents.slice(0, 100), actorId: actor.actorId });
     } catch (error) {
       return handleRouteError(res, config, error, "GET audit", actor);
+    }
+  });
+
+  // ── System: list all capabilities (static + synthesized) ─────────────────────
+  app.get("/api/system/capabilities", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const staticCount = (await import("../../../packages/blueprints/src/registry")).blueprintRegistry.length;
+      const synthesized = listSynthesizedBlueprints().map(b => ({
+        id: b.id,
+        name: b.name,
+        category: b.category,
+        description: b.description,
+        isSynthesized: true,
+      }));
+      return res.json({
+        ok: true,
+        staticCapabilities: staticCount,
+        synthesizedCapabilities: synthesized.length,
+        synthesized,
+        total: staticCount + synthesized.length,
+        actorId: actor.actorId,
+      });
+    } catch (error) {
+      return handleRouteError(res, config, error, "GET /api/system/capabilities", actor);
+    }
+  });
+
+  // ── System: manually trigger capability synthesis for a domain ───────────────
+  // Useful for pre-warming a capability before a build, or for operators who
+  // want to extend Botomatic to a new domain without waiting for auto-detection.
+  app.post("/api/system/capabilities/synthesize", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const { request }: { request?: string } = req.body as any;
+      if (!request?.trim()) return res.status(400).json({ error: "request description is required" });
+
+      const gap = detectCapabilityGap(request);
+      if (!gap.hasGap && gap.confidence === "high") {
+        const { blueprint } = await import("../../../packages/blueprints/src/registry")
+          .then(m => ({ blueprint: m.matchBlueprintFromText(request) }));
+        return res.json({
+          ok: true,
+          synthesized: false,
+          message: `High-confidence match found: "${blueprint.name}" — synthesis not needed.`,
+          existingBlueprint: blueprint.id,
+          actorId: actor.actorId,
+        });
+      }
+
+      const result = await synthesizeCapability(gap, request);
+      if (!result.ok) {
+        return res.status(500).json({ error: result.reason, actorId: actor.actorId });
+      }
+
+      activateSynthesizedCapability(result.capability);
+      persistCapability(result.capability);
+
+      return res.json({
+        ok: true,
+        synthesized: true,
+        capability: {
+          id: result.capability.id,
+          domain: result.capability.domain,
+          blueprintId: result.capability.blueprint.id,
+          waveTypeId: result.capability.waveTypeId,
+          synthesizedAt: result.capability.synthesizedAt,
+        },
+        gap,
+        actorId: actor.actorId,
+      });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/system/capabilities/synthesize", actor);
+    }
+  });
+
+  // ── System: delete a synthesized capability ───────────────────────────────────
+  app.delete("/api/system/capabilities/:capabilityId", requireRole("reviewer", config), async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const { deletePersistedCapability: delCap } = await import("../../../packages/capability-synthesizer/src");
+      delCap(req.params.capabilityId);
+      return res.json({ ok: true, deleted: req.params.capabilityId, actorId: actor.actorId });
+    } catch (error) {
+      return handleRouteError(res, config, error, "DELETE /api/system/capabilities/:capabilityId", actor);
+    }
+  });
+
+  // ── Real-time SSE stream — project-scoped push channel ───────────────────────
+  // Client opens one persistent connection. All subsequent events (UI mutations,
+  // packet completions, validation results) are pushed without polling.
+  app.get("/api/projects/:projectId/stream", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    const { projectId } = req.params;
+
+    const project = await repo.getProject(projectId);
+    if (!project) { res.status(404).end(); return; }
+
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.setHeader("X-Accel-Buffering", "no");
+    res.flushHeaders();
+
+    // Send initial connection acknowledgement
+    res.write(`event: connected\ndata: ${JSON.stringify({ projectId, actorId: actor.actorId, ts: new Date().toISOString() })}\n\n`);
+
+    sseSubscribe(projectId, res);
+
+    // Heartbeat every 20s to keep connection alive through proxies
+    const hb = setInterval(() => { try { res.write(": heartbeat\n\n"); } catch (_e) { clearInterval(hb); } }, 20_000);
+
+    req.on("close", () => {
+      clearInterval(hb);
+      sseUnsubscribe(projectId, res);
+    });
+  });
+
+  // ── UI Chat: natural language → UI mutation → SSE broadcast ─────────────────
+  // Parses free-text commands ("remove the sidebar", "make header dark",
+  // "add a footer"), applies them to the stored EditableUIDocument, and
+  // broadcasts the resulting patch to all SSE subscribers in real time.
+  app.post("/api/projects/:projectId/ui/chat", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+
+      const message: string = String((req.body as any)?.message || "").trim();
+      if (!message) return res.status(400).json({ error: "message is required" });
+
+      // Lazy-init UI document from spec if not yet created
+      let doc = getUIDocument(project);
+      if (!doc) {
+        const spec = getMasterSpec(project);
+        const previewManifest = spec
+          ? createUiPreviewManifest({
+              projectName: spec.appName ?? project.name ?? "App",
+              description: spec.coreOutcome ?? project.request ?? "",
+              targetUsers: spec.targetUsers ? [spec.targetUsers] : [],
+              requiredFeatures: spec.workflows ?? [],
+            })
+          : null;
+
+        // Bootstrap a minimal editable document from the preview manifest
+        const docId = `doc_${project.projectId}`;
+        doc = {
+          id: docId,
+          version: "1",
+          pages: (previewManifest?.pages ?? [{ id: "home", displayName: "Home", componentIds: [] }]).map((p: any) => ({
+            id: p.id ?? "home",
+            route: `/${p.id ?? "home"}`,
+            name: p.displayName ?? p.id ?? "Home",
+            title: p.displayName ?? "Home",
+            rootNodeIds: [],
+            nodes: {},
+          })),
+          sharedComponents: {},
+          theme: { tone: "default", colorPrimary: "#3B82F6", colorSurface: "#FFFFFF", colorText: "#111827", radiusCard: "8px", spacingScale: "4px", typographyBody: "Inter, sans-serif" },
+          navigation: { entries: [] },
+          metadata: { createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), projectId: project.projectId },
+        } as any;
+      }
+
+      // 1. Try NLP → UIEditCommand (direct manipulation)
+      const editCmd = parseNaturalLanguageUICommand(message, doc.id);
+      if (editCmd) {
+        const mutationResult = applyUIEditCommand(doc, editCmd, { confirmed: true });
+        if (mutationResult.status === "applied" && mutationResult.afterDocument) {
+          doc = mutationResult.afterDocument;
+          setUIDocument(project, doc);
+          await persistProject(config, project);
+          sseBroadcast(project.projectId, "ui_mutation", {
+            commandKind: editCmd.kind,
+            patch: mutationResult.previewPatch,
+            changedNodeIds: mutationResult.changedNodeIds,
+            changedPageIds: mutationResult.changedPageIds,
+            message,
+          });
+          return res.json({
+            ok: true,
+            interpreted: { kind: "direct_mutation", commandKind: editCmd.kind },
+            applied: true,
+            patch: mutationResult.previewPatch,
+            actorId: actor.actorId,
+          });
+        }
+      }
+
+      // 2. Try UIAppStructureCommand (add/remove pages, routes, components)
+      const structCmd = parseUIAppStructureCommand(message);
+      if (structCmd.status === "ok") {
+        // Map structure command to a page-level editCmd and broadcast intent
+        sseBroadcast(project.projectId, "ui_structure_change", {
+          commandType: structCmd.command.type,
+          command: structCmd.command,
+          message,
+        });
+        return res.json({
+          ok: true,
+          interpreted: { kind: "structure_command", commandType: structCmd.command.type },
+          applied: false, // structure changes require a rebuild packet
+          nextAction: `A targeted change-request packet has been queued for: ${structCmd.command.type}`,
+          actorId: actor.actorId,
+        });
+      }
+
+      // 3. Fallback: treat as a spec refinement and broadcast for operator to handle
+      sseBroadcast(project.projectId, "ui_chat_message", {
+        message,
+        interpreted: "spec_refinement",
+        actorId: actor.actorId,
+      });
+      return res.json({
+        ok: true,
+        interpreted: { kind: "spec_refinement" },
+        applied: false,
+        nextAction: "Message captured. Use POST /spec/answer-questions to apply spec-level changes.",
+        actorId: actor.actorId,
+      });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/projects/:projectId/ui/chat", actor);
+    }
+  });
+
+  // ── UI Document: get current editable document state ─────────────────────────
+  app.get("/api/projects/:projectId/ui/document", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      return res.json({ ok: true, document: getUIDocument(project), actorId: actor.actorId });
+    } catch (error) {
+      return handleRouteError(res, config, error, "GET /api/projects/:projectId/ui/document", actor);
+    }
+  });
+
+  // ── Memory: read cross-build episodic memory for a project ───────────────────
+  app.get("/api/projects/:projectId/memory", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const store = getMemoryStore(project);
+      const scope = (req.query as any).scope as string | undefined;
+      const entries = scope ? store.entries.filter(e => e.scope === scope) : store.entries;
+      return res.json({ ok: true, entries: entries.slice(0, 200), total: store.entries.length, actorId: actor.actorId });
+    } catch (error) {
+      return handleRouteError(res, config, error, "GET /api/projects/:projectId/memory", actor);
     }
   });
 

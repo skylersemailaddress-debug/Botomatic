@@ -1,5 +1,20 @@
 import { ExecuteRequest } from "./types.js";
 
+// ── Synthesized capability registry (runtime-loaded) ─────────────────────────
+// Populated by the capability-synthesizer package when new domains are detected.
+// Keyed by waveTypeId matching what detectWaveType() returns for the domain.
+const synthesizedConstraints = new Map<string, string>();
+const synthesizedWaveContexts = new Map<string, { preamble: string; instructions: string; fileHints: string }>();
+
+export function registerSynthesizedDomainPrompts(
+  waveTypeId: string,
+  constraints: string,
+  waveContext: { preamble: string; instructions: string; fileHints: string }
+): void {
+  synthesizedConstraints.set(waveTypeId, constraints);
+  synthesizedWaveContexts.set(waveTypeId, waveContext);
+}
+
 export type WaveType =
   | "repo_layout"
   | "api_schema"
@@ -17,6 +32,13 @@ export type WaveType =
   | "roblox_game"
   | "unity_steam_game"
   | "godot_game"
+  | "react_native_mobile"
+  | "flutter_mobile"
+  | "electron_desktop"
+  | "tauri_desktop"
+  | "ios_swift"
+  | "android_kotlin"
+  | "dotnet_maui"
   | "generic";
 
 export function detectWaveType(packetId: string, goal: string): WaveType {
@@ -37,6 +59,13 @@ export function detectWaveType(packetId: string, goal: string): WaveType {
   if (/roblox|luau|datastore|remoteevent|robloxstudio/.test(id)) return "roblox_game";
   if (/unity|csharp|steamworks|steam.?game|godot.*steam|steam.*godot/.test(id)) return "unity_steam_game";
   if (/godot|gdscript|godot.?game/.test(id)) return "godot_game";
+  if (/react.?native|expo|eas.?build|rn.?app/.test(id)) return "react_native_mobile";
+  if (/flutter|dart|riverpod|go_router/.test(id)) return "flutter_mobile";
+  if (/electron|ipc.?main|context.?bridge|electron.?builder/.test(id)) return "electron_desktop";
+  if (/tauri|tauri.?command|cargo.*tauri/.test(id)) return "tauri_desktop";
+  if (/swift|swiftui|xcode|uikit|appkit|ios.?app/.test(id)) return "ios_swift";
+  if (/kotlin|jetpack.?compose|android|gradle.*android/.test(id)) return "android_kotlin";
+  if (/maui|dotnet.?maui|xamarin|csharp.*mobile/.test(id)) return "dotnet_maui";
   return "generic";
 }
 
@@ -217,6 +246,90 @@ const DOMAIN_CONSTRAINTS: Partial<Record<WaveType, string>> = {
 - Retry: support max 3 retries with exponential backoff (1s, 2s, 4s). Track retryCount on each job.
 - /queue/status endpoint: return {queued, running, succeeded, failed, total} counts.`,
 
+  react_native_mobile: `
+## REACT NATIVE / EXPO RULES (non-negotiable):
+- Framework: Expo managed workflow with EAS Build — not bare React Native unless native modules explicitly required.
+- Navigation: React Navigation 6 (Stack + Bottom Tabs). Always wrap app in NavigationContainer at root.
+- Auth tokens: ALWAYS use expo-secure-store — NEVER AsyncStorage for sensitive data.
+- Environment: all API URLs and keys via app.config.ts (extra.apiBaseUrl) — never hardcoded.
+- TypeScript: strict mode. All components must be typed with React.FC<Props> or named function with typed props.
+- Styling: StyleSheet.create() for styles — never inline objects in JSX (performance).
+- Platform: check Platform.OS for platform-specific behaviour. Use Platform.select() for style variants.
+- Push notifications: expo-notifications for token registration and received handler. Always request permissions before subscribing.
+- Error handling: wrap navigation screens in ErrorBoundary. Every data fetch must handle loading/error/empty states.`,
+
+  flutter_mobile: `
+## FLUTTER / DART RULES (non-negotiable):
+- Language: Dart (latest stable). No null safety violations — all fields must be non-nullable or explicitly nullable.
+- State management: Riverpod 2 (ref.watch / ref.read / AsyncNotifier). No Provider, GetX, or setState for business logic.
+- Navigation: go_router with typed routes. Define routes in a single router.dart file.
+- HTTP: dio package with Interceptor for auth token injection (Bearer header). Throw DioException on non-2xx.
+- Secure storage: flutter_secure_storage for tokens — never SharedPreferences for sensitive data.
+- Data classes: use freezed + json_serializable. Run build_runner before committing. No manual copyWith.
+- Async: use async/await with try/catch. NEVER use Future.then() chains.
+- Logging: use logger package (Logger class) — no print() calls in production.
+- Images: use CachedNetworkImage for remote images — never Image.network directly.`,
+
+  electron_desktop: `
+## ELECTRON RULES (non-negotiable):
+- Security: contextIsolation: true, nodeIntegration: false, sandbox: true in ALL BrowserWindow configs.
+- IPC: ALL main↔renderer communication via contextBridge.exposeInMainWorld in preload.ts. No direct require('electron') in renderer.
+- Build: Vite for renderer, electron-builder for packaging. NEVER webpack unless specifically required.
+- Settings: electron-store for all app settings persistence. NEVER localStorage for settings.
+- Paths: use app.getPath('userData') for user data — NEVER hardcode absolute paths.
+- Auto-update: electron-updater with GitHub Releases. Implement update-available and update-downloaded events.
+- Logging: electron-log — configure to write to file AND console. Log app lifecycle events.
+- Main process errors: wrap all ipcMain.handle() in try/catch and return structured { error } on failure.
+- CSP: set Content-Security-Policy in main process BrowserWindow webContents headers.`,
+
+  tauri_desktop: `
+## TAURI RULES (non-negotiable):
+- Permissions: ONLY declare the capabilities you need in tauri.conf.json allowlist — never wildcard.
+- Commands: ALL frontend→backend calls use invoke('command_name', args) — never direct filesystem/shell access from renderer.
+- Rust handlers: ALL #[tauri::command] functions must return Result<T, String>. Use ? operator, never .unwrap() in production.
+- Async Rust: use async fn for all I/O commands. Mark with #[tauri::command] + async fn.
+- JS API: use @tauri-apps/api for all Tauri-specific APIs. No Node.js require() in renderer.
+- Plugins: use official Tauri plugins (tauri-plugin-fs, tauri-plugin-store, tauri-plugin-notification) — not raw OS calls.
+- Error propagation: Rust errors convert to String via .map_err(|e| e.to_string()) before returning to frontend.
+- Build: cargo check before tauri build. Fix ALL warnings in Rust code.`,
+
+  ios_swift: `
+## IOS SWIFT / SWIFTUI RULES (non-negotiable):
+- Language: Swift 5.9+. Use SwiftUI for all UI — no UIKit unless platform integration requires it.
+- Concurrency: async/await with Task and Actor — NO DispatchQueue.main.async or completion handlers.
+- Storage: Keychain (via KeychainAccess package) for auth tokens — NEVER UserDefaults for sensitive data.
+- Networking: URLSession with async/await. Codable + JSONDecoder for responses. Never use Alamofire.
+- Dependencies: Swift Package Manager only — no CocoaPods or Carthage.
+- Architecture: MVVM with @Observable (iOS 17+) or @ObservedObject / @StateObject for older targets.
+- Navigation: NavigationStack with typed NavigationPath — no NavigationView (deprecated iOS 16+).
+- Error handling: throw/catch structured errors conforming to LocalizedError — never force-unwrap optionals.
+- Sign in with Apple: REQUIRED for any app with third-party login (App Store rule).`,
+
+  android_kotlin: `
+## ANDROID KOTLIN / JETPACK COMPOSE RULES (non-negotiable):
+- Language: Kotlin. Jetpack Compose for all UI — no XML layouts.
+- Architecture: MVVM with ViewModel + StateFlow. Use collectAsStateWithLifecycle() in composables.
+- Coroutines: viewModelScope for ViewModel-launched coroutines. Dispatchers.IO for network/DB, Dispatchers.Main for UI.
+- DI: Hilt (Dagger Hilt) for all dependency injection. @HiltViewModel for ViewModels.
+- Navigation: Navigation Compose with type-safe routes (Kotlin Sealed class route definitions).
+- HTTP: Retrofit2 + OkHttp3 + kotlinx.serialization. Inject Retrofit via Hilt module.
+- Storage: EncryptedSharedPreferences or Android Keystore for tokens — NEVER plain SharedPreferences for auth.
+- Settings: Jetpack DataStore (Preferences) — not SharedPreferences.
+- Build: ./gradlew build must pass. Target SDK must match current Google Play requirements (API 34+).
+- Permissions: declare all permissions in AndroidManifest.xml. Request dangerous permissions at runtime.`,
+
+  dotnet_maui: `
+## .NET MAUI RULES (non-negotiable):
+- Language: C# 12 / .NET 8 LTS. XAML or C# Markup for UI — prefer C# Markup for complex views.
+- Architecture: MVVM via CommunityToolkit.Mvvm (ObservableObject, RelayCommand, [ObservableProperty]).
+- DI: Microsoft.Extensions.DependencyInjection registered in MauiProgram.cs. Inject via constructor.
+- Navigation: Shell URI-based navigation. Register all routes in AppShell.xaml or Shell.Current.GoToAsync().
+- HTTP: HttpClient with named client registered in DI, with BaseAddress and DelegatingHandler for auth.
+- Secure storage: SecureStorage.SetAsync() for tokens — NEVER Preferences for sensitive data.
+- Platform-specific: use #if WINDOWS, #if ANDROID, #if IOS guards or partial class platform implementations.
+- Build: dotnet build must succeed for all target frameworks. Warnings-as-errors for security-sensitive code.
+- Entitlements: declare all permissions in each platform manifest (AndroidManifest.xml, Info.plist, Package.appxmanifest).`,
+
   roblox_game: `
 ## ROBLOX / LUAU RULES (non-negotiable):
 - Language: Luau ONLY. No TypeScript, no Node.js, no external npm packages.
@@ -262,9 +375,14 @@ export function buildUserPrompt(req: ExecuteRequest, waveType: WaveType): string
     ? `\nConstraints:\n${constraints.map(c => `- ${c}`).join("\n")}`
     : "";
 
-  const waveContext = WAVE_CONTEXT[waveType] ?? WAVE_CONTEXT.generic;
+  // Static registry first, synthesized runtime registry as fallback extension
+  const waveContext = WAVE_CONTEXT[waveType]
+    ?? synthesizedWaveContexts.get(waveType)
+    ?? WAVE_CONTEXT.generic;
   const crossPacketCtx = buildCrossPacketContext(req);
-  const domainConstraints = DOMAIN_CONSTRAINTS[waveType] ?? "";
+  const domainConstraints = DOMAIN_CONSTRAINTS[waveType as keyof typeof DOMAIN_CONSTRAINTS]
+    ?? synthesizedConstraints.get(waveType)
+    ?? "";
 
   return `${waveContext.preamble}
 
@@ -454,6 +572,83 @@ const WAVE_CONTEXT: Record<WaveType, { preamble: string; instructions: string; f
 - SaveManager implementation — FileAccess + JSON, save to user://save.json
 - InputMap actions referenced by string name, never hardcoded key constants`,
     fileHints: `Required files: autoloads/GameManager.gd, autoloads/SaveManager.gd, scenes/<feature>/<Feature>.gd, resources/<Type>.gd, export_presets.cfg`,
+  },
+
+  react_native_mobile: {
+    preamble: "Generate a React Native / Expo screen or feature.",
+    instructions: `Create the requested mobile feature including:
+- Screen component (src/screens/<Name>Screen.tsx) — typed React.FC with navigation props
+- Navigation types (src/navigation/types.ts) — extend RootStackParamList
+- API service hook (src/hooks/use<Name>.ts) — React Query or SWR for data fetching
+- Component(s) (src/components/<Name>/) — reusable, typed with StyleSheet.create styles
+- Expo config update (app.config.ts) — add any new permissions or plugins needed`,
+    fileHints: `Required files: src/screens/<Name>Screen.tsx, src/hooks/use<Name>.ts, src/components/<Name>.tsx, app.config.ts`,
+  },
+
+  flutter_mobile: {
+    preamble: "Generate a Flutter / Dart feature using Riverpod and go_router.",
+    instructions: `Create the requested Flutter feature including:
+- Screen widget (lib/screens/<name>_screen.dart) — stateless, uses Consumer/ref.watch
+- Provider/Notifier (lib/providers/<name>_provider.dart) — AsyncNotifier or Notifier
+- Model (lib/models/<name>.dart) — freezed data class with json_serializable
+- Repository (lib/repositories/<name>_repository.dart) — dio-based API calls
+- Route registration (lib/router.dart) — add route to existing go_router config`,
+    fileHints: `Required files: lib/screens/<name>_screen.dart, lib/providers/<name>_provider.dart, lib/models/<name>.dart, lib/repositories/<name>_repository.dart`,
+  },
+
+  electron_desktop: {
+    preamble: "Generate an Electron desktop app feature with IPC bridge.",
+    instructions: `Create the requested desktop feature including:
+- Main process handler (src/main/<feature>.ts) — ipcMain.handle() implementation
+- Preload bridge (src/preload/<feature>.ts) — contextBridge.exposeInMainWorld API
+- Renderer component (src/renderer/components/<Feature>.tsx) — React + TypeScript UI
+- Renderer hook (src/renderer/hooks/use<Feature>.ts) — calls preload bridge methods
+- electron-store schema update (src/main/store.ts) — add any new persisted settings`,
+    fileHints: `Required files: src/main/<feature>.ts, src/preload/<feature>.ts, src/renderer/components/<Feature>.tsx, src/renderer/hooks/use<Feature>.ts`,
+  },
+
+  tauri_desktop: {
+    preamble: "Generate a Tauri desktop feature with Rust command and React frontend.",
+    instructions: `Create the requested Tauri feature including:
+- Rust command (src-tauri/src/commands/<feature>.rs) — async #[tauri::command] returning Result<T, String>
+- Rust module registration (src-tauri/src/main.rs) — add command to .invoke_handler(tauri::generate_handler![...])
+- TypeScript API wrapper (src/lib/<feature>.ts) — typed invoke() calls matching Rust command signatures
+- React component (src/components/<Feature>.tsx) — UI calling the TypeScript wrapper
+- Capability update (src-tauri/capabilities/default.json) — add any new required permissions`,
+    fileHints: `Required files: src-tauri/src/commands/<feature>.rs, src/lib/<feature>.ts, src/components/<Feature>.tsx`,
+  },
+
+  ios_swift: {
+    preamble: "Generate a native iOS SwiftUI feature.",
+    instructions: `Create the requested iOS feature including:
+- View (Sources/<AppName>/Views/<Feature>View.swift) — SwiftUI View with @Observable ViewModel
+- ViewModel (Sources/<AppName>/ViewModels/<Feature>ViewModel.swift) — @Observable class, async methods
+- Model (Sources/<AppName>/Models/<Feature>.swift) — Codable struct
+- Service (Sources/<AppName>/Services/<Feature>Service.swift) — URLSession async/await API calls
+- Navigation route (Sources/<AppName>/Navigation/AppRouter.swift) — add NavigationPath destination`,
+    fileHints: `Required files: Views/<Feature>View.swift, ViewModels/<Feature>ViewModel.swift, Models/<Feature>.swift, Services/<Feature>Service.swift`,
+  },
+
+  android_kotlin: {
+    preamble: "Generate a native Android Jetpack Compose feature in Kotlin.",
+    instructions: `Create the requested Android feature including:
+- Screen composable (app/src/main/java/.../ui/<feature>/<Feature>Screen.kt) — @Composable with ViewModel
+- ViewModel (app/src/main/java/.../ui/<feature>/<Feature>ViewModel.kt) — HiltViewModel, StateFlow<UiState>
+- Repository (app/src/main/java/.../data/<feature>/<Feature>Repository.kt) — Retrofit API + Room DAO
+- API interface (app/src/main/java/.../data/remote/<Feature>Api.kt) — Retrofit @GET/@POST interface
+- Hilt module (app/src/main/java/.../di/<Feature>Module.kt) — @Provides for repository and API`,
+    fileHints: `Required files: ui/<feature>/<Feature>Screen.kt, ui/<feature>/<Feature>ViewModel.kt, data/<feature>/<Feature>Repository.kt, di/<Feature>Module.kt`,
+  },
+
+  dotnet_maui: {
+    preamble: "Generate a .NET MAUI cross-platform feature in C#.",
+    instructions: `Create the requested MAUI feature including:
+- Page (Pages/<Feature>Page.xaml + Pages/<Feature>Page.xaml.cs) — XAML page with code-behind
+- ViewModel (ViewModels/<Feature>ViewModel.cs) — ObservableObject, [RelayCommand], [ObservableProperty]
+- Service interface (Services/I<Feature>Service.cs) + implementation (Services/<Feature>Service.cs)
+- Model (Models/<Feature>.cs) — C# record or class with JSON serialization attributes
+- DI registration (MauiProgram.cs) — builder.Services.AddSingleton<I<Feature>Service, <Feature>Service>()`,
+    fileHints: `Required files: Pages/<Feature>Page.xaml, ViewModels/<Feature>ViewModel.cs, Services/<Feature>Service.cs, Models/<Feature>.cs`,
   },
 
   generic: {

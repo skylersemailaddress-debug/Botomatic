@@ -28,6 +28,19 @@ import { campaignOps } from "./blueprints/campaignOps";
 import { robloxGame } from "./blueprints/robloxGame";
 import { steamUnityGame } from "./blueprints/steamUnityGame";
 import { godotGame } from "./blueprints/godotGame";
+import { reactNativeApp } from "./blueprints/reactNativeApp";
+import { flutterApp } from "./blueprints/flutterApp";
+import { electronApp } from "./blueprints/electronApp";
+import { tauriApp } from "./blueprints/tauriApp";
+import { iosSwiftApp } from "./blueprints/iosSwiftApp";
+import { androidKotlinApp } from "./blueprints/androidKotlinApp";
+import { dotnetMauiApp } from "./blueprints/dotnetMauiApp";
+
+// ── Runtime-synthesized blueprints ────────────────────────────────────────────
+// Populated at startup from synthesized_capabilities.json and extended at
+// runtime whenever the capability synthesizer creates a new blueprint.
+// Never sorted into the static array — kept separate for auditability.
+const synthesizedBlueprints: Blueprint[] = [];
 
 export const blueprintRegistry: Blueprint[] = [
   marketingWebsite,
@@ -59,22 +72,52 @@ export const blueprintRegistry: Blueprint[] = [
   robloxGame,
   steamUnityGame,
   godotGame,
+  reactNativeApp,
+  flutterApp,
+  electronApp,
+  tauriApp,
+  iosSwiftApp,
+  androidKotlinApp,
+  dotnetMauiApp,
 ];
 
 export function getBlueprintById(id: string): Blueprint | undefined {
-  return blueprintRegistry.find((b) => b.id === id);
+  return [...blueprintRegistry, ...synthesizedBlueprints].find((b) => b.id === id);
 }
 
+export type BlueprintMatch = { blueprint: Blueprint; score: number; isSynthesized: boolean };
+
 export function matchBlueprintFromText(text: string): Blueprint {
+  return matchBlueprintWithScore(text).blueprint;
+}
+
+export function matchBlueprintWithScore(text: string): BlueprintMatch {
   const lower = text.toLowerCase();
-  const candidates = blueprintRegistry.map((b) => {
-    const score = [b.id, b.name, b.category, b.description].join(" ").toLowerCase().split(/\s+/).reduce((acc, token) => {
-      if (!token || token.length < 3) return acc;
-      return lower.includes(token) ? acc + 1 : acc;
-    }, 0);
+  const all = [...blueprintRegistry, ...synthesizedBlueprints];
+
+  const candidates = all.map((b) => {
+    const score = [b.id, b.name, b.category, b.description].join(" ")
+      .toLowerCase().split(/\s+/)
+      .reduce((acc, token) => (!token || token.length < 3 ? acc : lower.includes(token) ? acc + 1 : acc), 0);
     return { b, score };
   });
 
   candidates.sort((a, b) => b.score - a.score);
-  return candidates[0]?.b || saasDashboard;
+  const best = candidates[0];
+  return {
+    blueprint: best?.b || saasDashboard,
+    score: best?.score ?? 0,
+    isSynthesized: synthesizedBlueprints.includes(best?.b),
+  };
+}
+
+// Register a runtime-synthesized blueprint (in-memory, no file write here)
+export function registerSynthesizedBlueprint(blueprint: Blueprint): void {
+  const idx = synthesizedBlueprints.findIndex((b) => b.id === blueprint.id);
+  if (idx >= 0) synthesizedBlueprints[idx] = blueprint;
+  else synthesizedBlueprints.push(blueprint);
+}
+
+export function listSynthesizedBlueprints(): Blueprint[] {
+  return [...synthesizedBlueprints];
 }
