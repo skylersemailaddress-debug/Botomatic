@@ -1,0 +1,1526 @@
+{
+  "missionId": "mission_benchmark_nexus_v1_e337aa988d64",
+  "projectId": "benchmark_nexus_v1",
+  "sourceFile": "packages/mission-orchestrator/src/fixtures/nexus.ts",
+  "sourceHash": "1d2feb6e3ae961b6350f8bb3ccc5f3477d87a3855e4cf22f4f35a1c092b7bd97",
+  "specHash": "e337aa988d64bbae975b7a321827878a46170d6e9c383d176ffeaa5dce0ddeb9",
+  "title": "NEXUS CANONICAL MASTER BUILD SPEC — Benchmark Fixture",
+  "description": "Mission compiled from packages/mission-orchestrator/src/fixtures/nexus.ts — 12 waves, 38 packets",
+  "waves": [
+    {
+      "waveId": "repo_layout",
+      "missionId": "mission_benchmark_nexus_v1_e337aa988d64",
+      "index": 0,
+      "name": "Repo Layout + Scaffold",
+      "description": "Generate monorepo structure, workspace config, tsconfig, shared types, and dev tooling.",
+      "dependsOn": [],
+      "packets": [
+        {
+          "packetId": "repo_layout-p1",
+          "waveId": "repo_layout",
+          "goal": "Scaffold monorepo with packages/, apps/, and root config",
+          "scope": [
+            "package.json",
+            "tsconfig.json"
+          ],
+          "acceptanceCriteria": [
+            "monorepo builds",
+            "workspaces resolve",
+            "tsconfig compiles"
+          ],
+          "riskLevel": "low"
+        },
+        {
+          "packetId": "repo_layout-p2",
+          "waveId": "repo_layout",
+          "goal": "Define shared type contracts in packages/core-contracts/",
+          "scope": [
+            "packages/core-contracts/"
+          ],
+          "acceptanceCriteria": [
+            "monorepo builds",
+            "workspaces resolve",
+            "tsconfig compiles"
+          ],
+          "riskLevel": "low"
+        },
+        {
+          "packetId": "repo_layout-p3",
+          "waveId": "repo_layout",
+          "goal": "Verify clean build from fresh clone",
+          "scope": [
+            "*"
+          ],
+          "acceptanceCriteria": [
+            "monorepo builds",
+            "workspaces resolve",
+            "tsconfig compiles"
+          ],
+          "riskLevel": "low"
+        }
+      ],
+      "requiredValidators": [
+        "validate:spec-contract",
+        "validate:repo-structure"
+      ],
+      "evidenceRequirements": [
+        "repo-structure-proof",
+        "build-pass"
+      ],
+      "acceptanceCriteria": [
+        "monorepo builds",
+        "workspaces resolve",
+        "tsconfig compiles"
+      ],
+      "status": "proven",
+      "evidence": [
+        {
+          "evidenceId": "ev_repo_layout_dryrun",
+          "waveId": "repo_layout",
+          "evidenceType": "checkpoint",
+          "passed": true,
+          "detail": "Dry-run: wave \"Repo Layout + Scaffold\" would execute 3 packets",
+          "capturedAt": "2026-05-04T17:50:06.169Z",
+          "artifactId": "artifact_dryrun_repo_layout_1777917006169",
+          "workspacePath": "/tmp/mission-dryrun/mission_benchmark_nexus_v1_e337aa988d64/repo_layout",
+          "contentHash": "dryrun_hash_repo_layout"
+        }
+      ],
+      "waveType": "repo_layout",
+      "provenAt": "2026-05-04T17:50:06.170Z"
+    },
+    {
+      "waveId": "api_schema",
+      "missionId": "mission_benchmark_nexus_v1_e337aa988d64",
+      "index": 1,
+      "name": "API + Data Schema",
+      "description": "Define all API route contracts, data model schemas, and database migrations.",
+      "dependsOn": [
+        "repo_layout"
+      ],
+      "packets": [
+        {
+          "packetId": "api_schema-p1",
+          "waveId": "api_schema",
+          "goal": "Define canonical data model entities and relationships",
+          "scope": [
+            "packages/core-contracts/src/"
+          ],
+          "acceptanceCriteria": [
+            "all entities defined",
+            "migrations apply cleanly",
+            "no schema gaps"
+          ],
+          "riskLevel": "low"
+        },
+        {
+          "packetId": "api_schema-p2",
+          "waveId": "api_schema",
+          "goal": "Generate database migration files for all entities",
+          "scope": [
+            "migrations/"
+          ],
+          "acceptanceCriteria": [
+            "all entities defined",
+            "migrations apply cleanly",
+            "no schema gaps"
+          ],
+          "riskLevel": "medium"
+        },
+        {
+          "packetId": "api_schema-p3",
+          "waveId": "api_schema",
+          "goal": "Define all API route contracts with request/response/auth/error",
+          "scope": [
+            "packages/core-contracts/src/apiRoutes.ts"
+          ],
+          "acceptanceCriteria": [
+            "all entities defined",
+            "migrations apply cleanly",
+            "no schema gaps"
+          ],
+          "riskLevel": "low"
+        }
+      ],
+      "requiredValidators": [
+        "validate:api-contracts",
+        "validate:data-model"
+      ],
+      "evidenceRequirements": [
+        "schema-proof",
+        "migration-proof"
+      ],
+      "acceptanceCriteria": [
+        "all entities defined",
+        "migrations apply cleanly",
+        "no schema gaps"
+      ],
+      "status": "proven",
+      "evidence": [
+        {
+          "evidenceId": "ev_api_schema_dryrun",
+          "waveId": "api_schema",
+          "evidenceType": "checkpoint",
+          "passed": true,
+          "detail": "Dry-run: wave \"API + Data Schema\" would execute 3 packets",
+          "capturedAt": "2026-05-04T17:50:06.171Z",
+          "artifactId": "artifact_dryrun_api_schema_1777917006171",
+          "workspacePath": "/tmp/mission-dryrun/mission_benchmark_nexus_v1_e337aa988d64/api_schema",
+          "contentHash": "dryrun_hash_api_schema"
+        }
+      ],
+      "waveType": "api_schema",
+      "provenAt": "2026-05-04T17:50:06.171Z"
+    },
+    {
+      "waveId": "spec_compiler",
+      "missionId": "mission_benchmark_nexus_v1_e337aa988d64",
+      "index": 2,
+      "name": "DAS / IBC Spec Compiler",
+      "description": "Build the deterministic app spec compiler that converts raw input into DAS and IBC.",
+      "dependsOn": [
+        "repo_layout",
+        "api_schema"
+      ],
+      "packets": [
+        {
+          "packetId": "spec_compiler-p1",
+          "waveId": "spec_compiler",
+          "goal": "Implement spec extraction and normalization pipeline",
+          "scope": [
+            "packages/spec-engine/src/specAnalyzer.ts"
+          ],
+          "acceptanceCriteria": [
+            "same input → same specHash",
+            "missing roles → blocked decision",
+            "low-risk gap → assumption recorded"
+          ],
+          "riskLevel": "medium"
+        },
+        {
+          "packetId": "spec_compiler-p2",
+          "waveId": "spec_compiler",
+          "goal": "Implement assumption ledger and blocked decision engine",
+          "scope": [
+            "packages/spec-engine/src/assumptionLedger.ts"
+          ],
+          "acceptanceCriteria": [
+            "same input → same specHash",
+            "missing roles → blocked decision",
+            "low-risk gap → assumption recorded"
+          ],
+          "riskLevel": "low"
+        },
+        {
+          "packetId": "spec_compiler-p3",
+          "waveId": "spec_compiler",
+          "goal": "Implement specHash determinism — same input produces same hash",
+          "scope": [
+            "packages/spec-engine/src/"
+          ],
+          "acceptanceCriteria": [
+            "same input → same specHash",
+            "missing roles → blocked decision",
+            "low-risk gap → assumption recorded"
+          ],
+          "riskLevel": "high"
+        },
+        {
+          "packetId": "spec_compiler-p4",
+          "waveId": "spec_compiler",
+          "goal": "Implement Immutable Build Contract generator",
+          "scope": [
+            "packages/spec-engine/src/buildContract.ts"
+          ],
+          "acceptanceCriteria": [
+            "same input → same specHash",
+            "missing roles → blocked decision",
+            "low-risk gap → assumption recorded"
+          ],
+          "riskLevel": "medium"
+        }
+      ],
+      "requiredValidators": [
+        "validate:spec-contract",
+        "validate:spec-completeness"
+      ],
+      "evidenceRequirements": [
+        "spec-compiler-proof",
+        "same-input-same-hash"
+      ],
+      "acceptanceCriteria": [
+        "same input → same specHash",
+        "missing roles → blocked decision",
+        "low-risk gap → assumption recorded"
+      ],
+      "status": "proven",
+      "evidence": [
+        {
+          "evidenceId": "ev_spec_compiler_dryrun",
+          "waveId": "spec_compiler",
+          "evidenceType": "checkpoint",
+          "passed": true,
+          "detail": "Dry-run: wave \"DAS / IBC Spec Compiler\" would execute 4 packets",
+          "capturedAt": "2026-05-04T17:50:06.172Z",
+          "artifactId": "artifact_dryrun_spec_compiler_1777917006172",
+          "workspacePath": "/tmp/mission-dryrun/mission_benchmark_nexus_v1_e337aa988d64/spec_compiler",
+          "contentHash": "dryrun_hash_spec_compiler"
+        }
+      ],
+      "waveType": "spec_compiler",
+      "provenAt": "2026-05-04T17:50:06.172Z"
+    },
+    {
+      "waveId": "execution_runtime",
+      "missionId": "mission_benchmark_nexus_v1_e337aa988d64",
+      "index": 3,
+      "name": "Execution DAG + Runtime",
+      "description": "Build the job queue, worker system, packet execution, lease, and retry infrastructure.",
+      "dependsOn": [
+        "repo_layout",
+        "api_schema"
+      ],
+      "packets": [
+        {
+          "packetId": "execution_runtime-p1",
+          "waveId": "execution_runtime",
+          "goal": "Implement job queue with claim, lease, and retry semantics",
+          "scope": [
+            "packages/supabase-adapter/src/jobClient.ts"
+          ],
+          "acceptanceCriteria": [
+            "no double execution",
+            "idempotent jobs",
+            "lease expiry retries correctly"
+          ],
+          "riskLevel": "medium"
+        },
+        {
+          "packetId": "execution_runtime-p2",
+          "waveId": "execution_runtime",
+          "goal": "Implement packet worker with execution and status reporting",
+          "scope": [
+            "packages/execution/"
+          ],
+          "acceptanceCriteria": [
+            "no double execution",
+            "idempotent jobs",
+            "lease expiry retries correctly"
+          ],
+          "riskLevel": "medium"
+        },
+        {
+          "packetId": "execution_runtime-p3",
+          "waveId": "execution_runtime",
+          "goal": "Implement execution DAG — topological packet ordering",
+          "scope": [
+            "packages/packet-engine/src/"
+          ],
+          "acceptanceCriteria": [
+            "no double execution",
+            "idempotent jobs",
+            "lease expiry retries correctly"
+          ],
+          "riskLevel": "high"
+        }
+      ],
+      "requiredValidators": [
+        "validate:execution-runtime",
+        "validate:job-idempotency"
+      ],
+      "evidenceRequirements": [
+        "execution-proof",
+        "idempotency-proof"
+      ],
+      "acceptanceCriteria": [
+        "no double execution",
+        "idempotent jobs",
+        "lease expiry retries correctly"
+      ],
+      "status": "proven",
+      "evidence": [
+        {
+          "evidenceId": "ev_execution_runtime_dryrun",
+          "waveId": "execution_runtime",
+          "evidenceType": "checkpoint",
+          "passed": true,
+          "detail": "Dry-run: wave \"Execution DAG + Runtime\" would execute 3 packets",
+          "capturedAt": "2026-05-04T17:50:06.173Z",
+          "artifactId": "artifact_dryrun_execution_runtime_1777917006173",
+          "workspacePath": "/tmp/mission-dryrun/mission_benchmark_nexus_v1_e337aa988d64/execution_runtime",
+          "contentHash": "dryrun_hash_execution_runtime"
+        }
+      ],
+      "waveType": "execution_runtime",
+      "provenAt": "2026-05-04T17:50:06.173Z"
+    },
+    {
+      "waveId": "builder_factory",
+      "missionId": "mission_benchmark_nexus_v1_e337aa988d64",
+      "index": 4,
+      "name": "Builder / Factory Engine",
+      "description": "Build the code synthesis engine that turns packets + blueprints into real working applications.",
+      "dependsOn": [
+        "repo_layout",
+        "api_schema",
+        "spec_compiler",
+        "execution_runtime"
+      ],
+      "packets": [
+        {
+          "packetId": "builder_factory-p1",
+          "waveId": "builder_factory",
+          "goal": "Implement blueprint registry with domain-specific generation rules",
+          "scope": [
+            "packages/blueprints/src/"
+          ],
+          "acceptanceCriteria": [
+            "generated app builds",
+            "generated app runs",
+            "/health returns ok",
+            "no placeholder code"
+          ],
+          "riskLevel": "medium"
+        },
+        {
+          "packetId": "builder_factory-p2",
+          "waveId": "builder_factory",
+          "goal": "Implement real code synthesis — generate working TypeScript from blueprint + DAS",
+          "scope": [
+            "packages/domain-builders/src/"
+          ],
+          "acceptanceCriteria": [
+            "generated app builds",
+            "generated app runs",
+            "/health returns ok",
+            "no placeholder code"
+          ],
+          "riskLevel": "high"
+        },
+        {
+          "packetId": "builder_factory-p3",
+          "waveId": "builder_factory",
+          "goal": "Implement workspace materializer with real file output",
+          "scope": [
+            "apps/orchestrator-api/src/server_app.ts"
+          ],
+          "acceptanceCriteria": [
+            "generated app builds",
+            "generated app runs",
+            "/health returns ok",
+            "no placeholder code"
+          ],
+          "riskLevel": "high"
+        },
+        {
+          "packetId": "builder_factory-p4",
+          "waveId": "builder_factory",
+          "goal": "Prove generated app builds, runs, and passes /health smoke",
+          "scope": [
+            "runtime/generated-apps/"
+          ],
+          "acceptanceCriteria": [
+            "generated app builds",
+            "generated app runs",
+            "/health returns ok",
+            "no placeholder code"
+          ],
+          "riskLevel": "high"
+        }
+      ],
+      "requiredValidators": [
+        "validate:builder-output",
+        "validate:no-placeholders"
+      ],
+      "evidenceRequirements": [
+        "builder-proof",
+        "smoke-proof",
+        "no-placeholder-proof"
+      ],
+      "acceptanceCriteria": [
+        "generated app builds",
+        "generated app runs",
+        "/health returns ok",
+        "no placeholder code"
+      ],
+      "status": "proven",
+      "evidence": [
+        {
+          "evidenceId": "ev_builder_factory_dryrun",
+          "waveId": "builder_factory",
+          "evidenceType": "checkpoint",
+          "passed": true,
+          "detail": "Dry-run: wave \"Builder / Factory Engine\" would execute 4 packets",
+          "capturedAt": "2026-05-04T17:50:06.174Z",
+          "artifactId": "artifact_dryrun_builder_factory_1777917006174",
+          "workspacePath": "/tmp/mission-dryrun/mission_benchmark_nexus_v1_e337aa988d64/builder_factory",
+          "contentHash": "dryrun_hash_builder_factory"
+        }
+      ],
+      "waveType": "builder_factory",
+      "provenAt": "2026-05-04T17:50:06.174Z"
+    },
+    {
+      "waveId": "repair_replay",
+      "missionId": "mission_benchmark_nexus_v1_e337aa988d64",
+      "index": 5,
+      "name": "Repair + Replay Engine",
+      "description": "Build the dirty-repo repair engine with diagnostics, patching, rollback, and replay.",
+      "dependsOn": [
+        "builder_factory"
+      ],
+      "packets": [
+        {
+          "packetId": "repair_replay-p1",
+          "waveId": "repair_replay",
+          "goal": "Implement failure classifier for 5 known failure types",
+          "scope": [
+            "packages/repair-loop/src/"
+          ],
+          "acceptanceCriteria": [
+            "detects 5 failure types",
+            "patches apply cleanly",
+            "rollback restores prior state"
+          ],
+          "riskLevel": "medium"
+        },
+        {
+          "packetId": "repair_replay-p2",
+          "waveId": "repair_replay",
+          "goal": "Implement deterministic patch engine with rollback snapshots",
+          "scope": [
+            "packages/repo-repair/src/"
+          ],
+          "acceptanceCriteria": [
+            "detects 5 failure types",
+            "patches apply cleanly",
+            "rollback restores prior state"
+          ],
+          "riskLevel": "high"
+        },
+        {
+          "packetId": "repair_replay-p3",
+          "waveId": "repair_replay",
+          "goal": "Implement repair replay with idempotency guarantee",
+          "scope": [
+            "packages/repo-repair/src/"
+          ],
+          "acceptanceCriteria": [
+            "detects 5 failure types",
+            "patches apply cleanly",
+            "rollback restores prior state"
+          ],
+          "riskLevel": "medium"
+        }
+      ],
+      "requiredValidators": [
+        "validate:repair-engine",
+        "validate:rollback"
+      ],
+      "evidenceRequirements": [
+        "repair-proof",
+        "rollback-proof"
+      ],
+      "acceptanceCriteria": [
+        "detects 5 failure types",
+        "patches apply cleanly",
+        "rollback restores prior state"
+      ],
+      "status": "proven",
+      "evidence": [
+        {
+          "evidenceId": "ev_repair_replay_dryrun",
+          "waveId": "repair_replay",
+          "evidenceType": "checkpoint",
+          "passed": true,
+          "detail": "Dry-run: wave \"Repair + Replay Engine\" would execute 3 packets",
+          "capturedAt": "2026-05-04T17:50:06.177Z",
+          "artifactId": "artifact_dryrun_repair_replay_1777917006177",
+          "workspacePath": "/tmp/mission-dryrun/mission_benchmark_nexus_v1_e337aa988d64/repair_replay",
+          "contentHash": "dryrun_hash_repair_replay"
+        }
+      ],
+      "waveType": "repair_replay",
+      "provenAt": "2026-05-04T17:50:06.177Z"
+    },
+    {
+      "waveId": "truth_memory",
+      "missionId": "mission_benchmark_nexus_v1_e337aa988d64",
+      "index": 6,
+      "name": "State + Memory Engine",
+      "description": "Build the durable state substrate: persistent state objects, memory tiers, contradiction detection, and continuity guarantees.",
+      "dependsOn": [
+        "repo_layout",
+        "api_schema",
+        "execution_runtime"
+      ],
+      "packets": [
+        {
+          "packetId": "truth_memory-p1",
+          "waveId": "truth_memory",
+          "goal": "Implement persistent state object schema with confidence, status, and conflict resolution",
+          "scope": [
+            "packages/truth-engine/src/"
+          ],
+          "acceptanceCriteria": [
+            "truth objects persist",
+            "contradiction detection fires",
+            "memory influences next action"
+          ],
+          "riskLevel": "medium"
+        },
+        {
+          "packetId": "truth_memory-p2",
+          "waveId": "truth_memory",
+          "goal": "Implement memory tiers with durable storage and retrieval guarantees",
+          "scope": [
+            "packages/memory-engine/src/"
+          ],
+          "acceptanceCriteria": [
+            "truth objects persist",
+            "contradiction detection fires",
+            "memory influences next action"
+          ],
+          "riskLevel": "high"
+        },
+        {
+          "packetId": "truth_memory-p3",
+          "waveId": "truth_memory",
+          "goal": "Prove memory tier influences downstream decisions, not just retrieval",
+          "scope": [
+            "packages/memory-engine/src/"
+          ],
+          "acceptanceCriteria": [
+            "truth objects persist",
+            "contradiction detection fires",
+            "memory influences next action"
+          ],
+          "riskLevel": "high"
+        }
+      ],
+      "requiredValidators": [
+        "validate:truth-engine",
+        "validate:memory-influence"
+      ],
+      "evidenceRequirements": [
+        "truth-proof",
+        "memory-influence-proof"
+      ],
+      "acceptanceCriteria": [
+        "truth objects persist",
+        "contradiction detection fires",
+        "memory influences next action"
+      ],
+      "status": "proven",
+      "evidence": [
+        {
+          "evidenceId": "ev_truth_memory_dryrun",
+          "waveId": "truth_memory",
+          "evidenceType": "checkpoint",
+          "passed": true,
+          "detail": "Dry-run: wave \"State + Memory Engine\" would execute 3 packets",
+          "capturedAt": "2026-05-04T17:50:06.175Z",
+          "artifactId": "artifact_dryrun_truth_memory_1777917006175",
+          "workspacePath": "/tmp/mission-dryrun/mission_benchmark_nexus_v1_e337aa988d64/truth_memory",
+          "contentHash": "dryrun_hash_truth_memory"
+        }
+      ],
+      "waveType": "truth_memory",
+      "provenAt": "2026-05-04T17:50:06.175Z"
+    },
+    {
+      "waveId": "intelligence_shell",
+      "missionId": "mission_benchmark_nexus_v1_e337aa988d64",
+      "index": 7,
+      "name": "Application Shell + Control Interface",
+      "description": "Build the application frontend shell with navigation, core pages, interactive components, and operator control interface.",
+      "dependsOn": [
+        "builder_factory",
+        "truth_memory"
+      ],
+      "packets": [
+        {
+          "packetId": "intelligence_shell-p1",
+          "waveId": "intelligence_shell",
+          "goal": "Implement primary input interface with natural language and structured command support",
+          "scope": [
+            "apps/control-plane/src/components/CommandSpine"
+          ],
+          "acceptanceCriteria": [
+            "shell accepts user input",
+            "control pane shows real state",
+            "core surfaces render correctly"
+          ],
+          "riskLevel": "medium"
+        },
+        {
+          "packetId": "intelligence_shell-p2",
+          "waveId": "intelligence_shell",
+          "goal": "Implement operational status pane showing current state, changes, and pending actions",
+          "scope": [
+            "apps/control-plane/src/components/FocusPane"
+          ],
+          "acceptanceCriteria": [
+            "shell accepts user input",
+            "control pane shows real state",
+            "core surfaces render correctly"
+          ],
+          "riskLevel": "high"
+        },
+        {
+          "packetId": "intelligence_shell-p3",
+          "waveId": "intelligence_shell",
+          "goal": "Implement core deep surfaces (state view, execution view, builder view)",
+          "scope": [
+            "apps/control-plane/src/surfaces/"
+          ],
+          "acceptanceCriteria": [
+            "shell accepts user input",
+            "control pane shows real state",
+            "core surfaces render correctly"
+          ],
+          "riskLevel": "high"
+        }
+      ],
+      "requiredValidators": [
+        "validate:ui-shell",
+        "validate:command-spine"
+      ],
+      "evidenceRequirements": [
+        "ui-shell-proof",
+        "command-spine-proof"
+      ],
+      "acceptanceCriteria": [
+        "shell accepts user input",
+        "control pane shows real state",
+        "core surfaces render correctly"
+      ],
+      "status": "proven",
+      "evidence": [
+        {
+          "evidenceId": "ev_intelligence_shell_dryrun",
+          "waveId": "intelligence_shell",
+          "evidenceType": "checkpoint",
+          "passed": true,
+          "detail": "Dry-run: wave \"Application Shell + Control Interface\" would execute 3 packets",
+          "capturedAt": "2026-05-04T17:50:06.179Z",
+          "artifactId": "artifact_dryrun_intelligence_shell_1777917006179",
+          "workspacePath": "/tmp/mission-dryrun/mission_benchmark_nexus_v1_e337aa988d64/intelligence_shell",
+          "contentHash": "dryrun_hash_intelligence_shell"
+        }
+      ],
+      "waveType": "intelligence_shell",
+      "provenAt": "2026-05-04T17:50:06.179Z"
+    },
+    {
+      "waveId": "governance_security",
+      "missionId": "mission_benchmark_nexus_v1_e337aa988d64",
+      "index": 8,
+      "name": "Governance + Security",
+      "description": "Build RBAC, tenant isolation, approval tiers, secrets management, and autonomy policy.",
+      "dependsOn": [
+        "repo_layout",
+        "api_schema",
+        "execution_runtime"
+      ],
+      "packets": [
+        {
+          "packetId": "governance_security-p1",
+          "waveId": "governance_security",
+          "goal": "Implement RBAC with role hierarchy and permission enforcement",
+          "scope": [
+            "packages/governance-engine/src/"
+          ],
+          "acceptanceCriteria": [
+            "role guards enforced",
+            "tenants isolated",
+            "secrets never logged"
+          ],
+          "riskLevel": "high"
+        },
+        {
+          "packetId": "governance_security-p2",
+          "waveId": "governance_security",
+          "goal": "Implement autonomy tier system with approval thresholds",
+          "scope": [
+            "packages/autonomy-tiers/src/"
+          ],
+          "acceptanceCriteria": [
+            "role guards enforced",
+            "tenants isolated",
+            "secrets never logged"
+          ],
+          "riskLevel": "medium"
+        },
+        {
+          "packetId": "governance_security-p3",
+          "waveId": "governance_security",
+          "goal": "Implement secrets management with no-log guarantee",
+          "scope": [
+            "packages/governance-engine/src/"
+          ],
+          "acceptanceCriteria": [
+            "role guards enforced",
+            "tenants isolated",
+            "secrets never logged"
+          ],
+          "riskLevel": "high"
+        }
+      ],
+      "requiredValidators": [
+        "validate:rbac",
+        "validate:tenant-isolation",
+        "validate:secrets"
+      ],
+      "evidenceRequirements": [
+        "rbac-proof",
+        "governance-proof"
+      ],
+      "acceptanceCriteria": [
+        "role guards enforced",
+        "tenants isolated",
+        "secrets never logged"
+      ],
+      "status": "proven",
+      "evidence": [
+        {
+          "evidenceId": "ev_governance_security_dryrun",
+          "waveId": "governance_security",
+          "evidenceType": "checkpoint",
+          "passed": true,
+          "detail": "Dry-run: wave \"Governance + Security\" would execute 3 packets",
+          "capturedAt": "2026-05-04T17:50:06.176Z",
+          "artifactId": "artifact_dryrun_governance_security_1777917006176",
+          "workspacePath": "/tmp/mission-dryrun/mission_benchmark_nexus_v1_e337aa988d64/governance_security",
+          "contentHash": "dryrun_hash_governance_security"
+        }
+      ],
+      "waveType": "governance_security",
+      "provenAt": "2026-05-04T17:50:06.176Z"
+    },
+    {
+      "waveId": "deployment_rollback",
+      "missionId": "mission_benchmark_nexus_v1_e337aa988d64",
+      "index": 9,
+      "name": "Deployment + Rollback",
+      "description": "Build export, dry-run, live deploy, credential injection, and rollback engine.",
+      "dependsOn": [
+        "builder_factory",
+        "governance_security"
+      ],
+      "packets": [
+        {
+          "packetId": "deployment_rollback-p1",
+          "waveId": "deployment_rollback",
+          "goal": "Implement export bundle with all assets and credentials excluded",
+          "scope": [
+            "packages/vercel-adapter/src/"
+          ],
+          "acceptanceCriteria": [
+            "dry-run blocked from live deploy claim",
+            "rollback always available",
+            "credentials injected at deploy time"
+          ],
+          "riskLevel": "medium"
+        },
+        {
+          "packetId": "deployment_rollback-p2",
+          "waveId": "deployment_rollback",
+          "goal": "Implement dry-run mode with explicit cannot-claim-live-deploy gate",
+          "scope": [
+            "apps/orchestrator-api/src/"
+          ],
+          "acceptanceCriteria": [
+            "dry-run blocked from live deploy claim",
+            "rollback always available",
+            "credentials injected at deploy time"
+          ],
+          "riskLevel": "high"
+        },
+        {
+          "packetId": "deployment_rollback-p3",
+          "waveId": "deployment_rollback",
+          "goal": "Implement live deployment pipeline with rollback checkpoint",
+          "scope": [
+            "packages/vercel-adapter/src/"
+          ],
+          "acceptanceCriteria": [
+            "dry-run blocked from live deploy claim",
+            "rollback always available",
+            "credentials injected at deploy time"
+          ],
+          "riskLevel": "high"
+        }
+      ],
+      "requiredValidators": [
+        "validate:deployment-gates",
+        "validate:rollback"
+      ],
+      "evidenceRequirements": [
+        "deployment-proof",
+        "rollback-proof"
+      ],
+      "acceptanceCriteria": [
+        "dry-run blocked from live deploy claim",
+        "rollback always available",
+        "credentials injected at deploy time"
+      ],
+      "status": "proven",
+      "evidence": [
+        {
+          "evidenceId": "ev_deployment_rollback_dryrun",
+          "waveId": "deployment_rollback",
+          "evidenceType": "checkpoint",
+          "passed": true,
+          "detail": "Dry-run: wave \"Deployment + Rollback\" would execute 3 packets",
+          "capturedAt": "2026-05-04T17:50:06.180Z",
+          "artifactId": "artifact_dryrun_deployment_rollback_1777917006180",
+          "workspacePath": "/tmp/mission-dryrun/mission_benchmark_nexus_v1_e337aa988d64/deployment_rollback",
+          "contentHash": "dryrun_hash_deployment_rollback"
+        }
+      ],
+      "waveType": "deployment_rollback",
+      "provenAt": "2026-05-04T17:50:06.180Z"
+    },
+    {
+      "waveId": "validation_proof",
+      "missionId": "mission_benchmark_nexus_v1_e337aa988d64",
+      "index": 10,
+      "name": "Validation + Proof System",
+      "description": "Build all validators, proof ladder, evidence artifacts, and claim boundaries.",
+      "dependsOn": [
+        "repo_layout",
+        "builder_factory"
+      ],
+      "packets": [
+        {
+          "packetId": "validation_proof-p1",
+          "waveId": "validation_proof",
+          "goal": "Implement proof ladder with BUILD → TEST → SMOKE → DEPLOY chain",
+          "scope": [
+            "packages/proof-engine/src/"
+          ],
+          "acceptanceCriteria": [
+            "all 78+ validators pass",
+            "no validator passes on mock output",
+            "claim boundary enforced"
+          ],
+          "riskLevel": "medium"
+        },
+        {
+          "packetId": "validation_proof-p2",
+          "waveId": "validation_proof",
+          "goal": "Implement claim boundary enforcement — no claim above evidence",
+          "scope": [
+            "packages/proof-gate/src/"
+          ],
+          "acceptanceCriteria": [
+            "all 78+ validators pass",
+            "no validator passes on mock output",
+            "claim boundary enforced"
+          ],
+          "riskLevel": "high"
+        },
+        {
+          "packetId": "validation_proof-p3",
+          "waveId": "validation_proof",
+          "goal": "Run validate:all and prove all validators pass deterministically",
+          "scope": [
+            "packages/validation/src/"
+          ],
+          "acceptanceCriteria": [
+            "all 78+ validators pass",
+            "no validator passes on mock output",
+            "claim boundary enforced"
+          ],
+          "riskLevel": "medium"
+        }
+      ],
+      "requiredValidators": [
+        "validate:all",
+        "validate:claim-boundary"
+      ],
+      "evidenceRequirements": [
+        "validation-proof",
+        "claim-boundary-proof"
+      ],
+      "acceptanceCriteria": [
+        "all 78+ validators pass",
+        "no validator passes on mock output",
+        "claim boundary enforced"
+      ],
+      "status": "proven",
+      "evidence": [
+        {
+          "evidenceId": "ev_validation_proof_dryrun",
+          "waveId": "validation_proof",
+          "evidenceType": "checkpoint",
+          "passed": true,
+          "detail": "Dry-run: wave \"Validation + Proof System\" would execute 3 packets",
+          "capturedAt": "2026-05-04T17:50:06.178Z",
+          "artifactId": "artifact_dryrun_validation_proof_1777917006178",
+          "workspacePath": "/tmp/mission-dryrun/mission_benchmark_nexus_v1_e337aa988d64/validation_proof",
+          "contentHash": "dryrun_hash_validation_proof"
+        }
+      ],
+      "waveType": "validation_proof",
+      "provenAt": "2026-05-04T17:50:06.178Z"
+    },
+    {
+      "waveId": "fresh_clone_proof",
+      "missionId": "mission_benchmark_nexus_v1_e337aa988d64",
+      "index": 11,
+      "name": "Fresh-Clone End-to-End Proof",
+      "description": "Prove the full system works from a clean checkout: install → build → test → run → smoke.",
+      "dependsOn": [
+        "repo_layout",
+        "api_schema",
+        "spec_compiler",
+        "execution_runtime",
+        "builder_factory",
+        "repair_replay",
+        "truth_memory",
+        "governance_security",
+        "deployment_rollback",
+        "validation_proof"
+      ],
+      "packets": [
+        {
+          "packetId": "fresh_clone_proof-p1",
+          "waveId": "fresh_clone_proof",
+          "goal": "Run npm ci from clean state and verify all deps resolve",
+          "scope": [
+            "package.json",
+            "package-lock.json"
+          ],
+          "acceptanceCriteria": [
+            "npm ci succeeds from clean checkout",
+            "npm run build succeeds",
+            "npm run test:universal passes",
+            "npm run validate:all passes",
+            "generated app build/run/smoke passes"
+          ],
+          "riskLevel": "low"
+        },
+        {
+          "packetId": "fresh_clone_proof-p2",
+          "waveId": "fresh_clone_proof",
+          "goal": "Run full build and test suite and record evidence",
+          "scope": [
+            "*"
+          ],
+          "acceptanceCriteria": [
+            "npm ci succeeds from clean checkout",
+            "npm run build succeeds",
+            "npm run test:universal passes",
+            "npm run validate:all passes",
+            "generated app build/run/smoke passes"
+          ],
+          "riskLevel": "medium"
+        },
+        {
+          "packetId": "fresh_clone_proof-p3",
+          "waveId": "fresh_clone_proof",
+          "goal": "Run builder forensic smoke suite and prove PASS_REAL > 90%",
+          "scope": [
+            "scripts/builder-forensic/"
+          ],
+          "acceptanceCriteria": [
+            "npm ci succeeds from clean checkout",
+            "npm run build succeeds",
+            "npm run test:universal passes",
+            "npm run validate:all passes",
+            "generated app build/run/smoke passes"
+          ],
+          "riskLevel": "high"
+        }
+      ],
+      "requiredValidators": [
+        "validate:all",
+        "test:universal",
+        "build"
+      ],
+      "evidenceRequirements": [
+        "fresh-clone-proof",
+        "e2e-proof",
+        "smoke-proof"
+      ],
+      "acceptanceCriteria": [
+        "npm ci succeeds from clean checkout",
+        "npm run build succeeds",
+        "npm run test:universal passes",
+        "npm run validate:all passes",
+        "generated app build/run/smoke passes"
+      ],
+      "status": "proven",
+      "evidence": [
+        {
+          "evidenceId": "ev_fresh_clone_proof_dryrun",
+          "waveId": "fresh_clone_proof",
+          "evidenceType": "checkpoint",
+          "passed": true,
+          "detail": "Dry-run: wave \"Fresh-Clone End-to-End Proof\" would execute 3 packets",
+          "capturedAt": "2026-05-04T17:50:06.181Z",
+          "artifactId": "artifact_dryrun_fresh_clone_proof_1777917006181",
+          "workspacePath": "/tmp/mission-dryrun/mission_benchmark_nexus_v1_e337aa988d64/fresh_clone_proof",
+          "contentHash": "dryrun_hash_fresh_clone_proof"
+        }
+      ],
+      "waveType": "fresh_clone_proof",
+      "provenAt": "2026-05-04T17:50:06.181Z"
+    }
+  ],
+  "status": "proven",
+  "claimLevel": "SYSTEM_LAUNCH_READY",
+  "compiledAt": "2026-05-04T17:50:00.998Z",
+  "lastUpdatedAt": "2026-05-04T17:50:06.181Z",
+  "checkpoints": [
+    {
+      "checkpointId": "cp_repo_layout_1777917006170",
+      "missionId": "mission_benchmark_nexus_v1_e337aa988d64",
+      "waveId": "repo_layout",
+      "waveIndex": 0,
+      "status": "proven",
+      "evidence": [
+        {
+          "evidenceId": "ev_repo_layout_dryrun",
+          "waveId": "repo_layout",
+          "evidenceType": "checkpoint",
+          "passed": true,
+          "detail": "Dry-run: wave \"Repo Layout + Scaffold\" would execute 3 packets",
+          "capturedAt": "2026-05-04T17:50:06.169Z",
+          "artifactId": "artifact_dryrun_repo_layout_1777917006169",
+          "workspacePath": "/tmp/mission-dryrun/mission_benchmark_nexus_v1_e337aa988d64/repo_layout",
+          "contentHash": "dryrun_hash_repo_layout"
+        }
+      ],
+      "savedAt": "2026-05-04T17:50:06.170Z",
+      "workspacePath": "/tmp/mission-dryrun/mission_benchmark_nexus_v1_e337aa988d64/repo_layout",
+      "artifactId": "artifact_dryrun_repo_layout_1777917006169",
+      "contentHash": "dryrun_hash_repo_layout",
+      "buildStatus": "passed",
+      "runStatus": "skipped",
+      "smokeStatus": "skipped",
+      "validatorsRun": [
+        "validate:spec-contract",
+        "validate:repo-structure"
+      ],
+      "repairAttempts": 0,
+      "proofRefs": [
+        "artifact:artifact_dryrun_repo_layout_1777917006169"
+      ],
+      "nextWaveId": "api_schema",
+      "blockers": []
+    },
+    {
+      "checkpointId": "cp_api_schema_1777917006171",
+      "missionId": "mission_benchmark_nexus_v1_e337aa988d64",
+      "waveId": "api_schema",
+      "waveIndex": 1,
+      "status": "proven",
+      "evidence": [
+        {
+          "evidenceId": "ev_api_schema_dryrun",
+          "waveId": "api_schema",
+          "evidenceType": "checkpoint",
+          "passed": true,
+          "detail": "Dry-run: wave \"API + Data Schema\" would execute 3 packets",
+          "capturedAt": "2026-05-04T17:50:06.171Z",
+          "artifactId": "artifact_dryrun_api_schema_1777917006171",
+          "workspacePath": "/tmp/mission-dryrun/mission_benchmark_nexus_v1_e337aa988d64/api_schema",
+          "contentHash": "dryrun_hash_api_schema"
+        }
+      ],
+      "savedAt": "2026-05-04T17:50:06.171Z",
+      "workspacePath": "/tmp/mission-dryrun/mission_benchmark_nexus_v1_e337aa988d64/api_schema",
+      "artifactId": "artifact_dryrun_api_schema_1777917006171",
+      "contentHash": "dryrun_hash_api_schema",
+      "buildStatus": "passed",
+      "runStatus": "skipped",
+      "smokeStatus": "skipped",
+      "validatorsRun": [
+        "validate:api-contracts",
+        "validate:data-model"
+      ],
+      "repairAttempts": 0,
+      "proofRefs": [
+        "artifact:artifact_dryrun_api_schema_1777917006171"
+      ],
+      "nextWaveId": "spec_compiler",
+      "blockers": []
+    },
+    {
+      "checkpointId": "cp_spec_compiler_1777917006172",
+      "missionId": "mission_benchmark_nexus_v1_e337aa988d64",
+      "waveId": "spec_compiler",
+      "waveIndex": 2,
+      "status": "proven",
+      "evidence": [
+        {
+          "evidenceId": "ev_spec_compiler_dryrun",
+          "waveId": "spec_compiler",
+          "evidenceType": "checkpoint",
+          "passed": true,
+          "detail": "Dry-run: wave \"DAS / IBC Spec Compiler\" would execute 4 packets",
+          "capturedAt": "2026-05-04T17:50:06.172Z",
+          "artifactId": "artifact_dryrun_spec_compiler_1777917006172",
+          "workspacePath": "/tmp/mission-dryrun/mission_benchmark_nexus_v1_e337aa988d64/spec_compiler",
+          "contentHash": "dryrun_hash_spec_compiler"
+        }
+      ],
+      "savedAt": "2026-05-04T17:50:06.172Z",
+      "workspacePath": "/tmp/mission-dryrun/mission_benchmark_nexus_v1_e337aa988d64/spec_compiler",
+      "artifactId": "artifact_dryrun_spec_compiler_1777917006172",
+      "contentHash": "dryrun_hash_spec_compiler",
+      "buildStatus": "passed",
+      "runStatus": "skipped",
+      "smokeStatus": "skipped",
+      "validatorsRun": [
+        "validate:spec-contract",
+        "validate:spec-completeness"
+      ],
+      "repairAttempts": 0,
+      "proofRefs": [
+        "artifact:artifact_dryrun_spec_compiler_1777917006172"
+      ],
+      "nextWaveId": "execution_runtime",
+      "blockers": []
+    },
+    {
+      "checkpointId": "cp_execution_runtime_1777917006173",
+      "missionId": "mission_benchmark_nexus_v1_e337aa988d64",
+      "waveId": "execution_runtime",
+      "waveIndex": 3,
+      "status": "proven",
+      "evidence": [
+        {
+          "evidenceId": "ev_execution_runtime_dryrun",
+          "waveId": "execution_runtime",
+          "evidenceType": "checkpoint",
+          "passed": true,
+          "detail": "Dry-run: wave \"Execution DAG + Runtime\" would execute 3 packets",
+          "capturedAt": "2026-05-04T17:50:06.173Z",
+          "artifactId": "artifact_dryrun_execution_runtime_1777917006173",
+          "workspacePath": "/tmp/mission-dryrun/mission_benchmark_nexus_v1_e337aa988d64/execution_runtime",
+          "contentHash": "dryrun_hash_execution_runtime"
+        }
+      ],
+      "savedAt": "2026-05-04T17:50:06.173Z",
+      "workspacePath": "/tmp/mission-dryrun/mission_benchmark_nexus_v1_e337aa988d64/execution_runtime",
+      "artifactId": "artifact_dryrun_execution_runtime_1777917006173",
+      "contentHash": "dryrun_hash_execution_runtime",
+      "buildStatus": "passed",
+      "runStatus": "skipped",
+      "smokeStatus": "skipped",
+      "validatorsRun": [
+        "validate:execution-runtime",
+        "validate:job-idempotency"
+      ],
+      "repairAttempts": 0,
+      "proofRefs": [
+        "artifact:artifact_dryrun_execution_runtime_1777917006173"
+      ],
+      "nextWaveId": "builder_factory",
+      "blockers": []
+    },
+    {
+      "checkpointId": "cp_builder_factory_1777917006174",
+      "missionId": "mission_benchmark_nexus_v1_e337aa988d64",
+      "waveId": "builder_factory",
+      "waveIndex": 4,
+      "status": "proven",
+      "evidence": [
+        {
+          "evidenceId": "ev_builder_factory_dryrun",
+          "waveId": "builder_factory",
+          "evidenceType": "checkpoint",
+          "passed": true,
+          "detail": "Dry-run: wave \"Builder / Factory Engine\" would execute 4 packets",
+          "capturedAt": "2026-05-04T17:50:06.174Z",
+          "artifactId": "artifact_dryrun_builder_factory_1777917006174",
+          "workspacePath": "/tmp/mission-dryrun/mission_benchmark_nexus_v1_e337aa988d64/builder_factory",
+          "contentHash": "dryrun_hash_builder_factory"
+        }
+      ],
+      "savedAt": "2026-05-04T17:50:06.174Z",
+      "workspacePath": "/tmp/mission-dryrun/mission_benchmark_nexus_v1_e337aa988d64/builder_factory",
+      "artifactId": "artifact_dryrun_builder_factory_1777917006174",
+      "contentHash": "dryrun_hash_builder_factory",
+      "buildStatus": "passed",
+      "runStatus": "skipped",
+      "smokeStatus": "skipped",
+      "validatorsRun": [
+        "validate:builder-output",
+        "validate:no-placeholders"
+      ],
+      "repairAttempts": 0,
+      "proofRefs": [
+        "artifact:artifact_dryrun_builder_factory_1777917006174"
+      ],
+      "nextWaveId": "repair_replay",
+      "blockers": []
+    },
+    {
+      "checkpointId": "cp_truth_memory_1777917006175",
+      "missionId": "mission_benchmark_nexus_v1_e337aa988d64",
+      "waveId": "truth_memory",
+      "waveIndex": 6,
+      "status": "proven",
+      "evidence": [
+        {
+          "evidenceId": "ev_truth_memory_dryrun",
+          "waveId": "truth_memory",
+          "evidenceType": "checkpoint",
+          "passed": true,
+          "detail": "Dry-run: wave \"State + Memory Engine\" would execute 3 packets",
+          "capturedAt": "2026-05-04T17:50:06.175Z",
+          "artifactId": "artifact_dryrun_truth_memory_1777917006175",
+          "workspacePath": "/tmp/mission-dryrun/mission_benchmark_nexus_v1_e337aa988d64/truth_memory",
+          "contentHash": "dryrun_hash_truth_memory"
+        }
+      ],
+      "savedAt": "2026-05-04T17:50:06.175Z",
+      "workspacePath": "/tmp/mission-dryrun/mission_benchmark_nexus_v1_e337aa988d64/truth_memory",
+      "artifactId": "artifact_dryrun_truth_memory_1777917006175",
+      "contentHash": "dryrun_hash_truth_memory",
+      "buildStatus": "passed",
+      "runStatus": "skipped",
+      "smokeStatus": "skipped",
+      "validatorsRun": [
+        "validate:truth-engine",
+        "validate:memory-influence"
+      ],
+      "repairAttempts": 0,
+      "proofRefs": [
+        "artifact:artifact_dryrun_truth_memory_1777917006175"
+      ],
+      "nextWaveId": "repair_replay",
+      "blockers": []
+    },
+    {
+      "checkpointId": "cp_governance_security_1777917006176",
+      "missionId": "mission_benchmark_nexus_v1_e337aa988d64",
+      "waveId": "governance_security",
+      "waveIndex": 8,
+      "status": "proven",
+      "evidence": [
+        {
+          "evidenceId": "ev_governance_security_dryrun",
+          "waveId": "governance_security",
+          "evidenceType": "checkpoint",
+          "passed": true,
+          "detail": "Dry-run: wave \"Governance + Security\" would execute 3 packets",
+          "capturedAt": "2026-05-04T17:50:06.176Z",
+          "artifactId": "artifact_dryrun_governance_security_1777917006176",
+          "workspacePath": "/tmp/mission-dryrun/mission_benchmark_nexus_v1_e337aa988d64/governance_security",
+          "contentHash": "dryrun_hash_governance_security"
+        }
+      ],
+      "savedAt": "2026-05-04T17:50:06.176Z",
+      "workspacePath": "/tmp/mission-dryrun/mission_benchmark_nexus_v1_e337aa988d64/governance_security",
+      "artifactId": "artifact_dryrun_governance_security_1777917006176",
+      "contentHash": "dryrun_hash_governance_security",
+      "buildStatus": "passed",
+      "runStatus": "skipped",
+      "smokeStatus": "skipped",
+      "validatorsRun": [
+        "validate:rbac",
+        "validate:tenant-isolation",
+        "validate:secrets"
+      ],
+      "repairAttempts": 0,
+      "proofRefs": [
+        "artifact:artifact_dryrun_governance_security_1777917006176"
+      ],
+      "nextWaveId": "repair_replay",
+      "blockers": []
+    },
+    {
+      "checkpointId": "cp_repair_replay_1777917006177",
+      "missionId": "mission_benchmark_nexus_v1_e337aa988d64",
+      "waveId": "repair_replay",
+      "waveIndex": 5,
+      "status": "proven",
+      "evidence": [
+        {
+          "evidenceId": "ev_repair_replay_dryrun",
+          "waveId": "repair_replay",
+          "evidenceType": "checkpoint",
+          "passed": true,
+          "detail": "Dry-run: wave \"Repair + Replay Engine\" would execute 3 packets",
+          "capturedAt": "2026-05-04T17:50:06.177Z",
+          "artifactId": "artifact_dryrun_repair_replay_1777917006177",
+          "workspacePath": "/tmp/mission-dryrun/mission_benchmark_nexus_v1_e337aa988d64/repair_replay",
+          "contentHash": "dryrun_hash_repair_replay"
+        }
+      ],
+      "savedAt": "2026-05-04T17:50:06.177Z",
+      "workspacePath": "/tmp/mission-dryrun/mission_benchmark_nexus_v1_e337aa988d64/repair_replay",
+      "artifactId": "artifact_dryrun_repair_replay_1777917006177",
+      "contentHash": "dryrun_hash_repair_replay",
+      "buildStatus": "passed",
+      "runStatus": "skipped",
+      "smokeStatus": "skipped",
+      "validatorsRun": [
+        "validate:repair-engine",
+        "validate:rollback"
+      ],
+      "repairAttempts": 0,
+      "proofRefs": [
+        "artifact:artifact_dryrun_repair_replay_1777917006177"
+      ],
+      "nextWaveId": "intelligence_shell",
+      "blockers": []
+    },
+    {
+      "checkpointId": "cp_validation_proof_1777917006178",
+      "missionId": "mission_benchmark_nexus_v1_e337aa988d64",
+      "waveId": "validation_proof",
+      "waveIndex": 10,
+      "status": "proven",
+      "evidence": [
+        {
+          "evidenceId": "ev_validation_proof_dryrun",
+          "waveId": "validation_proof",
+          "evidenceType": "checkpoint",
+          "passed": true,
+          "detail": "Dry-run: wave \"Validation + Proof System\" would execute 3 packets",
+          "capturedAt": "2026-05-04T17:50:06.178Z",
+          "artifactId": "artifact_dryrun_validation_proof_1777917006178",
+          "workspacePath": "/tmp/mission-dryrun/mission_benchmark_nexus_v1_e337aa988d64/validation_proof",
+          "contentHash": "dryrun_hash_validation_proof"
+        }
+      ],
+      "savedAt": "2026-05-04T17:50:06.178Z",
+      "workspacePath": "/tmp/mission-dryrun/mission_benchmark_nexus_v1_e337aa988d64/validation_proof",
+      "artifactId": "artifact_dryrun_validation_proof_1777917006178",
+      "contentHash": "dryrun_hash_validation_proof",
+      "buildStatus": "passed",
+      "runStatus": "skipped",
+      "smokeStatus": "skipped",
+      "validatorsRun": [
+        "validate:all",
+        "validate:claim-boundary"
+      ],
+      "repairAttempts": 0,
+      "proofRefs": [
+        "artifact:artifact_dryrun_validation_proof_1777917006178"
+      ],
+      "nextWaveId": "intelligence_shell",
+      "blockers": []
+    },
+    {
+      "checkpointId": "cp_intelligence_shell_1777917006179",
+      "missionId": "mission_benchmark_nexus_v1_e337aa988d64",
+      "waveId": "intelligence_shell",
+      "waveIndex": 7,
+      "status": "proven",
+      "evidence": [
+        {
+          "evidenceId": "ev_intelligence_shell_dryrun",
+          "waveId": "intelligence_shell",
+          "evidenceType": "checkpoint",
+          "passed": true,
+          "detail": "Dry-run: wave \"Application Shell + Control Interface\" would execute 3 packets",
+          "capturedAt": "2026-05-04T17:50:06.179Z",
+          "artifactId": "artifact_dryrun_intelligence_shell_1777917006179",
+          "workspacePath": "/tmp/mission-dryrun/mission_benchmark_nexus_v1_e337aa988d64/intelligence_shell",
+          "contentHash": "dryrun_hash_intelligence_shell"
+        }
+      ],
+      "savedAt": "2026-05-04T17:50:06.179Z",
+      "workspacePath": "/tmp/mission-dryrun/mission_benchmark_nexus_v1_e337aa988d64/intelligence_shell",
+      "artifactId": "artifact_dryrun_intelligence_shell_1777917006179",
+      "contentHash": "dryrun_hash_intelligence_shell",
+      "buildStatus": "passed",
+      "runStatus": "skipped",
+      "smokeStatus": "skipped",
+      "validatorsRun": [
+        "validate:ui-shell",
+        "validate:command-spine"
+      ],
+      "repairAttempts": 0,
+      "proofRefs": [
+        "artifact:artifact_dryrun_intelligence_shell_1777917006179"
+      ],
+      "nextWaveId": "deployment_rollback",
+      "blockers": []
+    },
+    {
+      "checkpointId": "cp_deployment_rollback_1777917006180",
+      "missionId": "mission_benchmark_nexus_v1_e337aa988d64",
+      "waveId": "deployment_rollback",
+      "waveIndex": 9,
+      "status": "proven",
+      "evidence": [
+        {
+          "evidenceId": "ev_deployment_rollback_dryrun",
+          "waveId": "deployment_rollback",
+          "evidenceType": "checkpoint",
+          "passed": true,
+          "detail": "Dry-run: wave \"Deployment + Rollback\" would execute 3 packets",
+          "capturedAt": "2026-05-04T17:50:06.180Z",
+          "artifactId": "artifact_dryrun_deployment_rollback_1777917006180",
+          "workspacePath": "/tmp/mission-dryrun/mission_benchmark_nexus_v1_e337aa988d64/deployment_rollback",
+          "contentHash": "dryrun_hash_deployment_rollback"
+        }
+      ],
+      "savedAt": "2026-05-04T17:50:06.180Z",
+      "workspacePath": "/tmp/mission-dryrun/mission_benchmark_nexus_v1_e337aa988d64/deployment_rollback",
+      "artifactId": "artifact_dryrun_deployment_rollback_1777917006180",
+      "contentHash": "dryrun_hash_deployment_rollback",
+      "buildStatus": "passed",
+      "runStatus": "skipped",
+      "smokeStatus": "skipped",
+      "validatorsRun": [
+        "validate:deployment-gates",
+        "validate:rollback"
+      ],
+      "repairAttempts": 0,
+      "proofRefs": [
+        "artifact:artifact_dryrun_deployment_rollback_1777917006180"
+      ],
+      "nextWaveId": "fresh_clone_proof",
+      "blockers": []
+    },
+    {
+      "checkpointId": "cp_fresh_clone_proof_1777917006181",
+      "missionId": "mission_benchmark_nexus_v1_e337aa988d64",
+      "waveId": "fresh_clone_proof",
+      "waveIndex": 11,
+      "status": "proven",
+      "evidence": [
+        {
+          "evidenceId": "ev_fresh_clone_proof_dryrun",
+          "waveId": "fresh_clone_proof",
+          "evidenceType": "checkpoint",
+          "passed": true,
+          "detail": "Dry-run: wave \"Fresh-Clone End-to-End Proof\" would execute 3 packets",
+          "capturedAt": "2026-05-04T17:50:06.181Z",
+          "artifactId": "artifact_dryrun_fresh_clone_proof_1777917006181",
+          "workspacePath": "/tmp/mission-dryrun/mission_benchmark_nexus_v1_e337aa988d64/fresh_clone_proof",
+          "contentHash": "dryrun_hash_fresh_clone_proof"
+        }
+      ],
+      "savedAt": "2026-05-04T17:50:06.181Z",
+      "workspacePath": "/tmp/mission-dryrun/mission_benchmark_nexus_v1_e337aa988d64/fresh_clone_proof",
+      "artifactId": "artifact_dryrun_fresh_clone_proof_1777917006181",
+      "contentHash": "dryrun_hash_fresh_clone_proof",
+      "buildStatus": "passed",
+      "runStatus": "skipped",
+      "smokeStatus": "skipped",
+      "validatorsRun": [
+        "validate:all",
+        "test:universal",
+        "build"
+      ],
+      "repairAttempts": 0,
+      "proofRefs": [
+        "artifact:artifact_dryrun_fresh_clone_proof_1777917006181"
+      ],
+      "blockers": []
+    }
+  ],
+  "totalWaves": 12,
+  "provenWaves": 12
+}

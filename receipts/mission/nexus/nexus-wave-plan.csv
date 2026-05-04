@@ -1,0 +1,13 @@
+index,waveId,name,packets,dependsOn,riskLevel
+1,repo_layout,"Repo Layout + Scaffold",3,none,medium
+2,api_schema,"API + Data Schema",3,repo_layout,medium
+3,spec_compiler,"DAS / IBC Spec Compiler",4,repo_layout|api_schema,medium
+4,execution_runtime,"Execution DAG + Runtime",3,repo_layout|api_schema,medium
+5,builder_factory,"Builder / Factory Engine",4,repo_layout|api_schema|spec_compiler|execution_runtime,medium
+6,repair_replay,"Repair + Replay Engine",3,builder_factory,medium
+7,truth_memory,"State + Memory Engine",3,repo_layout|api_schema|execution_runtime,medium
+8,intelligence_shell,"Application Shell + Control Interface",3,builder_factory|truth_memory,medium
+9,governance_security,"Governance + Security",3,repo_layout|api_schema|execution_runtime,medium
+10,deployment_rollback,"Deployment + Rollback",3,builder_factory|governance_security,medium
+11,validation_proof,"Validation + Proof System",3,repo_layout|builder_factory,medium
+12,fresh_clone_proof,"Fresh-Clone End-to-End Proof",3,repo_layout|api_schema|spec_compiler|execution_runtime|builder_factory|repair_replay|truth_memory|governance_security|deployment_rollback|validation_proof,medium

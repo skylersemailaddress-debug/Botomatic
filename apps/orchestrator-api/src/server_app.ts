@@ -3737,6 +3737,10 @@ export function buildApp(config: RuntimeConfig) {
                 generatedAt: now(),
               },
             };
+            // Mark the packet complete so project status reflects execution
+            const passed = ws.buildStatus === "passed" && ws.smokeStatus === "passed";
+            setPacketStatus(project, pendingPacket.packetId, passed ? "complete" : "blocked");
+            recomputeProjectStatus(project);
           } catch {
             // Non-fatal: workspace materialization failure does not block the response
           }
