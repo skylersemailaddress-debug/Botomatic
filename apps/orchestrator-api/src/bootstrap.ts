@@ -12,11 +12,41 @@ function validateEnv() {
   }
 }
 
-// ── Claude Runner sidecar ─────────────────────────────────────────────────────
-// Spawns apps/claude-runner as a child process so a single `npm start` boots both.
-// Only spawned when EXECUTOR=claude (the real-work mode).
-// Auto-restarts on crash with exponential backoff (up to 30s).
+// ── Supabase connectivity probe ───────────────────────────────────────────────
+// Tests reachability before starting so we can fall back to memory mode instead
+// of crashing on the first project read/write. Logs a clear actionable message
+// when blocked (Supabase Network Restrictions turned on for the project IP).
 
+async function probeSupabase(): Promise<boolean> {
+  const url   = process.env.SUPABASE_URL;
+  const key   = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return false;
+
+  try {
+    const res = await fetch(`${url}/rest/v1/`, {
+      method: "GET",
+      headers: { apikey: key, Authorization: `Bearer ${key}` },
+      signal: AbortSignal.timeout(5000),
+    });
+    // 200 or 404 (table not found yet) both mean the API gateway responded
+    if (res.status === 403) {
+      const body = await res.text();
+      if (body.includes("allowlist")) {
+        console.error(JSON.stringify({
+          event: "supabase_blocked",
+          message: "Supabase Network Restrictions are blocking this IP. To fix: go to Supabase Dashboard → Project Settings → Network → Network Restrictions → clear all IPs (allow all). Then redeploy.",
+          supabaseUrl: url,
+        }));
+        return false;
+      }
+    }
+    return res.ok || res.status === 404;
+  } catch {
+    return false;
+  }
+}
+
+// ── Claude Runner sidecar ─────────────────────────────────────────────────────
 let runnerRestartDelay = 2000;
 let runnerProcess: ChildProcess | null = null;
 
@@ -42,7 +72,7 @@ function spawnClaudeRunner() {
   }));
 
   runnerProcess.on("exit", (code, signal) => {
-    if (signal === "SIGTERM" || signal === "SIGINT") return; // intentional shutdown
+    if (signal === "SIGTERM" || signal === "SIGINT") return;
     console.error(JSON.stringify({ event: "claude_runner_exit", code, signal, restartIn: runnerRestartDelay }));
     setTimeout(() => {
       runnerRestartDelay = Math.min(runnerRestartDelay * 2, 30000);
@@ -54,7 +84,6 @@ function spawnClaudeRunner() {
     console.error(JSON.stringify({ event: "claude_runner_spawn_error", message: err.message }));
   });
 
-  // Reset backoff after stable uptime
   setTimeout(() => { runnerRestartDelay = 2000; }, 30000);
 }
 
@@ -68,10 +97,36 @@ function shutdownRunner() {
 process.on("SIGTERM", () => { shutdownRunner(); process.exit(0); });
 process.on("SIGINT",  () => { shutdownRunner(); process.exit(0); });
 
-function start() {
+async function start() {
   validateEnv();
 
-  // Boot the executor sidecar first so it's ready before builds arrive
+  // Probe Supabase before creating config — fall back to memory if blocked
+  const wantsDurable = process.env.PROJECT_REPOSITORY_MODE === "durable";
+  const wantsSupabaseQueue = process.env.QUEUE_BACKEND === "supabase";
+
+  if (wantsDurable || wantsSupabaseQueue) {
+    const supabaseReachable = await probeSupabase();
+    if (!supabaseReachable) {
+      if (wantsDurable) {
+        process.env.PROJECT_REPOSITORY_MODE = "memory";
+        process.env.RUNTIME_MODE = "development"; // avoid the commercial/durable guard
+        console.warn(JSON.stringify({
+          event: "supabase_fallback",
+          message: "Supabase unreachable — running with in-memory project store. Data will NOT persist across restarts.",
+        }));
+      }
+      if (wantsSupabaseQueue) {
+        process.env.QUEUE_BACKEND = "memory";
+        console.warn(JSON.stringify({
+          event: "queue_fallback",
+          message: "Supabase unreachable — job queue running in-memory. Multi-worker job distribution unavailable.",
+        }));
+      }
+    } else {
+      console.log(JSON.stringify({ event: "supabase_connected", url: process.env.SUPABASE_URL }));
+    }
+  }
+
   spawnClaudeRunner();
 
   const config = createRuntimeConfig();
@@ -103,4 +158,8 @@ function start() {
   });
 }
 
-start();
+start().catch(err => {
+  console.error(JSON.stringify({ event: "startup_fatal", message: String(err?.message || err) }));
+  process.exit(1);
+});
+
