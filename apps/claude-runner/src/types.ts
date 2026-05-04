@@ -1,3 +1,11 @@
+export interface WaveOutput {
+  packetId: string;
+  waveType: string;
+  summary: string;
+  fileList: string[];
+  completedAt: string;
+}
+
 export interface ExecuteRequest {
   projectId: string;
   packetId: string;
@@ -5,6 +13,11 @@ export interface ExecuteRequest {
   goal: string;
   requirements: string[];
   constraints: string[];
+  // Cross-packet context
+  previousWaveOutputs?: WaveOutput[];
+  dataModelSchema?: string;
+  apiRoutes?: string;
+  repoStructure?: string;
 }
 
 export interface FileChange {

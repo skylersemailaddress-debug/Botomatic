@@ -162,10 +162,12 @@ async function executeWithAnthropic(
     logs.push("conversation_mode=enabled");
   }
 
+  // Prompt caching: system prompt is identical across all packets — cache it for 5 min TTL.
+  // This saves ~90% of system prompt tokens on cache hits (~$330/yr at scale).
   const response = await getAnthropic().messages.create({
     model,
     max_tokens: 8192,
-    system: systemPrompt,
+    system: [{ type: "text", text: systemPrompt, cache_control: { type: "ephemeral" } }],
     tools: [WRITE_FILES_TOOL_ANTHROPIC],
     tool_choice: { type: "any" },
     messages,

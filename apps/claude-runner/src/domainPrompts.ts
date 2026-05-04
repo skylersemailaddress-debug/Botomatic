@@ -55,6 +55,35 @@ export function buildSystemPrompt(): string {
 CRITICAL: The /health endpoint returning JSON { status: "ok" } is MANDATORY in any HTTP server file.`;
 }
 
+function buildCrossPacketContext(req: ExecuteRequest): string {
+  const parts: string[] = [];
+
+  // Repo structure — helps every wave understand the monorepo layout
+  if (req.repoStructure) {
+    parts.push(`## Repo Structure (from repo_layout wave)\n${req.repoStructure.slice(0, 800)}`);
+  }
+
+  // Data model — critical for auth, builder_factory, api_schema, intelligence_shell
+  if (req.dataModelSchema) {
+    parts.push(`## Data Model (from api_schema wave)\nUse these exact entity names and field types in your implementation:\n\`\`\`prisma\n${req.dataModelSchema.slice(0, 1200)}\n\`\`\``);
+  }
+
+  // API routes — helps auth, builder, and UI waves know the contract
+  if (req.apiRoutes) {
+    parts.push(`## API Contract (from api_schema wave)\n\`\`\`typescript\n${req.apiRoutes.slice(0, 800)}\n\`\`\``);
+  }
+
+  // Summary of all completed waves — gives broader situational awareness
+  if (req.previousWaveOutputs && req.previousWaveOutputs.length > 0) {
+    const summaries = req.previousWaveOutputs
+      .map(w => `- [${w.waveType}] ${w.summary} → files: ${w.fileList.slice(0, 6).join(", ")}`)
+      .join("\n");
+    parts.push(`## Completed Waves\n${summaries}`);
+  }
+
+  return parts.length > 0 ? `\n---\n${parts.join("\n\n")}\n---\n` : "";
+}
+
 export function buildUserPrompt(req: ExecuteRequest, waveType: WaveType): string {
   const { goal, requirements, constraints, packetId } = req;
 
@@ -66,12 +95,13 @@ export function buildUserPrompt(req: ExecuteRequest, waveType: WaveType): string
     : "";
 
   const waveContext = WAVE_CONTEXT[waveType] ?? WAVE_CONTEXT.generic;
+  const crossPacketCtx = buildCrossPacketContext(req);
 
   return `${waveContext.preamble}
 
 Packet ID: ${packetId}
 Goal: ${goal}${reqLines}${conLines}
-
+${crossPacketCtx}
 ${waveContext.instructions}
 
 Generate all necessary files using the write_files tool. Each file must be complete and functional.

@@ -1497,36 +1497,119 @@ async function processJob(config: RuntimeConfig, job: QueueJobRecord) {
 
   try {
     const executor = getExecutor();
-    const result = await executor.execute({ projectId: project.projectId, packetId: packet.packetId, branchName: packet.branchName, goal: packet.goal, requirements: packet.requirements, constraints: packet.constraints });
-    if (!result.success) {
-      packetFailureCount += 1;
-      recordOpsError("packet_failed", String((result as any).summary || "Executor returned unsuccessful result"), {
+
+    // ── Build cross-packet context from completed waves ──────────────────────
+    const completedPackets = getPackets(project).filter((p: any) => p.status === "complete");
+    const previousWaveOutputs = completedPackets.map((p: any) => ({
+      packetId: p.packetId,
+      waveType: p.waveType ?? p.packetId.split("_")[0] ?? "generic",
+      summary: p.goal ?? "",
+      fileList: ((project.runs as any)?.[p.packetId]?.changedFiles ?? []).map((f: any) => f.path ?? f),
+      completedAt: (project.runs as any)?.[p.packetId]?.completedAt ?? now(),
+    }));
+
+    // Extract key artifacts from prior waves for deep context injection
+    const apiSchemaPacket = completedPackets.find((p: any) => /api.?schema|schema|data.?model/i.test(p.packetId + " " + (p.goal ?? "")));
+    const repoLayoutPacket = completedPackets.find((p: any) => /repo.?layout|scaffold|monorepo/i.test(p.packetId + " " + (p.goal ?? "")));
+
+    const dataModelSchema = apiSchemaPacket
+      ? ((project.runs as any)?.[apiSchemaPacket.packetId]?.changedFiles ?? [])
+          .filter((f: any) => /schema\.prisma|models\.(ts|js)/.test(f.path ?? ""))
+          .map((f: any) => f.body ?? "")
+          .join("\n")
+          .slice(0, 1500) || undefined
+      : undefined;
+
+    const repoStructure = repoLayoutPacket
+      ? ((project.runs as any)?.[repoLayoutPacket.packetId]?.changedFiles ?? [])
+          .filter((f: any) => /package\.json|tsconfig/.test(f.path ?? ""))
+          .map((f: any) => `// ${f.path}\n${(f.body ?? "").slice(0, 300)}`)
+          .join("\n")
+          .slice(0, 800) || undefined
+      : undefined;
+
+    // ── Execute with retry loop (max 2 retries, error fed back each time) ───
+    const MAX_RETRIES = 2;
+    let result: any = null;
+    let lastErrorMsg = "";
+
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      const constraintsWithRepair = attempt > 0
+        ? [...(packet.constraints ?? []), `REPAIR_ATTEMPT_${attempt}: Previous attempt failed. Error: "${lastErrorMsg.slice(0, 300)}". Approach differently — fix the specific issue described.`]
+        : (packet.constraints ?? []);
+
+      result = await executor.execute({
         projectId: project.projectId,
         packetId: packet.packetId,
+        branchName: packet.branchName,
+        goal: packet.goal,
+        requirements: packet.requirements ?? [],
+        constraints: constraintsWithRepair,
+        previousWaveOutputs,
+        dataModelSchema,
+        repoStructure,
       });
+
+      if (result.success) break;
+      lastErrorMsg = String(result.summary ?? "Unknown error");
+    }
+
+    if (!result.success) {
+      packetFailureCount += 1;
+      recordOpsError("packet_failed", lastErrorMsg, { projectId: project.projectId, packetId: packet.packetId });
       const failedState = markPacketFailed({ projectId: project.projectId, status: project.status as any, packets: getPackets(project), runs: project.runs as any }, packet.packetId);
       project.plan = { ...((project.plan as any) || {}), packets: (failedState as any).packets };
       project.runs = (failedState as any).runs || project.runs;
       recomputeProjectStatus(project);
-      emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "packet_failed", actorId: workerId, role: "system", timestamp: now(), metadata: { packetId: packet.packetId, summary: (result as any).summary } });
+      emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "packet_failed", actorId: workerId, role: "system", timestamp: now(), metadata: { packetId: packet.packetId, summary: lastErrorMsg } });
       await persistProject(config, project);
-      await finalizeJob(job.job_id, "failed", (result as any).summary);
+      await finalizeJob(job.job_id, "failed", lastErrorMsg);
       return;
     }
 
-    await runGitHubLifecycle(config, project, packet, (result as any).changedFiles as ChangedFile[]);
-    const validation = runValidation(project.projectId, packet.packetId);
+    // Store changedFiles on runs so future waves can extract artifacts
+    project.runs = {
+      ...((project.runs || {}) as Record<string, unknown>),
+      [packet.packetId]: {
+        ...((project.runs as any)?.[packet.packetId] ?? {}),
+        changedFiles: result.changedFiles,
+        completedAt: now(),
+      },
+    };
+
+    await runGitHubLifecycle(config, project, packet, result.changedFiles as ChangedFile[]);
+
+    // ── Validation with one repair attempt on failure ────────────────────────
+    let validation = runValidation(project.projectId, packet.packetId);
+    if ((validation as any).status !== "passed" && result.changedFiles?.length > 0) {
+      const repairConstraint = `VALIDATION_FAILURE: "${(validation as any).summary}". Regenerate files to fix these failing checks. Be precise about what the validator requires.`;
+      const repairResult = await executor.execute({
+        projectId: project.projectId,
+        packetId: packet.packetId,
+        branchName: packet.branchName,
+        goal: packet.goal,
+        requirements: packet.requirements ?? [],
+        constraints: [...(packet.constraints ?? []), repairConstraint],
+        previousWaveOutputs,
+        dataModelSchema,
+        repoStructure,
+      });
+      if (repairResult.success) {
+        project.runs = {
+          ...((project.runs || {}) as Record<string, unknown>),
+          [packet.packetId]: { ...((project.runs as any)?.[packet.packetId] ?? {}), changedFiles: repairResult.changedFiles, completedAt: now() },
+        };
+        const revalidation = runValidation(project.projectId, packet.packetId);
+        if ((revalidation as any).status === "passed") validation = revalidation;
+      }
+    }
+
     if ((validation as any).status === "passed") {
       validationPassCount += 1;
       packetSuccessCount += 1;
     } else {
       validationFailCount += 1;
       packetFailureCount += 1;
-      recordOpsError("packet_failed", "Validation returned non-passed status", {
-        projectId: project.projectId,
-        packetId: packet.packetId,
-        status: (validation as any).status,
-      });
     }
     updateTelemetryTimestamp();
     project.validations = { ...((project.validations || {}) as Record<string, unknown>), [packet.packetId]: validation };
@@ -1571,7 +1654,16 @@ async function workerTick(config: RuntimeConfig) {
 function startQueueWorker(config: RuntimeConfig) {
   if (workerStarted) return;
   workerStarted = true;
-  setInterval(() => { void workerTick(config); }, Number(process.env.QUEUE_POLL_INTERVAL_MS || 2000));
+  const maxPollMs = Number(process.env.QUEUE_POLL_INTERVAL_MS || 2000);
+  let pollMs = 100; // start aggressive, back off when queue is empty
+  const tick = async () => {
+    const before = activeWorkers;
+    await workerTick(config);
+    const foundWork = activeWorkers > before;
+    pollMs = foundWork ? 100 : Math.min(maxPollMs, pollMs * 1.5);
+    setTimeout(() => { void tick(); }, pollMs);
+  };
+  void tick();
 }
 
 function isAllowedCorsOrigin(origin: string): boolean {

@@ -86,6 +86,11 @@ export class ClaudeCodeExecutor implements ExecutorAdapter {
         goal: context.goal,
         requirements: context.requirements,
         constraints: context.constraints,
+        // Cross-packet context — undefined fields are stripped by JSON.stringify
+        previousWaveOutputs: context.previousWaveOutputs,
+        dataModelSchema: context.dataModelSchema,
+        apiRoutes: context.apiRoutes,
+        repoStructure: context.repoStructure,
       },
       this.options.apiKey,
       this.options.timeoutMs

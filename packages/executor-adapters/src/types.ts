@@ -1,3 +1,11 @@
+export interface WaveOutput {
+  packetId: string;
+  waveType: string;
+  summary: string;
+  fileList: string[];   // paths only — keeps token count manageable
+  completedAt: string;
+}
+
 export interface ExecutorContext {
   projectId: string;
   packetId: string;
@@ -5,6 +13,12 @@ export interface ExecutorContext {
   goal: string;
   requirements: string[];
   constraints: string[];
+  // Cross-packet context: completed waves feed into subsequent waves
+  previousWaveOutputs?: WaveOutput[];
+  // Extracted artifacts — populated by orchestrator when available
+  dataModelSchema?: string;   // Prisma/DB schema from api_schema wave
+  apiRoutes?: string;         // API contract from api_schema wave
+  repoStructure?: string;     // package.json + file tree from repo_layout wave
 }
 
 export interface FileChange {
