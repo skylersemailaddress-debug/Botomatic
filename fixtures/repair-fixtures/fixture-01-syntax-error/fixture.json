@@ -1,0 +1,13 @@
+{
+  "id": "fixture-01",
+  "name": "syntax-error",
+  "failureType": "build_compile",
+  "description": "Generated app with a syntax error that prevents the build from succeeding",
+  "port": 33101,
+  "smokeRoutes": [
+    { "path": "/health", "expectedStatus": 200 }
+  ],
+  "repairStrategy": "patch_syntax_error",
+  "brokenFile": "app.js",
+  "diagnosis": "Unclosed object literal causes SyntaxError at parse time"
+}

@@ -1,0 +1,14 @@
+{
+  "id": "fixture-05",
+  "name": "missing-route",
+  "failureType": "smoke_route",
+  "description": "Generated app starts but is missing a required route that smoke tests expect",
+  "port": 33105,
+  "smokeRoutes": [
+    { "path": "/health", "expectedStatus": 200 },
+    { "path": "/api/dashboard", "expectedStatus": 200 }
+  ],
+  "repairStrategy": "add_missing_route",
+  "brokenFile": "app.js",
+  "diagnosis": "/api/dashboard route is missing; smoke test expects 200 but gets 404"
+}

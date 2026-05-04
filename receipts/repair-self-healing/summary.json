@@ -1,0 +1,126 @@
+{
+  "generatedAt": "2026-05-04T00:53:17.258Z",
+  "totalFixtures": 5,
+  "failuresInjected": 5,
+  "failuresDetected": 5,
+  "repairAttempts": 5,
+  "repairSuccesses": 5,
+  "repairFailures": 0,
+  "repairSuccessRate": 100,
+  "fakeSuccessCount": 0,
+  "followupEditSuccess": null,
+  "topUnrepairedClasses": [],
+  "topBlockers": [],
+  "cases": [
+    {
+      "id": "fixture-01",
+      "failureType": "build_compile",
+      "originalFailureExists": true,
+      "preRepair": {
+        "build": "fail",
+        "run": "fail",
+        "smoke": "fail"
+      },
+      "postRepair": {
+        "build": "ok",
+        "run": "ok",
+        "smoke": "ok"
+      },
+      "retryCount": 1,
+      "repairSuccess": true,
+      "finalClassification": "REPAIRED",
+      "diagnosis": "Unclosed object literal in BROKEN_CONFIG constant caused SyntaxError at parse time",
+      "changedFiles": [
+        "app.js"
+      ]
+    },
+    {
+      "id": "fixture-02",
+      "failureType": "dependency",
+      "originalFailureExists": true,
+      "preRepair": {
+        "build": "ok",
+        "run": "fail",
+        "smoke": "fail"
+      },
+      "postRepair": {
+        "build": "ok",
+        "run": "ok",
+        "smoke": "ok"
+      },
+      "retryCount": 1,
+      "repairSuccess": true,
+      "finalClassification": "REPAIRED",
+      "diagnosis": "Cannot find module './lib/db-client' — module file was absent from generated workspace",
+      "changedFiles": [
+        "lib/db-client.js"
+      ]
+    },
+    {
+      "id": "fixture-03",
+      "failureType": "smoke_route",
+      "originalFailureExists": true,
+      "preRepair": {
+        "build": "ok",
+        "run": "ok",
+        "smoke": "fail"
+      },
+      "postRepair": {
+        "build": "ok",
+        "run": "ok",
+        "smoke": "ok"
+      },
+      "retryCount": 1,
+      "repairSuccess": true,
+      "finalClassification": "REPAIRED",
+      "diagnosis": "/health route returned HTTP 500 — incorrect status code in generated route handler",
+      "changedFiles": [
+        "app.js"
+      ]
+    },
+    {
+      "id": "fixture-04",
+      "failureType": "runtime_start",
+      "originalFailureExists": true,
+      "preRepair": {
+        "build": "ok",
+        "run": "fail",
+        "smoke": "fail"
+      },
+      "postRepair": {
+        "build": "ok",
+        "run": "ok",
+        "smoke": "ok"
+      },
+      "retryCount": 1,
+      "repairSuccess": true,
+      "finalClassification": "REPAIRED",
+      "diagnosis": "package.json scripts.start referenced 'server.js' which does not exist; correct entry point is 'app.js'",
+      "changedFiles": [
+        "package.json"
+      ]
+    },
+    {
+      "id": "fixture-05",
+      "failureType": "smoke_route",
+      "originalFailureExists": true,
+      "preRepair": {
+        "build": "ok",
+        "run": "ok",
+        "smoke": "fail"
+      },
+      "postRepair": {
+        "build": "ok",
+        "run": "ok",
+        "smoke": "ok"
+      },
+      "retryCount": 1,
+      "repairSuccess": true,
+      "finalClassification": "REPAIRED",
+      "diagnosis": "/api/dashboard route was missing — smoke test expected 200 but received 404",
+      "changedFiles": [
+        "app.js"
+      ]
+    }
+  ]
+}

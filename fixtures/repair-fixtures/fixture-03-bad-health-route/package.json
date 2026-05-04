@@ -1,0 +1,10 @@
+{
+  "name": "fixture-03-bad-health-route",
+  "version": "1.0.0",
+  "description": "Repair fixture: health route returns 500 in generated app",
+  "scripts": {
+    "start": "node app.js",
+    "build": "node --check app.js"
+  },
+  "dependencies": {}
+}

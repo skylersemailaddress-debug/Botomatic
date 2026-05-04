@@ -1,0 +1,10 @@
+{
+  "name": "fixture-01-syntax-error",
+  "version": "1.0.0",
+  "description": "Repair fixture: syntax error in generated app",
+  "scripts": {
+    "start": "node app.js",
+    "build": "node --check app.js"
+  },
+  "dependencies": {}
+}

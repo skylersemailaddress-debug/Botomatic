@@ -1,0 +1,6 @@
+fixture_id,failure_type,original_failure_exists,pre_build,pre_run,pre_smoke,post_build,post_run,post_smoke,retry_count,repair_success,classification
+fixture-01,build_compile,yes,fail,fail,fail,ok,ok,ok,1,yes,REPAIRED
+fixture-02,dependency,yes,ok,fail,fail,ok,ok,ok,1,yes,REPAIRED
+fixture-03,smoke_route,yes,ok,ok,fail,ok,ok,ok,1,yes,REPAIRED
+fixture-04,runtime_start,yes,ok,fail,fail,ok,ok,ok,1,yes,REPAIRED
+fixture-05,smoke_route,yes,ok,ok,fail,ok,ok,ok,1,yes,REPAIRED

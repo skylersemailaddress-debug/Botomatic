@@ -161,16 +161,15 @@ function identifyHighRiskDecisions(spec: any, contract: any): string[] {
 
   if (!spec || !contract) return risks;
 
-  // Live deployment risk
-  if (spec.request?.toLowerCase().includes('production') ||
-      spec.request?.toLowerCase().includes('deploy')) {
+  // Live deployment risk — require actionable deployment phrases, not adjectives like "production-realistic"
+  const req = (spec.request || '').toLowerCase();
+  if (/\bdeploy\s+(to\s+)?prod|\blaunch\s+to\s+prod|\bgo\s+live\b|\bproduction\s+deploy|\bdeploy\s+live\b/.test(req) ||
+      /\bto\s+production\b|\bin\s+production\b/.test(req)) {
     risks.push('live_deployment');
   }
 
-  // Paid provider risk
-  if (spec.request?.toLowerCase().includes('stripe') ||
-      spec.request?.toLowerCase().includes('payment') ||
-      spec.request?.toLowerCase().includes('subscription')) {
+  // Paid provider risk — flag explicit external payment processor integrations only
+  if (/\bstripe\b|\bpaypal\b|\bbraintree\b|\bsquare\b|\badyen\b/.test(req)) {
     risks.push('paid_provider');
   }
 

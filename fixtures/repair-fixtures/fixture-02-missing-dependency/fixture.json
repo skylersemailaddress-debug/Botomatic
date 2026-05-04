@@ -1,0 +1,14 @@
+{
+  "id": "fixture-02",
+  "name": "missing-dependency",
+  "failureType": "dependency",
+  "description": "Generated app requires a module that does not exist in the workspace",
+  "port": 33102,
+  "smokeRoutes": [
+    { "path": "/health", "expectedStatus": 200 },
+    { "path": "/api/status", "expectedStatus": 200 }
+  ],
+  "repairStrategy": "create_missing_module",
+  "brokenFile": "lib/db-client.js",
+  "diagnosis": "Cannot find module './lib/db-client' at runtime — module file is missing"
+}

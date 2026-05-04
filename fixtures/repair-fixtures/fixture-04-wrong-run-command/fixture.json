@@ -1,0 +1,13 @@
+{
+  "id": "fixture-04",
+  "name": "wrong-run-command",
+  "failureType": "runtime_start",
+  "description": "Generated app has correct source but package.json start script points to wrong file",
+  "port": 33104,
+  "smokeRoutes": [
+    { "path": "/health", "expectedStatus": 200 }
+  ],
+  "repairStrategy": "fix_run_command",
+  "brokenFile": "package.json",
+  "diagnosis": "package.json scripts.start references server.js which does not exist; correct file is app.js"
+}
