@@ -10,6 +10,8 @@ export interface RunnerConfig {
   apiToken: string;
   dryRun?: boolean;
   maxWaves?: number;
+  /** If set, only execute this specific wave (it must be ready to run). */
+  targetWaveId?: string | null;
 }
 
 export interface WaveRunResult {
@@ -234,12 +236,21 @@ function applyWaveResult(mission: Mission, result: WaveRunResult): Mission {
   });
 
   const provenWaves = updatedWaves.filter((w) => w.status === "proven").length;
+  const provenIds = new Set(updatedWaves.filter((w) => w.status === "proven").map((w) => w.waveId));
+
+  // Mark pending waves as ready when all their dependencies are now proven
+  const withReady = updatedWaves.map((w) => {
+    if (w.status !== "pending") return w;
+    return w.dependsOn.every((dep) => provenIds.has(dep)) ? { ...w, status: "ready" as WaveStatus } : w;
+  });
+
+  const hasFailed = withReady.some((w) => w.status === "failed");
   const updated: Mission = {
     ...mission,
-    waves: updatedWaves,
+    waves: withReady,
     provenWaves,
     lastUpdatedAt: now,
-    status: provenWaves === mission.totalWaves ? "proven" : provenWaves > 0 ? "in_progress" : mission.status,
+    status: provenWaves === mission.totalWaves ? "proven" : hasFailed ? "failed" : provenWaves > 0 ? "in_progress" : mission.status,
   };
 
   updated.claimLevel = evaluateMissionClaim(updated);
@@ -286,7 +297,24 @@ export async function runMission(
   wavesPassed = current.waves.filter((w) => w.status === "proven").length;
 
   while (wavesRun < maxWaves) {
-    const next = getNextWave(current);
+    let next: MissionWave | null;
+    if (config.targetWaveId) {
+      // Validate the targeted wave is runnable
+      if (!canWaveRun(current, config.targetWaveId)) {
+        return {
+          mission: current,
+          wavesRun,
+          wavesPassed,
+          wavesFailed,
+          stopped: true,
+          stopReason: `Wave "${config.targetWaveId}" is not ready to run — dependencies not yet proven`,
+          finalClaimLevel: current.claimLevel,
+        };
+      }
+      next = current.waves.find((w) => w.waveId === config.targetWaveId) ?? null;
+    } else {
+      next = getNextWave(current);
+    }
     if (!next) {
       // No more ready waves
       const { blockedWaves } = planWaves(current);

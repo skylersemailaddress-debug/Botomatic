@@ -192,6 +192,7 @@
     "@trigger.dev/sdk": "^4.4.4"
   },
   "devDependencies": {
+    "@playwright/test": "^1.41.2",
     "@trigger.dev/build": "^4.4.4",
     "concurrently": "^9.0.1",
     "pixelmatch": "^7.2.0",

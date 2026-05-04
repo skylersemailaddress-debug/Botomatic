@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 /**
  * Run generic mission waves (dry-run by default).
- * Usage: node run-generic-wave.mjs [--dry-run] [--max-waves N]
+ * Usage: node run-generic-wave.mjs [--dry-run] [--max-waves N] [--wave <waveId>]
+ *
+ * --wave <waveId>  Target a specific wave by ID. Only that wave will be executed
+ *                  (it must be ready to run — all dependencies proven).
  */
 import fs from "fs/promises";
 import path from "path";
@@ -21,6 +24,7 @@ function parseArgs() {
     apiBaseUrl: get("--api") ?? process.env.API_BASE_URL ?? "http://127.0.0.1:3001",
     apiToken: get("--token") ?? process.env.BOTOMATIC_API_TOKEN ?? "dev-api-token",
     maxWaves: parseInt(get("--max-waves") ?? "1", 10),
+    targetWaveId: get("--wave") ?? null,
   };
 }
 
@@ -49,6 +53,7 @@ import { runMission, loadCheckpoint } from "./packages/mission-orchestrator/src/
     apiToken: ${JSON.stringify(args.apiToken)},
     dryRun: ${args.dryRun},
     maxWaves: ${args.maxWaves},
+    targetWaveId: ${JSON.stringify(args.targetWaveId)},
   };
 
   const result = await runMission(mission, config);

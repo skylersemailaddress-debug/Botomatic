@@ -274,11 +274,11 @@ export function compileSpecToMission(input: CompilerInput): CompilerOutput {
   const sourceHash = sha256(specText);
   const productType = detectProductType(specText);
   const targetArchitecture = detectTargetArchitecture(specText);
-  // specHash is deterministic: hash of (sourceHash + projectId + sorted wave IDs)
+  // specHash is deterministic: hash of spec content + sorted wave IDs only (no projectId)
   const hints = detectWaveHints(specText);
   const waveDefs = buildWaveCatalog(hints);
   const waveIds = waveDefs.map((w) => w.id).sort().join(",");
-  const specHash = sha256(`${sourceHash}:${projectId}:${waveIds}`);
+  const specHash = sha256(`${sourceHash}:${waveIds}`);
 
   const now = new Date().toISOString();
   const missionId = `mission_${projectId}_${specHash.slice(0, 12)}`;

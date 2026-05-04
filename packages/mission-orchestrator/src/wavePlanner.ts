@@ -93,15 +93,23 @@ export function planWaves(mission: Mission): WavePlan {
   const waveById = new Map(waves.map((w) => [w.waveId, w]));
   const orderedWaves = sorted.map((id) => waveById.get(id)!).filter(Boolean);
 
+  // Waves not included in topological sort (cyclic dependencies or unreachable)
+  const sortedSet = new Set(sorted);
+  const unsortedWaves = waves.filter((w) => !sortedSet.has(w.waveId));
+
   const provenIds = new Set(waves.filter((w) => w.status === "proven").map((w) => w.waveId));
 
   const readyWaves = orderedWaves.filter(
-    (w) => w.status === "pending" && w.dependsOn.every((dep) => provenIds.has(dep))
+    (w) => (w.status === "pending" || w.status === "ready") && w.dependsOn.every((dep) => provenIds.has(dep))
   );
 
-  const blockedWaves = orderedWaves.filter(
-    (w) => w.status === "pending" && !w.dependsOn.every((dep) => provenIds.has(dep))
-  );
+  const blockedWaves = [
+    ...orderedWaves.filter(
+      (w) => (w.status === "pending" || w.status === "ready") && !w.dependsOn.every((dep) => provenIds.has(dep))
+    ),
+    // Cyclic/unsorted waves are always blocked
+    ...unsortedWaves.filter((w) => w.status === "pending" || w.status === "ready"),
+  ];
 
   return { orderedWaves, readyWaves, blockedWaves, dependencyMap };
 }
