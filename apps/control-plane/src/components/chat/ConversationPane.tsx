@@ -23,6 +23,20 @@ type ChatMessage = {
   timestamp: string;
 };
 
+type Toast = {
+  id: string;
+  message: string;
+  kind: "info" | "success" | "warning" | "error";
+};
+
+type PacketProgress = {
+  total: number;
+  completed: number;
+  failed: number;
+  running: number;
+  percentComplete: number;
+};
+
 export default function ConversationPane({ projectId }: { projectId: string }) {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -37,7 +51,15 @@ export default function ConversationPane({ projectId }: { projectId: string }) {
   const [mode, setMode] = useState<string>("pending");
   const [routeStatus, setRouteStatus] = useState<string>("idle");
   const [classification, setClassification] = useState<CommandIntent>("generated_app_build");
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const [packetProgress, setPacketProgress] = useState<PacketProgress | null>(null);
   const lastStatusRef = useRef<string | null>(null);
+
+  function pushToast(message: string, kind: Toast["kind"] = "info") {
+    const id = `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    setToasts(t => [...t, { id, message, kind }]);
+    setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), 5000);
+  }
 
   useEffect(() => {
     if (!projectId) return;
@@ -50,40 +72,59 @@ export default function ConversationPane({ projectId }: { projectId: string }) {
       sseConnected = true;
     });
 
+    es.addEventListener("packet_start", (e: MessageEvent) => {
+      try {
+        const data = JSON.parse(e.data) as { packetId: string; goal: string; riskLevel: string };
+        setRouteStatus("executing");
+        setMode("executing");
+        pushToast(`Building: ${data.goal.slice(0, 60)}`, "info");
+      } catch { /* ignore */ }
+    });
+
     es.addEventListener("packet_complete", (e: MessageEvent) => {
       try {
-        const data = JSON.parse(e.data) as { packetId: string; status: string };
+        const data = JSON.parse(e.data) as { packetId: string; status: string; goal?: string };
         setRouteStatus("executing");
-        appendSystemMessage(`Packet complete: ${data.packetId} — status: ${data.status}`);
+        pushToast(`✓ ${(data.goal ?? data.packetId).slice(0, 60)}`, "success");
+        // Refresh progress from next status poll — don't derive it from individual events
       } catch { /* ignore parse errors */ }
     });
 
     es.addEventListener("packet_failed", (e: MessageEvent) => {
       try {
-        const data = JSON.parse(e.data) as { packetId: string; error: string };
+        const data = JSON.parse(e.data) as { packetId: string; error: string; goal?: string };
         setRouteStatus("blocked");
         setMode("validating");
-        appendSystemMessage(`Packet failed: ${data.packetId} — ${data.error}`);
+        pushToast(`Packet failed: ${(data.goal ?? data.packetId).slice(0, 50)}`, "error");
+        appendSystemMessage(`Packet failed: ${data.goal ?? data.packetId}\nReason: ${data.error}`);
+      } catch { /* ignore */ }
+    });
+
+    es.addEventListener("packet_retry", (e: MessageEvent) => {
+      try {
+        const data = JSON.parse(e.data) as { packetId: string; attempt: number; maxRetries: number; lastError: string };
+        pushToast(`Retrying packet (attempt ${data.attempt}/${data.maxRetries})`, "warning");
       } catch { /* ignore */ }
     });
 
     es.addEventListener("ui_mutation", (e: MessageEvent) => {
       try {
         const data = JSON.parse(e.data) as { command: string; patch: unknown };
-        appendSystemMessage(`UI updated: "${data.command}"`);
+        pushToast(`UI updated: "${data.command.slice(0, 50)}"`, "success");
       } catch { /* ignore */ }
     });
 
     es.addEventListener("capability_synthesized", (e: MessageEvent) => {
       try {
         const data = JSON.parse(e.data) as { id: string; domain: string };
-        appendSystemMessage(`New capability synthesized: ${data.domain} (id: ${data.id})`);
+        pushToast(`New skill learned: ${data.domain}`, "info");
+        appendSystemMessage(`Botomatic just learned a new capability: ${data.domain}. It can now build this type of app natively.`);
       } catch { /* ignore */ }
     });
 
     es.addEventListener("status", (e: MessageEvent) => {
       try {
-        const data = JSON.parse(e.data) as { projectStatus: string; validationStatus?: string };
+        const data = JSON.parse(e.data) as { projectStatus: string; validationStatus?: string; intelligenceCockpit?: { packetProgress: PacketProgress } };
         setRouteStatus(data.projectStatus || "idle");
         setMode(
           data.projectStatus === "executing"
@@ -94,6 +135,9 @@ export default function ConversationPane({ projectId }: { projectId: string }) {
             ? "validating"
             : "analyzing"
         );
+        if (data.intelligenceCockpit?.packetProgress) {
+          setPacketProgress(data.intelligenceCockpit.packetProgress);
+        }
       } catch { /* ignore */ }
     });
 
@@ -340,7 +384,27 @@ export default function ConversationPane({ projectId }: { projectId: string }) {
   }
 
   return (
-    <section className="chat-surface">
+    <section className="chat-surface" style={{ position: "relative" }}>
+      {/* Toast stack */}
+      {toasts.length > 0 && (
+        <div style={{ position: "absolute", top: 8, right: 8, zIndex: 100, display: "flex", flexDirection: "column", gap: 6, maxWidth: 340 }}>
+          {toasts.map(t => (
+            <div key={t.id} onClick={() => setToasts(ts => ts.filter(x => x.id !== t.id))} style={{
+              padding: "8px 12px",
+              borderRadius: 6,
+              fontSize: 12,
+              cursor: "pointer",
+              background: t.kind === "error" ? "#3b0a0a" : t.kind === "warning" ? "#3b2a00" : t.kind === "success" ? "#0a3b1a" : "#0a1a3b",
+              color: t.kind === "error" ? "#f87171" : t.kind === "warning" ? "#fbbf24" : t.kind === "success" ? "#4ade80" : "#60a5fa",
+              border: `1px solid ${t.kind === "error" ? "#7f1d1d" : t.kind === "warning" ? "#78350f" : t.kind === "success" ? "#14532d" : "#1e3a5f"}`,
+              boxShadow: "0 2px 8px rgba(0,0,0,0.4)",
+            }}>
+              {t.message}
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="chat-meta">
         <div className="chat-meta-title">Enterprise Builder Command Center</div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -350,6 +414,30 @@ export default function ConversationPane({ projectId }: { projectId: string }) {
           <StatusBadge status={loading ? "running" : "pending"} />
         </div>
       </div>
+
+      {/* Packet progress bar — shown during active builds */}
+      {packetProgress && packetProgress.total > 0 && (
+        <div style={{ padding: "4px 12px 0", fontSize: 11, color: "#9ca3af" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+            <span>
+              Building: {packetProgress.completed}/{packetProgress.total} packets
+              {packetProgress.running > 0 && ` · ${packetProgress.running} running`}
+              {packetProgress.failed > 0 && ` · ${packetProgress.failed} failed`}
+            </span>
+            <span>{packetProgress.percentComplete}%</span>
+          </div>
+          <div style={{ height: 3, background: "#1f2937", borderRadius: 2, overflow: "hidden" }}>
+            <div style={{
+              height: "100%",
+              width: `${packetProgress.percentComplete}%`,
+              background: packetProgress.failed > 0 ? "#ef4444" : "#3b82f6",
+              borderRadius: 2,
+              transition: "width 0.4s ease",
+            }} />
+          </div>
+        </div>
+      )}
+
       <MessageList messages={messages} />
       <Composer
         value={input}

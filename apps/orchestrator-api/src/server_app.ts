@@ -77,6 +77,8 @@ import {
 import { registerSynthesizedBlueprint, listSynthesizedBlueprints } from "../../../packages/blueprints/src/registry";
 import { registerSynthesizedDomainPrompts } from "../../claude-runner/src/domainPrompts";
 import { canAutoApprove } from "../../../packages/governance-engine/src/approvalPolicy";
+import { triageInput, condenseToSpec } from "../../../packages/conversation-triage/src";
+import { analyzeSpecProactively } from "../../../packages/proactive-advisor/src";
 import { markPacketComplete, markPacketFailed } from "../../../packages/execution/src/runner";
 import { MockExecutor } from "../../../packages/executor-adapters/src/mockExecutor";
 import { ClaudeCodeExecutor } from "../../../packages/executor-adapters/src/claudeCodeExecutor";
@@ -1457,6 +1459,16 @@ function buildUniversalCapabilityArtifacts(project: StoredProjectRecord, inputTe
     },
   });
 
+  // Store intelligence on masterTruth so confirm-and-build can cache it
+  (extracted.masterTruth as any).__intelligence = {
+    causalWorldModel: worldModel,
+    predictionLedger,
+    simulationResults,
+    interventions,
+    reflectionNotes: reflection,
+    evolutionProposals: evolution,
+  };
+
   return {
     extractedProductTruth: extracted.masterTruth,
     missingQuestions: extracted.missingQuestions,
@@ -1694,10 +1706,28 @@ async function processJob(config: RuntimeConfig, job: QueueJobRecord) {
     let lastErrorMsg = "";
     let nonRetryable = false;
 
+    // Broadcast packet_start so UI can show a running indicator immediately
+    sseBroadcast(project.projectId, "packet_start", {
+      packetId: packet.packetId,
+      goal: packet.goal,
+      riskLevel: (packet as any).riskLevel ?? "medium",
+      maxRetries: MAX_RETRIES,
+    });
+
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       const constraintsWithRepair = attempt > 0
         ? [...(packet.constraints ?? []), `REPAIR_ATTEMPT_${attempt}: Previous attempt failed. Error: "${lastErrorMsg.slice(0, 300)}". Approach differently — fix the specific issue described.`]
         : (packet.constraints ?? []);
+
+      // Broadcast attempt progress so UI can show retry state
+      if (attempt > 0) {
+        sseBroadcast(project.projectId, "packet_retry", {
+          packetId: packet.packetId,
+          attempt,
+          maxRetries: MAX_RETRIES,
+          lastError: lastErrorMsg.slice(0, 200),
+        });
+      }
 
       result = await executor.execute({
         projectId: project.projectId,
@@ -2355,6 +2385,38 @@ export function buildApp(config: RuntimeConfig) {
       });
     } catch (error) {
       return handleRouteError(res, config, error, "POST /api/projects/intake", actor);
+    }
+  });
+
+  // ── Conversation Triage — analyze raw input before creating a project ────
+  // Returns targeted questions and domain analysis without storing anything.
+  app.post("/api/intake/triage", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const v = zodGuard(z.object({ text: z.string().min(1).max(20000) }), req.body);
+      if (!v.ok) return res.status(400).json({ error: v.error, code: "TRIAGE_VALIDATION_ERROR" });
+      const analysis = triageInput(v.data.text as string);
+      return res.json({ ok: true, analysis, actorId: actor.actorId });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/intake/triage", actor);
+    }
+  });
+
+  // ── Triage condense — merge answers into a clarified spec ready for intake ─
+  app.post("/api/intake/triage/condense", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const v = zodGuard(z.object({
+        text: z.string().min(1).max(20000),
+        responses: z.array(z.object({ questionId: z.string(), answer: z.string().max(2000) })).optional(),
+      }), req.body);
+      if (!v.ok) return res.status(400).json({ error: v.error, code: "TRIAGE_CONDENSE_ERROR" });
+      const { text, responses = [] } = v.data as any;
+      const analysis = triageInput(text);
+      const clarified = condenseToSpec(text, analysis, responses);
+      return res.json({ ok: true, analysis, clarified, actorId: actor.actorId });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/intake/triage/condense", actor);
     }
   });
 
@@ -3128,12 +3190,17 @@ export function buildApp(config: RuntimeConfig) {
         metadata: { style: analyzed.style, openQuestions: mergedSpec.openQuestions.length },
       });
       await persistProject(config, project);
+
+      // Proactive advisory — surfaces blockers, smart defaults, contradictions
+      const advisory = analyzeSpecProactively(mergedSpec, blueprint, text);
+
       return res.json({
         ok: true,
         style: analyzed.style,
         readinessScore: mergedSpec.readinessScore,
         completeness: mergedSpec.completeness,
         openQuestions: mergedSpec.openQuestions,
+        proactiveAdvisory: advisory,
         actorId: actor.actorId,
       });
     } catch (error) {
@@ -3426,6 +3493,9 @@ export function buildApp(config: RuntimeConfig) {
       });
       await persistProject(config, project);
 
+      const blueprint = matchBlueprintFromText(project.request ?? "");
+      const advisory = analyzeSpecProactively(updated, blueprint, project.request ?? "");
+
       return res.json({
         ok: true,
         readinessScore,
@@ -3433,6 +3503,7 @@ export function buildApp(config: RuntimeConfig) {
         openQuestions: updated.openQuestions,
         readyToConfirm: readinessScore >= 60 && updated.openQuestions.length === 0,
         driftWarnings: driftWarnings.length > 0 ? driftWarnings : undefined,
+        proactiveAdvisory: advisory,
         spec: updated,
         actorId: actor.actorId,
       });
@@ -3489,6 +3560,20 @@ export function buildApp(config: RuntimeConfig) {
       const plan = generatePlan(compiled.masterTruth as any);
       compiled.plan = plan;
       compiled.status = "queued";
+
+      // Cache intelligence engine outputs in runs so /status can surface them
+      const compiledIntel = (compiled.masterTruth as any)?.__intelligence ?? null;
+      if (compiledIntel) {
+        compiled.runs = {
+          ...(compiled.runs ?? {}),
+          __causalWorldModel: compiledIntel.causalWorldModel ?? null,
+          __predictionLedger: compiledIntel.predictionLedger ?? null,
+          __simulationResults: compiledIntel.simulationResults ?? null,
+          __interventions: compiledIntel.interventions ?? null,
+          __reflectionNotes: compiledIntel.reflectionNotes ?? null,
+          __evolutionProposals: compiledIntel.evolutionProposals ?? null,
+        };
+      }
 
       // Generate and auto-approve build contract
       const contract = generateBuildContract(compiled.projectId, approvedSpec);
@@ -4628,7 +4713,27 @@ export function buildApp(config: RuntimeConfig) {
         (specCompleteness * 0.25 + validationPassRate * 0.30 + executionReliability * 0.45) * 100
       );
 
-      return res.json({ ...project, intakeArtifacts, healthScore, actorId: actor.actorId, workerId });
+      // Intelligence cockpit — expose engine outputs on every status poll
+      const compiledRuns = (project.runs as any) ?? {};
+      const intelligenceCockpit = {
+        healthScore,
+        causalWorldModel: compiledRuns.__causalWorldModel ?? null,
+        predictionLedger: compiledRuns.__predictionLedger ?? null,
+        simulationResults: compiledRuns.__simulationResults ?? null,
+        interventions: compiledRuns.__interventions ?? null,
+        reflectionNotes: compiledRuns.__reflectionNotes ?? null,
+        evolutionProposals: compiledRuns.__evolutionProposals ?? null,
+        packetProgress: {
+          total: totalPackets,
+          completed: completedPackets,
+          failed: failedPackets,
+          running: packets.filter((p: any) => p.status === "executing").length,
+          pending: packets.filter((p: any) => p.status === "queued" || p.status === "pending").length,
+          percentComplete: totalPackets > 0 ? Math.round((completedPackets / totalPackets) * 100) : 0,
+        },
+      };
+
+      return res.json({ ...project, intakeArtifacts, healthScore, intelligenceCockpit, actorId: actor.actorId, workerId });
     } catch (error) {
       return handleRouteError(res, config, error, "GET /api/projects/:projectId/status", actor);
     }
