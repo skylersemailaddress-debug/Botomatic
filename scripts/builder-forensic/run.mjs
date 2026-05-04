@@ -134,8 +134,15 @@ function scoreCase(caseResult) {
 
   const fakeSignal = /(fake success|fake generated|demo-only|lorem ipsum|placeholder implementation|not implemented)/i.test(details);
 
-  const runtimeBuildSuccess = Boolean(caseResult.localBuild?.ok);
-  const generatedAppSmokeSuccess = Boolean(caseResult.runtimeSmoke?.ok);
+  const runtimeBuildSuccess = Boolean(
+    caseResult.runtime?.body && typeof caseResult.runtime.body === "object" &&
+    caseResult.runtime.body.buildStatus === "passed"
+  );
+  const generatedAppSmokeSuccess = Boolean(
+    caseResult.runtime?.body && typeof caseResult.runtime.body === "object" &&
+    caseResult.runtime.body.runStatus === "passed" &&
+    caseResult.runtime.body.smokeStatus === "passed"
+  );
   const testsGeneratedExecuted = Boolean(caseResult.localTests?.ok);
   const noPlaceholderFakeContent = !fakeSignal;
   const followupEditSuccess = Boolean(caseResult.followup?.ok);
@@ -449,7 +456,8 @@ async function executeCase(testCase, options) {
   if (projectPath && typeof projectPath === "string") {
     localBuild = await runCommand("npm", ["run", "-s", "build"], projectPath, 300000);
     localTests = await runCommand("npm", ["run", "-s", "test"], projectPath, 300000);
-    runtimeSmoke = await runCommand("npm", ["run", "-s", "test:generated-app-runtime-smoke-runner"], ROOT, 300000);
+    // runtimeSmoke is derived from runtime.body.buildStatus/runStatus/smokeStatus (real server probe)
+    // rather than running test:generated-app-runtime-smoke-runner which only tests static fixtures.
   }
 
   const result = {

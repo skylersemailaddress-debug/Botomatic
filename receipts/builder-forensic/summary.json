@@ -1,63 +1,63 @@
 {
-  "generatedAt": "2026-05-04T01:53:41.740Z",
+  "generatedAt": "2026-05-04T02:35:07.080Z",
   "runsIncluded": [
     {
-      "runId": "smoke-20260504013328",
+      "runId": "smoke-20260504023158",
       "mode": "smoke",
       "selectedTotal": 25
     },
     {
-      "runId": "100-20260504013553",
+      "runId": "100-20260504023214",
       "mode": "100",
       "selectedTotal": 100
     },
     {
-      "runId": "repair-20260504015019",
+      "runId": "repair-20260504023331",
       "mode": "repair",
+      "selectedTotal": 25
+    },
+    {
+      "runId": "extreme-20260504023452",
+      "mode": "extreme",
       "selectedTotal": 25
     }
   ],
   "allRunsDiscovered": [
     {
-      "runId": "100-20260504013553",
+      "runId": "100-20260504023214",
       "mode": "100",
       "selectedTotal": 100
     },
     {
-      "runId": "repair-20260504014443",
+      "runId": "extreme-20260504023452",
+      "mode": "extreme",
+      "selectedTotal": 25
+    },
+    {
+      "runId": "repair-20260504023331",
       "mode": "repair",
       "selectedTotal": 25
     },
     {
-      "runId": "repair-20260504015019",
-      "mode": "repair",
-      "selectedTotal": 25
-    },
-    {
-      "runId": "smoke-20260504012452",
-      "mode": "smoke",
-      "selectedTotal": 25
-    },
-    {
-      "runId": "smoke-20260504013328",
+      "runId": "smoke-20260504023158",
       "mode": "smoke",
       "selectedTotal": 25
     }
   ],
-  "totalPromptsTested": 150,
+  "totalPromptsTested": 175,
   "categoriesCovered": 25,
   "passRate": 100,
   "passPlusPartialRate": 100,
-  "promptsReachedBuilderRuntime": 150,
-  "promptsGeneratedArtifacts": 150,
-  "builtSuccessfully": 150,
-  "ranSuccessfully": 150,
+  "promptsReachedBuilderRuntime": 175,
+  "promptsGeneratedArtifacts": 175,
+  "builtSuccessfully": 175,
+  "ranSuccessfully": 175,
   "repairedSuccessfully": 25,
   "failRate": 0,
   "unsupportedRate": 0,
   "runtimeSuccessRate": 100,
-  "followupSuccessRate": 83.33,
-  "repairSuccessRate": 16.67,
+  "followupSuccessRate": 71.43,
+  "repairSuccessRate": 14.29,
   "fakeContaminationRate": 0,
   "ownerVerdict": "PASS_PRIVATE_BETA",
   "answer99Percent": "No. Even with high measured pass rate, this harness forbids claiming 99% coverage without broader external/runtime/deployment proof.",
@@ -94,12 +94,12 @@
     {
       "rank": 1,
       "blocker": "Repair loop not executed for this case",
-      "count": 125
+      "count": 150
     },
     {
       "rank": 2,
       "blocker": "Follow-up edit path not executed for this case",
-      "count": 25
+      "count": 50
     }
   ]
 }

@@ -1,8 +1,9 @@
 import express from "express";
 import multer from "multer";
 import fs from "fs";
+import net from "net";
 import path from "path";
-import { spawnSync } from "child_process";
+import { spawnSync, spawn } from "child_process";
 import { compileConversationToMasterTruth } from "../../../packages/master-truth/src/compiler";
 import { generatePlan } from "../../../packages/packet-engine/src/generator";
 import {
@@ -1560,11 +1561,41 @@ export function classifyLocalExecutionOutcome(outcome: {
   return "PASS_PARTIAL";
 }
 
-function materializeGeneratedWorkspace(
+function findFreePort(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const srv = net.createServer();
+    srv.listen(0, "127.0.0.1", () => {
+      const addr = srv.address();
+      const port = typeof addr === "object" && addr ? addr.port : 0;
+      srv.close(() => resolve(port));
+    });
+    srv.on("error", reject);
+  });
+}
+
+function waitForServerPort(port: number, timeoutMs = 8000): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const deadline = Date.now() + timeoutMs;
+    function tryConnect() {
+      const sock = net.createConnection({ port, host: "127.0.0.1" });
+      sock.on("connect", () => { sock.destroy(); resolve(); });
+      sock.on("error", () => {
+        if (Date.now() >= deadline) {
+          reject(new Error(`Port ${port} not ready within ${timeoutMs}ms`));
+          return;
+        }
+        setTimeout(tryConnect, 100);
+      });
+    }
+    tryConnect();
+  });
+}
+
+async function materializeGeneratedWorkspace(
   projectId: string,
   jobId: string,
   request: string
-): { workspacePath: string; buildStatus: string; filesWritten: number } {
+): Promise<{ workspacePath: string; buildStatus: string; runStatus: string; smokeStatus: string; filesWritten: number }> {
   const workspaceDir = path.join(process.cwd(), "runtime", "generated-apps", projectId, jobId);
   const safeRequest = (request || "").slice(0, 120).replace(/["'\\`]/g, " ");
 
@@ -1620,9 +1651,41 @@ function materializeGeneratedWorkspace(
     timeout: 10000,
   });
 
+  const buildStatus = buildResult.status === 0 ? "passed" : "failed";
+  let runStatus = "failed";
+  let smokeStatus = "failed";
+
+  if (buildStatus === "passed") {
+    let serverProcess: ReturnType<typeof spawn> | null = null;
+    try {
+      const port = await findFreePort();
+      serverProcess = spawn("node", ["server.mjs"], {
+        cwd: workspaceDir,
+        env: { ...process.env, PORT: String(port) },
+        detached: false,
+        stdio: "ignore",
+      });
+      await waitForServerPort(port);
+      runStatus = "passed";
+      const resp = await fetch(`http://127.0.0.1:${port}/health`);
+      if (resp.ok) {
+        const json = (await resp.json()) as Record<string, unknown>;
+        if (json?.status === "ok") smokeStatus = "passed";
+      }
+    } catch {
+      // runStatus/smokeStatus remain "failed"
+    } finally {
+      if (serverProcess) {
+        try { serverProcess.kill("SIGTERM"); } catch {}
+      }
+    }
+  }
+
   return {
     workspacePath: workspaceDir,
-    buildStatus: buildResult.status === 0 ? "passed" : "failed",
+    buildStatus,
+    runStatus,
+    smokeStatus,
     filesWritten: files.length,
   };
 }
@@ -3563,21 +3626,21 @@ export function buildApp(config: RuntimeConfig) {
         // forensic harness can run local build/smoke and score PASS_REAL.
         if (config.repository.mode !== "durable") {
           try {
-            const ws = materializeGeneratedWorkspace(project.projectId, jobId, project.request || "");
+            const ws = await materializeGeneratedWorkspace(project.projectId, jobId, project.request || "");
             project.runs = {
               ...((project.runs || {}) as Record<string, unknown>),
               [generatedWorkspaceRunKey]: {
                 workspacePath: ws.workspacePath,
                 jobId,
                 buildStatus: ws.buildStatus,
-                runStatus: "passed",
-                smokeStatus: "passed",
+                runStatus: ws.runStatus,
+                smokeStatus: ws.smokeStatus,
                 filesWritten: ws.filesWritten,
                 classification: classifyLocalExecutionOutcome({
                   filesWritten: ws.filesWritten,
                   buildStatus: ws.buildStatus,
-                  runStatus: "passed",
-                  smokeStatus: "passed",
+                  runStatus: ws.runStatus,
+                  smokeStatus: ws.smokeStatus,
                 }),
                 generatedAt: now(),
               },

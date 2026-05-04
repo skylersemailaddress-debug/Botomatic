@@ -5,8 +5,8 @@
   ],
   "scripts": {
     "build": "npm run ui:build",
-    "api:start": "PORT=3001 tsx apps/orchestrator-api/src/bootstrap.ts",
-    "api:dev": "PORT=3001 tsx apps/orchestrator-api/src/bootstrap.ts",
+    "api:start": "PORT=3001 API_AUTH_TOKEN=dev-api-token tsx apps/orchestrator-api/src/bootstrap.ts",
+    "api:dev": "PORT=3001 API_AUTH_TOKEN=dev-api-token tsx apps/orchestrator-api/src/bootstrap.ts",
     "doctor": "tsx scripts/doctor.ts",
     "start:easy": "tsx scripts/startEasy.ts",
     "start:easy:dry-run": "tsx scripts/startEasy.ts --dry-run",
