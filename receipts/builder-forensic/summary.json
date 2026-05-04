@@ -1,140 +1,105 @@
 {
-  "generatedAt": "2026-05-04T00:50:46.920Z",
+  "generatedAt": "2026-05-04T01:53:41.740Z",
   "runsIncluded": [
     {
-      "runId": "smoke-20260504004106",
+      "runId": "smoke-20260504013328",
       "mode": "smoke",
       "selectedTotal": 25
     },
     {
-      "runId": "100-20260504004111",
+      "runId": "100-20260504013553",
       "mode": "100",
       "selectedTotal": 100
     },
     {
-      "runId": "200-20260504004115",
-      "mode": "200",
-      "selectedTotal": 200
-    },
-    {
-      "runId": "repair-20260504004936",
+      "runId": "repair-20260504015019",
       "mode": "repair",
-      "selectedTotal": 25
-    },
-    {
-      "runId": "extreme-20260504005043",
-      "mode": "extreme",
       "selectedTotal": 25
     }
   ],
   "allRunsDiscovered": [
     {
-      "runId": "100-20260504004111",
+      "runId": "100-20260504013553",
       "mode": "100",
       "selectedTotal": 100
     },
     {
-      "runId": "200-20260504004115",
-      "mode": "200",
-      "selectedTotal": 200
-    },
-    {
-      "runId": "extreme-20260504005043",
-      "mode": "extreme",
-      "selectedTotal": 25
-    },
-    {
-      "runId": "repair-20260504004936",
+      "runId": "repair-20260504014443",
       "mode": "repair",
       "selectedTotal": 25
     },
     {
-      "runId": "smoke-20260504003636",
+      "runId": "repair-20260504015019",
+      "mode": "repair",
+      "selectedTotal": 25
+    },
+    {
+      "runId": "smoke-20260504012452",
       "mode": "smoke",
       "selectedTotal": 25
     },
     {
-      "runId": "smoke-20260504004106",
+      "runId": "smoke-20260504013328",
       "mode": "smoke",
       "selectedTotal": 25
     }
   ],
-  "totalPromptsTested": 375,
-  "categoriesCovered": 40,
-  "passRate": 0,
+  "totalPromptsTested": 150,
+  "categoriesCovered": 25,
+  "passRate": 100,
   "passPlusPartialRate": 100,
-  "promptsReachedBuilderRuntime": 375,
-  "promptsGeneratedArtifacts": 375,
-  "builtSuccessfully": 0,
-  "ranSuccessfully": 0,
-  "repairedSuccessfully": 225,
+  "promptsReachedBuilderRuntime": 150,
+  "promptsGeneratedArtifacts": 150,
+  "builtSuccessfully": 150,
+  "ranSuccessfully": 150,
+  "repairedSuccessfully": 25,
   "failRate": 0,
   "unsupportedRate": 0,
-  "runtimeSuccessRate": 0,
-  "followupSuccessRate": 86.67,
-  "repairSuccessRate": 60,
+  "runtimeSuccessRate": 100,
+  "followupSuccessRate": 83.33,
+  "repairSuccessRate": 16.67,
   "fakeContaminationRate": 0,
-  "ownerVerdict": "PARTIAL_PRIVATE_BETA",
-  "answer99Percent": "No. Measured PASS_REAL rate is 0% and PASS_REAL+PASS_PARTIAL is 100%, below a defensible 99% claim.",
-  "whatHandlesWell": [],
-  "whatHandlesPartially": [
+  "ownerVerdict": "PASS_PRIVATE_BETA",
+  "answer99Percent": "No. Even with high measured pass rate, this harness forbids claiming 99% coverage without broader external/runtime/deployment proof.",
+  "whatHandlesWell": [
     "add-auth-payments-email-db-edit",
     "admin-internal-ops",
     "ai-writing-tool",
-    "analytics-reporting-app",
-    "api-integration-app",
-    "auth-heavy-app",
     "booking-scheduling-app",
-    "chat-collab-app",
-    "contradictory-prompt",
     "course-lms",
     "crm",
     "dirty-repo-repair-build-prompts",
     "ecommerce-storefront",
     "events-community",
     "failure-recovery-prompts",
-    "file-upload-heavy-app",
     "finance-budgeting",
     "fitness-wellness",
     "follow-up-edits-after-first-build",
     "healthcare-intake-non-medical",
-    "huge-build-me-airbnb-uber-shopify",
     "inventory-logistics",
-    "job-board",
     "legal-intake-non-legal-advice",
     "local-service-site",
     "make-it-prettier-design-edit",
     "marketplace",
-    "messy-typo-filled-prompt",
-    "mobile-first-app",
-    "multi-tenant-app",
     "one-page-landing-page",
-    "payment-subscription-app",
     "project-management",
     "real-estate-listings",
     "restaurant-order-app",
-    "role-based-app",
     "saas-dashboard",
-    "social-community-app",
-    "support-ticketing",
-    "weird-vague-app"
+    "support-ticketing"
   ],
+  "whatHandlesPartially": [],
   "whatFails": [],
   "topBlockers": [
     {
       "rank": 1,
-      "blocker": "No generated project path returned for local build validation",
-      "count": 375
+      "blocker": "Repair loop not executed for this case",
+      "count": 125
     },
     {
       "rank": 2,
-      "blocker": "Repair loop not executed for this case",
-      "count": 150
-    },
-    {
-      "rank": 3,
       "blocker": "Follow-up edit path not executed for this case",
-      "count": 50
+      "count": 25
     }
   ]
 }
