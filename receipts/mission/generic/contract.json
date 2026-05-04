@@ -1,0 +1,46 @@
+{
+  "missionId": "mission_benchmark_enterprise_saas_v1_d99a2e44a278",
+  "projectId": "benchmark_enterprise_saas_v1",
+  "sourceSpecHash": "b93d2fd5089ec66c641b76748d7aabc081fc6d5b254821f2ec7512bd5f77cb5c",
+  "sourceType": "file",
+  "lockedSpecVersion": "6053e42371ba",
+  "userApproved": true,
+  "productType": "general_app",
+  "targetArchitecture": "full_stack_app",
+  "assumptions": [
+    {
+      "id": "a_email",
+      "field": "email_provider",
+      "decision": "Use default transactional email",
+      "reason": "Low-risk default",
+      "risk": "low",
+      "autoDecided": true
+    }
+  ],
+  "blockers": [],
+  "unresolvedQuestions": [],
+  "excludedScope": [],
+  "acceptanceCriteria": [
+    "monorepo builds",
+    "workspaces resolve",
+    "tsconfig compiles",
+    "all entities defined",
+    "migrations apply cleanly"
+  ],
+  "requiredCapabilities": [],
+  "requiredWaves": [
+    "repo_layout",
+    "api_schema",
+    "spec_compiler",
+    "execution_runtime",
+    "builder_factory",
+    "governance_security",
+    "deployment_rollback",
+    "validation_proof",
+    "fresh_clone_proof"
+  ],
+  "claimBoundary": "MISSION_COMPILED",
+  "approvedAt": "2026-05-04T04:53:45.498Z",
+  "approvedBy": "system_autopilot",
+  "lockedAt": "2026-05-04T04:53:45.498Z"
+}

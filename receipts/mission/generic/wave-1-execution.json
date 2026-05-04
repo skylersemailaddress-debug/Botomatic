@@ -1,0 +1,18 @@
+{
+  "waveId": "repo_layout",
+  "status": "proven",
+  "claimLevel": "SYSTEM_PARTIAL",
+  "workspacePath": "/tmp/mission-dryrun/mission_benchmark_enterprise_saas_v1_d99a2e44a278/repo_layout",
+  "artifactId": "artifact_dryrun_repo_layout_1777870429208",
+  "contentHash": "dryrun_hash_repo_layout",
+  "buildStatus": "passed",
+  "runStatus": "skipped",
+  "smokeStatus": "skipped",
+  "validatorsRun": [
+    "validate:spec-contract",
+    "validate:repo-structure"
+  ],
+  "proofRefs": [
+    "artifact:artifact_dryrun_repo_layout_1777870429208"
+  ]
+}

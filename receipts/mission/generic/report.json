@@ -1,0 +1,134 @@
+{
+  "missionId": "mission_benchmark_enterprise_saas_v1_d99a2e44a278",
+  "claimLevel": "SYSTEM_PARTIAL",
+  "provenWaves": 1,
+  "totalWaves": 9,
+  "userStage": "understanding_spec",
+  "waves": [
+    {
+      "waveId": "repo_layout",
+      "name": "Repo Layout + Scaffold",
+      "status": "proven",
+      "dependsOn": [],
+      "packetCount": 3,
+      "evidenceCount": 1,
+      "artifactId": null,
+      "workspacePath": null
+    },
+    {
+      "waveId": "api_schema",
+      "name": "API + Data Schema",
+      "status": "pending",
+      "dependsOn": [
+        "repo_layout"
+      ],
+      "packetCount": 3,
+      "evidenceCount": 0,
+      "artifactId": null,
+      "workspacePath": null
+    },
+    {
+      "waveId": "spec_compiler",
+      "name": "DAS / IBC Spec Compiler",
+      "status": "pending",
+      "dependsOn": [
+        "repo_layout",
+        "api_schema"
+      ],
+      "packetCount": 4,
+      "evidenceCount": 0,
+      "artifactId": null,
+      "workspacePath": null
+    },
+    {
+      "waveId": "execution_runtime",
+      "name": "Execution DAG + Runtime",
+      "status": "pending",
+      "dependsOn": [
+        "repo_layout",
+        "api_schema"
+      ],
+      "packetCount": 3,
+      "evidenceCount": 0,
+      "artifactId": null,
+      "workspacePath": null
+    },
+    {
+      "waveId": "builder_factory",
+      "name": "Builder / Factory Engine",
+      "status": "pending",
+      "dependsOn": [
+        "repo_layout",
+        "api_schema",
+        "spec_compiler",
+        "execution_runtime"
+      ],
+      "packetCount": 4,
+      "evidenceCount": 0,
+      "artifactId": null,
+      "workspacePath": null
+    },
+    {
+      "waveId": "governance_security",
+      "name": "Governance + Security",
+      "status": "pending",
+      "dependsOn": [
+        "repo_layout",
+        "api_schema",
+        "execution_runtime"
+      ],
+      "packetCount": 3,
+      "evidenceCount": 0,
+      "artifactId": null,
+      "workspacePath": null
+    },
+    {
+      "waveId": "deployment_rollback",
+      "name": "Deployment + Rollback",
+      "status": "pending",
+      "dependsOn": [
+        "builder_factory",
+        "governance_security"
+      ],
+      "packetCount": 3,
+      "evidenceCount": 0,
+      "artifactId": null,
+      "workspacePath": null
+    },
+    {
+      "waveId": "validation_proof",
+      "name": "Validation + Proof System",
+      "status": "pending",
+      "dependsOn": [
+        "repo_layout",
+        "builder_factory"
+      ],
+      "packetCount": 3,
+      "evidenceCount": 0,
+      "artifactId": null,
+      "workspacePath": null
+    },
+    {
+      "waveId": "fresh_clone_proof",
+      "name": "Fresh-Clone End-to-End Proof",
+      "status": "pending",
+      "dependsOn": [
+        "repo_layout",
+        "api_schema",
+        "spec_compiler",
+        "execution_runtime",
+        "builder_factory",
+        "repair_replay",
+        "truth_memory",
+        "governance_security",
+        "deployment_rollback",
+        "validation_proof"
+      ],
+      "packetCount": 3,
+      "evidenceCount": 0,
+      "artifactId": null,
+      "workspacePath": null
+    }
+  ],
+  "generatedAt": "2026-05-04T04:53:49.862Z"
+}

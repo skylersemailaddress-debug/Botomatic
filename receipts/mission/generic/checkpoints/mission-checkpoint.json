@@ -1,0 +1,753 @@
+{
+  "missionId": "mission_benchmark_enterprise_saas_v1_d99a2e44a278",
+  "projectId": "benchmark_enterprise_saas_v1",
+  "sourceFile": "fixtures/enterprise-saas.ts",
+  "sourceHash": "b93d2fd5089ec66c641b76748d7aabc081fc6d5b254821f2ec7512bd5f77cb5c",
+  "specHash": "d99a2e44a2784335f33548c92ad1b43b7d3fe643d1770a524b6d7442825faf11",
+  "title": "ENTERPRISE HR PLATFORM — Benchmark Fixture",
+  "description": "Mission compiled from fixtures/enterprise-saas.ts — 9 waves, 29 packets",
+  "waves": [
+    {
+      "waveId": "repo_layout",
+      "missionId": "mission_benchmark_enterprise_saas_v1_d99a2e44a278",
+      "index": 0,
+      "name": "Repo Layout + Scaffold",
+      "description": "Generate monorepo structure, workspace config, tsconfig, shared types, and dev tooling.",
+      "dependsOn": [],
+      "packets": [
+        {
+          "packetId": "repo_layout-p1",
+          "waveId": "repo_layout",
+          "goal": "Scaffold monorepo with packages/, apps/, and root config",
+          "scope": [
+            "package.json",
+            "tsconfig.json"
+          ],
+          "acceptanceCriteria": [
+            "monorepo builds",
+            "workspaces resolve",
+            "tsconfig compiles"
+          ],
+          "riskLevel": "low"
+        },
+        {
+          "packetId": "repo_layout-p2",
+          "waveId": "repo_layout",
+          "goal": "Define shared type contracts in packages/core-contracts/",
+          "scope": [
+            "packages/core-contracts/"
+          ],
+          "acceptanceCriteria": [
+            "monorepo builds",
+            "workspaces resolve",
+            "tsconfig compiles"
+          ],
+          "riskLevel": "low"
+        },
+        {
+          "packetId": "repo_layout-p3",
+          "waveId": "repo_layout",
+          "goal": "Verify clean build from fresh clone",
+          "scope": [
+            "*"
+          ],
+          "acceptanceCriteria": [
+            "monorepo builds",
+            "workspaces resolve",
+            "tsconfig compiles"
+          ],
+          "riskLevel": "low"
+        }
+      ],
+      "requiredValidators": [
+        "validate:spec-contract",
+        "validate:repo-structure"
+      ],
+      "evidenceRequirements": [
+        "repo-structure-proof",
+        "build-pass"
+      ],
+      "acceptanceCriteria": [
+        "monorepo builds",
+        "workspaces resolve",
+        "tsconfig compiles"
+      ],
+      "status": "proven",
+      "evidence": [
+        {
+          "evidenceId": "ev_repo_layout_dryrun",
+          "waveId": "repo_layout",
+          "evidenceType": "checkpoint",
+          "passed": true,
+          "detail": "Dry-run: wave \"Repo Layout + Scaffold\" would execute 3 packets",
+          "capturedAt": "2026-05-04T04:53:49.208Z",
+          "artifactId": "artifact_dryrun_repo_layout_1777870429208",
+          "workspacePath": "/tmp/mission-dryrun/mission_benchmark_enterprise_saas_v1_d99a2e44a278/repo_layout",
+          "contentHash": "dryrun_hash_repo_layout"
+        }
+      ],
+      "provenAt": "2026-05-04T04:53:49.208Z"
+    },
+    {
+      "waveId": "api_schema",
+      "missionId": "mission_benchmark_enterprise_saas_v1_d99a2e44a278",
+      "index": 1,
+      "name": "API + Data Schema",
+      "description": "Define all API route contracts, data model schemas, and database migrations.",
+      "dependsOn": [
+        "repo_layout"
+      ],
+      "packets": [
+        {
+          "packetId": "api_schema-p1",
+          "waveId": "api_schema",
+          "goal": "Define canonical data model entities and relationships",
+          "scope": [
+            "packages/core-contracts/src/"
+          ],
+          "acceptanceCriteria": [
+            "all entities defined",
+            "migrations apply cleanly",
+            "no schema gaps"
+          ],
+          "riskLevel": "low"
+        },
+        {
+          "packetId": "api_schema-p2",
+          "waveId": "api_schema",
+          "goal": "Generate database migration files for all entities",
+          "scope": [
+            "migrations/"
+          ],
+          "acceptanceCriteria": [
+            "all entities defined",
+            "migrations apply cleanly",
+            "no schema gaps"
+          ],
+          "riskLevel": "medium"
+        },
+        {
+          "packetId": "api_schema-p3",
+          "waveId": "api_schema",
+          "goal": "Define all API route contracts with request/response/auth/error",
+          "scope": [
+            "packages/core-contracts/src/apiRoutes.ts"
+          ],
+          "acceptanceCriteria": [
+            "all entities defined",
+            "migrations apply cleanly",
+            "no schema gaps"
+          ],
+          "riskLevel": "low"
+        }
+      ],
+      "requiredValidators": [
+        "validate:api-contracts",
+        "validate:data-model"
+      ],
+      "evidenceRequirements": [
+        "schema-proof",
+        "migration-proof"
+      ],
+      "acceptanceCriteria": [
+        "all entities defined",
+        "migrations apply cleanly",
+        "no schema gaps"
+      ],
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "waveId": "spec_compiler",
+      "missionId": "mission_benchmark_enterprise_saas_v1_d99a2e44a278",
+      "index": 2,
+      "name": "DAS / IBC Spec Compiler",
+      "description": "Build the deterministic app spec compiler that converts raw input into DAS and IBC.",
+      "dependsOn": [
+        "repo_layout",
+        "api_schema"
+      ],
+      "packets": [
+        {
+          "packetId": "spec_compiler-p1",
+          "waveId": "spec_compiler",
+          "goal": "Implement spec extraction and normalization pipeline",
+          "scope": [
+            "packages/spec-engine/src/specAnalyzer.ts"
+          ],
+          "acceptanceCriteria": [
+            "same input → same specHash",
+            "missing roles → blocked decision",
+            "low-risk gap → assumption recorded"
+          ],
+          "riskLevel": "medium"
+        },
+        {
+          "packetId": "spec_compiler-p2",
+          "waveId": "spec_compiler",
+          "goal": "Implement assumption ledger and blocked decision engine",
+          "scope": [
+            "packages/spec-engine/src/assumptionLedger.ts"
+          ],
+          "acceptanceCriteria": [
+            "same input → same specHash",
+            "missing roles → blocked decision",
+            "low-risk gap → assumption recorded"
+          ],
+          "riskLevel": "low"
+        },
+        {
+          "packetId": "spec_compiler-p3",
+          "waveId": "spec_compiler",
+          "goal": "Implement specHash determinism — same input produces same hash",
+          "scope": [
+            "packages/spec-engine/src/"
+          ],
+          "acceptanceCriteria": [
+            "same input → same specHash",
+            "missing roles → blocked decision",
+            "low-risk gap → assumption recorded"
+          ],
+          "riskLevel": "high"
+        },
+        {
+          "packetId": "spec_compiler-p4",
+          "waveId": "spec_compiler",
+          "goal": "Implement Immutable Build Contract generator",
+          "scope": [
+            "packages/spec-engine/src/buildContract.ts"
+          ],
+          "acceptanceCriteria": [
+            "same input → same specHash",
+            "missing roles → blocked decision",
+            "low-risk gap → assumption recorded"
+          ],
+          "riskLevel": "medium"
+        }
+      ],
+      "requiredValidators": [
+        "validate:spec-contract",
+        "validate:spec-completeness"
+      ],
+      "evidenceRequirements": [
+        "spec-compiler-proof",
+        "same-input-same-hash"
+      ],
+      "acceptanceCriteria": [
+        "same input → same specHash",
+        "missing roles → blocked decision",
+        "low-risk gap → assumption recorded"
+      ],
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "waveId": "execution_runtime",
+      "missionId": "mission_benchmark_enterprise_saas_v1_d99a2e44a278",
+      "index": 3,
+      "name": "Execution DAG + Runtime",
+      "description": "Build the job queue, worker system, packet execution, lease, and retry infrastructure.",
+      "dependsOn": [
+        "repo_layout",
+        "api_schema"
+      ],
+      "packets": [
+        {
+          "packetId": "execution_runtime-p1",
+          "waveId": "execution_runtime",
+          "goal": "Implement job queue with claim, lease, and retry semantics",
+          "scope": [
+            "packages/supabase-adapter/src/jobClient.ts"
+          ],
+          "acceptanceCriteria": [
+            "no double execution",
+            "idempotent jobs",
+            "lease expiry retries correctly"
+          ],
+          "riskLevel": "medium"
+        },
+        {
+          "packetId": "execution_runtime-p2",
+          "waveId": "execution_runtime",
+          "goal": "Implement packet worker with execution and status reporting",
+          "scope": [
+            "packages/execution/"
+          ],
+          "acceptanceCriteria": [
+            "no double execution",
+            "idempotent jobs",
+            "lease expiry retries correctly"
+          ],
+          "riskLevel": "medium"
+        },
+        {
+          "packetId": "execution_runtime-p3",
+          "waveId": "execution_runtime",
+          "goal": "Implement execution DAG — topological packet ordering",
+          "scope": [
+            "packages/packet-engine/src/"
+          ],
+          "acceptanceCriteria": [
+            "no double execution",
+            "idempotent jobs",
+            "lease expiry retries correctly"
+          ],
+          "riskLevel": "high"
+        }
+      ],
+      "requiredValidators": [
+        "validate:execution-runtime",
+        "validate:job-idempotency"
+      ],
+      "evidenceRequirements": [
+        "execution-proof",
+        "idempotency-proof"
+      ],
+      "acceptanceCriteria": [
+        "no double execution",
+        "idempotent jobs",
+        "lease expiry retries correctly"
+      ],
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "waveId": "builder_factory",
+      "missionId": "mission_benchmark_enterprise_saas_v1_d99a2e44a278",
+      "index": 4,
+      "name": "Builder / Factory Engine",
+      "description": "Build the code synthesis engine that turns packets + blueprints into real working applications.",
+      "dependsOn": [
+        "repo_layout",
+        "api_schema",
+        "spec_compiler",
+        "execution_runtime"
+      ],
+      "packets": [
+        {
+          "packetId": "builder_factory-p1",
+          "waveId": "builder_factory",
+          "goal": "Implement blueprint registry with domain-specific generation rules",
+          "scope": [
+            "packages/blueprints/src/"
+          ],
+          "acceptanceCriteria": [
+            "generated app builds",
+            "generated app runs",
+            "/health returns ok",
+            "no placeholder code"
+          ],
+          "riskLevel": "medium"
+        },
+        {
+          "packetId": "builder_factory-p2",
+          "waveId": "builder_factory",
+          "goal": "Implement real code synthesis — generate working TypeScript from blueprint + DAS",
+          "scope": [
+            "packages/domain-builders/src/"
+          ],
+          "acceptanceCriteria": [
+            "generated app builds",
+            "generated app runs",
+            "/health returns ok",
+            "no placeholder code"
+          ],
+          "riskLevel": "high"
+        },
+        {
+          "packetId": "builder_factory-p3",
+          "waveId": "builder_factory",
+          "goal": "Implement workspace materializer with real file output",
+          "scope": [
+            "apps/orchestrator-api/src/server_app.ts"
+          ],
+          "acceptanceCriteria": [
+            "generated app builds",
+            "generated app runs",
+            "/health returns ok",
+            "no placeholder code"
+          ],
+          "riskLevel": "high"
+        },
+        {
+          "packetId": "builder_factory-p4",
+          "waveId": "builder_factory",
+          "goal": "Prove generated app builds, runs, and passes /health smoke",
+          "scope": [
+            "runtime/generated-apps/"
+          ],
+          "acceptanceCriteria": [
+            "generated app builds",
+            "generated app runs",
+            "/health returns ok",
+            "no placeholder code"
+          ],
+          "riskLevel": "high"
+        }
+      ],
+      "requiredValidators": [
+        "validate:builder-output",
+        "validate:no-placeholders"
+      ],
+      "evidenceRequirements": [
+        "builder-proof",
+        "smoke-proof",
+        "no-placeholder-proof"
+      ],
+      "acceptanceCriteria": [
+        "generated app builds",
+        "generated app runs",
+        "/health returns ok",
+        "no placeholder code"
+      ],
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "waveId": "governance_security",
+      "missionId": "mission_benchmark_enterprise_saas_v1_d99a2e44a278",
+      "index": 5,
+      "name": "Governance + Security",
+      "description": "Build RBAC, tenant isolation, approval tiers, secrets management, and autonomy policy.",
+      "dependsOn": [
+        "repo_layout",
+        "api_schema",
+        "execution_runtime"
+      ],
+      "packets": [
+        {
+          "packetId": "governance_security-p1",
+          "waveId": "governance_security",
+          "goal": "Implement RBAC with role hierarchy and permission enforcement",
+          "scope": [
+            "packages/governance-engine/src/"
+          ],
+          "acceptanceCriteria": [
+            "role guards enforced",
+            "tenants isolated",
+            "secrets never logged"
+          ],
+          "riskLevel": "high"
+        },
+        {
+          "packetId": "governance_security-p2",
+          "waveId": "governance_security",
+          "goal": "Implement autonomy tier system with approval thresholds",
+          "scope": [
+            "packages/autonomy-tiers/src/"
+          ],
+          "acceptanceCriteria": [
+            "role guards enforced",
+            "tenants isolated",
+            "secrets never logged"
+          ],
+          "riskLevel": "medium"
+        },
+        {
+          "packetId": "governance_security-p3",
+          "waveId": "governance_security",
+          "goal": "Implement secrets management with no-log guarantee",
+          "scope": [
+            "packages/governance-engine/src/"
+          ],
+          "acceptanceCriteria": [
+            "role guards enforced",
+            "tenants isolated",
+            "secrets never logged"
+          ],
+          "riskLevel": "high"
+        }
+      ],
+      "requiredValidators": [
+        "validate:rbac",
+        "validate:tenant-isolation",
+        "validate:secrets"
+      ],
+      "evidenceRequirements": [
+        "rbac-proof",
+        "governance-proof"
+      ],
+      "acceptanceCriteria": [
+        "role guards enforced",
+        "tenants isolated",
+        "secrets never logged"
+      ],
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "waveId": "deployment_rollback",
+      "missionId": "mission_benchmark_enterprise_saas_v1_d99a2e44a278",
+      "index": 6,
+      "name": "Deployment + Rollback",
+      "description": "Build export, dry-run, live deploy, credential injection, and rollback engine.",
+      "dependsOn": [
+        "builder_factory",
+        "governance_security"
+      ],
+      "packets": [
+        {
+          "packetId": "deployment_rollback-p1",
+          "waveId": "deployment_rollback",
+          "goal": "Implement export bundle with all assets and credentials excluded",
+          "scope": [
+            "packages/vercel-adapter/src/"
+          ],
+          "acceptanceCriteria": [
+            "dry-run blocked from live deploy claim",
+            "rollback always available",
+            "credentials injected at deploy time"
+          ],
+          "riskLevel": "medium"
+        },
+        {
+          "packetId": "deployment_rollback-p2",
+          "waveId": "deployment_rollback",
+          "goal": "Implement dry-run mode with explicit cannot-claim-live-deploy gate",
+          "scope": [
+            "apps/orchestrator-api/src/"
+          ],
+          "acceptanceCriteria": [
+            "dry-run blocked from live deploy claim",
+            "rollback always available",
+            "credentials injected at deploy time"
+          ],
+          "riskLevel": "high"
+        },
+        {
+          "packetId": "deployment_rollback-p3",
+          "waveId": "deployment_rollback",
+          "goal": "Implement live deployment pipeline with rollback checkpoint",
+          "scope": [
+            "packages/vercel-adapter/src/"
+          ],
+          "acceptanceCriteria": [
+            "dry-run blocked from live deploy claim",
+            "rollback always available",
+            "credentials injected at deploy time"
+          ],
+          "riskLevel": "high"
+        }
+      ],
+      "requiredValidators": [
+        "validate:deployment-gates",
+        "validate:rollback"
+      ],
+      "evidenceRequirements": [
+        "deployment-proof",
+        "rollback-proof"
+      ],
+      "acceptanceCriteria": [
+        "dry-run blocked from live deploy claim",
+        "rollback always available",
+        "credentials injected at deploy time"
+      ],
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "waveId": "validation_proof",
+      "missionId": "mission_benchmark_enterprise_saas_v1_d99a2e44a278",
+      "index": 7,
+      "name": "Validation + Proof System",
+      "description": "Build all validators, proof ladder, evidence artifacts, and claim boundaries.",
+      "dependsOn": [
+        "repo_layout",
+        "builder_factory"
+      ],
+      "packets": [
+        {
+          "packetId": "validation_proof-p1",
+          "waveId": "validation_proof",
+          "goal": "Implement proof ladder with BUILD → TEST → SMOKE → DEPLOY chain",
+          "scope": [
+            "packages/proof-engine/src/"
+          ],
+          "acceptanceCriteria": [
+            "all 78+ validators pass",
+            "no validator passes on mock output",
+            "claim boundary enforced"
+          ],
+          "riskLevel": "medium"
+        },
+        {
+          "packetId": "validation_proof-p2",
+          "waveId": "validation_proof",
+          "goal": "Implement claim boundary enforcement — no claim above evidence",
+          "scope": [
+            "packages/proof-gate/src/"
+          ],
+          "acceptanceCriteria": [
+            "all 78+ validators pass",
+            "no validator passes on mock output",
+            "claim boundary enforced"
+          ],
+          "riskLevel": "high"
+        },
+        {
+          "packetId": "validation_proof-p3",
+          "waveId": "validation_proof",
+          "goal": "Run validate:all and prove all validators pass deterministically",
+          "scope": [
+            "packages/validation/src/"
+          ],
+          "acceptanceCriteria": [
+            "all 78+ validators pass",
+            "no validator passes on mock output",
+            "claim boundary enforced"
+          ],
+          "riskLevel": "medium"
+        }
+      ],
+      "requiredValidators": [
+        "validate:all",
+        "validate:claim-boundary"
+      ],
+      "evidenceRequirements": [
+        "validation-proof",
+        "claim-boundary-proof"
+      ],
+      "acceptanceCriteria": [
+        "all 78+ validators pass",
+        "no validator passes on mock output",
+        "claim boundary enforced"
+      ],
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "waveId": "fresh_clone_proof",
+      "missionId": "mission_benchmark_enterprise_saas_v1_d99a2e44a278",
+      "index": 8,
+      "name": "Fresh-Clone End-to-End Proof",
+      "description": "Prove the full system works from a clean checkout: install → build → test → run → smoke.",
+      "dependsOn": [
+        "repo_layout",
+        "api_schema",
+        "spec_compiler",
+        "execution_runtime",
+        "builder_factory",
+        "repair_replay",
+        "truth_memory",
+        "governance_security",
+        "deployment_rollback",
+        "validation_proof"
+      ],
+      "packets": [
+        {
+          "packetId": "fresh_clone_proof-p1",
+          "waveId": "fresh_clone_proof",
+          "goal": "Run npm ci from clean state and verify all deps resolve",
+          "scope": [
+            "package.json",
+            "package-lock.json"
+          ],
+          "acceptanceCriteria": [
+            "npm ci succeeds from clean checkout",
+            "npm run build succeeds",
+            "npm run test:universal passes",
+            "npm run validate:all passes",
+            "generated app build/run/smoke passes"
+          ],
+          "riskLevel": "low"
+        },
+        {
+          "packetId": "fresh_clone_proof-p2",
+          "waveId": "fresh_clone_proof",
+          "goal": "Run full build and test suite and record evidence",
+          "scope": [
+            "*"
+          ],
+          "acceptanceCriteria": [
+            "npm ci succeeds from clean checkout",
+            "npm run build succeeds",
+            "npm run test:universal passes",
+            "npm run validate:all passes",
+            "generated app build/run/smoke passes"
+          ],
+          "riskLevel": "medium"
+        },
+        {
+          "packetId": "fresh_clone_proof-p3",
+          "waveId": "fresh_clone_proof",
+          "goal": "Run builder forensic smoke suite and prove PASS_REAL > 90%",
+          "scope": [
+            "scripts/builder-forensic/"
+          ],
+          "acceptanceCriteria": [
+            "npm ci succeeds from clean checkout",
+            "npm run build succeeds",
+            "npm run test:universal passes",
+            "npm run validate:all passes",
+            "generated app build/run/smoke passes"
+          ],
+          "riskLevel": "high"
+        }
+      ],
+      "requiredValidators": [
+        "validate:all",
+        "test:universal",
+        "build"
+      ],
+      "evidenceRequirements": [
+        "fresh-clone-proof",
+        "e2e-proof",
+        "smoke-proof"
+      ],
+      "acceptanceCriteria": [
+        "npm ci succeeds from clean checkout",
+        "npm run build succeeds",
+        "npm run test:universal passes",
+        "npm run validate:all passes",
+        "generated app build/run/smoke passes"
+      ],
+      "status": "pending",
+      "evidence": []
+    }
+  ],
+  "status": "in_progress",
+  "claimLevel": "SYSTEM_PARTIAL",
+  "compiledAt": "2026-05-04T04:53:42.164Z",
+  "lastUpdatedAt": "2026-05-04T04:53:49.208Z",
+  "checkpoints": [
+    {
+      "checkpointId": "cp_repo_layout_1777870429208",
+      "missionId": "mission_benchmark_enterprise_saas_v1_d99a2e44a278",
+      "waveId": "repo_layout",
+      "waveIndex": 0,
+      "status": "proven",
+      "evidence": [
+        {
+          "evidenceId": "ev_repo_layout_dryrun",
+          "waveId": "repo_layout",
+          "evidenceType": "checkpoint",
+          "passed": true,
+          "detail": "Dry-run: wave \"Repo Layout + Scaffold\" would execute 3 packets",
+          "capturedAt": "2026-05-04T04:53:49.208Z",
+          "artifactId": "artifact_dryrun_repo_layout_1777870429208",
+          "workspacePath": "/tmp/mission-dryrun/mission_benchmark_enterprise_saas_v1_d99a2e44a278/repo_layout",
+          "contentHash": "dryrun_hash_repo_layout"
+        }
+      ],
+      "savedAt": "2026-05-04T04:53:49.208Z",
+      "workspacePath": "/tmp/mission-dryrun/mission_benchmark_enterprise_saas_v1_d99a2e44a278/repo_layout",
+      "artifactId": "artifact_dryrun_repo_layout_1777870429208",
+      "contentHash": "dryrun_hash_repo_layout",
+      "buildStatus": "passed",
+      "runStatus": "skipped",
+      "smokeStatus": "skipped",
+      "validatorsRun": [
+        "validate:spec-contract",
+        "validate:repo-structure"
+      ],
+      "repairAttempts": 0,
+      "proofRefs": [
+        "artifact:artifact_dryrun_repo_layout_1777870429208"
+      ],
+      "nextWaveId": "api_schema",
+      "blockers": []
+    }
+  ],
+  "totalWaves": 9,
+  "provenWaves": 1
+}
