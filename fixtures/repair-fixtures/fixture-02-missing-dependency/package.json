@@ -1,0 +1,10 @@
+{
+  "name": "fixture-02-missing-dependency",
+  "version": "1.0.0",
+  "description": "Repair fixture: missing dependency module in generated app",
+  "scripts": {
+    "start": "node app.js",
+    "build": "node --check app.js"
+  },
+  "dependencies": {}
+}

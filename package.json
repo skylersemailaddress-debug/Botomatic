@@ -161,6 +161,7 @@
     "test:builder-forensic:repair": "node scripts/builder-forensic/run.mjs --mode repair",
     "test:builder-forensic:extreme": "node scripts/builder-forensic/run.mjs --mode extreme",
     "test:builder-forensic:report": "node scripts/builder-forensic/report.mjs",
+    "test:builder-forensic:repair-harness": "node scripts/builder-forensic/repair-harness.mjs",
     "audit:routes-commercial": "node scripts/forensic/routes-commercial.mjs",
     "audit:ui-actions": "node scripts/forensic/ui-actions-audit.mjs",
     "test:e2e:live-beta": "node scripts/forensic/e2e-live-beta.mjs --iterations 1",

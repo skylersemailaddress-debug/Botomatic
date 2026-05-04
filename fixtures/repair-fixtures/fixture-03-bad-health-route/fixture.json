@@ -1,0 +1,13 @@
+{
+  "id": "fixture-03",
+  "name": "bad-health-route",
+  "failureType": "smoke_route",
+  "description": "Generated app starts successfully but /health route returns 500 instead of 200",
+  "port": 33103,
+  "smokeRoutes": [
+    { "path": "/health", "expectedStatus": 200 }
+  ],
+  "repairStrategy": "fix_health_route",
+  "brokenFile": "app.js",
+  "diagnosis": "/health handler returns 500 due to misconfigured status code in generated route"
+}

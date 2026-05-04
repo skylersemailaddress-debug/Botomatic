@@ -1,0 +1,10 @@
+{
+  "name": "fixture-05-missing-route",
+  "version": "1.0.0",
+  "description": "Repair fixture: missing dashboard route in generated app",
+  "scripts": {
+    "start": "node app.js",
+    "build": "node --check app.js"
+  },
+  "dependencies": {}
+}
