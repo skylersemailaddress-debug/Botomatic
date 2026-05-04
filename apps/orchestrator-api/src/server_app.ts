@@ -4734,6 +4734,79 @@ export function buildApp(config: RuntimeConfig) {
     }
   });
 
+  // ── Launch Proof ─────────────────────────────────────────────────────────
+  app.get("/api/projects/:projectId/launch-proof", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const proof = buildProofStatusPayload();
+      // Derive proof rung: 0=none, 1=benchmark present, 2=benchmark pass, 3=runtime proof, 4=all suites pass
+      let proofRung = 0;
+      if (proof.benchmark.exists) proofRung = 1;
+      if (proof.benchmark.launchablePass) proofRung = 2;
+      if (proof.runtimeProof.greenfield.exists && proof.runtimeProof.greenfield.status === "passed") proofRung = 3;
+      if (proof.benchmark.universalPass && proof.runtimeProof.selfUpgrade.status === "passed") proofRung = 4;
+      const readinessScore = Math.round(
+        (proof.benchmark.averageScoreOutOf10 / 10) * 100 * 0.5 +
+        (proof.benchmark.universalScoreOutOf10 / 10) * 100 * 0.3 +
+        (proof.benchmark.criticalFailures === 0 ? 100 : 0) * 0.2
+      );
+      return res.json({
+        projectId: req.params.projectId,
+        verified: proofRung >= 3,
+        verifiedAt: proofRung >= 3 ? proof.lastProofRun ?? now() : undefined,
+        verificationMethod: "benchmark" as const,
+        buildStatus: (project as any).status ?? "unknown",
+        commercialReadinessScore: readinessScore,
+        lastUpdated: (project as any).updatedAt ?? now(),
+        proofRung,
+        proof,
+      });
+    } catch (error) {
+      return handleRouteError(res, config, error, "GET /api/projects/:projectId/launch-proof", actor);
+    }
+  });
+
+  app.post("/api/projects/:projectId/launch/verify", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const { verificationMethod = "benchmark", commercialReadinessScore, buildStatus } = req.body ?? {};
+      const proof = buildProofStatusPayload();
+      let proofRung = 0;
+      if (proof.benchmark.exists) proofRung = 1;
+      if (proof.benchmark.launchablePass) proofRung = 2;
+      if (proof.runtimeProof.greenfield.exists && proof.runtimeProof.greenfield.status === "passed") proofRung = 3;
+      if (proof.benchmark.universalPass && proof.runtimeProof.selfUpgrade.status === "passed") proofRung = 4;
+      const verified = proofRung >= 3;
+      const derivedScore = Math.round(
+        (proof.benchmark.averageScoreOutOf10 / 10) * 100 * 0.5 +
+        (proof.benchmark.universalScoreOutOf10 / 10) * 100 * 0.3 +
+        (proof.benchmark.criticalFailures === 0 ? 100 : 0) * 0.2
+      );
+      return res.json({
+        verified,
+        message: verified
+          ? "Launch proof verified — build meets proof rung ≥ 3"
+          : `Launch proof not yet verified — current proof rung: ${proofRung}/4`,
+        launchProof: {
+          projectId: req.params.projectId,
+          verified,
+          verifiedAt: verified ? proof.lastProofRun ?? now() : undefined,
+          verificationMethod: verificationMethod ?? "benchmark",
+          buildStatus: buildStatus ?? (project as any).status ?? "unknown",
+          commercialReadinessScore: commercialReadinessScore ?? derivedScore,
+          lastUpdated: now(),
+          proofRung,
+        },
+      });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/projects/:projectId/launch/verify", actor);
+    }
+  });
+
   app.get("/api/projects/:projectId/ui/security-center", requireRole("reviewer", config), async (req, res) => {
     const actor = await getRequestActor(req, config);
     try {

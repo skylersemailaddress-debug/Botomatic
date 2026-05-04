@@ -1,8 +1,21 @@
-import express from "express";
 import { createRuntimeConfig } from "./config";
 import { buildApp } from "./server_app";
 
+function validateEnv() {
+  const required = ["ANTHROPIC_API_KEY"];
+  const missing = required.filter(k => !process.env[k]);
+  if (missing.length > 0) {
+    console.error(JSON.stringify({ event: "startup_env_error", missing }));
+    process.exit(1);
+  }
+  // Warn if executor is pointed at Claude but the runner URL is missing
+  if (process.env.EXECUTOR === "claude" && !process.env.CLAUDE_EXECUTOR_URL) {
+    console.warn(JSON.stringify({ event: "startup_warn", message: "EXECUTOR=claude but CLAUDE_EXECUTOR_URL not set — executor will fail at runtime" }));
+  }
+}
+
 function start() {
+  validateEnv();
   const config = createRuntimeConfig();
 
   const app = buildApp(config);
