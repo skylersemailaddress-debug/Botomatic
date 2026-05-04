@@ -85,6 +85,7 @@ import { intakeCloudLink } from "./intake/cloudIntake";
 import { validateLocalFolderManifest } from "./intake/localManifest";
 import { isBlockedFileExtension, suspiciousBinaryHook } from "./intake/intakeSafety";
 import { assertProviderPromoteGate, assertProviderRollbackGate, loadProviderDeploymentContracts } from "./deployProviderGates";
+import { triggerDeployment } from "./deployProviders";
 
 type VerifiedRequestAuth = AuthContext & { issuer?: string };
 
@@ -191,6 +192,8 @@ function toStored(record: {
   gitResults?: Record<string, any>;
   deployments?: Record<string, any>;
   auditEvents?: any[];
+  githubOwner?: string | null;
+  githubRepo?: string | null;
 }): StoredProjectRecord {
   const timestamp = now();
   return {
@@ -205,6 +208,8 @@ function toStored(record: {
     validations: record.validations ?? null,
     gitOperations: record.gitOperations ?? null,
     gitResults: record.gitResults ?? null,
+    githubOwner: record.githubOwner ?? null,
+    githubRepo: record.githubRepo ?? null,
     createdAt: timestamp,
     updatedAt: timestamp,
     ...(record.deployments ? { deployments: record.deployments } : {}),
@@ -287,12 +292,10 @@ function getExecutor() {
   return MockExecutor;
 }
 
-function getGitHub() {
-  return new GitHubRuntime({
-    token: process.env.GITHUB_TOKEN!,
-    owner: "skylersemailaddress-debug",
-    repo: "Botomatic",
-  });
+function getGitHub(project?: { githubOwner?: string | null; githubRepo?: string | null }) {
+  const owner = project?.githubOwner || process.env.GITHUB_OWNER || "skylersemailaddress-debug";
+  const repo  = project?.githubRepo  || process.env.GITHUB_REPO  || "Botomatic";
+  return new GitHubRuntime({ token: process.env.GITHUB_TOKEN!, owner, repo });
 }
 
 async function getVerifiedAuth(req: express.Request, config: RuntimeConfig): Promise<VerifiedRequestAuth> {
@@ -1409,7 +1412,7 @@ function buildProofStatusPayload() {
 }
 
 async function runGitHubLifecycle(config: RuntimeConfig, project: StoredProjectRecord, packet: any, changedFiles: ChangedFile[]) {
-  const gh = getGitHub();
+  const gh = getGitHub(project);
   const branchOp = ensureGitOperation(project, { packetId: packet.packetId, type: "create_branch", branchName: packet.branchName });
   if (!getGitOperationResult(project, branchOp.operationId)?.status || getGitOperationResult(project, branchOp.operationId)?.status === "failed") {
     setGitOperationStatus(project, branchOp.operationId, "submitted");
@@ -1702,16 +1705,22 @@ async function materializeGeneratedWorkspace(
   const executorFiles = await callClaudeExecutor(projectId, jobId, safeRequest);
   let files: Array<[string, string]>;
 
-  if (executorFiles && executorFiles.length > 0) {
-    files = executorFiles.map((f) => [f.path, f.body] as [string, string]);
-    // Ensure a smoke-testable server.mjs always exists
-    const hasServer = files.some(([p]) => p === "server.mjs" || p === "server.js" || p === "src/server.ts");
-    if (!hasServer) {
-      const fallback = buildFallbackFiles(projectId, safeRequest);
-      files.push(...fallback.filter(([p]) => p === "server.mjs" || p === "package.json"));
-    }
-  } else {
-    files = buildFallbackFiles(projectId, safeRequest);
+  if (!executorFiles || executorFiles.length === 0) {
+    // Executor returned nothing — surface this as a real failure instead of hiding it
+    return {
+      workspacePath: workspaceDir,
+      buildStatus: "failed",
+      runStatus: "failed",
+      smokeStatus: "failed",
+      filesWritten: 0,
+    };
+  }
+
+  files = executorFiles.map((f) => [f.path, f.body] as [string, string]);
+  // If executor didn't include a runnable server entry, that's a real gap — log it but don't silently inject boilerplate
+  const hasServer = files.some(([p]) => p === "server.mjs" || p === "server.js" || p === "src/server.ts" || p === "index.mjs" || p === "index.js");
+  if (!hasServer) {
+    console.warn(`[workspace] executor returned ${files.length} files but none is a server entry — smoke test will fail`);
   }
 
   for (const [relPath, content] of files) {
@@ -1882,7 +1891,7 @@ export function buildApp(config: RuntimeConfig) {
   app.post("/api/projects/intake", async (req, res) => {
     const actor = await getRequestActor(req, config);
     try {
-      const { name, request, prompt, projectName } = req.body as Record<string, unknown>;
+      const { name, request, prompt, projectName, githubOwner, githubRepo } = req.body as Record<string, unknown>;
       const safeRequest = typeof request === "string" && request.trim() ? request : typeof prompt === "string" ? prompt : "";
       if (!safeRequest.trim()) {
         return res.status(400).json({
@@ -1898,6 +1907,8 @@ export function buildApp(config: RuntimeConfig) {
         request: safeRequest,
         status: "clarifying",
         governanceApproval: buildDefaultGovernanceApproval(actor.actorId),
+        githubOwner: typeof githubOwner === "string" && githubOwner.trim() ? githubOwner.trim() : null,
+        githubRepo:  typeof githubRepo  === "string" && githubRepo.trim()  ? githubRepo.trim()  : null,
       });
       ensureGovernanceApprovalState(project, actor.actorId);
       const blueprint = matchBlueprintFromText(safeRequest || String(name || "") || "");
@@ -4277,11 +4288,49 @@ export function buildApp(config: RuntimeConfig) {
           deploymentGate: { status: "blocked", reasons: providerGate.reasons },
         });
       }
+      // Trigger real deployment to Vercel or Railway
+      const latestBranch = Object.values((project.gitOperations || {}) as Record<string, any>)
+        .filter((op: any) => op?.type === "commit_files" && op?.status === "succeeded")
+        .sort((a: any, b: any) => (b.updatedAt || "").localeCompare(a.updatedAt || ""))
+        .map((op: any) => op.branchName)?.[0] ?? "main";
+
+      const deployResult = await triggerDeployment({
+        projectName: project.name,
+        gitBranch: latestBranch,
+        gitOwner: project.githubOwner || process.env.GITHUB_OWNER || "skylersemailaddress-debug",
+        gitRepo:  project.githubRepo  || process.env.GITHUB_REPO  || "Botomatic",
+        environment,
+      });
+
       ensureDeploymentState(project as any);
-      (project as any).deployments[environment] = { environment, status: "promoted", promotedAt: now(), promotedBy: actor.actorId };
-      emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "promote", actorId: actor.actorId, role: "admin", timestamp: now(), metadata: { environment } });
+      (project as any).deployments[environment] = {
+        environment,
+        status: "promoted",
+        promotedAt: now(),
+        promotedBy: actor.actorId,
+        deploymentId: deployResult.deploymentId ?? null,
+        deploymentUrl: deployResult.deploymentUrl ?? null,
+        deployProvider: deployResult.provider,
+        deploySkipped: deployResult.skipped ?? false,
+        deployError: deployResult.error ?? null,
+      };
+      emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "promote", actorId: actor.actorId, role: "admin", timestamp: now(), metadata: { environment, deployProvider: deployResult.provider, deploymentUrl: deployResult.deploymentUrl } });
       await persistProject(config, project);
-      return res.json({ success: true, environment, governanceApprovalStatus: governanceApproval.approvalStatus, actorId: actor.actorId, providerGate: { ...providerGate, liveExecutionClaimed: false } });
+      return res.json({
+        success: true,
+        environment,
+        governanceApprovalStatus: governanceApproval.approvalStatus,
+        actorId: actor.actorId,
+        providerGate: { ...providerGate, liveExecutionClaimed: true },
+        deployment: {
+          provider: deployResult.provider,
+          deploymentId: deployResult.deploymentId,
+          deploymentUrl: deployResult.deploymentUrl,
+          skipped: deployResult.skipped,
+          reason: deployResult.reason,
+          error: deployResult.error,
+        },
+      });
     } catch (error) {
       return handleRouteError(res, config, error, "POST deploy/promote", actor);
     }

@@ -172,12 +172,10 @@ function getExecutor() {
   return MockExecutor;
 }
 
-function getGitHub() {
-  return new GitHubRuntime({
-    token: process.env.GITHUB_TOKEN!,
-    owner: "skylersemailaddress-debug",
-    repo: "Botomatic",
-  });
+function getGitHub(project?: { githubOwner?: string | null; githubRepo?: string | null }) {
+  const owner = project?.githubOwner || process.env.GITHUB_OWNER || "skylersemailaddress-debug";
+  const repo  = project?.githubRepo  || process.env.GITHUB_REPO  || "Botomatic";
+  return new GitHubRuntime({ token: process.env.GITHUB_TOKEN!, owner, repo });
 }
 
 function getRequestActor(req: express.Request): RequestActor {
@@ -421,7 +419,7 @@ app.post("/api/projects/:projectId/dispatch/execute-next", async (req, res) => {
         });
 
         if (result.success) {
-          const gh = getGitHub();
+          const gh = getGitHub(updated);
           const baseSha = await gh.getDefaultBranchSha();
           await gh.createBranch(executingPacket.branchName, baseSha);
 
