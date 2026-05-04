@@ -720,7 +720,27 @@ function getPacket(project: StoredProjectRecord, packetId: string) {
 }
 
 function getNextPendingPacket(project: StoredProjectRecord) {
-  return getPackets(project).find((packet: any) => packet.status === "pending") || null;
+  const packets = getPackets(project);
+  const completedIds = new Set(
+    packets.filter((p: any) => p.status === "complete").map((p: any) => p.packetId)
+  );
+  return packets.find((packet: any) => {
+    if (packet.status !== "pending") return false;
+    const deps: string[] = (packet.dependencies as string[]) ?? [];
+    return deps.every(d => completedIds.has(d));
+  }) || null;
+}
+
+function getNewlyUnblockedPackets(project: StoredProjectRecord, justCompletedId: string): any[] {
+  const packets = getPackets(project);
+  const completedIds = new Set(
+    packets.filter((p: any) => p.status === "complete").map((p: any) => p.packetId)
+  );
+  return packets.filter((packet: any) => {
+    if (packet.status !== "pending") return false;
+    const deps: string[] = (packet.dependencies as string[]) ?? [];
+    return deps.includes(justCompletedId) && deps.every(d => completedIds.has(d));
+  });
 }
 
 function getRepairablePackets(project: StoredProjectRecord) {
@@ -1528,10 +1548,11 @@ async function processJob(config: RuntimeConfig, job: QueueJobRecord) {
           .slice(0, 800) || undefined
       : undefined;
 
-    // ── Execute with retry loop (max 2 retries, error fed back each time) ───
-    const MAX_RETRIES = 2;
+    // ── Execute with retry loop — maxRetries from packet, skip on non-retryable ─
+    const MAX_RETRIES = (packet as any).maxRetries ?? 2;
     let result: any = null;
     let lastErrorMsg = "";
+    let nonRetryable = false;
 
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       const constraintsWithRepair = attempt > 0
@@ -1552,18 +1573,28 @@ async function processJob(config: RuntimeConfig, job: QueueJobRecord) {
 
       if (result.success) break;
       lastErrorMsg = String(result.summary ?? "Unknown error");
+
+      // N94 — validate after first attempt so we can inspect failure kind
+      if (attempt === 0 && result.changedFiles?.length > 0) {
+        const earlyValidation = runValidation(project.projectId, packet.packetId);
+        if ((earlyValidation as any).isRetryable === false) {
+          nonRetryable = true;
+          break;
+        }
+      }
     }
 
-    if (!result.success) {
+    if (!result || !result.success) {
       packetFailureCount += 1;
-      recordOpsError("packet_failed", lastErrorMsg, { projectId: project.projectId, packetId: packet.packetId });
+      const failReason = nonRetryable ? `Non-retryable failure: ${lastErrorMsg}` : lastErrorMsg;
+      recordOpsError("packet_failed", failReason, { projectId: project.projectId, packetId: packet.packetId });
       const failedState = markPacketFailed({ projectId: project.projectId, status: project.status as any, packets: getPackets(project), runs: project.runs as any }, packet.packetId);
       project.plan = { ...((project.plan as any) || {}), packets: (failedState as any).packets };
       project.runs = (failedState as any).runs || project.runs;
       recomputeProjectStatus(project);
-      emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "packet_failed", actorId: workerId, role: "system", timestamp: now(), metadata: { packetId: packet.packetId, summary: lastErrorMsg } });
+      emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "packet_failed", actorId: workerId, role: "system", timestamp: now(), metadata: { packetId: packet.packetId, summary: failReason, nonRetryable } });
       await persistProject(config, project);
-      await finalizeJob(job.job_id, "failed", lastErrorMsg);
+      await finalizeJob(job.job_id, "failed", failReason);
       return;
     }
 
@@ -1579,9 +1610,9 @@ async function processJob(config: RuntimeConfig, job: QueueJobRecord) {
 
     await runGitHubLifecycle(config, project, packet, result.changedFiles as ChangedFile[]);
 
-    // ── Validation with one repair attempt on failure ────────────────────────
+    // ── Validation with one repair attempt on failure (skip if non-retryable) ──
     let validation = runValidation(project.projectId, packet.packetId);
-    if ((validation as any).status !== "passed" && result.changedFiles?.length > 0) {
+    if ((validation as any).status !== "passed" && (validation as any).isRetryable !== false && result.changedFiles?.length > 0) {
       const repairConstraint = `VALIDATION_FAILURE: "${(validation as any).summary}". Regenerate files to fix these failing checks. Be precise about what the validator requires.`;
       const repairResult = await executor.execute({
         projectId: project.projectId,
@@ -1613,11 +1644,20 @@ async function processJob(config: RuntimeConfig, job: QueueJobRecord) {
     }
     updateTelemetryTimestamp();
     project.validations = { ...((project.validations || {}) as Record<string, unknown>), [packet.packetId]: validation };
-    emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "validation", actorId: workerId, role: "system", timestamp: now(), metadata: { packetId: packet.packetId } });
+    emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "validation", actorId: workerId, role: "system", timestamp: now(), metadata: { packetId: packet.packetId, proofRung: (validation as any).proofRung } });
     const completedState = markPacketComplete({ projectId: project.projectId, status: project.status as any, packets: getPackets(project), runs: project.runs as any }, packet.packetId);
     project.plan = { ...((project.plan as any) || {}), packets: (completedState as any).packets };
     project.runs = (completedState as any).runs || project.runs;
     recomputeProjectStatus(project);
+
+    // N92 — auto-enqueue all packets that are newly unblocked by this completion
+    const unblocked = getNewlyUnblockedPackets(project, packet.packetId);
+    for (const unblockedPacket of unblocked) {
+      try {
+        await enqueueJob(project.projectId, unblockedPacket.packetId);
+      } catch (_e) { /* already queued or queue unavailable — tolerate */ }
+    }
+
     await persistProject(config, project);
     await finalizeJob(job.job_id, "succeeded");
   } catch (error: any) {
@@ -3061,6 +3101,22 @@ export function buildApp(config: RuntimeConfig) {
         (updated as any).__answers = { ...((updated as any).__answers || {}), [field]: a };
       }
 
+      // N81 — Intent drift detection: surface contradictions with committed spec values
+      const driftWarnings: Array<{ field: string; existing: string; incoming: string }> = [];
+      for (const { field, answer } of answers) {
+        const a = answer.trim();
+        const f = field.toLowerCase();
+        if (f.includes("auth") && spec.authModel && spec.authModel !== "unknown" && spec.authModel !== updated.authModel) {
+          driftWarnings.push({ field, existing: spec.authModel, incoming: updated.authModel ?? a });
+        }
+        if (f.includes("tenant") && spec.tenancyModel && spec.tenancyModel !== updated.tenancyModel) {
+          driftWarnings.push({ field, existing: spec.tenancyModel, incoming: updated.tenancyModel ?? a });
+        }
+        if (f.includes("deploy") && spec.deploymentTarget && spec.deploymentTarget !== "unknown" && spec.deploymentTarget !== updated.deploymentTarget) {
+          driftWarnings.push({ field, existing: spec.deploymentTarget, incoming: updated.deploymentTarget ?? a });
+        }
+      }
+
       // Recompute completeness and readiness after answers
       const clarifications = getSpecClarifications(project);
       const remainingMustAsk = clarifications.filter((q: any) => q.mustAsk && updated.openQuestions.includes(q.question));
@@ -3092,6 +3148,7 @@ export function buildApp(config: RuntimeConfig) {
         openQuestionsRemaining: updated.openQuestions.length,
         openQuestions: updated.openQuestions,
         readyToConfirm: readinessScore >= 60 && updated.openQuestions.length === 0,
+        driftWarnings: driftWarnings.length > 0 ? driftWarnings : undefined,
         spec: updated,
         actorId: actor.actorId,
       });
@@ -3115,15 +3172,20 @@ export function buildApp(config: RuntimeConfig) {
       const spec = getMasterSpec(project);
       if (!spec) return res.status(400).json({ error: "Spec not initialized. Submit the intake form first." });
 
-      // Require minimum readiness — warn but don't hard-block so the user can override
-      const minReadiness = Number((req.body as any)?.forceReadiness) || 50;
-      if (spec.readinessScore < minReadiness && !(req.body as any)?.force) {
+      // 03.4 — Completeness gates: <80 blocks, 80-94 warns, ≥95 full execution
+      const score = spec.readinessScore ?? 0;
+      const force = Boolean((req.body as any)?.force);
+      if (score < 80 && !force) {
         return res.status(400).json({
-          error: `Spec readiness is ${spec.readinessScore}% — at least ${minReadiness}% required before building. Answer the open questions or pass force:true to override.`,
-          readinessScore: spec.readinessScore,
+          error: `Spec readiness is ${score}% — minimum 80% required to build. Answer the open questions or pass force:true to override.`,
+          readinessScore: score,
           openQuestions: spec.openQuestions,
+          gate: "blocked",
         });
       }
+      const gateWarning = score < 95
+        ? `Spec readiness is ${score}% — below 95% confidence threshold. Build will proceed but some areas may be under-specified.`
+        : undefined;
 
       // Auto-approve high-risk assumptions marked as safe-to-build on user confirmation
       const assumptionIds = spec.assumptions.map((a: any) => a.id);
@@ -3167,7 +3229,8 @@ export function buildApp(config: RuntimeConfig) {
         projectId: compiled.projectId,
         status: "queued",
         packetCount: packets.length,
-        packets: packets.map((p: any) => ({ packetId: p.packetId, goal: p.goal, waveType: p.waveType })),
+        packets: packets.map((p: any) => ({ packetId: p.packetId, goal: p.goal, waveType: p.waveType, dependencies: p.dependencies, riskLevel: p.riskLevel })),
+        gateWarning,
         actorId: actor.actorId,
       });
     } catch (error) {
@@ -4241,7 +4304,26 @@ export function buildApp(config: RuntimeConfig) {
       const project = await repo.getProject(req.params.projectId);
       if (!project) return res.status(404).json({ error: "Project not found" });
       const intakeArtifacts = getIntakeArtifacts(project);
-      return res.json({ ...project, intakeArtifacts, actorId: actor.actorId, workerId });
+
+      // N88 — composite project health score
+      const packets = getPackets(project);
+      const totalPackets = packets.length;
+      const completedPackets = packets.filter((p: any) => p.status === "complete").length;
+      const failedPackets = packets.filter((p: any) => p.status === "failed").length;
+      const spec = getMasterSpec(project);
+      const specCompleteness = spec ? (spec.readinessScore ?? 0) / 100 : 0;
+      const validationPassRate = totalPackets > 0
+        ? Object.values((project.validations || {}) as Record<string, any>)
+            .filter(v => v?.status === "passed").length / totalPackets
+        : 0;
+      const executionReliability = totalPackets > 0
+        ? Math.max(0, (completedPackets - failedPackets) / totalPackets)
+        : 0;
+      const healthScore = Math.round(
+        (specCompleteness * 0.25 + validationPassRate * 0.30 + executionReliability * 0.45) * 100
+      );
+
+      return res.json({ ...project, intakeArtifacts, healthScore, actorId: actor.actorId, workerId });
     } catch (error) {
       return handleRouteError(res, config, error, "GET /api/projects/:projectId/status", actor);
     }
@@ -4739,6 +4821,100 @@ export function buildApp(config: RuntimeConfig) {
       return res.json({ events: (project as any).auditEvents.slice(0, 100), actorId: actor.actorId });
     } catch (error) {
       return handleRouteError(res, config, error, "GET audit", actor);
+    }
+  });
+
+  // ── Change Request: targeted delta patches without full rebuild ─────────────
+  // Accepts a free-text change description and creates targeted repair packets
+  // scoped only to the affected artifact categories. Existing complete packets
+  // are left untouched — only impacted ones are re-queued.
+  app.post("/api/projects/:projectId/change-request", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+
+      const { description, affectedAreas }: { description?: string; affectedAreas?: string[] } = req.body as any;
+      if (!description?.trim()) {
+        return res.status(400).json({ error: "description is required" });
+      }
+
+      const packets = getPackets(project);
+      if (packets.length === 0) {
+        return res.status(400).json({ error: "No build plan exists — run confirm-and-build first." });
+      }
+
+      // Determine which packets are affected by the change
+      const desc = description.toLowerCase();
+      const explicitAreas = Array.isArray(affectedAreas) ? affectedAreas.map(a => a.toLowerCase()) : [];
+
+      const affected = packets.filter((p: any) => {
+        if (p.status !== "complete") return false;
+        const goal = (p.goal ?? "").toLowerCase();
+        const writes: string[] = p.writes ?? [];
+        const matchesDesc = desc.split(/\s+/).some((word: string) => word.length > 3 && goal.includes(word));
+        const matchesArea = explicitAreas.some(area => goal.includes(area) || writes.some(w => w.includes(area)));
+        return matchesDesc || matchesArea;
+      });
+
+      if (affected.length === 0) {
+        return res.status(200).json({
+          ok: true,
+          message: "No completed packets match the change description. If you want to add new capability, confirm-and-build after updating the spec.",
+          changeRequestId: null,
+          repatchedPackets: [],
+        });
+      }
+
+      const now_ = new Date().toISOString();
+      const changeId = `cr_${Date.now()}`;
+      const repatchedPackets: string[] = [];
+
+      for (const packet of affected) {
+        // Reset packet to pending with change-request constraint injected
+        const updatedConstraints = [
+          ...(packet.constraints ?? []),
+          `CHANGE_REQUEST [${changeId}]: "${description.slice(0, 200)}". Apply this targeted change without altering unrelated behaviour.`,
+        ];
+        const updatedPacket = {
+          ...packet,
+          status: "pending",
+          retryCount: 0,
+          constraints: updatedConstraints,
+          updatedAt: now_,
+        };
+
+        const allPackets = getPackets(project).map((p: any) =>
+          p.packetId === packet.packetId ? updatedPacket : p
+        );
+        project.plan = { ...((project.plan as any) || {}), packets: allPackets };
+        repatchedPackets.push(packet.packetId);
+
+        try {
+          await enqueueJob(project.projectId, packet.packetId);
+        } catch (_e) { /* queue unavailable — packet will be picked up on next poll */ }
+      }
+
+      project.status = "running";
+      emitEvent(project as any, {
+        id: `evt_${Date.now()}`,
+        projectId: project.projectId,
+        type: "change_request",
+        actorId: actor.actorId,
+        timestamp: now_,
+        metadata: { changeId, description: description.slice(0, 200), affectedPackets: repatchedPackets },
+      });
+      await persistProject(config, project);
+
+      return res.json({
+        ok: true,
+        changeRequestId: changeId,
+        repatchedPackets,
+        message: `${repatchedPackets.length} packet(s) re-queued for targeted repair.`,
+        actorId: actor.actorId,
+      });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/projects/:projectId/change-request", actor);
     }
   });
 

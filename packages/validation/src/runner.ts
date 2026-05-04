@@ -1,7 +1,27 @@
 import { spawnSync } from "child_process";
 import fs from "fs";
 import path from "path";
-import { ValidationRecord } from "./types";
+import { FailureKind, ProofRung, ValidationRecord } from "./types";
+
+// N94 — classify error messages into retryable vs non-retryable failure kinds
+function classifyFailure(failures: string[]): { failureKind: FailureKind; isRetryable: boolean } {
+  const combined = failures.join(" ").toLowerCase();
+  if (/syntaxerror|syntax error|unexpected token|parse error|invalid syntax/i.test(combined))
+    return { failureKind: "parse_error",   isRetryable: false };
+  if (/typeerror|type error|ts\d{4}|cannot find name|property.*does not exist|argument.*not assignable/i.test(combined))
+    return { failureKind: "type_error",    isRetryable: false };
+  if (/forbidden tokens|placeholder|todo.*implement|not implemented/i.test(combined))
+    return { failureKind: "placeholder",   isRetryable: false };
+  if (/missing.*file|entry.*not found|no server entry/i.test(combined))
+    return { failureKind: "missing_file",  isRetryable: true  };
+  if (/build failed|npm.*error/i.test(combined))
+    return { failureKind: "build_error",   isRetryable: true  };
+  if (/test.*fail|assertion.*fail/i.test(combined))
+    return { failureKind: "test_error",    isRetryable: true  };
+  if (failures.length > 0)
+    return { failureKind: "unknown",       isRetryable: true  };
+  return { failureKind: null, isRetryable: false };
+}
 
 export interface ValidationOptions {
   workspacePath?: string;
@@ -30,6 +50,9 @@ export function runValidation(
       status: "passed",
       checks: ["workspace_skipped"],
       summary: "No workspace path provided — validation skipped",
+      proofRung: 1 as ProofRung,   // Rung 1: assertion (skipped but logged)
+      failureKind: null,
+      isRetryable: false,
       createdAt: now,
       updatedAt: now,
     };
@@ -93,14 +116,29 @@ export function runValidation(
   if (placeholderHits.length > 0) failures.push(`Forbidden tokens: ${placeholderHits.join(", ")}`);
 
   const passed = failures.length === 0;
+
+  // N85 — assign proof rung based on what checks completed successfully
+  let proofRung: ProofRung = 1; // Rung 1: assertion — we at least ran checks
+  if (hasPkg && serverEntry) proofRung = 2;           // Rung 2: file existence verified
+  if (proofRung >= 2 && checks.some(c => c.includes("syntax_check:pass"))) proofRung = 2;
+  if (checks.some(c => c === "build:pass"))  proofRung = 3; // Rung 3: build validated
+  if (checks.some(c => c === "test:pass") && checks.some(c => c === "no_placeholders:pass")) proofRung = 4; // Rung 4: evidence artifact
+  // Rung 5 (audit-reproducible) requires deployment — not available here
+
+  // N94 — classify failure for retry decisions
+  const { failureKind, isRetryable } = classifyFailure(failures);
+
   return {
     projectId,
     packetId,
     status: passed ? "passed" : "failed",
     checks,
     summary: passed
-      ? `All ${checks.length} checks passed`
+      ? `All ${checks.length} checks passed (proof rung ${proofRung})`
       : `${failures.length} check(s) failed: ${failures[0]}`,
+    proofRung,
+    failureKind,
+    isRetryable,
     createdAt: now,
     updatedAt: now,
   };

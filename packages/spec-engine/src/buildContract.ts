@@ -1,12 +1,42 @@
+import { createHash } from "crypto";
 import { BuildContract, MasterSpec } from "./specModel";
 import { computeBuildBlockStatus } from "./specCompleteness";
 
-export function generateBuildContract(projectId: string, spec: MasterSpec): BuildContract {
+// ── Deterministic spec hashing (N24, 03.5) ───────────────────────────────────
+// Same inputs → same hash. Used for drift detection and IBC reproducibility.
+function hashSpec(spec: MasterSpec): string {
+  const canonical = JSON.stringify({
+    appName: spec.appName,
+    appType: spec.appType,
+    roles:               [...spec.roles].sort(),
+    dataEntities:        [...spec.dataEntities].sort(),
+    workflows:           [...spec.workflows].sort(),
+    integrations:        [...spec.integrations].sort(),
+    authModel:           spec.authModel,
+    tenancyModel:        spec.tenancyModel,
+    payments:            [...spec.payments].sort(),
+    complianceRequirements: [...spec.complianceRequirements].sort(),
+    deploymentTarget:    spec.deploymentTarget,
+  });
+  return createHash("sha256").update(canonical).digest("hex").slice(0, 20);
+}
+
+function hashInputs(request: string): string {
+  return createHash("sha256").update(request.trim().toLowerCase()).digest("hex").slice(0, 20);
+}
+
+export function generateBuildContract(projectId: string, spec: MasterSpec, requestText?: string): BuildContract {
   const now = new Date().toISOString();
   const block = computeBuildBlockStatus(spec, true, false);
+  const specHash   = hashSpec(spec);
+  const inputsHash = requestText ? hashInputs(requestText) : undefined;
+  const contractId = `ibc_${specHash}`;
 
   return {
     id: `contract_${projectId}_${Date.now()}`,
+    specHash,
+    inputsHash,
+    contractId,
     projectId,
     appSummary: `${spec.appName}: ${spec.coreOutcome}`,
     targetUsers: spec.targetUsers,

@@ -125,6 +125,10 @@ export type BuildContract = {
   readinessScore: number;
   readyToBuild: boolean;
   blockers: string[];
+  // N24 / 03.5 — deterministic hashes for change detection and reproducibility
+  specHash?: string;     // SHA-256 of canonical spec fields — same inputs → same hash
+  inputsHash?: string;   // SHA-256 of raw request text — detects new input drift
+  contractId?: string;   // stable ID derived from specHash
   approvedAt?: string;
   approvedBy?: string;
   createdAt: string;

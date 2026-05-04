@@ -22,7 +22,11 @@ export interface Packet {
   validationCommands: string[];
   constraints: string[];
   executorTarget: "claude";
-  dependencies: string[];
+  dependencies: string[];   // packetIds that must be "complete" before this executes (N82)
+  // N82 — Resource declarations for conflict detection and parallel scheduling
+  reads:  string[];         // artifact categories this packet consumes
+  writes: string[];         // artifact categories this packet produces
+  blocks: string[];         // packetIds that cannot start until this one completes
   retryCount: number;
   maxRetries: number;
   riskLevel: RiskLevel;
