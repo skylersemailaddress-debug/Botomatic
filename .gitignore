@@ -1,5 +1,8 @@
 node_modules/
 
+# Generated app workspaces (ephemeral forensic/builder output)
+runtime/generated-apps/
+
 .trigger.env.local
 
 # Local secrets / runtime env
