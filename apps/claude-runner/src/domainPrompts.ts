@@ -359,7 +359,7 @@ const DOMAIN_CONSTRAINTS: Partial<Record<WaveType, string>> = {
 - Save system: use FileAccess.open() with JSON.stringify()/parse() to user://save.json. Call save in NOTIFICATION_WM_CLOSE_REQUEST and on explicit save action.
 - Scene management: SceneLoader autoload with transition animation. Use ResourceLoader.load_threaded_request() for large scenes.
 - Input: define all actions in Project Settings > Input Map. Use Input.is_action_pressed() — never hardcode key constants.
-- Signals: declare signals at top of class with `signal my_signal`. Emit with emit_signal() or shorthand self.my_signal.emit().
+- Signals: declare signals at top of class with "signal my_signal". Emit with emit_signal() or shorthand self.my_signal.emit().
 - Resource system: extend Resource for all data objects (items, stats, quests). Store as .tres files, load with preload() for small assets, load() for large.
 - Performance: use Object Pooling for frequently spawned nodes. Never instantiate/free nodes in tight loops.
 - Export: configure export templates in export_presets.cfg. NEVER hardcode absolute paths — use res:// and user:// prefixes.`,

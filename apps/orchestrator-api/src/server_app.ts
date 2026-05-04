@@ -1,4 +1,7 @@
 import express from "express";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
+import { z, ZodError } from "zod";
 import multer from "multer";
 import fs from "fs";
 import net from "net";
@@ -2074,6 +2077,47 @@ async function materializeGeneratedWorkspace(
   };
 }
 
+// ── Input validation schemas ──────────────────────────────────────────────────
+const IntakeBodySchema = z.object({
+  name: z.string().max(500).optional(),
+  request: z.string().min(1).max(20000).optional(),
+  prompt: z.string().min(1).max(20000).optional(),
+  projectName: z.string().max(500).optional(),
+  githubOwner: z.string().max(200).optional(),
+  githubRepo: z.string().max(200).optional(),
+}).refine(d => Boolean(d.request?.trim() || d.prompt?.trim()), {
+  message: "request or prompt is required",
+});
+
+const AnswerQuestionsSchema = z.object({
+  answers: z.array(z.object({
+    field: z.string().min(1).max(200),
+    answer: z.string().min(0).max(5000),
+  })).min(1).max(50),
+});
+
+const OperatorSendSchema = z.object({
+  message: z.string().min(1).max(10000),
+  role: z.enum(["operator", "system"]).optional(),
+});
+
+const ConfirmBuildSchema = z.object({
+  force: z.boolean().optional(),
+});
+
+const ChangeRequestSchema = z.object({
+  changeRequest: z.string().min(1).max(10000),
+});
+
+function zodGuard(schema: z.ZodTypeAny, body: unknown): { ok: true; data: any } | { ok: false; error: string } {
+  const result = schema.safeParse(body);
+  if (!result.success) {
+    const msg = result.error.errors.map(e => `${e.path.join(".")}: ${e.message}`).join("; ");
+    return { ok: false, error: msg };
+  }
+  return { ok: true, data: result.data };
+}
+
 export function buildApp(config: RuntimeConfig) {
   // Boot-time: restore synthesized capabilities from previous sessions
   loadSynthesizedCapabilitiesAtStartup();
@@ -2083,7 +2127,56 @@ export function buildApp(config: RuntimeConfig) {
   if (config.repository.mode === "durable") {
     startQueueWorker(config);
   }
-  app.use(express.json());
+
+  // ── Security headers ────────────────────────────────────────────────────────
+  app.use(helmet({
+    crossOriginEmbedderPolicy: false, // SSE streams need this relaxed
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        upgradeInsecureRequests: [],
+      },
+    },
+  }));
+
+  // ── Body size cap — 10 MB prevents accidental giant payloads ───────────────
+  app.use(express.json({ limit: "10mb" }));
+  app.use(express.urlencoded({ extended: false, limit: "10mb" }));
+
+  // ── Rate limiting ───────────────────────────────────────────────────────────
+  // Global: 200 req / 60 s per IP
+  const globalLimiter = rateLimit({
+    windowMs: 60_000,
+    max: 200,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: "Too many requests — please slow down", code: "RATE_LIMITED" },
+  });
+  // Intake + build: heavier ops get tighter budget
+  const heavyLimiter = rateLimit({
+    windowMs: 60_000,
+    max: 20,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: "Too many build requests — please wait", code: "RATE_LIMITED_BUILD" },
+  });
+  // AI endpoints (operator/send, ui/chat): 30 req / 60 s
+  const aiLimiter = rateLimit({
+    windowMs: 60_000,
+    max: 30,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: "Too many AI requests — please wait", code: "RATE_LIMITED_AI" },
+  });
+
+  app.use(globalLimiter);
+  app.use("/api/projects/intake", heavyLimiter);
+  app.use("/api/projects/:projectId/spec/confirm-and-build", heavyLimiter);
+  app.use("/api/projects/:projectId/autonomous-build/start", heavyLimiter);
+  app.use("/api/projects/:projectId/operator/send", aiLimiter);
+  app.use("/api/projects/:projectId/ui/chat", aiLimiter);
 
   app.use((req, res, next) => {
     const origin = req.header("origin");
@@ -2190,7 +2283,9 @@ export function buildApp(config: RuntimeConfig) {
   app.post("/api/projects/intake", async (req, res) => {
     const actor = await getRequestActor(req, config);
     try {
-      const { name, request, prompt, projectName, githubOwner, githubRepo } = req.body as Record<string, unknown>;
+      const validation = zodGuard(IntakeBodySchema, req.body);
+      if (!validation.ok) return res.status(400).json({ error: validation.error, code: "INTAKE_VALIDATION_ERROR" });
+      const { name, request, prompt, projectName, githubOwner, githubRepo } = validation.data as any;
       const safeRequest = typeof request === "string" && request.trim() ? request : typeof prompt === "string" ? prompt : "";
       if (!safeRequest.trim()) {
         return res.status(400).json({
@@ -3182,6 +3277,8 @@ export function buildApp(config: RuntimeConfig) {
   app.post("/api/projects/:projectId/spec/answer-questions", async (req, res) => {
     const actor = await getRequestActor(req, config);
     try {
+      const v = zodGuard(AnswerQuestionsSchema, req.body);
+      if (!v.ok) return res.status(400).json({ error: v.error, code: "ANSWER_QUESTIONS_VALIDATION_ERROR" });
       const project = await repo.getProject(req.params.projectId);
       if (!project) return res.status(404).json({ error: "Project not found" });
       const spec = getMasterSpec(project);
@@ -3349,6 +3446,8 @@ export function buildApp(config: RuntimeConfig) {
   app.post("/api/projects/:projectId/spec/confirm-and-build", async (req, res) => {
     const actor = await getRequestActor(req, config);
     try {
+      const v = zodGuard(ConfirmBuildSchema, req.body);
+      if (!v.ok) return res.status(400).json({ error: v.error, code: "CONFIRM_BUILD_VALIDATION_ERROR" });
       const project = await repo.getProject(req.params.projectId);
       if (!project) return res.status(404).json({ error: "Project not found" });
 
@@ -3780,6 +3879,8 @@ export function buildApp(config: RuntimeConfig) {
   app.post("/api/projects/:projectId/operator/send", async (req, res) => {
     const actor = await getRequestActor(req, config);
     try {
+      const v = zodGuard(OperatorSendSchema, req.body);
+      if (!v.ok) return res.status(400).json({ error: v.error, code: "OPERATOR_SEND_VALIDATION_ERROR" });
       const auth = await getVerifiedAuth(req, config);
       const role = auth.role;
       const message = String((req.body as any)?.message || "");
@@ -5089,6 +5190,19 @@ export function buildApp(config: RuntimeConfig) {
     }
   });
 
+  // Alias without /ui/ prefix — frontend launchProof.ts calls this path
+  app.get("/api/projects/:projectId/deployments", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      ensureDeploymentState(project as any);
+      return res.json({ deployments: (project as any).deployments ?? {}, actorId: actor.actorId });
+    } catch (error) {
+      return handleRouteError(res, config, error, "GET /api/projects/:projectId/deployments", actor);
+    }
+  });
+
   app.get("/api/projects/:projectId/ui/audit", requireRole("reviewer", config), async (req, res) => {
     const actor = await getRequestActor(req, config);
     try {
@@ -5357,6 +5471,8 @@ export function buildApp(config: RuntimeConfig) {
   app.post("/api/projects/:projectId/change-request", async (req, res) => {
     const actor = await getRequestActor(req, config);
     try {
+      const v = zodGuard(ChangeRequestSchema, req.body);
+      if (!v.ok) return res.status(400).json({ error: v.error, code: "CHANGE_REQUEST_VALIDATION_ERROR" });
       const project = await repo.getProject(req.params.projectId);
       if (!project) return res.status(404).json({ error: "Project not found" });
 
