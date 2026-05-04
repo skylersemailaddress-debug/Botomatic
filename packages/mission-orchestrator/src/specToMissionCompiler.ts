@@ -48,18 +48,18 @@ function detectWaveHints(specText: string): Set<string> {
   const lower = specText.toLowerCase();
   const present = new Set<string>();
   const signals: Array<[string, string]> = [
-    ["repo_layout", "repo layout|monorepo|workspace|directory structure|scaffold"],
-    ["api_schema", "api contract|data schema|database|entity|migration|prisma|orm"],
-    ["spec_compiler", "spec compiler|deterministic app spec|das|ibc|build contract"],
-    ["execution_runtime", "execution runtime|worker|job queue|packet|dag|orchestrat"],
-    ["builder_factory", "builder engine|factory|code gen|blueprint|generate app"],
-    ["repair_replay", "repair engine|replay|dirty repo|rollback|patch"],
-    ["truth_memory", "truth engine|memory engine|belief|fact|continuity"],
-    ["intelligence_shell", "intelligence shell|command spine|operational focus|prediction"],
-    ["governance_security", "governance|security|rbac|tenant|approval|permission"],
-    ["deployment_rollback", "deployment|rollback|live deploy|export|vercel|cloud"],
-    ["validation_proof", "validation|proof|validator|evidence|claim boundary"],
-    ["fresh_clone_proof", "fresh clone|end-to-end proof|system launch|launch ready"],
+    ["repo_layout", "repo layout|monorepo|workspace|directory structure|scaffold|project structure"],
+    ["api_schema", "api contract|data schema|database|entity|migration|prisma|orm|data model|rest api|graphql"],
+    ["spec_compiler", "spec compiler|deterministic app spec|das|ibc|build contract|specification compiler"],
+    ["execution_runtime", "execution runtime|worker|job queue|packet|dag|orchestrat|background job|task queue"],
+    ["builder_factory", "builder engine|factory|code gen|blueprint|generate app|code generation|app generator"],
+    ["repair_replay", "repair engine|replay|dirty repo|rollback|patch|error recovery|self-heal"],
+    ["truth_memory", "truth engine|memory engine|belief|fact|continuity|persistent state|state store|knowledge base"],
+    ["intelligence_shell", "intelligence shell|command spine|operational focus|prediction|frontend shell|user interface|navigation|dashboard|control panel|admin panel|ui shell"],
+    ["governance_security", "governance|security|rbac|tenant|approval|permission|auth|access control|compliance"],
+    ["deployment_rollback", "deployment|rollback|live deploy|export|vercel|cloud|ci/cd|pipeline|release"],
+    ["validation_proof", "validation|proof|validator|evidence|claim boundary|testing|quality assurance"],
+    ["fresh_clone_proof", "fresh clone|end-to-end proof|system launch|launch ready|e2e|smoke test|full system"],
   ];
   for (const [id, pattern] of signals) {
     if (new RegExp(pattern).test(lower)) present.add(id);
@@ -263,8 +263,8 @@ function buildWaveCatalog(hints: Set<string>): WaveDef[] {
     },
   ];
 
-  // Include waves that have signals in the spec, always include core waves
-  const coreWaves = new Set(["repo_layout", "api_schema", "spec_compiler", "execution_runtime", "builder_factory", "validation_proof", "fresh_clone_proof"]);
+  // Core waves always included; optional waves added when spec signals their need
+  const coreWaves = new Set(["repo_layout", "api_schema", "builder_factory", "validation_proof", "fresh_clone_proof"]);
   return catalog.filter((w) => coreWaves.has(w.id) || hints.has(w.id));
 }
 
@@ -299,13 +299,14 @@ export function compileSpecToMission(input: CompilerInput): CompilerOutput {
       index,
       name: def.name,
       description: def.description,
-      dependsOn: def.dependsOn,
+      dependsOn: def.dependsOn.filter((depId) => waveDefs.some((d) => d.id === depId)),
       packets,
       requiredValidators: def.validators,
       evidenceRequirements: def.evidence,
       acceptanceCriteria: def.acceptance,
       status: "pending",
       evidence: [],
+      waveType: def.id,
     };
   });
 

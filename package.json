@@ -74,6 +74,8 @@
     "test:mission:benchmark:nexus:report": "node scripts/mission/generic-mission-report.mjs",
     "test:mission:orchestrator": "tsx packages/mission-orchestrator/src/tests/missionOrchestrator.test.ts",
     "test:mission:generic:unit": "tsx packages/mission-orchestrator/src/tests/genericMission.test.ts",
+    "test:mission:e2e": "tsx packages/mission-orchestrator/src/tests/missionEndToEnd.test.ts",
+    "test:mission:all": "npm run -s test:mission:orchestrator && npm run -s test:mission:generic:unit && npm run -s test:mission:e2e",
     "test:claim-boundary-readiness": "tsx packages/validation/src/tests/claimBoundaryReadiness.test.ts",
     "test:ui-routes": "tsx packages/validation/src/tests/uiRouteRegression.test.ts",
     "test:ui-blueprints": "tsx packages/ui-blueprint-registry/src/tests/registry.test.ts",

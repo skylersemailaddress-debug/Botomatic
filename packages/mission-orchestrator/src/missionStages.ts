@@ -43,12 +43,51 @@ export function getMissionProgress(
   mission: Mission | null,
   contract: MissionContract | null
 ): MissionProgress {
-  if (!mission || !contract) {
+  if (!mission) {
     return {
       stage: "understanding_spec",
       stageLabel: STAGE_LABELS.understanding_spec,
       percentComplete: 0,
       currentAction: "Analyzing the spec to understand required capabilities.",
+      blockers: [],
+      isComplete: false,
+      needsUserInput: false,
+    };
+  }
+
+  // If all waves are proven, report complete regardless of contract state
+  if (mission.provenWaves === mission.totalWaves && mission.totalWaves > 0) {
+    return {
+      stage: "complete",
+      stageLabel: STAGE_LABELS.complete,
+      percentComplete: 100,
+      currentAction: "All waves proven. Mission complete.",
+      blockers: [],
+      isComplete: true,
+      needsUserInput: false,
+    };
+  }
+
+  if (!contract) {
+    // No contract yet — in early planning stage
+    if (mission.status === "compiled" && mission.provenWaves === 0) {
+      return {
+        stage: "understanding_spec",
+        stageLabel: STAGE_LABELS.understanding_spec,
+        percentComplete: 5,
+        currentAction: "Analyzing the spec to understand required capabilities.",
+        blockers: [],
+        isComplete: false,
+        needsUserInput: false,
+      };
+    }
+    // Mission in progress but no contract reference — derive from waves
+    const { stage, pct } = deriveStageFromWaves(mission);
+    return {
+      stage,
+      stageLabel: STAGE_LABELS[stage],
+      percentComplete: pct,
+      currentAction: getMissionCurrentAction(mission),
       blockers: [],
       isComplete: false,
       needsUserInput: false,

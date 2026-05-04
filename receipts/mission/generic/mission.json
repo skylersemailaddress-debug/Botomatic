@@ -1,15 +1,15 @@
 {
-  "missionId": "mission_benchmark_enterprise_saas_v1_d99a2e44a278",
+  "missionId": "mission_benchmark_enterprise_saas_v1_e9251c98fa50",
   "projectId": "benchmark_enterprise_saas_v1",
   "sourceFile": "fixtures/enterprise-saas.ts",
   "sourceHash": "b93d2fd5089ec66c641b76748d7aabc081fc6d5b254821f2ec7512bd5f77cb5c",
-  "specHash": "d99a2e44a2784335f33548c92ad1b43b7d3fe643d1770a524b6d7442825faf11",
+  "specHash": "e9251c98fa5077999a56821586ef3148d67f6029a5d31132213aaff4bcd12a5d",
   "title": "ENTERPRISE HR PLATFORM — Benchmark Fixture",
   "description": "Mission compiled from fixtures/enterprise-saas.ts — 9 waves, 29 packets",
   "waves": [
     {
       "waveId": "repo_layout",
-      "missionId": "mission_benchmark_enterprise_saas_v1_d99a2e44a278",
+      "missionId": "mission_benchmark_enterprise_saas_v1_e9251c98fa50",
       "index": 0,
       "name": "Repo Layout + Scaffold",
       "description": "Generate monorepo structure, workspace config, tsconfig, shared types, and dev tooling.",
@@ -80,17 +80,18 @@
           "evidenceType": "checkpoint",
           "passed": true,
           "detail": "Dry-run: wave \"Repo Layout + Scaffold\" would execute 3 packets",
-          "capturedAt": "2026-05-04T04:53:49.208Z",
-          "artifactId": "artifact_dryrun_repo_layout_1777870429208",
-          "workspacePath": "/tmp/mission-dryrun/mission_benchmark_enterprise_saas_v1_d99a2e44a278/repo_layout",
+          "capturedAt": "2026-05-04T05:20:50.398Z",
+          "artifactId": "artifact_dryrun_repo_layout_1777872050399",
+          "workspacePath": "/tmp/mission-dryrun/mission_benchmark_enterprise_saas_v1_e9251c98fa50/repo_layout",
           "contentHash": "dryrun_hash_repo_layout"
         }
       ],
-      "provenAt": "2026-05-04T04:53:49.208Z"
+      "waveType": "repo_layout",
+      "provenAt": "2026-05-04T05:20:50.399Z"
     },
     {
       "waveId": "api_schema",
-      "missionId": "mission_benchmark_enterprise_saas_v1_d99a2e44a278",
+      "missionId": "mission_benchmark_enterprise_saas_v1_e9251c98fa50",
       "index": 1,
       "name": "API + Data Schema",
       "description": "Define all API route contracts, data model schemas, and database migrations.",
@@ -155,11 +156,12 @@
         "no schema gaps"
       ],
       "status": "pending",
-      "evidence": []
+      "evidence": [],
+      "waveType": "api_schema"
     },
     {
       "waveId": "spec_compiler",
-      "missionId": "mission_benchmark_enterprise_saas_v1_d99a2e44a278",
+      "missionId": "mission_benchmark_enterprise_saas_v1_e9251c98fa50",
       "index": 2,
       "name": "DAS / IBC Spec Compiler",
       "description": "Build the deterministic app spec compiler that converts raw input into DAS and IBC.",
@@ -239,89 +241,19 @@
         "low-risk gap → assumption recorded"
       ],
       "status": "pending",
-      "evidence": []
-    },
-    {
-      "waveId": "execution_runtime",
-      "missionId": "mission_benchmark_enterprise_saas_v1_d99a2e44a278",
-      "index": 3,
-      "name": "Execution DAG + Runtime",
-      "description": "Build the job queue, worker system, packet execution, lease, and retry infrastructure.",
-      "dependsOn": [
-        "repo_layout",
-        "api_schema"
-      ],
-      "packets": [
-        {
-          "packetId": "execution_runtime-p1",
-          "waveId": "execution_runtime",
-          "goal": "Implement job queue with claim, lease, and retry semantics",
-          "scope": [
-            "packages/supabase-adapter/src/jobClient.ts"
-          ],
-          "acceptanceCriteria": [
-            "no double execution",
-            "idempotent jobs",
-            "lease expiry retries correctly"
-          ],
-          "riskLevel": "medium"
-        },
-        {
-          "packetId": "execution_runtime-p2",
-          "waveId": "execution_runtime",
-          "goal": "Implement packet worker with execution and status reporting",
-          "scope": [
-            "packages/execution/"
-          ],
-          "acceptanceCriteria": [
-            "no double execution",
-            "idempotent jobs",
-            "lease expiry retries correctly"
-          ],
-          "riskLevel": "medium"
-        },
-        {
-          "packetId": "execution_runtime-p3",
-          "waveId": "execution_runtime",
-          "goal": "Implement execution DAG — topological packet ordering",
-          "scope": [
-            "packages/packet-engine/src/"
-          ],
-          "acceptanceCriteria": [
-            "no double execution",
-            "idempotent jobs",
-            "lease expiry retries correctly"
-          ],
-          "riskLevel": "high"
-        }
-      ],
-      "requiredValidators": [
-        "validate:execution-runtime",
-        "validate:job-idempotency"
-      ],
-      "evidenceRequirements": [
-        "execution-proof",
-        "idempotency-proof"
-      ],
-      "acceptanceCriteria": [
-        "no double execution",
-        "idempotent jobs",
-        "lease expiry retries correctly"
-      ],
-      "status": "pending",
-      "evidence": []
+      "evidence": [],
+      "waveType": "spec_compiler"
     },
     {
       "waveId": "builder_factory",
-      "missionId": "mission_benchmark_enterprise_saas_v1_d99a2e44a278",
-      "index": 4,
+      "missionId": "mission_benchmark_enterprise_saas_v1_e9251c98fa50",
+      "index": 3,
       "name": "Builder / Factory Engine",
       "description": "Build the code synthesis engine that turns packets + blueprints into real working applications.",
       "dependsOn": [
         "repo_layout",
         "api_schema",
-        "spec_compiler",
-        "execution_runtime"
+        "spec_compiler"
       ],
       "packets": [
         {
@@ -401,18 +333,88 @@
         "no placeholder code"
       ],
       "status": "pending",
-      "evidence": []
+      "evidence": [],
+      "waveType": "builder_factory"
+    },
+    {
+      "waveId": "intelligence_shell",
+      "missionId": "mission_benchmark_enterprise_saas_v1_e9251c98fa50",
+      "index": 4,
+      "name": "Application Shell + Control Interface",
+      "description": "Build the application frontend shell with navigation, core pages, interactive components, and operator control interface.",
+      "dependsOn": [
+        "builder_factory"
+      ],
+      "packets": [
+        {
+          "packetId": "intelligence_shell-p1",
+          "waveId": "intelligence_shell",
+          "goal": "Implement primary input interface with natural language and structured command support",
+          "scope": [
+            "apps/control-plane/src/components/CommandSpine"
+          ],
+          "acceptanceCriteria": [
+            "shell accepts user input",
+            "control pane shows real state",
+            "core surfaces render correctly"
+          ],
+          "riskLevel": "medium"
+        },
+        {
+          "packetId": "intelligence_shell-p2",
+          "waveId": "intelligence_shell",
+          "goal": "Implement operational status pane showing current state, changes, and pending actions",
+          "scope": [
+            "apps/control-plane/src/components/FocusPane"
+          ],
+          "acceptanceCriteria": [
+            "shell accepts user input",
+            "control pane shows real state",
+            "core surfaces render correctly"
+          ],
+          "riskLevel": "high"
+        },
+        {
+          "packetId": "intelligence_shell-p3",
+          "waveId": "intelligence_shell",
+          "goal": "Implement core deep surfaces (state view, execution view, builder view)",
+          "scope": [
+            "apps/control-plane/src/surfaces/"
+          ],
+          "acceptanceCriteria": [
+            "shell accepts user input",
+            "control pane shows real state",
+            "core surfaces render correctly"
+          ],
+          "riskLevel": "high"
+        }
+      ],
+      "requiredValidators": [
+        "validate:ui-shell",
+        "validate:command-spine"
+      ],
+      "evidenceRequirements": [
+        "ui-shell-proof",
+        "command-spine-proof"
+      ],
+      "acceptanceCriteria": [
+        "shell accepts user input",
+        "control pane shows real state",
+        "core surfaces render correctly"
+      ],
+      "status": "pending",
+      "evidence": [],
+      "waveType": "intelligence_shell"
     },
     {
       "waveId": "governance_security",
-      "missionId": "mission_benchmark_enterprise_saas_v1_d99a2e44a278",
+      "missionId": "mission_benchmark_enterprise_saas_v1_e9251c98fa50",
       "index": 5,
       "name": "Governance + Security",
       "description": "Build RBAC, tenant isolation, approval tiers, secrets management, and autonomy policy.",
       "dependsOn": [
         "repo_layout",
-        "api_schema",
-        "execution_runtime"
+        "api_schema"
       ],
       "packets": [
         {
@@ -473,11 +475,12 @@
         "secrets never logged"
       ],
       "status": "pending",
-      "evidence": []
+      "evidence": [],
+      "waveType": "governance_security"
     },
     {
       "waveId": "deployment_rollback",
-      "missionId": "mission_benchmark_enterprise_saas_v1_d99a2e44a278",
+      "missionId": "mission_benchmark_enterprise_saas_v1_e9251c98fa50",
       "index": 6,
       "name": "Deployment + Rollback",
       "description": "Build export, dry-run, live deploy, credential injection, and rollback engine.",
@@ -543,11 +546,12 @@
         "credentials injected at deploy time"
       ],
       "status": "pending",
-      "evidence": []
+      "evidence": [],
+      "waveType": "deployment_rollback"
     },
     {
       "waveId": "validation_proof",
-      "missionId": "mission_benchmark_enterprise_saas_v1_d99a2e44a278",
+      "missionId": "mission_benchmark_enterprise_saas_v1_e9251c98fa50",
       "index": 7,
       "name": "Validation + Proof System",
       "description": "Build all validators, proof ladder, evidence artifacts, and claim boundaries.",
@@ -613,11 +617,12 @@
         "claim boundary enforced"
       ],
       "status": "pending",
-      "evidence": []
+      "evidence": [],
+      "waveType": "validation_proof"
     },
     {
       "waveId": "fresh_clone_proof",
-      "missionId": "mission_benchmark_enterprise_saas_v1_d99a2e44a278",
+      "missionId": "mission_benchmark_enterprise_saas_v1_e9251c98fa50",
       "index": 8,
       "name": "Fresh-Clone End-to-End Proof",
       "description": "Prove the full system works from a clean checkout: install → build → test → run → smoke.",
@@ -625,10 +630,7 @@
         "repo_layout",
         "api_schema",
         "spec_compiler",
-        "execution_runtime",
         "builder_factory",
-        "repair_replay",
-        "truth_memory",
         "governance_security",
         "deployment_rollback",
         "validation_proof"
@@ -702,17 +704,18 @@
         "generated app build/run/smoke passes"
       ],
       "status": "pending",
-      "evidence": []
+      "evidence": [],
+      "waveType": "fresh_clone_proof"
     }
   ],
   "status": "in_progress",
   "claimLevel": "SYSTEM_PARTIAL",
-  "compiledAt": "2026-05-04T04:53:42.164Z",
-  "lastUpdatedAt": "2026-05-04T04:53:49.208Z",
+  "compiledAt": "2026-05-04T05:20:49.402Z",
+  "lastUpdatedAt": "2026-05-04T05:20:50.399Z",
   "checkpoints": [
     {
-      "checkpointId": "cp_repo_layout_1777870429208",
-      "missionId": "mission_benchmark_enterprise_saas_v1_d99a2e44a278",
+      "checkpointId": "cp_repo_layout_1777872050399",
+      "missionId": "mission_benchmark_enterprise_saas_v1_e9251c98fa50",
       "waveId": "repo_layout",
       "waveIndex": 0,
       "status": "proven",
@@ -723,15 +726,15 @@
           "evidenceType": "checkpoint",
           "passed": true,
           "detail": "Dry-run: wave \"Repo Layout + Scaffold\" would execute 3 packets",
-          "capturedAt": "2026-05-04T04:53:49.208Z",
-          "artifactId": "artifact_dryrun_repo_layout_1777870429208",
-          "workspacePath": "/tmp/mission-dryrun/mission_benchmark_enterprise_saas_v1_d99a2e44a278/repo_layout",
+          "capturedAt": "2026-05-04T05:20:50.398Z",
+          "artifactId": "artifact_dryrun_repo_layout_1777872050399",
+          "workspacePath": "/tmp/mission-dryrun/mission_benchmark_enterprise_saas_v1_e9251c98fa50/repo_layout",
           "contentHash": "dryrun_hash_repo_layout"
         }
       ],
-      "savedAt": "2026-05-04T04:53:49.208Z",
-      "workspacePath": "/tmp/mission-dryrun/mission_benchmark_enterprise_saas_v1_d99a2e44a278/repo_layout",
-      "artifactId": "artifact_dryrun_repo_layout_1777870429208",
+      "savedAt": "2026-05-04T05:20:50.399Z",
+      "workspacePath": "/tmp/mission-dryrun/mission_benchmark_enterprise_saas_v1_e9251c98fa50/repo_layout",
+      "artifactId": "artifact_dryrun_repo_layout_1777872050399",
       "contentHash": "dryrun_hash_repo_layout",
       "buildStatus": "passed",
       "runStatus": "skipped",
@@ -742,7 +745,7 @@
       ],
       "repairAttempts": 0,
       "proofRefs": [
-        "artifact:artifact_dryrun_repo_layout_1777870429208"
+        "artifact:artifact_dryrun_repo_layout_1777872050399"
       ],
       "nextWaveId": "api_schema",
       "blockers": []

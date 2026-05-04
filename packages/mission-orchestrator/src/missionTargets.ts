@@ -111,14 +111,17 @@ export function detectTargetArchitecture(specText: string): MissionTargetType {
 
 export function detectProductType(specText: string): string {
   const lower = specText.toLowerCase();
+  // More-specific signals checked before broad catch-alls
   if (/marketplace/.test(lower)) return "marketplace";
   if (/crm|customer\s+relationship/.test(lower)) return "crm";
   if (/ecommerce|e-commerce|shop|store/.test(lower)) return "ecommerce";
   if (/lms|learning\s+management|e-learning/.test(lower)) return "lms";
-  if (/analytics|dashboard|reporting/.test(lower)) return "analytics_platform";
-  if (/ai|llm|chat|assistant|agent/.test(lower)) return "ai_platform";
+  if (/ai\s+platform|llm|chat|assistant|agent/.test(lower)) return "ai_platform";
+  // SaaS before analytics — a SaaS HR platform has "reporting" but is still SaaS
+  if (/saas|subscription\s+service|multi[- ]tenant\s+saas|saas_platform/.test(lower)) return "saas_platform";
+  if (/\bhr\b|payroll|human\s+resources|employee\s+management/.test(lower)) return "saas_platform";
   if (/workflow|automation/.test(lower)) return "workflow_platform";
-  if (/saas|subscription\s+service/.test(lower)) return "saas_platform";
+  if (/analytics|reporting\s+dashboard|bi\s+platform/.test(lower)) return "analytics_platform";
   if (/enterprise|internal\s+tool|back[\s-]office/.test(lower)) return "enterprise_platform";
   if (/integration|connector|api\s+gateway/.test(lower)) return "integration_platform";
   return "general_app";

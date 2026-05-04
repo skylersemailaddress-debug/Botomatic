@@ -1,5 +1,5 @@
 {
-  "missionId": "mission_benchmark_enterprise_saas_v1_d99a2e44a278",
+  "missionId": "mission_benchmark_enterprise_saas_v1_e9251c98fa50",
   "projectId": "benchmark_enterprise_saas_v1",
   "sourceSpecHash": "b93d2fd5089ec66c641b76748d7aabc081fc6d5b254821f2ec7512bd5f77cb5c",
   "sourceType": "file",
@@ -32,15 +32,15 @@
     "repo_layout",
     "api_schema",
     "spec_compiler",
-    "execution_runtime",
     "builder_factory",
+    "intelligence_shell",
     "governance_security",
     "deployment_rollback",
     "validation_proof",
     "fresh_clone_proof"
   ],
   "claimBoundary": "MISSION_COMPILED",
-  "approvedAt": "2026-05-04T04:53:45.498Z",
+  "approvedAt": "2026-05-04T05:20:49.903Z",
   "approvedBy": "system_autopilot",
-  "lockedAt": "2026-05-04T04:53:45.498Z"
+  "lockedAt": "2026-05-04T05:20:49.903Z"
 }
