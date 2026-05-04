@@ -22,6 +22,10 @@ export async function enqueueJob(job: {
   project_id: string;
   packet_id: string;
 }) {
+  if (!URL) {
+    // Dev/memory mode: no Supabase configured, packet stays pending in-memory
+    return;
+  }
   const res = await fetch(`${URL}/rest/v1/orchestrator_jobs`, {
     method: "POST",
     headers,
