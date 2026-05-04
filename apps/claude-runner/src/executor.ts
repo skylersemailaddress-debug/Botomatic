@@ -3,31 +3,32 @@ import OpenAI from "openai";
 import { ExecuteRequest, ExecuteResponse, FileChange } from "./types.js";
 import { detectWaveType, WaveType, buildSystemPrompt, buildUserPrompt } from "./domainPrompts.js";
 
-// ── Model routing ────────────────────────────────────────────────────────────
-// Three tiers: flagship (deep reasoning), general (standard gen), utility (fast/cheap).
+// ── Model routing ─────────────────────────────────────────────────────────────
+// Five tiers: council | flagship | general | fast | utility
+// Council = hardest waves run Anthropic + Gemini + OpenAI in parallel, best wins.
+// Fast    = deployment/validation waves use Gemini Flash (lowest latency capable model).
+// Utility = scaffold/repo-layout uses GPT-4o-mini (cheapest capable model).
 
 const MODEL_FLAGSHIP_PROVIDER = process.env.NEXUS_MODEL_FLAGSHIP_PROVIDER ?? "anthropic";
-const MODEL_FLAGSHIP          = process.env.NEXUS_MODEL_FLAGSHIP          ?? "claude-sonnet-4-6";
+const MODEL_FLAGSHIP          = process.env.NEXUS_MODEL_FLAGSHIP          ?? "claude-opus-4-7";
 const MODEL_GENERAL_PROVIDER  = process.env.NEXUS_MODEL_GENERAL_PROVIDER  ?? "anthropic";
 const MODEL_GENERAL           = process.env.NEXUS_MODEL_GENERAL           ?? "claude-sonnet-4-6";
-const MODEL_UTILITY_PROVIDER  = process.env.NEXUS_MODEL_UTILITY_PROVIDER  ?? "anthropic";
-const MODEL_UTILITY           = process.env.NEXUS_MODEL_UTILITY           ?? "claude-sonnet-4-6";
+const MODEL_FAST_PROVIDER     = process.env.NEXUS_MODEL_FAST_PROVIDER     ?? "google";
+const MODEL_FAST              = process.env.NEXUS_MODEL_FAST              ?? "gemini-2.0-flash";
+const MODEL_UTILITY_PROVIDER  = process.env.NEXUS_MODEL_UTILITY_PROVIDER  ?? "openai";
+const MODEL_UTILITY           = process.env.NEXUS_MODEL_UTILITY           ?? "gpt-4o-mini";
 
-// Council mode: multiple providers vote and the best result wins.
-// Enabled when NEXUS_COUNCIL_MODEL_ENABLED=true AND wave is flagship-tier.
-const COUNCIL_ENABLED = process.env.NEXUS_COUNCIL_MODEL_ENABLED === "true";
-
-// Conversation mode: use extended thinking / multi-turn for flagship waves.
-// Enabled when NEXUS_CONVERSATION_MODEL_ENABLED=true.
+// Council mode: when enabled AND wave is council-tier, three providers vote.
+const COUNCIL_ENABLED      = process.env.NEXUS_COUNCIL_MODEL_ENABLED      === "true";
 const CONVERSATION_ENABLED = process.env.NEXUS_CONVERSATION_MODEL_ENABLED === "true";
 
-// Local/Ollama: only for low-risk utility waves when enabled.
-const LOCAL_ENABLED      = process.env.NEXUS_MODEL_LOCAL_ENABLED === "true";
-const LOCAL_BASE_URL     = process.env.NEXUS_MODEL_LOCAL_BASE_URL ?? "http://localhost:11434";
-const LOCAL_LOW_RISK_ONLY = process.env.NEXUS_MODEL_LOCAL_LOW_RISK_ONLY !== "false"; // default true
+const LOCAL_ENABLED       = process.env.NEXUS_MODEL_LOCAL_ENABLED         === "true";
+const LOCAL_BASE_URL      = process.env.NEXUS_MODEL_LOCAL_BASE_URL        ?? "http://localhost:11434";
+const LOCAL_LOW_RISK_ONLY = process.env.NEXUS_MODEL_LOCAL_LOW_RISK_ONLY   !== "false";
 
-// Wave types that require flagship-tier reasoning
-const FLAGSHIP_WAVES = new Set<WaveType>([
+// ── Wave tier classification ──────────────────────────────────────────────────
+// Council: deepest reasoning — auth, spec, factory, governance, proof, repair, memory
+const COUNCIL_WAVES = new Set<WaveType>([
   "auth",
   "spec_compiler",
   "builder_factory",
@@ -37,26 +38,39 @@ const FLAGSHIP_WAVES = new Set<WaveType>([
   "truth_memory",
 ]);
 
-// Wave types suited to the cheap/fast utility tier
+// Fast: latency-sensitive and deterministic — validation, deployment
+const FAST_WAVES = new Set<WaveType>([
+  "validation_proof",
+  "deployment_rollback",
+]);
+
+// Utility: cheap structural output — layout, generic scaffolding
 const UTILITY_WAVES = new Set<WaveType>([
   "repo_layout",
-  "validation_proof",
   "generic",
 ]);
 
-function selectTier(waveType: WaveType): { provider: string; model: string; tier: string } {
-  // Local override: Ollama only handles utility waves when enabled and low-risk gate passes
+type Tier = "council" | "flagship" | "general" | "fast" | "utility" | "local";
+
+function selectTier(waveType: WaveType): { provider: string; model: string; tier: Tier } {
   if (LOCAL_ENABLED && UTILITY_WAVES.has(waveType) && LOCAL_LOW_RISK_ONLY) {
     return { provider: "ollama", model: "llama3", tier: "local" };
   }
-  if (FLAGSHIP_WAVES.has(waveType)) return { provider: MODEL_FLAGSHIP_PROVIDER, model: MODEL_FLAGSHIP, tier: "flagship" };
-  if (UTILITY_WAVES.has(waveType))  return { provider: MODEL_UTILITY_PROVIDER,  model: MODEL_UTILITY,  tier: "utility"  };
+  if (COUNCIL_WAVES.has(waveType)) {
+    // Council falls back to flagship if not enabled
+    if (COUNCIL_ENABLED) return { provider: "council", model: "multi", tier: "council" };
+    return { provider: MODEL_FLAGSHIP_PROVIDER, model: MODEL_FLAGSHIP, tier: "flagship" };
+  }
+  if (FAST_WAVES.has(waveType))    return { provider: MODEL_FAST_PROVIDER,    model: MODEL_FAST,    tier: "fast"    };
+  if (UTILITY_WAVES.has(waveType)) return { provider: MODEL_UTILITY_PROVIDER, model: MODEL_UTILITY, tier: "utility" };
   return { provider: MODEL_GENERAL_PROVIDER, model: MODEL_GENERAL, tier: "general" };
 }
 
-// ── SDK clients (lazy) ───────────────────────────────────────────────────────
+// ── SDK clients (lazy) ────────────────────────────────────────────────────────
 let _anthropic: Anthropic | null = null;
-let _openai: OpenAI | null = null;
+let _openai:    OpenAI    | null = null;
+let _gemini:    OpenAI    | null = null;
+let _azure:     OpenAI    | null = null;
 
 function getAnthropic(): Anthropic {
   if (!_anthropic) _anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -68,7 +82,31 @@ function getOpenAI(): OpenAI {
   return _openai;
 }
 
-// ── Tool schemas ─────────────────────────────────────────────────────────────
+function getGemini(): OpenAI {
+  if (!_gemini) {
+    _gemini = new OpenAI({
+      apiKey:  process.env.GEMINI_API_KEY ?? process.env.GOOGLE_API_KEY ?? "",
+      baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
+    });
+  }
+  return _gemini;
+}
+
+function getAzure(): OpenAI {
+  if (!_azure) {
+    const endpoint = (process.env.AZURE_OPENAI_ENDPOINT ?? "").replace(/\/$/, "");
+    const version  = process.env.AZURE_OPENAI_API_VERSION ?? "2024-10-21";
+    _azure = new OpenAI({
+      apiKey:  process.env.AZURE_OPENAI_API_KEY ?? "",
+      baseURL: `${endpoint}/openai/deployments`,
+      defaultHeaders: { "api-version": version },
+      defaultQuery:   { "api-version": version },
+    });
+  }
+  return _azure;
+}
+
+// ── Tool schemas ──────────────────────────────────────────────────────────────
 const WRITE_FILES_TOOL_ANTHROPIC: Anthropic.Tool = {
   name: "write_files",
   description: "Write all generated source files for this wave packet. Every file must be complete and functional.",
@@ -144,6 +182,18 @@ function ensureHealthEndpoint(files: FileChange[]): FileChange[] {
   });
 }
 
+// ── Council scoring ───────────────────────────────────────────────────────────
+// Weighted: file count (most important) + server/entry presence + total body bytes.
+function scoreResult(r: { files: FileChange[]; summary: string }): number {
+  const hasServer = r.files.some((f) =>
+    /server\.(ts|js|mjs)$/.test(f.path) ||
+    /index\.(ts|js|mjs)$/.test(f.path) ||
+    /main\.(ts|js|mjs)$/.test(f.path)
+  );
+  const totalChars = r.files.reduce((n, f) => n + f.body.length, 0);
+  return r.files.length * 100 + (hasServer ? 50 : 0) + Math.floor(totalChars / 200);
+}
+
 // ── Provider execution functions ──────────────────────────────────────────────
 
 async function executeWithAnthropic(
@@ -155,15 +205,13 @@ async function executeWithAnthropic(
 ): Promise<{ files: FileChange[]; summary: string } | null> {
   const messages: Anthropic.MessageParam[] = [{ role: "user", content: userPrompt }];
 
-  // Conversation mode: prime with a brief assistant ack for extended engagement
   if (conversationMode && CONVERSATION_ENABLED) {
     messages.push({ role: "assistant", content: "I'll generate complete, production-ready files for this wave. Let me analyze the requirements carefully." });
-    messages.push({ role: "user", content: "Good. Now use the write_files tool with complete, working code." });
+    messages.push({ role: "user",      content: "Good. Now use the write_files tool with complete, working code." });
     logs.push("conversation_mode=enabled");
   }
 
-  // Prompt caching: system prompt is identical across all packets — cache it for 5 min TTL.
-  // This saves ~90% of system prompt tokens on cache hits (~$330/yr at scale).
+  // System prompt caching: identical across all packets — saves ~90% of system prompt tokens on hits.
   const response = await getAnthropic().messages.create({
     model,
     max_tokens: 8192,
@@ -173,9 +221,9 @@ async function executeWithAnthropic(
     messages,
   });
 
-  logs.push(`stop_reason=${response.stop_reason}`);
-  logs.push(`input_tokens=${response.usage.input_tokens}`);
-  logs.push(`output_tokens=${response.usage.output_tokens}`);
+  logs.push(`anthropic_stop=${response.stop_reason}`);
+  logs.push(`anthropic_in=${response.usage.input_tokens}`);
+  logs.push(`anthropic_out=${response.usage.output_tokens}`);
 
   for (const block of response.content) {
     if (block.type === "tool_use" && block.name === "write_files") {
@@ -190,23 +238,26 @@ async function executeWithOpenAI(
   model: string,
   systemPrompt: string,
   userPrompt: string,
-  logs: string[]
+  logs: string[],
+  clientOverride?: OpenAI,
+  tag = "openai"
 ): Promise<{ files: FileChange[]; summary: string } | null> {
-  const response = await getOpenAI().chat.completions.create({
+  const client = clientOverride ?? getOpenAI();
+  const response = await client.chat.completions.create({
     model,
     max_tokens: 8192,
     tools: [WRITE_FILES_TOOL_OPENAI],
     tool_choice: { type: "function", function: { name: "write_files" } },
     messages: [
       { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt },
+      { role: "user",   content: userPrompt   },
     ],
   });
 
   const choice = response.choices[0];
-  logs.push(`finish_reason=${choice.finish_reason}`);
-  logs.push(`input_tokens=${response.usage?.prompt_tokens ?? 0}`);
-  logs.push(`output_tokens=${response.usage?.completion_tokens ?? 0}`);
+  logs.push(`${tag}_finish=${choice.finish_reason}`);
+  logs.push(`${tag}_in=${response.usage?.prompt_tokens ?? 0}`);
+  logs.push(`${tag}_out=${response.usage?.completion_tokens ?? 0}`);
 
   const toolCall = choice.message?.tool_calls?.[0];
   if (toolCall && "function" in toolCall && toolCall.function?.name === "write_files") {
@@ -216,15 +267,40 @@ async function executeWithOpenAI(
   return null;
 }
 
+async function executeWithGemini(
+  model: string,
+  systemPrompt: string,
+  userPrompt: string,
+  logs: string[]
+): Promise<{ files: FileChange[]; summary: string } | null> {
+  if (!process.env.GEMINI_API_KEY && !process.env.GOOGLE_API_KEY) {
+    logs.push("gemini_key_missing=skip");
+    return null;
+  }
+  return executeWithOpenAI(model, systemPrompt, userPrompt, logs, getGemini(), "gemini");
+}
+
+async function executeWithAzure(
+  model: string,
+  systemPrompt: string,
+  userPrompt: string,
+  logs: string[]
+): Promise<{ files: FileChange[]; summary: string } | null> {
+  if (!process.env.AZURE_OPENAI_API_KEY || !process.env.AZURE_OPENAI_ENDPOINT) {
+    logs.push("azure_key_missing=skip");
+    return null;
+  }
+  return executeWithOpenAI(model, systemPrompt, userPrompt, logs, getAzure(), "azure");
+}
+
 async function executeWithOllama(
   model: string,
   systemPrompt: string,
   userPrompt: string,
   logs: string[]
 ): Promise<{ files: FileChange[]; summary: string } | null> {
-  // Ollama uses OpenAI-compatible API at LOCAL_BASE_URL
   const ollamaClient = new OpenAI({
-    apiKey: "ollama", // Ollama doesn't require a real key
+    apiKey: "ollama",
     baseURL: `${LOCAL_BASE_URL}/v1`,
   });
 
@@ -233,7 +309,7 @@ async function executeWithOllama(
       model,
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt + "\n\nRespond ONLY with a JSON object: {\"files\": [{\"path\": \"...\", \"body\": \"...\"}], \"summary\": \"...\"}" },
+        { role: "user",   content: userPrompt + '\n\nRespond ONLY with a JSON object: {"files": [{"path": "...", "body": "..."}], "summary": "..."}' },
       ],
       max_tokens: 8192,
     });
@@ -253,8 +329,13 @@ async function executeWithOllama(
   return null;
 }
 
-// ── Council mode: run flagship + utility in parallel, pick the winner ─────────
-// "Winner" = whichever returns more files (richer output). Flagship breaks ties.
+// ── Council mode ──────────────────────────────────────────────────────────────
+// All three providers (Anthropic + Gemini-2.5-pro + GPT-4o) run in parallel.
+// Winner = highest composite score (file count + server entry + body size).
+// Flagship always runs; others are skipped gracefully if keys are absent.
+const COUNCIL_GEMINI_MODEL = process.env.NEXUS_COUNCIL_GEMINI_MODEL ?? "gemini-2.5-pro";
+const COUNCIL_OPENAI_MODEL = process.env.NEXUS_COUNCIL_OPENAI_MODEL ?? "gpt-4o";
+
 async function executeWithCouncil(
   systemPrompt: string,
   userPrompt: string,
@@ -262,35 +343,46 @@ async function executeWithCouncil(
 ): Promise<{ files: FileChange[]; summary: string } | null> {
   logs.push("council_mode=enabled");
 
-  const [flagshipResult, utilityResult] = await Promise.allSettled([
+  const [anthropicResult, geminiResult, openaiResult] = await Promise.allSettled([
     executeWithAnthropic(MODEL_FLAGSHIP, systemPrompt, userPrompt, logs, CONVERSATION_ENABLED),
+    executeWithGemini(COUNCIL_GEMINI_MODEL, systemPrompt, userPrompt, logs),
     process.env.OPENAI_API_KEY
-      ? executeWithOpenAI(MODEL_UTILITY, systemPrompt, userPrompt, logs)
+      ? executeWithOpenAI(COUNCIL_OPENAI_MODEL, systemPrompt, userPrompt, logs)
       : Promise.resolve(null),
   ]);
 
-  const flagship = flagshipResult.status === "fulfilled" ? flagshipResult.value : null;
-  const utility  = utilityResult.status  === "fulfilled" ? utilityResult.value  : null;
+  const candidates: Array<{ name: string; result: { files: FileChange[]; summary: string } }> = [];
+  const push = (name: string, settled: PromiseSettledResult<{ files: FileChange[]; summary: string } | null>) => {
+    if (settled.status === "fulfilled" && settled.value && settled.value.files.length > 0) {
+      candidates.push({ name, result: settled.value });
+    }
+  };
 
-  if (!flagship && !utility) return null;
-  if (!flagship) return utility;
-  if (!utility) return flagship;
+  push("anthropic", anthropicResult);
+  push("gemini",    geminiResult);
+  push("openai",    openaiResult);
 
-  // Council decision: prefer whichever has more files; flagship wins ties
-  const winner = utility.files.length > flagship.files.length ? utility : flagship;
-  logs.push(`council_winner=${winner === flagship ? "flagship" : "utility"}`);
-  logs.push(`council_flagship_files=${flagship.files.length}`);
-  logs.push(`council_utility_files=${utility.files.length}`);
-  return winner;
+  if (candidates.length === 0) return null;
+
+  // Pick highest-scoring candidate
+  candidates.sort((a, b) => scoreResult(b.result) - scoreResult(a.result));
+  const winner = candidates[0];
+
+  logs.push(`council_winner=${winner.name}`);
+  for (const c of candidates) {
+    logs.push(`council_${c.name}_files=${c.result.files.length}_score=${scoreResult(c.result)}`);
+  }
+
+  return winner.result;
 }
 
 // ── Main entry point ──────────────────────────────────────────────────────────
 export async function executePacket(req: ExecuteRequest): Promise<ExecuteResponse> {
-  const waveType = detectWaveType(req.packetId, req.goal);
+  const waveType    = detectWaveType(req.packetId, req.goal);
   const { provider, model, tier } = selectTier(waveType);
   const systemPrompt = buildSystemPrompt();
-  const userPrompt = buildUserPrompt(req, waveType);
-  const isFlagship = tier === "flagship";
+  const userPrompt   = buildUserPrompt(req, waveType);
+  const isFlagship   = tier === "flagship" || tier === "council";
 
   const logs: string[] = [
     `wave_type=${waveType}`,
@@ -298,7 +390,7 @@ export async function executePacket(req: ExecuteRequest): Promise<ExecuteRespons
     `provider=${provider}`,
     `model=${model}`,
     `packet_id=${req.packetId}`,
-    `council=${COUNCIL_ENABLED && isFlagship}`,
+    `council=${tier === "council"}`,
     `conversation=${CONVERSATION_ENABLED && isFlagship}`,
     `local_enabled=${LOCAL_ENABLED}`,
   ];
@@ -306,29 +398,60 @@ export async function executePacket(req: ExecuteRequest): Promise<ExecuteRespons
   try {
     let result: { files: FileChange[]; summary: string } | null = null;
 
-    // Council mode: flagship waves get multi-model consensus when enabled
-    if (COUNCIL_ENABLED && isFlagship) {
-      result = await executeWithCouncil(systemPrompt, userPrompt, logs);
-    } else if (provider === "ollama") {
-      result = await executeWithOllama(model, systemPrompt, userPrompt, logs);
-      // Ollama fallback: if local fails, escalate to utility tier
-      if (!result) {
-        logs.push("ollama_fallback=utility");
-        result = process.env.OPENAI_API_KEY
-          ? await executeWithOpenAI(MODEL_UTILITY, systemPrompt, userPrompt, logs)
-          : await executeWithAnthropic(MODEL_GENERAL, systemPrompt, userPrompt, logs);
-      }
-    } else if (provider === "openai") {
-      if (!process.env.OPENAI_API_KEY) {
-        logs.push("openai_key_missing=fallback_to_anthropic");
-        result = await executeWithAnthropic(MODEL_GENERAL, systemPrompt, userPrompt, logs);
-      } else {
-        result = await executeWithOpenAI(model, systemPrompt, userPrompt, logs);
-      }
-    } else {
-      // Anthropic (flagship or general)
-      if (!process.env.ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY not set");
-      result = await executeWithAnthropic(model, systemPrompt, userPrompt, logs, isFlagship);
+    switch (tier) {
+      case "council":
+        result = await executeWithCouncil(systemPrompt, userPrompt, logs);
+        break;
+
+      case "local":
+        result = await executeWithOllama(model, systemPrompt, userPrompt, logs);
+        if (!result) {
+          // Local failed — escalate to fast tier
+          logs.push("ollama_fallback=fast");
+          result = await executeWithGemini(MODEL_FAST, systemPrompt, userPrompt, logs)
+            ?? await executeWithAnthropic(MODEL_GENERAL, systemPrompt, userPrompt, logs);
+        }
+        break;
+
+      case "fast":
+        result = await executeWithGemini(model, systemPrompt, userPrompt, logs);
+        if (!result) {
+          // Gemini unavailable — fall back to general Anthropic
+          logs.push("fast_fallback=general");
+          result = await executeWithAnthropic(MODEL_GENERAL, systemPrompt, userPrompt, logs);
+        }
+        break;
+
+      case "utility":
+        if (!process.env.OPENAI_API_KEY) {
+          logs.push("openai_key_missing=fallback_general");
+          result = await executeWithAnthropic(MODEL_GENERAL, systemPrompt, userPrompt, logs);
+        } else {
+          result = await executeWithOpenAI(model, systemPrompt, userPrompt, logs);
+        }
+        break;
+
+      case "flagship":
+        if (!process.env.ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY not set");
+        result = await executeWithAnthropic(model, systemPrompt, userPrompt, logs, CONVERSATION_ENABLED);
+        break;
+
+      default:
+        // general
+        if (provider === "openai") {
+          result = process.env.OPENAI_API_KEY
+            ? await executeWithOpenAI(model, systemPrompt, userPrompt, logs)
+            : await executeWithAnthropic(MODEL_GENERAL, systemPrompt, userPrompt, logs);
+        } else if (provider === "google") {
+          result = await executeWithGemini(model, systemPrompt, userPrompt, logs)
+            ?? await executeWithAnthropic(MODEL_GENERAL, systemPrompt, userPrompt, logs);
+        } else if (provider === "azure") {
+          result = await executeWithAzure(model, systemPrompt, userPrompt, logs)
+            ?? await executeWithAnthropic(MODEL_GENERAL, systemPrompt, userPrompt, logs);
+        } else {
+          if (!process.env.ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY not set");
+          result = await executeWithAnthropic(model, systemPrompt, userPrompt, logs, isFlagship);
+        }
     }
 
     if (!result) {
