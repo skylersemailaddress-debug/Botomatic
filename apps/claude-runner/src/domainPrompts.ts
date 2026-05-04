@@ -14,6 +14,9 @@ export type WaveType =
   | "execution_runtime"
   | "repair_replay"
   | "truth_memory"
+  | "roblox_game"
+  | "unity_steam_game"
+  | "godot_game"
   | "generic";
 
 export function detectWaveType(packetId: string, goal: string): WaveType {
@@ -31,6 +34,9 @@ export function detectWaveType(packetId: string, goal: string): WaveType {
   if (/execution|runtime|worker|queue|job/.test(id)) return "execution_runtime";
   if (/repair|replay|fix|recover|patch/.test(id)) return "repair_replay";
   if (/memory|truth|state|store|cache/.test(id)) return "truth_memory";
+  if (/roblox|luau|datastore|remoteevent|robloxstudio/.test(id)) return "roblox_game";
+  if (/unity|csharp|steamworks|steam.?game|godot.*steam|steam.*godot/.test(id)) return "unity_steam_game";
+  if (/godot|gdscript|godot.?game/.test(id)) return "godot_game";
   return "generic";
 }
 
@@ -210,6 +216,40 @@ const DOMAIN_CONSTRAINTS: Partial<Record<WaveType, string>> = {
 - Timeouts: wrap job execution in Promise.race with a 60s timeout — failed jobs must not block the queue.
 - Retry: support max 3 retries with exponential backoff (1s, 2s, 4s). Track retryCount on each job.
 - /queue/status endpoint: return {queued, running, succeeded, failed, total} counts.`,
+
+  roblox_game: `
+## ROBLOX / LUAU RULES (non-negotiable):
+- Language: Luau ONLY. No TypeScript, no Node.js, no external npm packages.
+- Architecture: ServerScriptService for server Scripts, StarterPlayerScripts for LocalScripts, ReplicatedStorage for shared ModuleScripts and RemoteEvents/RemoteFunctions.
+- ALL RemoteEvent/RemoteFunction handlers on the server MUST validate every argument before use — never trust client inputs.
+- Data persistence: use Roblox DataStoreService with pcall() wrappers and retry on failure. NEVER rely on in-memory state for persistent player data.
+- Monetisation: MarketplaceService:PromptGamePassPurchase() and :PromptProductPurchase() — grant items/currency ONLY from the server-side ProcessReceipt callback.
+- Performance: use task.spawn() for non-blocking operations. Avoid wait() (deprecated) — use task.wait() instead.
+- Communication: all gameplay events must go through RemoteEvents. NEVER call server functions directly from client scripts.
+- NEVER hardcode UserId values. NEVER grant currency/items without server-side verification.`,
+
+  unity_steam_game: `
+## UNITY / C# / STEAM RULES (non-negotiable):
+- Language: C# (.cs) targeting Unity 2022 LTS or newer. Use UnityEngine and Steamworks.NET namespaces.
+- Architecture: ScriptableObject-based data (no magic strings), singleton GameManager/AudioManager via DontDestroyOnLoad, scene transitions via SceneLoader.
+- Save system: use JsonUtility.ToJson() / FromJson() with FileStream to persistent data path. NEVER use PlayerPrefs for gameplay-critical data.
+- Steam integration: Steamworks.NET wrapper. Init via SteamAPI.Init() in Awake, shut down in OnApplicationQuit. Achievement unlock via SteamUserStats.SetAchievement().
+- Input: use new Unity Input System (not legacy Input.GetKey). Define InputActionAsset in assets.
+- Debug: surround all Debug.Log calls with #if UNITY_EDITOR / #endif guards in production scripts.
+- Build pipeline: multi-platform build script (BuildScript.cs) with BuildPlayerOptions. Output to /Builds/ directory. NEVER hardcode absolute paths.
+- Async: use UniTask or Coroutines for async operations. NEVER block the main thread with Thread.Sleep.`,
+
+  godot_game: `
+## GODOT 4 / GDSCRIPT RULES (non-negotiable):
+- Language: GDScript (.gd) for Godot 4. Use @export, @onready, signal, await correctly.
+- Architecture: Autoloads (project.godot [autoload] section) for GameManager, SaveManager, AudioManager. Use signals for loose coupling between nodes — avoid direct node references across branches.
+- Save system: use FileAccess.open() with JSON.stringify()/parse() to user://save.json. Call save in NOTIFICATION_WM_CLOSE_REQUEST and on explicit save action.
+- Scene management: SceneLoader autoload with transition animation. Use ResourceLoader.load_threaded_request() for large scenes.
+- Input: define all actions in Project Settings > Input Map. Use Input.is_action_pressed() — never hardcode key constants.
+- Signals: declare signals at top of class with `signal my_signal`. Emit with emit_signal() or shorthand self.my_signal.emit().
+- Resource system: extend Resource for all data objects (items, stats, quests). Store as .tres files, load with preload() for small assets, load() for large.
+- Performance: use Object Pooling for frequently spawned nodes. Never instantiate/free nodes in tight loops.
+- Export: configure export templates in export_presets.cfg. NEVER hardcode absolute paths — use res:// and user:// prefixes.`,
 };
 
 export function buildUserPrompt(req: ExecuteRequest, waveType: WaveType): string {
@@ -380,6 +420,40 @@ const WAVE_CONTEXT: Record<WaveType, { preamble: string; instructions: string; f
 - Query engine (src/truth/query.ts) — structured queries against truth store
 - Health server (src/server.ts) — /health + /memory/snapshot endpoint`,
     fileHints: `Required files: src/memory/store.ts, src/truth/compiler.ts, src/memory/snapshots.ts, src/truth/query.ts, src/server.ts`,
+  },
+
+  roblox_game: {
+    preamble: "Generate a Roblox game module in Luau following Roblox Studio conventions.",
+    instructions: `Create the requested Roblox game feature including:
+- ServerScript (ServerScriptService/) — server-side logic, DataStore, RemoteEvent handlers with server-side validation
+- LocalScript (StarterPlayerScripts/ or StarterGui/) — client-side UI and input handling
+- ModuleScript (ReplicatedStorage/) — shared constants, utility functions, data schemas
+- RemoteEvents / RemoteFunctions (ReplicatedStorage/Events/) — defined and bound on server
+- DataStore save/load (src/DataManager.server.lua) — with pcall retry wrapper`,
+    fileHints: `Required files: ServerScriptService/GameServer.server.luau, StarterPlayerScripts/GameClient.client.luau, ReplicatedStorage/Modules/GameConstants.luau, ReplicatedStorage/Events/ (RemoteEvent instances), ServerScriptService/DataManager.server.luau`,
+  },
+
+  unity_steam_game: {
+    preamble: "Generate a Unity C# game component targeting Steam/PC release.",
+    instructions: `Create the requested Unity game feature including:
+- GameManager.cs (Assets/Scripts/Core/) — singleton, DontDestroyOnLoad, scene state
+- SaveManager.cs (Assets/Scripts/Core/) — JSON save/load via FileStream to persistentDataPath
+- Feature script (Assets/Scripts/<Feature>/) — core gameplay logic for the requested feature
+- SteamManager.cs (Assets/Scripts/Steam/) — SteamAPI init, achievement + leaderboard helpers
+- InputHandler.cs (Assets/Scripts/Input/) — new Unity Input System action callbacks
+- BuildScript.cs (Assets/Editor/) — automated multi-platform build pipeline`,
+    fileHints: `Required files: Assets/Scripts/Core/GameManager.cs, Assets/Scripts/Core/SaveManager.cs, Assets/Scripts/<Feature>/<Feature>Controller.cs, Assets/Scripts/Steam/SteamManager.cs, Assets/Editor/BuildScript.cs`,
+  },
+
+  godot_game: {
+    preamble: "Generate a Godot 4 GDScript game component following Godot best practices.",
+    instructions: `Create the requested Godot game feature including:
+- Autoload scripts (autoloads/) — GameManager.gd, SaveManager.gd with signal declarations
+- Scene script (scenes/<feature>/<Feature>.gd) — node logic attached to matching .tscn
+- Resource definition (resources/<Type>.gd) — extends Resource, @export properties
+- SaveManager implementation — FileAccess + JSON, save to user://save.json
+- InputMap actions referenced by string name, never hardcoded key constants`,
+    fileHints: `Required files: autoloads/GameManager.gd, autoloads/SaveManager.gd, scenes/<feature>/<Feature>.gd, resources/<Type>.gd, export_presets.cfg`,
   },
 
   generic: {

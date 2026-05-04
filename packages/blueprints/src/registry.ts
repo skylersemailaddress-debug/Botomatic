@@ -25,6 +25,9 @@ import { realEstateListings } from "./blueprints/realEstateListings";
 import { fieldService } from "./blueprints/fieldService";
 import { nonprofitVolunteerOps } from "./blueprints/nonprofitVolunteerOps";
 import { campaignOps } from "./blueprints/campaignOps";
+import { robloxGame } from "./blueprints/robloxGame";
+import { steamUnityGame } from "./blueprints/steamUnityGame";
+import { godotGame } from "./blueprints/godotGame";
 
 export const blueprintRegistry: Blueprint[] = [
   marketingWebsite,
@@ -53,6 +56,9 @@ export const blueprintRegistry: Blueprint[] = [
   fieldService,
   nonprofitVolunteerOps,
   campaignOps,
+  robloxGame,
+  steamUnityGame,
+  godotGame,
 ];
 
 export function getBlueprintById(id: string): Blueprint | undefined {
