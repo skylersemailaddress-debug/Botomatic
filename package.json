@@ -7,6 +7,9 @@
     "build": "npm run ui:build",
     "api:start": "PORT=3001 API_AUTH_TOKEN=dev-api-token tsx apps/orchestrator-api/src/bootstrap.ts",
     "api:dev": "PORT=3001 API_AUTH_TOKEN=dev-api-token tsx apps/orchestrator-api/src/bootstrap.ts",
+    "executor:dev": "PORT=4000 tsx apps/claude-runner/src/server.ts",
+    "executor:start": "PORT=4000 tsx apps/claude-runner/src/server.ts",
+    "dev:full": "concurrently \"npm run api:dev\" \"npm run executor:dev\"",
     "doctor": "tsx scripts/doctor.ts",
     "start:easy": "tsx scripts/startEasy.ts",
     "start:easy:dry-run": "tsx scripts/startEasy.ts --dry-run",
@@ -189,6 +192,7 @@
     "test:visual-commercial": "node tests/visual/scripts/compare-commercial-cockpit.cjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "0.93.0",
     "@trigger.dev/sdk": "^4.4.4"
   },
   "devDependencies": {

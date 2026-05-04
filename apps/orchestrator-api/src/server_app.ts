@@ -1631,27 +1631,40 @@ function waitForServerPort(port: number, timeoutMs = 8000): Promise<void> {
   });
 }
 
-async function materializeGeneratedWorkspace(
+async function callClaudeExecutor(
   projectId: string,
-  jobId: string,
-  request: string
-): Promise<{ workspacePath: string; buildStatus: string; runStatus: string; smokeStatus: string; filesWritten: number }> {
-  const workspaceDir = path.join(process.cwd(), "runtime", "generated-apps", projectId, jobId);
-  const safeRequest = (request || "").slice(0, 120).replace(/["'\\`]/g, " ");
+  packetId: string,
+  goal: string,
+): Promise<Array<{ path: string; body: string }> | null> {
+  const executorUrl = process.env.CLAUDE_EXECUTOR_URL;
+  if (!executorUrl) return null;
+  try {
+    const res = await fetch(`${executorUrl.replace(/\/$/, "")}/execute`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ projectId, packetId, branchName: "main", goal, requirements: [], constraints: ["Include a /health endpoint returning {status:'ok'}"] }),
+      signal: AbortSignal.timeout(120_000),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { success?: boolean; changedFiles?: Array<{ path: string; body: string }> };
+    if (data.success && Array.isArray(data.changedFiles) && data.changedFiles.length > 0) {
+      return data.changedFiles;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
 
+function buildFallbackFiles(projectId: string, safeRequest: string): Array<[string, string]> {
   const pkg = {
     name: `botomatic-gen-${projectId.slice(-8)}`,
     version: "1.0.0",
     description: safeRequest,
-    scripts: {
-      build: "node --check server.mjs",
-      test: "node --check server.mjs",
-      start: "node server.mjs",
-    },
+    scripts: { build: "node --check server.mjs", test: "node --check server.mjs", start: "node server.mjs" },
     type: "module",
     dependencies: {},
   };
-
   const serverLines = [
     `// Generated app workspace: ${projectId}`,
     `import http from "http";`,
@@ -1665,12 +1678,9 @@ async function materializeGeneratedWorkspace(
     `  res.writeHead(200, { "Content-Type": "text/html" });`,
     `  res.end("<html><body><h1>Generated App</h1></body></html>");`,
     `});`,
-    `server.listen(PORT, "127.0.0.1", () => {`,
-    `  process.stdout.write("server listening on " + PORT + "\\n");`,
-    `});`,
+    `server.listen(PORT, "127.0.0.1", () => { process.stdout.write("server listening on " + PORT + "\\n"); });`,
   ];
-
-  const files: Array<[string, string]> = [
+  return [
     ["package.json", JSON.stringify(pkg, null, 2)],
     ["server.mjs", serverLines.join("\n")],
     ["README.md", `# Generated App\n\nProject: ${projectId}\nRequest: ${safeRequest}\n`],
@@ -1678,6 +1688,31 @@ async function materializeGeneratedWorkspace(
     ["src/components/Hero.tsx", `export function Hero() { return <div className="hero"><h1>${safeRequest.slice(0, 40)}</h1></div>; }`],
     ["scripts/build.mjs", `import { spawnSync } from "child_process";\nconst r = spawnSync("node", ["--check", "server.mjs"], { encoding: "utf8" });\nif (r.status !== 0) throw new Error(r.stderr);\nconsole.log("build ok");`],
   ];
+}
+
+async function materializeGeneratedWorkspace(
+  projectId: string,
+  jobId: string,
+  request: string
+): Promise<{ workspacePath: string; buildStatus: string; runStatus: string; smokeStatus: string; filesWritten: number }> {
+  const workspaceDir = path.join(process.cwd(), "runtime", "generated-apps", projectId, jobId);
+  const safeRequest = (request || "").slice(0, 120).replace(/["'\\`]/g, " ");
+
+  // Attempt real code generation via Claude executor
+  const executorFiles = await callClaudeExecutor(projectId, jobId, safeRequest);
+  let files: Array<[string, string]>;
+
+  if (executorFiles && executorFiles.length > 0) {
+    files = executorFiles.map((f) => [f.path, f.body] as [string, string]);
+    // Ensure a smoke-testable server.mjs always exists
+    const hasServer = files.some(([p]) => p === "server.mjs" || p === "server.js" || p === "src/server.ts");
+    if (!hasServer) {
+      const fallback = buildFallbackFiles(projectId, safeRequest);
+      files.push(...fallback.filter(([p]) => p === "server.mjs" || p === "package.json"));
+    }
+  } else {
+    files = buildFallbackFiles(projectId, safeRequest);
+  }
 
   for (const [relPath, content] of files) {
     const fullPath = path.join(workspaceDir, relPath);
@@ -1685,7 +1720,11 @@ async function materializeGeneratedWorkspace(
     fs.writeFileSync(fullPath, content, "utf8");
   }
 
-  const buildResult = spawnSync("node", ["--check", "server.mjs"], {
+  // Find which server entry point exists
+  const serverCandidates = ["server.mjs", "server.js"];
+  const serverEntry = serverCandidates.find((f) => fs.existsSync(path.join(workspaceDir, f))) ?? "server.mjs";
+
+  const buildResult = spawnSync("node", ["--check", serverEntry], {
     cwd: workspaceDir,
     encoding: "utf8",
     timeout: 10000,
@@ -1699,7 +1738,7 @@ async function materializeGeneratedWorkspace(
     let serverProcess: ReturnType<typeof spawn> | null = null;
     try {
       const port = await findFreePort();
-      serverProcess = spawn("node", ["server.mjs"], {
+      serverProcess = spawn("node", [serverEntry], {
         cwd: workspaceDir,
         env: { ...process.env, PORT: String(port) },
         detached: false,

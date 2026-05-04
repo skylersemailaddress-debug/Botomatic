@@ -4,9 +4,11 @@
   "type": "module",
   "main": "src/server.ts",
   "scripts": {
-    "dev": "tsx src/server.ts"
+    "dev": "tsx src/server.ts",
+    "start": "tsx src/server.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "*",
     "express": "^4.19.2"
   },
   "devDependencies": {
