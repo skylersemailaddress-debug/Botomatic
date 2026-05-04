@@ -38,11 +38,21 @@ app.post("/execute", async (req, res) => {
 
 const PORT = parseInt(process.env.PORT ?? "4000", 10);
 app.listen(PORT, "127.0.0.1", () => {
-  console.log(`[claude-runner] Listening on http://127.0.0.1:${PORT}`);
-  console.log(`[claude-runner] ANTHROPIC_API_KEY: ${process.env.ANTHROPIC_API_KEY ? "set" : "MISSING"}`);
-  console.log(`[claude-runner] OPENAI_API_KEY:    ${process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== "replace_me" ? "set" : "not set"}`);
-  console.log(`[claude-runner] Model tiers:`);
-  console.log(`  flagship → ${process.env.NEXUS_MODEL_FLAGSHIP_PROVIDER ?? "anthropic"}/${process.env.NEXUS_MODEL_FLAGSHIP ?? "claude-sonnet-4-6"}`);
-  console.log(`  general  → ${process.env.NEXUS_MODEL_GENERAL_PROVIDER  ?? "anthropic"}/${process.env.NEXUS_MODEL_GENERAL  ?? "claude-sonnet-4-6"}`);
-  console.log(`  utility  → ${process.env.NEXUS_MODEL_UTILITY_PROVIDER  ?? "anthropic"}/${process.env.NEXUS_MODEL_UTILITY  ?? "claude-sonnet-4-6"}`);
+  const anthropicKey = process.env.ANTHROPIC_API_KEY ? "set" : "MISSING";
+  const openaiKey    = process.env.OPENAI_API_KEY    ? "set" : "missing (brainstorm/utility will fallback to Claude)";
+  const geminiKey    = (process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY) ? "set" : "missing (fast tier will fallback to Claude)";
+  console.log(JSON.stringify({
+    event: "claude_runner_ready",
+    port: PORT,
+    anthropicKey,
+    openaiKey,
+    geminiKey,
+    tiers: {
+      flagship:   `${process.env.NEXUS_MODEL_FLAGSHIP_PROVIDER   ?? "anthropic"}/${process.env.NEXUS_MODEL_FLAGSHIP   ?? "claude-opus-4-7"}  (council escalation target)`,
+      general:    `${process.env.NEXUS_MODEL_GENERAL_PROVIDER    ?? "anthropic"}/${process.env.NEXUS_MODEL_GENERAL    ?? "claude-sonnet-4-6"} (code generation, most waves)`,
+      brainstorm: `${process.env.NEXUS_MODEL_BRAINSTORM_PROVIDER ?? "openai"}/${process.env.NEXUS_MODEL_BRAINSTORM     ?? "gpt-4o"}           (spec analysis, architecture, AI features)`,
+      fast:       `${process.env.NEXUS_MODEL_FAST_PROVIDER       ?? "google"}/${process.env.NEXUS_MODEL_FAST           ?? "gemini-2.0-flash"} (validation, deployment)`,
+      utility:    `${process.env.NEXUS_MODEL_UTILITY_PROVIDER    ?? "openai"}/${process.env.NEXUS_MODEL_UTILITY         ?? "gpt-4o-mini"}      (scaffolding, critic)`,
+    },
+  }));
 });

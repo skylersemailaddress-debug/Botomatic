@@ -4,19 +4,27 @@ import { ExecuteRequest, ExecuteResponse, FileChange } from "./types.js";
 import { detectWaveType, WaveType, buildSystemPrompt, buildUserPrompt } from "./domainPrompts.js";
 
 // ── Model routing ─────────────────────────────────────────────────────────────
-// Five tiers: council | flagship | general | fast | utility
-// Council = hardest waves run Anthropic + Gemini + OpenAI in parallel, best wins.
-// Fast    = deployment/validation waves use Gemini Flash (lowest latency capable model).
-// Utility = scaffold/repo-layout uses GPT-4o-mini (cheapest capable model).
+// Six tiers: council | flagship | brainstorm | general | fast | utility | local
+//
+// Philosophy:
+//   Claude  = organizer and builder — all code generation, auth, security, repair
+//   OpenAI  = creative and brainstorming — spec analysis, architecture ideation, intelligence
+//   Gemini  = speed tier — validation, deployment checks (lowest latency)
+//   GPT-mini = cheap critic and scaffolding
+//
+// Cascade (council waves): Sonnet drafts → GPT-4o-mini critic evaluates →
+//   if passRate < threshold, Opus rewrites with critic notes as constraints.
 
-const MODEL_FLAGSHIP_PROVIDER = process.env.NEXUS_MODEL_FLAGSHIP_PROVIDER ?? "anthropic";
-const MODEL_FLAGSHIP          = process.env.NEXUS_MODEL_FLAGSHIP          ?? "claude-opus-4-7";
-const MODEL_GENERAL_PROVIDER  = process.env.NEXUS_MODEL_GENERAL_PROVIDER  ?? "anthropic";
-const MODEL_GENERAL           = process.env.NEXUS_MODEL_GENERAL           ?? "claude-sonnet-4-6";
-const MODEL_FAST_PROVIDER     = process.env.NEXUS_MODEL_FAST_PROVIDER     ?? "google";
-const MODEL_FAST              = process.env.NEXUS_MODEL_FAST              ?? "gemini-2.0-flash";
-const MODEL_UTILITY_PROVIDER  = process.env.NEXUS_MODEL_UTILITY_PROVIDER  ?? "openai";
-const MODEL_UTILITY           = process.env.NEXUS_MODEL_UTILITY           ?? "gpt-4o-mini";
+const MODEL_FLAGSHIP_PROVIDER  = process.env.NEXUS_MODEL_FLAGSHIP_PROVIDER  ?? "anthropic";
+const MODEL_FLAGSHIP           = process.env.NEXUS_MODEL_FLAGSHIP           ?? "claude-opus-4-7";
+const MODEL_GENERAL_PROVIDER   = process.env.NEXUS_MODEL_GENERAL_PROVIDER   ?? "anthropic";
+const MODEL_GENERAL            = process.env.NEXUS_MODEL_GENERAL            ?? "claude-sonnet-4-6";
+const MODEL_BRAINSTORM_PROVIDER= process.env.NEXUS_MODEL_BRAINSTORM_PROVIDER ?? "openai";
+const MODEL_BRAINSTORM         = process.env.NEXUS_MODEL_BRAINSTORM         ?? "gpt-4o";
+const MODEL_FAST_PROVIDER      = process.env.NEXUS_MODEL_FAST_PROVIDER      ?? "google";
+const MODEL_FAST               = process.env.NEXUS_MODEL_FAST               ?? "gemini-2.0-flash";
+const MODEL_UTILITY_PROVIDER   = process.env.NEXUS_MODEL_UTILITY_PROVIDER   ?? "openai";
+const MODEL_UTILITY            = process.env.NEXUS_MODEL_UTILITY            ?? "gpt-4o-mini";
 
 // Council mode: when enabled AND wave is council-tier, three providers vote.
 const COUNCIL_ENABLED      = process.env.NEXUS_COUNCIL_MODEL_ENABLED      === "true";
@@ -27,15 +35,21 @@ const LOCAL_BASE_URL      = process.env.NEXUS_MODEL_LOCAL_BASE_URL        ?? "ht
 const LOCAL_LOW_RISK_ONLY = process.env.NEXUS_MODEL_LOCAL_LOW_RISK_ONLY   !== "false";
 
 // ── Wave tier classification ──────────────────────────────────────────────────
-// Council: deepest reasoning — auth, spec, factory, governance, proof, repair, memory
+
+// Council (Claude cascade): deep code-generation reasoning — auth, factory, security, proof, repair, memory
 const COUNCIL_WAVES = new Set<WaveType>([
   "auth",
-  "spec_compiler",
   "builder_factory",
   "governance_security",
   "fresh_clone_proof",
   "repair_replay",
   "truth_memory",
+]);
+
+// Brainstorm (OpenAI GPT-4o): creative analysis — spec ideation, architecture, AI features
+const BRAINSTORM_WAVES = new Set<WaveType>([
+  "spec_compiler",
+  "intelligence_shell",
 ]);
 
 // Fast: latency-sensitive and deterministic — validation, deployment
@@ -50,16 +64,20 @@ const UTILITY_WAVES = new Set<WaveType>([
   "generic",
 ]);
 
-type Tier = "council" | "flagship" | "general" | "fast" | "utility" | "local";
+type Tier = "council" | "flagship" | "brainstorm" | "general" | "fast" | "utility" | "local";
 
 function selectTier(waveType: WaveType): { provider: string; model: string; tier: Tier } {
   if (LOCAL_ENABLED && UTILITY_WAVES.has(waveType) && LOCAL_LOW_RISK_ONLY) {
     return { provider: "ollama", model: "llama3", tier: "local" };
   }
   if (COUNCIL_WAVES.has(waveType)) {
-    // Council falls back to flagship if not enabled
     if (COUNCIL_ENABLED) return { provider: "council", model: "multi", tier: "council" };
     return { provider: MODEL_FLAGSHIP_PROVIDER, model: MODEL_FLAGSHIP, tier: "flagship" };
+  }
+  if (BRAINSTORM_WAVES.has(waveType)) {
+    // Falls back to Claude general if OpenAI key not available
+    if (process.env.OPENAI_API_KEY) return { provider: MODEL_BRAINSTORM_PROVIDER, model: MODEL_BRAINSTORM, tier: "brainstorm" };
+    return { provider: MODEL_GENERAL_PROVIDER, model: MODEL_GENERAL, tier: "general" };
   }
   if (FAST_WAVES.has(waveType))    return { provider: MODEL_FAST_PROVIDER,    model: MODEL_FAST,    tier: "fast"    };
   if (UTILITY_WAVES.has(waveType)) return { provider: MODEL_UTILITY_PROVIDER, model: MODEL_UTILITY, tier: "utility" };
@@ -491,8 +509,17 @@ export async function executePacket(req: ExecuteRequest): Promise<ExecuteRespons
 
     switch (tier) {
       case "council":
-        // Cascade: draft with general → critic → escalate to flagship if needed
+        // Cascade: Sonnet draft → GPT-mini critic → Opus escalation if needed
         result = await executeWithCascade(waveType, systemPrompt, userPrompt, logs);
+        break;
+
+      case "brainstorm":
+        // OpenAI GPT-4o: creative spec analysis, architecture ideation, AI features
+        result = await executeWithOpenAI(model, systemPrompt, userPrompt, logs);
+        if (!result) {
+          logs.push("brainstorm_fallback=claude_general");
+          result = await executeWithAnthropic(MODEL_GENERAL, systemPrompt, userPrompt, logs);
+        }
         break;
 
       case "local":

@@ -1876,7 +1876,15 @@ async function processJob(config: RuntimeConfig, job: QueueJobRecord) {
 async function workerTick(config: RuntimeConfig) {
   if (activeWorkers >= workerConcurrency) return;
   const availableSlots = workerConcurrency - activeWorkers;
-  const claims = await Promise.all(Array.from({ length: availableSlots }, () => claimJob(workerId, leaseMs)));
+  let claims: (QueueJobRecord | null)[];
+  try {
+    claims = await Promise.all(Array.from({ length: availableSlots }, () => claimJob(workerId, leaseMs)));
+  } catch (err: any) {
+    // Network/TLS errors (Supabase unreachable, cert issues) — log and skip tick, don't crash
+    const code = err?.cause?.code ?? err?.code ?? "unknown";
+    console.error(JSON.stringify({ event: "queue_claim_error", workerId, code, message: String(err?.message || err), timestamp: now() }));
+    return;
+  }
   const jobs = claims.filter(Boolean) as QueueJobRecord[];
   for (const job of jobs) {
     activeWorkers += 1;
@@ -1892,10 +1900,14 @@ function startQueueWorker(config: RuntimeConfig) {
   if (workerStarted) return;
   workerStarted = true;
   const maxPollMs = Number(process.env.QUEUE_POLL_INTERVAL_MS || 2000);
-  let pollMs = 100; // start aggressive, back off when queue is empty
+  let pollMs = 100;
   const tick = async () => {
     const before = activeWorkers;
-    await workerTick(config);
+    try {
+      await workerTick(config);
+    } catch (err: any) {
+      console.error(JSON.stringify({ event: "queue_tick_error", workerId, message: String(err?.message || err), timestamp: now() }));
+    }
     const foundWork = activeWorkers > before;
     pollMs = foundWork ? 100 : Math.min(maxPollMs, pollMs * 1.5);
     setTimeout(() => { void tick(); }, pollMs);
