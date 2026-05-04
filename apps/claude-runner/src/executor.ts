@@ -329,51 +329,142 @@ async function executeWithOllama(
   return null;
 }
 
-// ── Council mode ──────────────────────────────────────────────────────────────
-// All three providers (Anthropic + Gemini-2.5-pro + GPT-4o) run in parallel.
-// Winner = highest composite score (file count + server entry + body size).
-// Flagship always runs; others are skipped gracefully if keys are absent.
-const COUNCIL_GEMINI_MODEL = process.env.NEXUS_COUNCIL_GEMINI_MODEL ?? "gemini-2.5-pro";
-const COUNCIL_OPENAI_MODEL = process.env.NEXUS_COUNCIL_OPENAI_MODEL ?? "gpt-4o";
+// ── Critic pass ───────────────────────────────────────────────────────────────
+// Runs a fast cheap model that evaluates a generated result against specific rubric.
+// Returns issues[] and a passRate (0–1). Used in cascade to decide if escalation needed.
 
-async function executeWithCouncil(
+const CRITIC_MODEL          = process.env.NEXUS_CRITIC_MODEL          ?? "gpt-4o-mini";
+const CRITIC_PROVIDER       = process.env.NEXUS_CRITIC_PROVIDER       ?? "openai";
+const CRITIC_PASS_THRESHOLD = Number(process.env.NEXUS_CRITIC_THRESHOLD ?? "0.75");
+
+async function runCriticPass(
+  waveType: string,
+  systemPrompt: string,
+  userPrompt: string,
+  result: { files: FileChange[]; summary: string },
+  logs: string[]
+): Promise<{ issues: string[]; passRate: number }> {
+  const fileList = result.files.map(f => `${f.path} (${f.body.length} chars)`).join("\n");
+  const hasHealth = result.files.some(f => f.body.includes("/health"));
+  const hasServer = result.files.some(f => /server\.(ts|js)$/.test(f.path));
+
+  // Extract required files from the user prompt's fileHints section
+  const fileHintsMatch = userPrompt.match(/Required files:(.*?)(?:\n\n|$)/s);
+  const requiredFilesHint = fileHintsMatch ? fileHintsMatch[1].trim() : "";
+
+  const criticPrompt = `You are a code quality critic. Evaluate these generated files for a "${waveType}" wave.
+
+Files generated:
+${fileList}
+
+Required files hint: ${requiredFilesHint || "not specified"}
+
+Check ONLY these things and respond with JSON only — no prose:
+1. Are at least 3 files generated? (minimum viable output)
+2. Does a server/index file exist? (${hasServer ? "YES" : "NO"})
+3. Does the server file include a /health endpoint? (${hasHealth ? "YES" : "NO"})
+4. Are there any obviously broken patterns (e.g., imports from packages that don't exist, circular deps, missing required files)?
+5. Does the summary describe what was built?
+
+Respond ONLY with: {"issues": ["issue1", "issue2"], "passRate": 0.0-1.0}
+passRate 1.0 = excellent, 0.75 = acceptable, below 0.75 = needs escalation to a stronger model.`;
+
+  try {
+    let criticResult: { files: FileChange[]; summary: string } | null = null;
+
+    if (CRITIC_PROVIDER === "openai" && process.env.OPENAI_API_KEY) {
+      const response = await getOpenAI().chat.completions.create({
+        model: CRITIC_MODEL,
+        max_tokens: 512,
+        messages: [
+          { role: "system", content: "You are a concise code critic. Respond only with JSON." },
+          { role: "user",   content: criticPrompt },
+        ],
+      });
+      const text = response.choices[0]?.message?.content ?? "{}";
+      const parsed = JSON.parse(text.match(/\{[\s\S]*\}/)?.[0] ?? "{}") as { issues?: string[]; passRate?: number };
+      logs.push(`critic_pass_rate=${parsed.passRate ?? 0}`);
+      logs.push(`critic_issues=${(parsed.issues ?? []).length}`);
+      return { issues: parsed.issues ?? [], passRate: parsed.passRate ?? 0 };
+    } else if ((CRITIC_PROVIDER === "google" || !process.env.OPENAI_API_KEY) && (process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY)) {
+      const response = await getGemini().chat.completions.create({
+        model: "gemini-2.0-flash",
+        max_tokens: 512,
+        messages: [
+          { role: "system", content: "You are a concise code critic. Respond only with JSON." },
+          { role: "user",   content: criticPrompt },
+        ],
+      });
+      const text = response.choices[0]?.message?.content ?? "{}";
+      const parsed = JSON.parse(text.match(/\{[\s\S]*\}/)?.[0] ?? "{}") as { issues?: string[]; passRate?: number };
+      logs.push(`critic_pass_rate=${parsed.passRate ?? 0}`);
+      return { issues: parsed.issues ?? [], passRate: parsed.passRate ?? 0 };
+    }
+  } catch (err) {
+    logs.push(`critic_error=${err instanceof Error ? err.message : String(err)}`);
+  }
+
+  // If critic is unavailable, pass through (don't block the build)
+  return { issues: [], passRate: 1.0 };
+}
+
+// ── Cascade + Critic (replaces council) ───────────────────────────────────────
+// Step 1: Run fast Sonnet to get a first draft.
+// Step 2: Critic evaluates the draft with a cheap model.
+// Step 3: If passRate < threshold → escalate to Opus with critic issues as constraints.
+// This is cheaper than 3× parallel council AND produces targeted improvements.
+async function executeWithCascade(
+  waveType: string,
   systemPrompt: string,
   userPrompt: string,
   logs: string[]
 ): Promise<{ files: FileChange[]; summary: string } | null> {
-  logs.push("council_mode=enabled");
+  logs.push("cascade_mode=enabled");
 
-  const [anthropicResult, geminiResult, openaiResult] = await Promise.allSettled([
-    executeWithAnthropic(MODEL_FLAGSHIP, systemPrompt, userPrompt, logs, CONVERSATION_ENABLED),
-    executeWithGemini(COUNCIL_GEMINI_MODEL, systemPrompt, userPrompt, logs),
-    process.env.OPENAI_API_KEY
-      ? executeWithOpenAI(COUNCIL_OPENAI_MODEL, systemPrompt, userPrompt, logs)
-      : Promise.resolve(null),
-  ]);
+  // Step 1: Fast draft with general model
+  logs.push("cascade_step=1_draft");
+  const draftResult = await executeWithAnthropic(MODEL_GENERAL, systemPrompt, userPrompt, logs, false);
 
-  const candidates: Array<{ name: string; result: { files: FileChange[]; summary: string } }> = [];
-  const push = (name: string, settled: PromiseSettledResult<{ files: FileChange[]; summary: string } | null>) => {
-    if (settled.status === "fulfilled" && settled.value && settled.value.files.length > 0) {
-      candidates.push({ name, result: settled.value });
-    }
-  };
-
-  push("anthropic", anthropicResult);
-  push("gemini",    geminiResult);
-  push("openai",    openaiResult);
-
-  if (candidates.length === 0) return null;
-
-  // Pick highest-scoring candidate
-  candidates.sort((a, b) => scoreResult(b.result) - scoreResult(a.result));
-  const winner = candidates[0];
-
-  logs.push(`council_winner=${winner.name}`);
-  for (const c of candidates) {
-    logs.push(`council_${c.name}_files=${c.result.files.length}_score=${scoreResult(c.result)}`);
+  if (!draftResult || draftResult.files.length === 0) {
+    // Draft failed — go straight to flagship
+    logs.push("cascade_draft_failed=escalating_to_flagship");
+    return executeWithAnthropic(MODEL_FLAGSHIP, systemPrompt, userPrompt, logs, CONVERSATION_ENABLED);
   }
 
-  return winner.result;
+  // Step 2: Critic evaluation
+  logs.push("cascade_step=2_critic");
+  const { issues, passRate } = await runCriticPass(waveType, systemPrompt, userPrompt, draftResult, logs);
+
+  if (passRate >= CRITIC_PASS_THRESHOLD) {
+    logs.push(`cascade_accepted=draft_pass_rate=${passRate}`);
+    return draftResult;
+  }
+
+  // Step 3: Escalate to flagship with critic's specific issues as hard constraints
+  logs.push(`cascade_step=3_escalate_pass_rate=${passRate}`);
+  const escalationConstraints = issues.length > 0
+    ? `\n\nCRITIC REVIEW FOUND THESE ISSUES — FIX ALL OF THEM:\n${issues.map(i => `- ${i}`).join("\n")}`
+    : "\n\nPrevious attempt was incomplete — generate a more thorough, complete implementation.";
+
+  const escalatedResult = await executeWithAnthropic(
+    MODEL_FLAGSHIP,
+    systemPrompt,
+    userPrompt + escalationConstraints,
+    logs,
+    CONVERSATION_ENABLED
+  );
+
+  if (!escalatedResult) {
+    logs.push("cascade_escalation_failed=returning_draft");
+    return draftResult;
+  }
+
+  // Pick the better result
+  const draftScore    = scoreResult(draftResult);
+  const escalateScore = scoreResult(escalatedResult);
+  const winner = escalateScore >= draftScore ? escalatedResult : draftResult;
+  logs.push(`cascade_final=escalated_wins=${escalateScore >= draftScore} draft_score=${draftScore} escalated_score=${escalateScore}`);
+  return winner;
 }
 
 // ── Main entry point ──────────────────────────────────────────────────────────
@@ -400,7 +491,8 @@ export async function executePacket(req: ExecuteRequest): Promise<ExecuteRespons
 
     switch (tier) {
       case "council":
-        result = await executeWithCouncil(systemPrompt, userPrompt, logs);
+        // Cascade: draft with general → critic → escalate to flagship if needed
+        result = await executeWithCascade(waveType, systemPrompt, userPrompt, logs);
         break;
 
       case "local":

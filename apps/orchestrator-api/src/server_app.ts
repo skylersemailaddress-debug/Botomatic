@@ -2010,7 +2010,27 @@ export function buildApp(config: RuntimeConfig) {
       project.runs = { ...((project.runs || {}) as Record<string, unknown>), [specStyleRunKey]: analyzed.style };
       emitEvent(project as any, { id: `evt_${Date.now()}`, projectId, type: "intake", actorId: actor.actorId, timestamp: now(), metadata: { name: project.name } });
       await repo.upsertProject(project);
-      return res.json({ projectId, status: project.status, actorId: actor.actorId });
+
+      // Return the full question list so clients can immediately render the intake form
+      const clarifications = getSpecClarifications(project);
+      const spec = getMasterSpec(project);
+      return res.json({
+        projectId,
+        status: project.status,
+        actorId: actor.actorId,
+        readinessScore: spec?.readinessScore ?? 0,
+        openQuestions: spec?.openQuestions ?? [],
+        clarifications: {
+          mustAsk:       clarifications.filter((q: any) => q.mustAsk),
+          approvalNeeded: clarifications.filter((q: any) => !q.mustAsk && q.requiresApproval),
+          safeDefaults:  clarifications.filter((q: any) => q.suggestedDefault && !q.mustAsk),
+        },
+        hints: {
+          nextStep: clarifications.some((q: any) => q.mustAsk)
+            ? `Answer the ${clarifications.filter((q: any) => q.mustAsk).length} required questions at POST /api/projects/${projectId}/spec/answer-questions, then confirm the build at POST /api/projects/${projectId}/spec/confirm-and-build`
+            : `Spec is sufficiently complete — confirm the build at POST /api/projects/${projectId}/spec/confirm-and-build`,
+        },
+      });
     } catch (error) {
       return handleRouteError(res, config, error, "POST /api/projects/intake", actor);
     }
@@ -2928,6 +2948,230 @@ export function buildApp(config: RuntimeConfig) {
       return res.json({ ok: true, contract: approved, actorId: actor.actorId });
     } catch (error) {
       return handleRouteError(res, config, error, "POST /api/projects/:projectId/spec/approve", actor);
+    }
+  });
+
+  // ── Spec Q&A: accept user answers, merge into spec, recompute completeness ──
+  app.post("/api/projects/:projectId/spec/answer-questions", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const spec = getMasterSpec(project);
+      if (!spec) return res.status(400).json({ error: "Spec not initialized. Run /spec/analyze first." });
+
+      const answers: Array<{ field: string; answer: string }> = Array.isArray((req.body as any)?.answers)
+        ? (req.body as any).answers
+        : [];
+      if (answers.length === 0) return res.status(400).json({ error: "answers[] array is required" });
+
+      // Apply each answer to the spec field it addresses
+      let updated = { ...spec };
+      for (const { field, answer } of answers) {
+        const a = answer.trim();
+        if (!a) continue;
+        const f = field.toLowerCase();
+
+        if (f.includes("auth") || f.includes("login") || f.includes("sign")) {
+          const auth =
+            /google/i.test(a) ? "google_oauth" :
+            /github/i.test(a) ? "github_oauth" :
+            /saml|sso|okta|azure.?ad/i.test(a) ? "saml_sso" :
+            /magic.?link|passwordless/i.test(a) ? "magic_link" :
+            /oidc|openid/i.test(a) ? "oidc" :
+            /email|password/i.test(a) ? "email_password" : a;
+          updated.authModel = auth;
+          updated.openQuestions = updated.openQuestions.filter(q => !/auth|login|sign.?in/i.test(q));
+        }
+
+        if (f.includes("tenant") || f.includes("tenancy") || f.includes("multi")) {
+          updated.tenancyModel = /multi/i.test(a) ? "multi_tenant" : "single_tenant";
+          updated.openQuestions = updated.openQuestions.filter(q => !/tenant/i.test(q));
+        }
+
+        if (f.includes("payment") || f.includes("billing") || f.includes("monetiz")) {
+          if (/no|none|not/i.test(a)) {
+            updated.payments = [];
+          } else {
+            updated.payments = [/stripe/i.test(a) ? "stripe" : /braintree/i.test(a) ? "braintree" : "payment_provider_pending"];
+            updated.pricingModel = /subscription/i.test(a) ? "subscription" :
+              /one.?time/i.test(a) ? "one_time" :
+              /usage/i.test(a) ? "usage_based" :
+              /freemium/i.test(a) ? "freemium" : updated.pricingModel;
+          }
+          updated.openQuestions = updated.openQuestions.filter(q => !/payment|billing|pricing/i.test(q));
+        }
+
+        if (f.includes("compliance") || f.includes("regulat") || f.includes("legal")) {
+          const newReqs: string[] = [];
+          if (/gdpr/i.test(a)) newReqs.push("gdpr");
+          if (/hipaa/i.test(a)) newReqs.push("hipaa");
+          if (/soc.?2/i.test(a)) newReqs.push("soc2");
+          if (/pci/i.test(a)) newReqs.push("pci_dss");
+          if (/ccpa/i.test(a)) newReqs.push("ccpa");
+          updated.complianceRequirements = newReqs;
+          updated.openQuestions = updated.openQuestions.filter(q => !/compliance|regulat|gdpr|hipaa/i.test(q));
+        }
+
+        if (f.includes("deploy") || f.includes("host") || f.includes("infrastructure")) {
+          const target =
+            /railway/i.test(a) ? "railway" :
+            /render/i.test(a) ? "render" :
+            /fly/i.test(a) ? "fly" :
+            /aws/i.test(a) ? "aws" :
+            /gcp|google.?cloud/i.test(a) ? "gcp" :
+            /azure/i.test(a) ? "azure" :
+            /vercel/i.test(a) ? "vercel" : updated.deploymentTarget;
+          updated.deploymentTarget = target;
+          updated.openQuestions = updated.openQuestions.filter(q => !/deploy|host/i.test(q));
+        }
+
+        if (f.includes("database") || f.includes("db")) {
+          const db =
+            /mongo/i.test(a) ? "mongodb" :
+            /mysql/i.test(a) ? "mysql" :
+            /sqlite/i.test(a) ? "sqlite" :
+            /postgres/i.test(a) ? "postgres" : updated.deploymentTarget;
+          if (db !== updated.deploymentTarget) {
+            updated.openQuestions = updated.openQuestions.filter(q => !/database/i.test(q));
+          }
+        }
+
+        if (f.includes("workflow") || f.includes("journey") || f.includes("user.?flow")) {
+          if (updated.workflows.length < 3) {
+            updated.workflows = [a.slice(0, 120)];
+          }
+          updated.openQuestions = updated.openQuestions.filter(q => !/workflow|journey/i.test(q));
+        }
+
+        if (f.includes("role") || f.includes("user.?type") || f.includes("permission")) {
+          const extractedRoles = a.match(/\b(admin|manager|user|staff|employee|guest|owner|operator|customer|member)\b/gi) || [];
+          if (extractedRoles.length > 0) {
+            updated.roles = [...new Set([...updated.roles, ...extractedRoles.map(r => r.toLowerCase())])];
+          }
+          updated.openQuestions = updated.openQuestions.filter(q => !/role|permission/i.test(q));
+        }
+
+        if (f.includes("v1_exclu") || f.includes("out.?of.?scope") || f.includes("exclusion")) {
+          updated.excludedItems = [a.slice(0, 300)];
+          updated.openQuestions = updated.openQuestions.filter(q => !/out.?of.?scope|exclusion/i.test(q));
+        }
+
+        // Fallback: store the raw answer in a custom "answers" bag on the spec for the build to use
+        (updated as any).__answers = { ...((updated as any).__answers || {}), [field]: a };
+      }
+
+      // Recompute completeness and readiness after answers
+      const clarifications = getSpecClarifications(project);
+      const remainingMustAsk = clarifications.filter((q: any) => q.mustAsk && updated.openQuestions.includes(q.question));
+      updated.openQuestions = remainingMustAsk.map((q: any) => q.question);
+
+      const { computeCompleteness } = await import("../../../packages/spec-engine/src/specCompleteness.js");
+      const completeness = computeCompleteness(updated);
+      const readinessScore = Math.round(
+        (completeness.criticalCompleteness + completeness.commercialCompleteness +
+          completeness.implementationCompleteness + completeness.launchCompleteness +
+          completeness.riskCompleteness) / 5
+      );
+      updated = { ...updated, completeness, readinessScore };
+
+      setMasterSpec(project, updated);
+      emitEvent(project as any, {
+        id: `evt_${Date.now()}`,
+        projectId: project.projectId,
+        type: "spec_answers_applied",
+        actorId: actor.actorId,
+        timestamp: now(),
+        metadata: { answeredFields: answers.map(a => a.field), openQuestionsRemaining: updated.openQuestions.length, readinessScore },
+      });
+      await persistProject(config, project);
+
+      return res.json({
+        ok: true,
+        readinessScore,
+        openQuestionsRemaining: updated.openQuestions.length,
+        openQuestions: updated.openQuestions,
+        readyToConfirm: readinessScore >= 60 && updated.openQuestions.length === 0,
+        spec: updated,
+        actorId: actor.actorId,
+      });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/projects/:projectId/spec/answer-questions", actor);
+    }
+  });
+
+  // ── Confirm & Build: user approves the spec, compile → plan → queue ─────────
+  // No "reviewer" role required — this is the self-serve build trigger for all users.
+  app.post("/api/projects/:projectId/spec/confirm-and-build", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+
+      if (["queued", "running", "succeeded"].includes(String(project.status))) {
+        return res.status(409).json({ error: "Build already started", status: project.status });
+      }
+
+      const spec = getMasterSpec(project);
+      if (!spec) return res.status(400).json({ error: "Spec not initialized. Submit the intake form first." });
+
+      // Require minimum readiness — warn but don't hard-block so the user can override
+      const minReadiness = Number((req.body as any)?.forceReadiness) || 50;
+      if (spec.readinessScore < minReadiness && !(req.body as any)?.force) {
+        return res.status(400).json({
+          error: `Spec readiness is ${spec.readinessScore}% — at least ${minReadiness}% required before building. Answer the open questions or pass force:true to override.`,
+          readinessScore: spec.readinessScore,
+          openQuestions: spec.openQuestions,
+        });
+      }
+
+      // Auto-approve high-risk assumptions marked as safe-to-build on user confirmation
+      const assumptionIds = spec.assumptions.map((a: any) => a.id);
+      const approvedAssumptions = approveAssumptions(spec.assumptions as any[], assumptionIds);
+      const approvedSpec = { ...spec, assumptions: approvedAssumptions };
+      setMasterSpec(project, approvedSpec);
+
+      // Compile master truth
+      const compiled = compileProjectWithIntake(project);
+      if (!compiled.masterTruth) {
+        return res.status(500).json({ error: "Compilation produced no master truth — check spec fields." });
+      }
+
+      // Generate build plan
+      const plan = generatePlan(compiled.masterTruth as any);
+      compiled.plan = plan;
+      compiled.status = "queued";
+
+      // Generate and auto-approve build contract
+      const contract = generateBuildContract(compiled.projectId, approvedSpec);
+      const approvedContract = approveBuildContract(
+        { ...contract, readyToBuild: true, blockers: [] },
+        actor.actorId
+      );
+      setBuildContract(compiled, approvedContract);
+
+      emitEvent(compiled as any, {
+        id: `evt_${Date.now()}`,
+        projectId: compiled.projectId,
+        type: "build_confirmed",
+        actorId: actor.actorId,
+        timestamp: now(),
+        metadata: { readinessScore: spec.readinessScore, packetCount: (plan as any)?.packets?.length ?? 0 },
+      });
+
+      await repo.upsertProject(compiled);
+
+      const packets = (plan as any)?.packets ?? [];
+      return res.json({
+        ok: true,
+        projectId: compiled.projectId,
+        status: "queued",
+        packetCount: packets.length,
+        packets: packets.map((p: any) => ({ packetId: p.packetId, goal: p.goal, waveType: p.waveType })),
+        actorId: actor.actorId,
+      });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/projects/:projectId/spec/confirm-and-build", actor);
     }
   });
 

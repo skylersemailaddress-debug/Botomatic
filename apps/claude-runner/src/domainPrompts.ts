@@ -42,17 +42,81 @@ if (req.url === "/health") {
   return;
 }`.trim();
 
+// ── Trusted dependency manifest ───────────────────────────────────────────────
+// Use ONLY these packages and versions. This prevents AI from inventing package
+// names, using deprecated APIs, or picking versions with breaking changes.
+const TRUSTED_DEPS = `
+## APPROVED PACKAGES — use ONLY these (do not invent or use unlisted packages):
+
+### HTTP / Framework
+- express@4.19.2          — HTTP server (prefer over raw http for complex routes)
+- cors@2.8.5              — CORS middleware for Express
+- helmet@7.1.0            — Security headers for Express
+
+### Auth / Security
+- jsonwebtoken@9.0.2      — JWT sign/verify (import as "jsonwebtoken")
+- bcryptjs@2.4.3          — Password hashing (NOT bcrypt — use bcryptjs, pure JS)
+- express-rate-limit@7.3.1 — Rate limiting middleware
+
+### Database / ORM
+- @prisma/client@5.14.0   — Prisma ORM client (always use with schema.prisma)
+- prisma@5.14.0           — Prisma CLI (dev dependency)
+
+### Validation
+- zod@3.23.8              — Schema validation (use for all input validation)
+
+### Email
+- resend@3.2.0            — Transactional email (preferred)
+- @sendgrid/mail@8.1.3    — SendGrid alternative
+
+### Payments
+- stripe@15.7.0           — Stripe SDK (import: import Stripe from "stripe")
+
+### File Storage
+- @aws-sdk/client-s3@3.600.0      — AWS S3 v3 SDK
+- @aws-sdk/s3-request-presigner@3.600.0 — Presigned URLs
+
+### WebSockets / Real-time
+- socket.io@4.7.5         — WebSocket server (with socket.io-client@4.7.5 on client)
+
+### Utilities
+- uuid@9.0.1              — UUID generation (import: import { v4 as uuidv4 } from "uuid")
+- date-fns@3.6.0          — Date manipulation (NOT moment.js)
+- dotenv@16.4.5           — Env var loading
+
+### Queue / Jobs
+- bullmq@5.8.4            — Job queue with Redis
+- ioredis@5.3.2           — Redis client
+
+### Testing
+- vitest@1.6.0            — Test runner (preferred over jest)
+- supertest@7.0.0         — HTTP testing
+
+### Frontend (if applicable)
+- next@14.2.4             — Next.js app router
+- react@18.3.1 / react-dom@18.3.1
+- tailwindcss@3.4.4       — Utility CSS
+- @radix-ui/react-*@latest — Headless UI primitives (shadcn/ui uses these)
+
+### Do NOT use:
+- moment.js (use date-fns), lodash (use native JS), axios (use fetch),
+  request (deprecated), node-fetch (use built-in fetch in Node 18+),
+  mongoose (use Prisma), sequelize (use Prisma), passport (implement JWT directly)
+`.trim();
+
 export function buildSystemPrompt(): string {
   return `You are an expert full-stack software engineer generating production-quality Node.js/TypeScript application code. You MUST:
 
 1. Generate REAL, WORKING code — no placeholders, no TODOs, no "// implement this"
 2. Every server file MUST include a /health endpoint returning { status: "ok" }
-3. Use TypeScript where appropriate, but prefer .ts over .js for logic files
-4. All files must be syntactically valid and parseable by Node.js
-5. Use only built-in Node.js modules (http, fs, path, crypto) unless express is explicitly needed
-6. Keep implementations focused and complete — no skeleton stubs
+3. Use TypeScript where appropriate, prefer .ts over .js for all logic files
+4. All files must be syntactically valid and immediately runnable by Node.js 20+
+5. Use built-in Node.js fetch (Node 18+) instead of axios or node-fetch
+6. Keep implementations focused and complete — no skeleton stubs, no half-finished code
 
-CRITICAL: The /health endpoint returning JSON { status: "ok" } is MANDATORY in any HTTP server file.`;
+CRITICAL: The /health endpoint returning JSON { status: "ok" } is MANDATORY in any HTTP server file.
+
+${TRUSTED_DEPS}`;
 }
 
 function buildCrossPacketContext(req: ExecuteRequest): string {
@@ -84,6 +148,70 @@ function buildCrossPacketContext(req: ExecuteRequest): string {
   return parts.length > 0 ? `\n---\n${parts.join("\n\n")}\n---\n` : "";
 }
 
+// ── Domain blueprint constraints ─────────────────────────────────────────────
+// Injected per wave to enforce proven patterns that AI consistently gets wrong.
+const DOMAIN_CONSTRAINTS: Partial<Record<WaveType, string>> = {
+  auth: `
+## AUTH IMPLEMENTATION RULES (non-negotiable):
+- JWT: use jsonwebtoken@9.0.2. Sign with process.env.JWT_SECRET. Expiry: 15m access token, 7d refresh token in httpOnly cookie.
+- Password: ALWAYS use bcryptjs.hash(password, 12) — NEVER store plaintext or use bcrypt (use bcryptjs).
+- Middleware: extract Bearer token from Authorization header, verify, attach decoded user to req.user.
+- RBAC: canDo(user, action, resource) helper that checks role permissions map.
+- Routes: POST /auth/register, POST /auth/login (returns {accessToken}), POST /auth/refresh, POST /auth/logout, GET /auth/me.
+- Logout: clear the refresh token cookie AND invalidate token (add to blocklist or use short TTL).
+- NEVER hardcode secrets. ALWAYS read from process.env. Throw clear error if JWT_SECRET missing at startup.`,
+
+  api_schema: `
+## PRISMA SCHEMA RULES (non-negotiable):
+- ALWAYS include: id String @id @default(cuid()), createdAt DateTime @default(now()), updatedAt DateTime @updatedAt on every model.
+- ALWAYS add @@index on foreign key fields (e.g., @@index([userId])).
+- Soft-delete: add deletedAt DateTime? to any entity that should be soft-deleted; filter WHERE deletedAt IS NULL in all queries.
+- Enums: use Prisma enums (not string fields) for status fields.
+- Relations: always define both sides of the relation explicitly.
+- Generate working Prisma schema that passes \`prisma validate\`.`,
+
+  governance_security: `
+## SECURITY RULES (non-negotiable):
+- Rate limiting: apply express-rate-limit to all auth endpoints (max 10 req/15min).
+- Input validation: use zod schemas for ALL incoming request bodies — never trust raw req.body.
+- SQL injection: use Prisma parameterized queries ONLY — never string-concatenate into queries.
+- XSS: sanitize any user content before storing or returning as HTML.
+- Secrets: scanner must flag any string matching /[a-z0-9]{32,}/i that appears in source code literals.
+- Audit: every mutating action must write to audit_log with {timestamp, actorId, action, resourceType, resourceId, before, after}.`,
+
+  deployment_rollback: `
+## DEPLOYMENT RULES (non-negotiable):
+- vercel.json: set framework to null for API-only, or "nextjs" for Next.js. Include rewrites if needed.
+- Health probe: poll GET /health until 200 or timeout 120s with 2s interval.
+- Rollback: use git tags for checkpoints (git tag before deploy, git checkout tag on rollback).
+- Dockerfile: multi-stage — build stage (node:20-alpine + npm ci + npm run build), runtime stage (node:20-alpine + only production files).
+- Environment: NEVER hardcode values — all secrets via process.env, verified at startup.`,
+
+  validation_proof: `
+## TESTING RULES (non-negotiable):
+- Use vitest (NOT jest). Import: import { describe, it, expect, beforeAll, afterAll } from "vitest".
+- Smoke test: start the actual server on a random port, hit GET /health, assert status 200 and body.status === "ok".
+- Integration tests: test the actual HTTP endpoints with supertest — not mocked behavior.
+- Coverage: test happy path AND the most important error case (400 bad input, 401 unauthorized) for each endpoint.
+- Each test file must be independently runnable: no shared mutable state between describe blocks.`,
+
+  intelligence_shell: `
+## FRONTEND RULES (non-negotiable):
+- Use Next.js 14 App Router (not Pages Router). Server components by default, client components only where needed.
+- Auth guard: create middleware.ts at root that checks for auth cookie/token and redirects to /login if missing.
+- API client (lib/api.ts): typed fetch wrapper that reads NEXT_PUBLIC_API_BASE_URL from env, includes credentials: "include".
+- Error states: every data-fetching component must handle loading, error, and empty states.
+- Tailwind: use shadcn/ui patterns — cn() utility, className merging, consistent spacing scale.`,
+
+  execution_runtime: `
+## QUEUE/WORKER RULES (non-negotiable):
+- In-memory queue: use a Map<string, Job> with status: "queued"|"running"|"succeeded"|"failed".
+- Worker: process one job at a time, mark running before starting, always mark succeeded/failed in finally block.
+- Timeouts: wrap job execution in Promise.race with a 60s timeout — failed jobs must not block the queue.
+- Retry: support max 3 retries with exponential backoff (1s, 2s, 4s). Track retryCount on each job.
+- /queue/status endpoint: return {queued, running, succeeded, failed, total} counts.`,
+};
+
 export function buildUserPrompt(req: ExecuteRequest, waveType: WaveType): string {
   const { goal, requirements, constraints, packetId } = req;
 
@@ -96,6 +224,7 @@ export function buildUserPrompt(req: ExecuteRequest, waveType: WaveType): string
 
   const waveContext = WAVE_CONTEXT[waveType] ?? WAVE_CONTEXT.generic;
   const crossPacketCtx = buildCrossPacketContext(req);
+  const domainConstraints = DOMAIN_CONSTRAINTS[waveType] ?? "";
 
   return `${waveContext.preamble}
 
@@ -103,6 +232,7 @@ Packet ID: ${packetId}
 Goal: ${goal}${reqLines}${conLines}
 ${crossPacketCtx}
 ${waveContext.instructions}
+${domainConstraints}
 
 Generate all necessary files using the write_files tool. Each file must be complete and functional.
 ${waveContext.fileHints}`;
