@@ -8,7 +8,15 @@ interface CommercialWorkspaceShellProps {
   children: ReactNode;
 }
 
-const nav = ["Home", "Projects", "Templates", "Design Studio", "Brand Kit", "Launch", "Learn"];
+const navItems = [
+  { label: "Home", href: "/", icon: "🏠" },
+  { label: "Projects", href: "/projects/new", icon: "📁" },
+  { label: "Templates", href: "/projects/new?template=1", icon: "📄" },
+  { label: "Design Studio", href: "/projects/new?studio=design", icon: "🎨" },
+  { label: "Brand Kit", href: "/projects/new?brand=kit", icon: "✦" },
+  { label: "Launch", href: "/projects/new?launch=1", icon: "🚀" },
+  { label: "Learn", href: "/projects/new?learn=1", icon: "📚" },
+];
 
 export function CommercialWorkspaceShell({ projectId, children }: CommercialWorkspaceShellProps) {
   return (
@@ -25,10 +33,10 @@ export function CommercialWorkspaceShell({ projectId, children }: CommercialWork
         <Link href="/projects/new" className="commercial-new-project">+ New Project</Link>
 
         <nav className="commercial-nav" aria-label="Primary navigation">
-          {nav.map((item) => (
-            <Link key={item} href={item === "Home" ? "/" : "/projects/new"} className={item === "Home" ? "is-active" : ""}>
-              <span>{item.slice(0, 1)}</span>
-              <strong>{item}</strong>
+          {navItems.map((item) => (
+            <Link key={item.label} href={item.href} className={item.label === "Home" ? "is-active" : ""}>
+              <span aria-hidden="true" className="commercial-nav-icon">{item.icon}</span>
+              <strong>{item.label}</strong>
             </Link>
           ))}
         </nav>
@@ -39,7 +47,7 @@ export function CommercialWorkspaceShell({ projectId, children }: CommercialWork
             <strong>Project {projectId.slice(-6)}</strong>
             <span>Current workspace</span>
           </div>
-          <Link href="/projects/new">View all projects →</Link>
+          <Link href="/projects">View all projects →</Link>
         </section>
 
         <section className="commercial-upgrade-card">
