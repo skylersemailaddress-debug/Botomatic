@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { AppShell } from "@/components/shell/AppShell";
 import { useVibeOrchestration } from "../builder/useVibeOrchestration";
 import { useLiveUIBuilderVibe } from "./useLiveUIBuilderVibe";
@@ -11,10 +12,10 @@ import type { OrchestrationStage } from "@/services/orchestration";
 
 const SUGGESTION_CHIPS = [
   "Make it more minimal",
-  "Change the color to emerald",
+  "Change color to emerald",
   "Add a video background",
   "Improve mobile view",
-  "Add testimonials",
+  "Add testimonials section",
 ];
 
 const ACTION_CHIPS = [
@@ -33,18 +34,20 @@ const WHAT_NEXT = [
   { icon: "✉️", label: "Email Notifications", desc: "Send confirmations" },
 ];
 
-function stageStatusClass(status: string) {
-  if (status === "complete") return "pipeline-step--complete";
-  if (status === "running" || status === "queued") return "pipeline-step--running";
-  if (status === "failed" || status === "blocked") return "pipeline-step--failed";
-  return "pipeline-step--pending";
-}
+type CanvasTab = "vibe" | "diff" | "code";
 
 function stageIcon(status: string) {
   if (status === "complete") return "✓";
   if (status === "running" || status === "queued") return "●";
   if (status === "failed" || status === "blocked") return "✕";
   return "○";
+}
+
+function stageStatusClass(status: string) {
+  if (status === "complete") return "pipeline-step--complete";
+  if (status === "running" || status === "queued") return "pipeline-step--running";
+  if (status === "failed" || status === "blocked") return "pipeline-step--failed";
+  return "pipeline-step--pending";
 }
 
 function checkDotClass(status: string) {
@@ -101,6 +104,8 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
 
   const [firstRunState, setFirstRunState] = useState<FirstRunState>(getFirstRunFallback(projectId));
   const [deviceMode, setDeviceMode] = useState<"desktop" | "tablet" | "mobile">("desktop");
+  const [canvasTab, setCanvasTab] = useState<CanvasTab>("vibe");
+  const [chatTab, setChatTab] = useState<"chat" | "plan" | "history">("chat");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputRows, setInputRows] = useState(1);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -117,9 +122,8 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
     return () => { active = false; };
   }, [projectId]);
 
-  // Sync orchestration stages into chat messages
   useEffect(() => {
-    const { graph, submitting } = orchestration;
+    const { graph } = orchestration;
     if (graph.stages.length === 0) return;
     setMessages((prev) => {
       const last = prev[prev.length - 1];
@@ -134,7 +138,7 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSubmit = useCallback(async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent | React.KeyboardEvent) => {
     e.preventDefault();
     const text = orchestration.prompt.trim();
     if (!text || orchestration.submitting) return;
@@ -177,13 +181,16 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
         { label: "Launch",   status: "pending" },
       ];
 
+  const frameClass = `vibe-canvas-frame${deviceMode === "tablet" ? " vibe-canvas-frame--tablet" : deviceMode === "mobile" ? " vibe-canvas-frame--mobile" : ""}`;
+
   return (
     <AppShell projectId={projectId}>
       <div className="vibe-wrap">
-        {/* ── Top bar ── */}
+        {/* Topbar */}
         <header className="vibe-topbar">
           <div className="vibe-mode-badge">✦ Vibe Mode</div>
-          <span className="vibe-mode-tagline">Chat. Design. Build. Launch. All in one flow.</span>
+          <span className="vibe-project-name">Project {projectId.slice(0, 8)}…</span>
+          <span className="vibe-mode-tagline">Chat · Design · Build · Launch</span>
 
           <div className="vibe-device-switcher" role="tablist" aria-label="Device preview">
             {(["desktop", "tablet", "mobile"] as const).map((d) => (
@@ -195,110 +202,121 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
                 className={`vibe-device-btn${deviceMode === d ? " active" : ""}`}
                 onClick={() => setDeviceMode(d)}
               >
-                {d.charAt(0).toUpperCase() + d.slice(1)}
+                {d === "desktop" ? "🖥" : d === "tablet" ? "📱" : "📲"} {d.charAt(0).toUpperCase() + d.slice(1)}
               </button>
             ))}
           </div>
 
           <div className="vibe-topbar-actions">
             <button type="button" className="vibe-btn-ghost" onClick={handleShare}>Share</button>
+            <Link href={`/projects/${projectId}/deployment`} className="vibe-btn-ghost">Deploy</Link>
             <button
               type="button"
               className="vibe-btn-launch"
               disabled={!firstRunState.canLaunch}
               onClick={() => void handleLaunch()}
             >
-              {firstRunState.canLaunch ? "🚀 Launch App" : "Launch App"}
+              {firstRunState.canLaunch ? "🚀 Launch" : "Launch"}
             </button>
           </div>
         </header>
 
-        {/* ── Body: chat + right rail ── */}
+        {/* 3-panel body */}
         <div className="vibe-body">
-          {/* Chat panel */}
+
+          {/* ── LEFT: Chat panel ── */}
           <div className="vibe-chat-panel">
-            <div className="vibe-chat-scroll">
-              {messages.length === 0 ? (
-                <div className="vibe-chat-empty">
-                  <div className="vibe-chat-empty-icon">✦</div>
-                  <h3>What do you want to build?</h3>
-                  <p>Describe your idea below and Botomatic will design, build and launch it for you.</p>
-                </div>
-              ) : (
-                messages.map((msg, i) => (
-                  <div key={i} className={`vibe-msg vibe-msg--${msg.role}`}>
-                    <div className="vibe-msg-avatar">{msg.role === "user" ? "B" : "✦"}</div>
-                    <div className="vibe-msg-bubble">
-                      <div>{msg.text}</div>
-                      {msg.steps && msg.steps.length > 0 && (
-                        <div className="vibe-steps">
-                          {msg.steps.map((step, si) => (
-                            <div key={si} className={`vibe-step vibe-step--${step.status}`}>
-                              <div className="vibe-step-icon">{stageIcon(step.status)}</div>
-                              {step.label}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))
-              )}
-              <div ref={chatEndRef} />
-            </div>
-
-            {messages.length > 0 && (
-              <div className="vibe-chips">
-                {SUGGESTION_CHIPS.map((c) => (
-                  <button key={c} type="button" className="vibe-chip" onClick={() => handleChip(c)}>{c}</button>
-                ))}
-              </div>
-            )}
-
-            <form className="vibe-input-bar" onSubmit={(e) => void handleSubmit(e)}>
-              <textarea
-                className="vibe-input"
-                placeholder="Ask anything… (e.g., add a pricing section, make the hero bolder, add dark mode)"
-                value={orchestration.prompt}
-                rows={inputRows}
-                onChange={(e) => {
-                  orchestration.setPrompt(e.target.value);
-                  const lines = e.target.value.split("\n").length;
-                  setInputRows(Math.min(lines, 4));
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void handleSubmit(e as any); }
-                }}
-                disabled={orchestration.submitting}
-              />
-              <button
-                type="submit"
-                className="vibe-send-btn"
-                disabled={!orchestration.prompt.trim() || orchestration.submitting}
-                aria-label="Send"
-              >
-                {orchestration.submitting ? "…" : "▶"}
-              </button>
-            </form>
-
-            <div className="vibe-chips" style={{ borderTop: "none", paddingTop: 0 }}>
-              {ACTION_CHIPS.map((c) => (
-                <button key={c.label} type="button" className="vibe-chip" onClick={() => handleActionChip(c.label)}>
-                  {c.icon} {c.label}
+            {/* Tabs */}
+            <div className="vibe-chat-tabs">
+              {(["chat", "plan", "history"] as const).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  className={`vibe-chat-tab${chatTab === t ? " active" : ""}`}
+                  onClick={() => setChatTab(t)}
+                >
+                  {t.charAt(0).toUpperCase() + t.slice(1)}
                 </button>
               ))}
             </div>
-          </div>
 
-          {/* Right rail */}
-          <div className="vibe-rail">
-            {/* Build Map */}
-            <div className="rail-card">
-              <div className="rail-card-header">
-                <span className="rail-card-title">📋 Build Map</span>
-                <a href="#" className="rail-card-action">View Audit →</a>
-              </div>
-              <div className="rail-card-body">
+            {chatTab === "chat" && (
+              <>
+                <div className="vibe-chat-scroll">
+                  {messages.length === 0 ? (
+                    <div className="vibe-chat-empty">
+                      <div className="vibe-chat-empty-icon">✦</div>
+                      <h3>What do you want to build?</h3>
+                      <p>Describe an idea and Botomatic will design, build and launch it.</p>
+                    </div>
+                  ) : (
+                    messages.map((msg, i) => (
+                      <div key={i} className={`vibe-msg vibe-msg--${msg.role}`}>
+                        <div className="vibe-msg-avatar">{msg.role === "user" ? "B" : "✦"}</div>
+                        <div className="vibe-msg-bubble">
+                          <div>{msg.text}</div>
+                          {msg.steps && msg.steps.length > 0 && (
+                            <div className="vibe-steps">
+                              {msg.steps.map((step, si) => (
+                                <div key={si} className={`vibe-step vibe-step--${step.status}`}>
+                                  <div className="vibe-step-icon">{stageIcon(step.status)}</div>
+                                  {step.label}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                  <div ref={chatEndRef} />
+                </div>
+
+                {messages.length > 0 && (
+                  <div className="vibe-chips">
+                    {SUGGESTION_CHIPS.map((c) => (
+                      <button key={c} type="button" className="vibe-chip" onClick={() => handleChip(c)}>{c}</button>
+                    ))}
+                  </div>
+                )}
+
+                <form className="vibe-input-bar" onSubmit={(e) => void handleSubmit(e)}>
+                  <textarea
+                    className="vibe-input"
+                    placeholder="Ask anything… add a pricing section, make the hero bolder…"
+                    value={orchestration.prompt}
+                    rows={inputRows}
+                    onChange={(e) => {
+                      orchestration.setPrompt(e.target.value);
+                      setInputRows(Math.min(e.target.value.split("\n").length, 4));
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void handleSubmit(e as any); }
+                    }}
+                    disabled={orchestration.submitting}
+                  />
+                  <button
+                    type="submit"
+                    className="vibe-send-btn"
+                    disabled={!orchestration.prompt.trim() || orchestration.submitting}
+                    aria-label="Send"
+                  >
+                    {orchestration.submitting ? "…" : "▶"}
+                  </button>
+                </form>
+
+                <div className="vibe-chips" style={{ borderTop: "none", paddingTop: 0 }}>
+                  {ACTION_CHIPS.map((c) => (
+                    <button key={c.label} type="button" className="vibe-chip" onClick={() => handleActionChip(c.label)}>
+                      {c.icon} {c.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {chatTab === "plan" && (
+              <div style={{ flex: 1, overflow: "auto", padding: 16 }}>
                 <div className="build-pipeline">
                   {pipelineSteps.map((step, i) => (
                     <div key={i} className={`pipeline-step ${stageStatusClass(step.status)}`}>
@@ -322,65 +340,23 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
                     ))}
                   </div>
                 )}
+                {stages.length === 0 && (
+                  <p style={{ fontSize: 13, color: "var(--text-3)", textAlign: "center", marginTop: 32 }}>
+                    No build plan yet. Start a conversation to generate one.
+                  </p>
+                )}
               </div>
-            </div>
+            )}
 
-            {/* App Health */}
-            <div className="rail-card">
-              <div className="rail-card-header">
-                <span className="rail-card-title">💚 App Health</span>
-                <a href="#" className="rail-card-action">View full report →</a>
-              </div>
-              <div className="rail-card-body">
-                <div className="health-ring-wrap">
-                  <HealthRing pct={firstRunState.hasExecutionRun ? 92 : 0} />
-                  <div className="health-metrics">
-                    {[
-                      ["Performance", firstRunState.hasExecutionRun ? "Good" : "--"],
-                      ["Security",    firstRunState.hasExecutionRun ? "Good" : "--"],
-                      ["SEO",         firstRunState.hasExecutionRun ? "Good" : "--"],
-                      ["Best Practices", firstRunState.hasExecutionRun ? "Good" : "--"],
-                    ].map(([label, val]) => (
-                      <div key={label} className="health-metric">
-                        <span className="health-metric-label">{label}</span>
-                        <span className="health-metric-value" style={{ color: val === "--" ? "var(--text-3)" : undefined }}>{val}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* What's Next */}
-            <div className="rail-card">
-              <div className="rail-card-header">
-                <span className="rail-card-title">⚡ What's Next</span>
-              </div>
-              <div className="rail-card-body">
-                <div className="next-grid">
-                  {WHAT_NEXT.map((item) => (
-                    <button key={item.label} type="button" className="next-item">
-                      <div className="next-item-icon">{item.icon}</div>
-                      <div className="next-item-label">{item.label}</div>
-                      <div className="next-item-desc">{item.desc}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Recent Activity */}
-            <div className="rail-card">
-              <div className="rail-card-header">
-                <span className="rail-card-title">🕐 Recent Activity</span>
-                <a href="#" className="rail-card-action">View all →</a>
-              </div>
-              <div className="rail-card-body">
+            {chatTab === "history" && (
+              <div style={{ flex: 1, overflow: "auto", padding: 16 }}>
                 {stages.length === 0 ? (
-                  <p style={{ fontSize: 12, color: "var(--text-3)" }}>No activity yet. Start building to see progress here.</p>
+                  <p style={{ fontSize: 13, color: "var(--text-3)", textAlign: "center", marginTop: 32 }}>
+                    No activity yet.
+                  </p>
                 ) : (
                   <div className="activity-list">
-                    {stages.slice().reverse().slice(0, 4).map((s, i) => (
+                    {stages.slice().reverse().map((s, i) => (
                       <div key={i} className="activity-item">
                         <div className="activity-icon">🔧</div>
                         <span className="activity-text">{s.label}</span>
@@ -390,31 +366,148 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
                   </div>
                 )}
               </div>
+            )}
+          </div>
+
+          {/* ── CENTER: Canvas panel ── */}
+          <div className="vibe-canvas-panel">
+            <div className="vibe-canvas-tabs">
+              {(["vibe", "diff", "code"] as const).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  className={`vibe-canvas-tab${canvasTab === t ? " active" : ""}`}
+                  onClick={() => setCanvasTab(t)}
+                >
+                  {t === "vibe" ? "✦ Vibe" : t === "diff" ? "⊕ Diff" : "⌥ Code"}
+                </button>
+              ))}
+              <div className="vibe-canvas-spacer" />
+              <span className="vibe-canvas-zoom">100%</span>
             </div>
 
-            {/* One-Click Launch */}
-            <div className="rail-card launch-card">
-              <div className="rail-card-header">
-                <span className="rail-card-title">🚀 One-Click Launch</span>
+            <div className="vibe-canvas-area">
+              {canvasTab === "vibe" && (
+                <div className={frameClass}>
+                  <div className="vibe-canvas-placeholder">
+                    <div className="vibe-canvas-placeholder-icon">🖼</div>
+                    <h3>Live Preview</h3>
+                    <p>Your app will render here as it's built. Start chatting to begin.</p>
+                  </div>
+                </div>
+              )}
+
+              {canvasTab === "diff" && (
+                <div style={{ flex: 1, width: "100%", height: "100%", overflow: "auto" }}>
+                  <div className="vibe-diff-view">
+                    {stages.length === 0
+                      ? <span style={{ color: "#585b70" }}>{`// No changes yet`}</span>
+                      : stages.map((s, i) => (
+                          <div key={i} className={i % 2 === 0 ? "vibe-diff-add" : "vibe-diff-rem"}>
+                            {i % 2 === 0 ? "+ " : "- "}{s.label}: {checkStatusLabel(s.status)}
+                          </div>
+                        ))
+                    }
+                  </div>
+                </div>
+              )}
+
+              {canvasTab === "code" && (
+                <div style={{ flex: 1, width: "100%", height: "100%", overflow: "auto" }}>
+                  <div className="vibe-diff-view">
+                    <span style={{ color: "#585b70" }}>{`// Source will appear here once your app is generated`}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ── RIGHT: Inspector panel ── */}
+          <div className="vibe-inspector-panel">
+            <div className="vibe-inspector-header">🔍 Inspector</div>
+            <div className="vibe-inspector-body">
+
+              {/* App Health */}
+              <div className="rail-card">
+                <div className="rail-card-header">
+                  <span className="rail-card-title">💚 App Health</span>
+                  <Link href={`/projects/${projectId}/evidence`} className="rail-card-action">Report →</Link>
+                </div>
+                <div className="rail-card-body">
+                  <div className="health-ring-wrap">
+                    <HealthRing pct={firstRunState.hasExecutionRun ? 92 : 0} />
+                    <div className="health-metrics">
+                      {([
+                        ["Performance", firstRunState.hasExecutionRun ? "Good" : "--"],
+                        ["Security",    firstRunState.hasExecutionRun ? "Good" : "--"],
+                        ["SEO",         firstRunState.hasExecutionRun ? "Good" : "--"],
+                        ["Practices",   firstRunState.hasExecutionRun ? "Good" : "--"],
+                      ] as [string, string][]).map(([label, val]) => (
+                        <div key={label} className="health-metric">
+                          <span className="health-metric-label">{label}</span>
+                          <span className="health-metric-value" style={{ color: val === "--" ? "var(--text-3)" : undefined }}>{val}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="rail-card-body">
-                <p>{firstRunState.canLaunch ? "Everything looks good! Your app is ready to launch." : "Complete the build steps to enable launch."}</p>
-                <button
-                  type="button"
-                  className="launch-card-btn"
-                  disabled={!firstRunState.canLaunch}
-                  onClick={() => void handleLaunch()}
-                >
-                  Launch My App
-                </button>
-                <div className="launch-card-actions">
-                  {["👁", "🧪", "☁️"].map((icon) => (
-                    <button key={icon} type="button" className="launch-card-action-btn">{icon}</button>
-                  ))}
+
+              {/* What's Next */}
+              <div className="rail-card">
+                <div className="rail-card-header">
+                  <span className="rail-card-title">⚡ What's Next</span>
+                </div>
+                <div className="rail-card-body">
+                  <div className="next-grid">
+                    {WHAT_NEXT.map((item) => (
+                      <button key={item.label} type="button" className="next-item">
+                        <div className="next-item-icon">{item.icon}</div>
+                        <div className="next-item-label">{item.label}</div>
+                        <div className="next-item-desc">{item.desc}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Selected element properties */}
+              <div className="rail-card">
+                <div className="rail-card-header">
+                  <span className="rail-card-title">🎛 Properties</span>
+                </div>
+                <div className="rail-card-body">
+                  <div className="vibe-inspector-empty">
+                    Click any element in the canvas to inspect its properties.
+                  </div>
+                </div>
+              </div>
+
+              {/* One-Click Launch */}
+              <div className="rail-card launch-card">
+                <div className="rail-card-header">
+                  <span className="rail-card-title">🚀 Launch</span>
+                </div>
+                <div className="rail-card-body">
+                  <p>{firstRunState.canLaunch ? "Everything looks good! Ready to launch." : "Complete build steps to enable launch."}</p>
+                  <button
+                    type="button"
+                    className="launch-card-btn"
+                    disabled={!firstRunState.canLaunch}
+                    onClick={() => void handleLaunch()}
+                  >
+                    Launch My App
+                  </button>
+                  <div className="launch-card-actions">
+                    <Link href={`/projects/${projectId}/deployment`} className="launch-card-action-btn" title="Deploy">👁</Link>
+                    <Link href={`/projects/${projectId}/logs`} className="launch-card-action-btn" title="Logs">📋</Link>
+                    <Link href={`/projects/${projectId}/advanced`} className="launch-card-action-btn" title="Pro Cockpit">⚙️</Link>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
+
         </div>
       </div>
     </AppShell>

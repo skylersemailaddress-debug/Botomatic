@@ -4,15 +4,26 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
-const NAV = [
-  { label: "Home",          href: "/",                    icon: "⌂" },
-  { label: "Projects",      href: "/projects/new",         icon: "▤" },
-  { label: "Templates",     href: "/projects/new?t=1",     icon: "⊞" },
-  { label: "Design Studio", href: "/projects/new?s=design",icon: "✦" },
-  { label: "Brand Kit",     href: "/projects/new?s=brand", icon: "◈" },
-  { label: "Launch",        href: "/projects/new?s=launch",icon: "▲" },
-  { label: "Learn",         href: "/projects/new?s=learn", icon: "◎" },
+const NAV_TOP = [
+  { label: "Home",          href: "/projects/new",              icon: "⌂" },
+  { label: "Templates",     href: "/projects/new?t=1",          icon: "⊞" },
+  { label: "Design Studio", href: "/projects/new?s=design",     icon: "✦" },
+  { label: "Brand Kit",     href: "/projects/new?s=brand",      icon: "◈" },
+  { label: "Learn",         href: "/projects/new?s=learn",      icon: "◎" },
 ];
+
+function projectNav(projectId: string) {
+  return [
+    { label: "Vibe Builder",  href: `/projects/${projectId}`,             icon: "✦" },
+    { label: "Deployment",    href: `/projects/${projectId}/deployment`,   icon: "▲" },
+    { label: "Logs",          href: `/projects/${projectId}/logs`,         icon: "📋" },
+    { label: "Evidence",      href: `/projects/${projectId}/evidence`,     icon: "🔍" },
+    { label: "Validators",    href: `/projects/${projectId}/validators`,   icon: "✓" },
+    { label: "Vault",         href: `/projects/${projectId}/vault`,        icon: "🔐" },
+    { label: "Settings",      href: `/projects/${projectId}/settings`,     icon: "⚙" },
+    { label: "Pro Cockpit",   href: `/projects/${projectId}/advanced`,     icon: "⌥" },
+  ];
+}
 
 const RECENT_PLACEHOLDER = [
   { label: "Luxury Booking Site", color: "#22c55e", time: "Just now" },
@@ -27,11 +38,13 @@ interface AppShellProps {
 
 export function AppShell({ children, projectId }: AppShellProps) {
   const pathname = usePathname();
+  const navItems = projectId ? projectNav(projectId) : NAV_TOP;
 
   return (
     <div className="app-shell">
       <aside className="app-sidebar" aria-label="Botomatic navigation">
-        <Link href="/" className="sidebar-brand" aria-label="Botomatic home">
+        {/* Brand */}
+        <Link href="/projects/new" className="sidebar-brand" aria-label="Botomatic home">
           <span className="sidebar-brand-mark">B</span>
           <span className="sidebar-brand-name">
             <strong>Botomatic</strong>
@@ -43,32 +56,40 @@ export function AppShell({ children, projectId }: AppShellProps) {
           + New Project
         </Link>
 
-        <nav className="sidebar-nav" aria-label="Product navigation">
-          {NAV.map((item) => (
-            <Link
-              key={item.label}
-              href={item.href}
-              className={`sidebar-nav-item${pathname === item.href ? " active" : ""}`}
-            >
-              <span className="sidebar-nav-icon" aria-hidden="true">{item.icon}</span>
-              {item.label}
-            </Link>
-          ))}
+        <nav className="sidebar-nav" aria-label={projectId ? "Project navigation" : "Product navigation"}>
+          {navItems.map((item) => {
+            const isActive = pathname === item.href || (item.href !== "/projects/new" && pathname.startsWith(item.href));
+            return (
+              <Link
+                key={item.label}
+                href={item.href}
+                className={`sidebar-nav-item${isActive ? " active" : ""}`}
+              >
+                <span className="sidebar-nav-icon" aria-hidden="true">{item.icon}</span>
+                {item.label}
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="sidebar-divider" />
 
-        <span className="sidebar-section-label">Recent Projects</span>
-        <div className="sidebar-recent">
-          {RECENT_PLACEHOLDER.map((p) => (
-            <div key={p.label} className="sidebar-recent-item">
-              <span className="sidebar-recent-dot" style={{ background: p.color }} />
-              <span className="sidebar-recent-name">{p.label}</span>
-              <span className="sidebar-recent-time">{p.time}</span>
+        {!projectId && (
+          <>
+            <span className="sidebar-section-label">Recent Projects</span>
+            <div className="sidebar-recent">
+              {RECENT_PLACEHOLDER.map((p) => (
+                <div key={p.label} className="sidebar-recent-item">
+                  <span className="sidebar-recent-dot" style={{ background: p.color }} />
+                  <span className="sidebar-recent-name">{p.label}</span>
+                  <span className="sidebar-recent-time">{p.time}</span>
+                </div>
+              ))}
+              <Link href="/projects/new" className="sidebar-view-all">View all projects →</Link>
             </div>
-          ))}
-          <Link href="/projects/new" className="sidebar-view-all">View all projects →</Link>
-        </div>
+            <div className="sidebar-divider" />
+          </>
+        )}
 
         <div className="sidebar-upgrade">
           <strong>🚀 Go Pro Anytime</strong>
