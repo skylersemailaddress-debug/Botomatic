@@ -149,75 +149,75 @@ export function validateBuilderCapability(root: string): RepoValidatorResult {
 export function validateUIReadiness(root: string): RepoValidatorResult {
   const checks = [
     "apps/control-plane/src/app/projects/[projectId]/page.tsx",
-    "apps/control-plane/src/app/projects/[projectId]/vibe/page.tsx",
-    "apps/control-plane/src/app/projects/[projectId]/advanced/page.tsx",
-    "apps/control-plane/src/components/builder/NorthStarBuilderShell.tsx",
-    "apps/control-plane/src/components/shell/ProductionPageShell.tsx",
+    "apps/control-plane/src/components/shell/AppShell.tsx",
+    "apps/control-plane/src/components/shell/workspaceView.ts",
     "apps/control-plane/src/components/vibe/VibeDashboard.tsx",
-    "apps/control-plane/src/components/pro/ProDashboard.tsx",
-    "apps/control-plane/src/components/commercial/CommercialWorkspaceShell.tsx",
-    "apps/control-plane/src/components/commercial/CommercialVibeCockpit.tsx",
-    "apps/control-plane/src/components/commercial/CommercialProCockpit.tsx",
-    "apps/control-plane/src/components/commercial/CommercialPanel.tsx",
-    "apps/control-plane/src/styles/commercial-workspace.css",
+    "apps/control-plane/src/components/builder/useVibeOrchestration.ts",
+    "apps/control-plane/src/components/vibe/useLiveUIBuilderVibe.ts",
+    "apps/control-plane/src/app/projects/[projectId]/deployment/page.tsx",
+    "apps/control-plane/src/app/projects/[projectId]/logs/page.tsx",
+    "apps/control-plane/src/app/projects/[projectId]/evidence/page.tsx",
+    "apps/control-plane/src/app/projects/[projectId]/validators/page.tsx",
+    "apps/control-plane/src/app/projects/[projectId]/vault/page.tsx",
+    "apps/control-plane/src/app/projects/[projectId]/settings/page.tsx",
+    "apps/control-plane/src/styles/app.css",
     "apps/control-plane/src/styles/tokens.css",
     "apps/control-plane/src/styles/globals.css",
   ];
 
   const fileOk = checks.every((p) => has(root, p));
   if (!fileOk) {
-    return result("Validate-Botomatic-UIReadiness", false, "One or more required control-plane UI surfaces are missing.", checks);
+    return result("Validate-Botomatic-UIReadiness", false, "One or more canonical control-plane UI surfaces are missing.", checks);
   }
 
   const projectPage = read(root, "apps/control-plane/src/app/projects/[projectId]/page.tsx");
-  const vibePage = read(root, "apps/control-plane/src/app/projects/[projectId]/vibe/page.tsx");
-  const advancedPage = read(root, "apps/control-plane/src/app/projects/[projectId]/advanced/page.tsx");
+  const appShell = read(root, "apps/control-plane/src/components/shell/AppShell.tsx");
   const vibeDashboard = read(root, "apps/control-plane/src/components/vibe/VibeDashboard.tsx");
-  const proDashboard = read(root, "apps/control-plane/src/components/pro/ProDashboard.tsx");
-  const productionShell = read(root, "apps/control-plane/src/components/shell/ProductionPageShell.tsx");
-  const northStarShell = read(root, "apps/control-plane/src/components/builder/NorthStarBuilderShell.tsx");
+  const orchestrationHook = read(root, "apps/control-plane/src/components/builder/useVibeOrchestration.ts");
+  const liveUiHook = read(root, "apps/control-plane/src/components/vibe/useLiveUIBuilderVibe.ts");
   const globals = read(root, "apps/control-plane/src/styles/globals.css");
+  const appCss = read(root, "apps/control-plane/src/styles/app.css");
   const tokenCss = read(root, "apps/control-plane/src/styles/tokens.css");
-  const commercialShell = read(root, "apps/control-plane/src/components/commercial/CommercialWorkspaceShell.tsx");
-  const commercialVibe = read(root, "apps/control-plane/src/components/commercial/CommercialVibeCockpit.tsx");
-  const commercialPro = read(root, "apps/control-plane/src/components/commercial/CommercialProCockpit.tsx");
-  const commercialCss = read(root, "apps/control-plane/src/styles/commercial-workspace.css");
   const uiFiles = listFilesRecursive(path.join(root, "apps/control-plane/src"))
     .filter((p) => /\.(ts|tsx|css)$/.test(p));
   const uiText = uiFiles.map((filePath) => read(root, path.relative(root, filePath))).join("\n").toLowerCase();
 
-  const hasCommercialCockpitSignals =
-    vibePage.includes("<CommercialWorkspaceShell") &&
-    vibePage.includes("<CommercialVibeCockpit") &&
-    advancedPage.includes("<CommercialWorkspaceShell") &&
-    advancedPage.includes("<CommercialProCockpit") &&
-    commercialShell.includes("data-testid=\"commercial-shell\"") &&
-    commercialShell.includes("data-testid=\"commercial-product-sidebar\"") &&
-    commercialVibe.includes("data-testid=\"commercial-vibe-cockpit\"") &&
-    commercialVibe.includes("data-testid=\"commercial-vibe-right-rail\"") &&
-    commercialVibe.includes("data-testid=\"commercial-vibe-command-bar\"") &&
-    commercialPro.includes("data-testid=\"commercial-pro-cockpit\"") &&
-    commercialPro.includes("data-testid=\"commercial-pro-grid\"") &&
-    commercialCss.includes(".commercial-shell") &&
-    commercialCss.includes(".commercial-vibe-grid") &&
-    commercialCss.includes(".commercial-pro-grid") &&
-    commercialVibe.includes("No generated preview yet") &&
-    commercialPro.includes("No generated source yet") &&
-    commercialPro.includes("No database schema generated yet") &&
-    commercialPro.includes("No tests have run yet") &&
-    commercialPro.includes("No runtime logs yet") &&
-    commercialPro.includes("No commits yet") &&
-    !commercialVibe.includes("Luxora") &&
-    !commercialPro.includes("Luxora") &&
-    !commercialVibe.includes("Luxury Booking Site") &&
-    !commercialPro.includes("Luxury Booking Site");
+  const routeShellAlignment =
+    projectPage.includes("VibeDashboard") &&
+    vibeDashboard.includes("<AppShell") &&
+    appShell.includes("app-sidebar") &&
+    appShell.includes("Product navigation");
+
+  const vibeSurfaceSignals =
+    vibeDashboard.includes("Vibe Mode") &&
+    vibeDashboard.includes("Build Map") &&
+    vibeDashboard.includes("One-Click Launch") &&
+    vibeDashboard.includes("Improve Design") &&
+    vibeDashboard.includes("Launch App") &&
+    vibeDashboard.includes("orchestration.graph.stages") &&
+    vibeDashboard.includes("firstRunState.canLaunch");
+
+  const realDataSignals =
+    orchestrationHook.includes("submitVibeIntake") &&
+    orchestrationHook.includes("getOrchestrationStatus") &&
+    orchestrationHook.includes("getProjectResume") &&
+    vibeDashboard.includes("getProjectRuntimeState") &&
+    vibeDashboard.includes("getFirstRunState");
+
+  const liveUiBuilderSignals =
+    liveUiHook.includes("handleUIPreviewChatEdit") &&
+    liveUiHook.includes("sourceSyncDryRun") &&
+    liveUiHook.includes("applyUISourcePatch") &&
+    liveUiHook.includes("Real local adapter unavailable in browser-safe mode.") &&
+    liveUiHook.includes("Rollback requires server-side local adapter.");
 
   const hasDesignSystemSignals =
     tokenCss.includes("--space-") &&
     tokenCss.includes("--radius-") &&
     tokenCss.includes("--shadow") &&
     globals.toLowerCase().includes("font-family") &&
-    globals.toLowerCase().includes("@media");
+    globals.toLowerCase().includes("@media") &&
+    appCss.includes(".app-shell");
 
   const hasStateSignals =
     uiText.includes("loading") &&
@@ -230,84 +230,25 @@ export function validateUIReadiness(root: string): RepoValidatorResult {
     !uiText.includes("fixme") &&
     !uiText.includes("fake demo data");
 
-  const legacyRouteShellAlignment =
-    projectPage.includes("<VibeBuilderSkeleton") &&
-    vibePage.includes("<VibeDashboard") &&
-    advancedPage.includes("<ProDashboard");
-
-  const commercialRouteShellAlignment =
-    vibePage.includes("<CommercialWorkspaceShell") &&
-    vibePage.includes("<CommercialVibeCockpit") &&
-    advancedPage.includes("<CommercialWorkspaceShell") &&
-    advancedPage.includes("<CommercialProCockpit");
-
-  const routeShellAlignment = legacyRouteShellAlignment || commercialRouteShellAlignment;
-
-  const legacyVibeSurfaceSignals =
-    vibeDashboard.includes("Vibe Mode") &&
-    vibeDashboard.includes("Build Map") &&
-    vibeDashboard.includes("One-Click Launch") &&
-    vibeDashboard.includes("Improve Design") &&
-    vibeDashboard.includes("Launch App");
-
-  const commercialVibeSurfaceSignals =
-    commercialVibe.includes("Vibe Mode") &&
-    commercialVibe.includes("Build Map") &&
-    commercialVibe.includes("One-Click Launch") &&
-    commercialVibe.includes("Improve Design") &&
-    commercialVibe.includes("Launch unavailable");
-
-  const vibeSurfaceSignals = legacyVibeSurfaceSignals || commercialVibeSurfaceSignals;
-
-  const legacyProSurfaceSignals =
-    proDashboard.includes("Pro Mode") &&
-    proDashboard.includes("Build Pipeline") &&
-    proDashboard.includes("Code Changes") &&
-    proDashboard.includes("Live Application") &&
-    proDashboard.includes("System Health") &&
-    proDashboard.includes("Services") &&
-    proDashboard.includes("Database Schema") &&
-    proDashboard.includes("Test Results") &&
-    proDashboard.includes("Terminal") &&
-    proDashboard.includes("AI Copilot") &&
-    proDashboard.includes("Deploy");
-
-  const commercialProSurfaceSignals =
-    commercialPro.includes("Pro Mode") &&
-    commercialPro.includes("Build Pipeline") &&
-    commercialPro.includes("Code Changes") &&
-    commercialPro.includes("Live Application") &&
-    commercialPro.includes("System Health") &&
-    commercialPro.includes("Services") &&
-    commercialPro.includes("Database Schema") &&
-    commercialPro.includes("Test Results") &&
-    commercialPro.includes("Terminal") &&
-    commercialPro.includes("AI Copilot") &&
-    commercialPro.includes("Deploy");
-
-  const proSurfaceSignals = legacyProSurfaceSignals || commercialProSurfaceSignals;
-
-  const shellToggleGuardText = `${productionShell}\n${northStarShell}`.toLowerCase();
-  const hasNoGlobalModeToggleLanguage =
-    !shellToggleGuardText.includes("choose mode") &&
-    !shellToggleGuardText.includes("switch to vibe") &&
-    !shellToggleGuardText.includes("switch to pro") &&
-    !shellToggleGuardText.includes("vibe/pro mode toggle") &&
-    !shellToggleGuardText.includes("dual-mode toggle") &&
-    !shellToggleGuardText.includes("workspace mode switcher");
+  const legacyFilesNotRequired =
+    !has(root, "apps/control-plane/src/components/pro/ProDashboard.tsx") &&
+    !has(root, "apps/control-plane/src/components/commercial/CommercialWorkspaceShell.tsx") &&
+    !has(root, "apps/control-plane/src/app/projects/[projectId]/vibe/page.tsx") &&
+    !has(root, "apps/control-plane/src/app/projects/[projectId]/advanced/page.tsx");
 
   const ok =
+    routeShellAlignment &&
+    vibeSurfaceSignals &&
+    realDataSignals &&
+    liveUiBuilderSignals &&
     hasDesignSystemSignals &&
     hasStateSignals &&
     noPlaceholderUi &&
-    routeShellAlignment &&
-    vibeSurfaceSignals &&
-    proSurfaceSignals &&
-    hasNoGlobalModeToggleLanguage;
+    legacyFilesNotRequired;
   return result(
     "Validate-Botomatic-UIReadiness",
     ok,
-    ok ? "Enterprise control-plane UI surfaces and quality signals are present." : "UI readiness is incomplete (design system, state handling, panel wiring, or placeholder guard failed).",
+    ok ? "Canonical AppShell/VibeDashboard UI surfaces and quality signals are present." : "UI readiness is incomplete (canonical shell, Vibe surface, live data wiring, state handling, or placeholder guard failed).",
     checks
   );
 }
@@ -912,15 +853,21 @@ export function validateBehavioralRuntimeCoverage(root: string): RepoValidatorRe
 export function validateUIControlPlaneIntegration(root: string): RepoValidatorResult {
   const checks = [
     "apps/control-plane/src/app/projects/[projectId]/page.tsx",
-    "apps/control-plane/src/app/projects/[projectId]/advanced/page.tsx",
-    "apps/control-plane/src/components/commercial/CommercialWorkspaceShell.tsx",
-    "apps/control-plane/src/components/commercial/CommercialVibeCockpit.tsx",
-    "apps/control-plane/src/components/commercial/CommercialProCockpit.tsx",
+    "apps/control-plane/src/components/vibe/VibeDashboard.tsx",
+    "apps/control-plane/src/components/shell/AppShell.tsx",
     "apps/control-plane/src/app/projects/[projectId]/settings/page.tsx",
     "apps/control-plane/src/app/projects/[projectId]/evidence/page.tsx",
     "apps/control-plane/src/app/projects/[projectId]/deployment/page.tsx",
     "apps/control-plane/src/app/projects/[projectId]/logs/page.tsx",
     "apps/control-plane/src/components/overview/AuditPanel.tsx",
+    "apps/control-plane/src/components/overview/AutonomousBuildRunPanel.tsx",
+    "apps/control-plane/src/components/overview/DeploymentPanel.tsx",
+    "apps/control-plane/src/components/overview/DeploymentHistoryPanel.tsx",
+    "apps/control-plane/src/components/overview/GatePanel.tsx",
+    "apps/control-plane/src/components/overview/LaunchReadinessPanel.tsx",
+    "apps/control-plane/src/components/overview/ProofValidationPanel.tsx",
+    "apps/control-plane/src/components/overview/ArtifactPanel.tsx",
+    "apps/control-plane/src/components/overview/PacketPanel.tsx",
     "apps/control-plane/src/services/audit.ts",
     "apps/control-plane/src/services/spec.ts",
     "apps/control-plane/src/services/overview.ts",
@@ -929,11 +876,8 @@ export function validateUIControlPlaneIntegration(root: string): RepoValidatorRe
   ];
   const fileOk = checks.every((p) => has(root, p));
   const page = fileOk ? read(root, "apps/control-plane/src/app/projects/[projectId]/page.tsx") : "";
-  const vibePage = fileOk ? read(root, "apps/control-plane/src/app/projects/[projectId]/vibe/page.tsx") : "";
-  const advancedPage = fileOk ? read(root, "apps/control-plane/src/app/projects/[projectId]/advanced/page.tsx") : "";
-  const commercialShellIntegration = fileOk ? read(root, "apps/control-plane/src/components/commercial/CommercialWorkspaceShell.tsx") : "";
-  const commercialVibeIntegration = fileOk ? read(root, "apps/control-plane/src/components/commercial/CommercialVibeCockpit.tsx") : "";
-  const commercialProIntegration = fileOk ? read(root, "apps/control-plane/src/components/commercial/CommercialProCockpit.tsx") : "";
+  const vibeDashboard = fileOk ? read(root, "apps/control-plane/src/components/vibe/VibeDashboard.tsx") : "";
+  const appShell = fileOk ? read(root, "apps/control-plane/src/components/shell/AppShell.tsx") : "";
   const settingsPage = fileOk ? read(root, "apps/control-plane/src/app/projects/[projectId]/settings/page.tsx") : "";
   const evidencePage = fileOk ? read(root, "apps/control-plane/src/app/projects/[projectId]/evidence/page.tsx") : "";
   const deploymentPage = fileOk ? read(root, "apps/control-plane/src/app/projects/[projectId]/deployment/page.tsx") : "";
@@ -951,26 +895,28 @@ export function validateUIControlPlaneIntegration(root: string): RepoValidatorRe
     deploySvc.includes("/deploy/promote");
   const ok =
     fileOk &&
-    (page.includes("<VibeBuilderSkeleton") || (vibePage.includes("<CommercialWorkspaceShell") && vibePage.includes("<CommercialVibeCockpit"))) &&
-    (advancedPage.includes("<ProDashboard") || (advancedPage.includes("<CommercialWorkspaceShell") && advancedPage.includes("<CommercialProCockpit"))) &&
-    commercialShellIntegration.includes("commercial-product-sidebar") &&
-    commercialVibeIntegration.includes("commercial-vibe-right-rail") &&
-    commercialVibeIntegration.includes("commercial-vibe-command-bar") &&
-    commercialProIntegration.includes("commercial-pro-grid") &&
+    page.includes("VibeDashboard") &&
+    vibeDashboard.includes("<AppShell") &&
+    vibeDashboard.includes("useVibeOrchestration") &&
+    vibeDashboard.includes("useLiveUIBuilderVibe") &&
+    appShell.includes("Product navigation") &&
+    appShell.includes("+ New Project") &&
     settingsPage.includes("<GatePanel") &&
     settingsPage.includes("<LaunchReadinessPanel") &&
     evidencePage.includes("<ProofValidationPanel") &&
     evidencePage.includes("<PacketPanel") &&
     evidencePage.includes("<ArtifactPanel") &&
     deploymentPage.includes("<DeploymentPanel") &&
+    deploymentPage.includes("<DeploymentHistoryPanel") &&
     logsPage.includes("<AuditPanel") &&
+    logsPage.includes("<AutonomousBuildRunPanel") &&
     servicesUseRealApi;
   return result(
     "Validate-Botomatic-UIControlPlaneIntegration",
     ok,
     ok
-      ? "Core enterprise control-plane panels are mounted and backed by real API services."
-      : "One or more core enterprise control-plane panels or service API mappings are missing.",
+      ? "Canonical AppShell/VibeDashboard control-plane panels are mounted and backed by real API services."
+      : "One or more canonical control-plane panels or service API mappings are missing.",
     checks
   );
 }
