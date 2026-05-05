@@ -1,11 +1,13 @@
 import express from "express";
 import { createRuntimeConfig } from "./config";
 import { buildApp } from "./server_app";
+import { registerStandaloneCapabilityRoutes } from "./capabilitiesStandalone";
 
 function start() {
   const config = createRuntimeConfig();
 
   const app = buildApp(config);
+  registerStandaloneCapabilityRoutes(app);
 
   console.log(
     JSON.stringify({
