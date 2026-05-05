@@ -10,10 +10,10 @@ import type { IntakeResponse } from "@/services/intake";
 
 const NAV_GLOBAL = [
   { label: "Home",          href: "/",                   icon: "⌂" },
-  { label: "Templates",     href: "/?t=1",               icon: "⊞" },
-  { label: "Design Studio", href: "/?s=design",          icon: "✦" },
-  { label: "Brand Kit",     href: "/?s=brand",           icon: "◈" },
-  { label: "Learn",         href: "/?s=learn",           icon: "◎" },
+  { label: "Templates",     href: "/templates",               icon: "⊞" },
+  { label: "Design Studio", href: "/design-studio",          icon: "✦" },
+  { label: "Brand Kit",     href: "/brand-kit",           icon: "◈" },
+  { label: "Learn",         href: "/learn",           icon: "◎" },
 ];
 
 function projectNav(projectId: string) {
@@ -109,7 +109,7 @@ export function AppShell({ children, projectId, chipHints }: AppShellProps) {
         <nav className="sidebar-nav" aria-label={projectId ? "Project navigation" : "Product navigation"}>
           {navItems.map((item) => {
             const isActive = pathname === item.href ||
-              (item.href !== "/" && item.href !== "/?t=1" && item.href !== "/?s=design" && item.href !== "/?s=brand" && item.href !== "/?s=learn" && pathname.startsWith(item.href));
+              (item.href !== "/" && pathname.startsWith(item.href));
             return (
               <Link
                 key={item.label}
@@ -125,7 +125,7 @@ export function AppShell({ children, projectId, chipHints }: AppShellProps) {
         </nav>
 
         <div className="sidebar-bottom">
-          <Link href="/?s=settings" className="sidebar-nav-item" title="Settings">
+          <Link href="/settings" className="sidebar-nav-item" title="Settings">
             <span className="sidebar-nav-icon" aria-hidden="true">⚙</span>
             <span className="sidebar-nav-label">Settings</span>
           </Link>
