@@ -1,14 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AppShell } from "@/components/shell/AppShell";
 import { useVibeOrchestration } from "../builder/useVibeOrchestration";
 import { getFirstRunFallback, getFirstRunState, type FirstRunState } from "@/services/firstRun";
 import { getJsonSafe } from "@/services/api";
 import { requestDeploy } from "@/services/launchProof";
+import type { OrchestrationStage } from "@/services/orchestration";
 
 type CanvasTab = "vibe" | "diff" | "code";
+
+interface ChatMessage {
+  role: "user" | "ai";
+  text: string;
+  steps?: OrchestrationStage[];
+  time: string;
+}
+
+function now() {
+  return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
 
 function stageIcon(status: string) {
   if (status === "complete") return "✓";
@@ -74,6 +86,8 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
   const [deviceMode, setDeviceMode] = useState<"desktop" | "tablet" | "mobile">("desktop");
   const [canvasTab, setCanvasTab] = useState<CanvasTab>("vibe");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let active = true;
@@ -107,6 +121,37 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
     }, 15000);
     return () => clearInterval(interval);
   }, [projectId, previewUrl]);
+
+  // Sync orchestration stages into the chat history as AI messages
+  useEffect(() => {
+    const { graph } = orchestration;
+    if (graph.stages.length === 0) return;
+    setMessages((prev) => {
+      const last = prev[prev.length - 1];
+      if (last?.role === "ai") {
+        return [...prev.slice(0, -1), { ...last, steps: graph.stages }];
+      }
+      return [...prev, {
+        role: "ai",
+        text: graph.objective || "Working on your request…",
+        steps: graph.stages,
+        time: now(),
+      }];
+    });
+  }, [orchestration.graph.stages, orchestration.graph.objective]);
+
+  // When AppShell sends a message, add it to local history via the prompt value
+  const prevPrompt = useRef("");
+  useEffect(() => {
+    const p = orchestration.prompt;
+    if (p && p !== prevPrompt.current) {
+      prevPrompt.current = p;
+    }
+  }, [orchestration.prompt]);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   const handleLaunch = async () => {
     await requestDeploy(projectId, { idempotencyKey: `launch_${Date.now()}` });
@@ -162,30 +207,51 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
         {/* 3-panel body */}
         <div className="vibe-body">
 
-          {/* LEFT: Build activity */}
+          {/* LEFT: Chat history panel */}
           <div className="vibe-chat-panel">
             <div className="vibe-chat-tabs">
-              <span className="vibe-chat-tab active" style={{ cursor: "default" }}>Build Activity</span>
+              <button type="button" className="vibe-chat-tab active" style={{ cursor: "default" }}>Chat</button>
+              <button type="button" className="vibe-chat-tab" style={{ opacity: .5, cursor: "default" }}>History</button>
             </div>
 
             <div className="vibe-chat-scroll">
-              {stages.length === 0 ? (
+              {messages.length === 0 ? (
                 <div className="vibe-chat-empty">
                   <div className="vibe-chat-empty-icon">✦</div>
                   <h3>Ready to build</h3>
-                  <p>Use the chat bar below to describe changes — build steps will appear here.</p>
+                  <p>Describe what you want in the chat bar below — the conversation will appear here.</p>
                 </div>
               ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 4, padding: "8px 0" }}>
-                  {stages.map((s, i) => (
-                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", borderRadius: 8, background: s.status === "running" ? "var(--brand-soft)" : "transparent" }}>
-                      <span style={{ fontSize: 14, color: stageColor(s.status), flexShrink: 0 }}>{stageIcon(s.status)}</span>
-                      <span style={{ flex: 1, fontSize: 13, color: "var(--text-1)", fontWeight: s.status === "running" ? 600 : 400 }}>{s.label}</span>
-                      <span style={{ fontSize: 11, color: stageColor(s.status), fontWeight: 600 }}>{statusLabel(s.status)}</span>
+                messages.map((msg, i) => (
+                  <div key={i} className={`vibe-msg vibe-msg--${msg.role}`}>
+                    <div className="vibe-msg-avatar">{msg.role === "user" ? "U" : "✦"}</div>
+                    <div className="vibe-msg-bubble">
+                      <div className="vibe-msg-header">
+                        <strong>{msg.role === "user" ? "You" : "Botomatic"}</strong>
+                        <span className="vibe-msg-time">{msg.time}</span>
+                      </div>
+                      <div>{msg.text}</div>
+                      {msg.steps && msg.steps.length > 0 && (
+                        <div className="vibe-proposed-changes">
+                          <div className="vibe-proposed-title">Proposed changes</div>
+                          {msg.steps.map((step, si) => (
+                            <div key={si} className="vibe-proposed-item">
+                              <span style={{ color: stageColor(step.status), fontWeight: 700, fontSize: 13 }}>
+                                {stageIcon(step.status)}
+                              </span>
+                              <span>{step.label}</span>
+                              <span style={{ marginLeft: "auto", fontSize: 11, color: stageColor(step.status) }}>
+                                {statusLabel(step.status)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))
               )}
+              <div ref={chatEndRef} />
             </div>
           </div>
 
