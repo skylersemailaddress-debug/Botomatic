@@ -37,3 +37,7 @@ playwright-report/
 release-evidence/generated-apps/**/.next/
 *.old
 release-evidence/runtime/repair_strategy_memory.json
+
+# Runtime upload/scratch directory and synthesized capability cache
+runtime/
+synthesized_capabilities.json
