@@ -1,5 +1,6 @@
 import { createRuntimeConfig } from "./config";
 import { buildApp } from "./server_app";
+import { registerStandaloneCapabilityRoutes } from "./capabilitiesStandalone";
 import { spawn, ChildProcess } from "child_process";
 import { resolve } from "path";
 
@@ -131,6 +132,7 @@ async function start() {
 
   const config = createRuntimeConfig();
   const app    = buildApp(config);
+  registerStandaloneCapabilityRoutes(app);
 
   console.log(
     JSON.stringify({
