@@ -28,6 +28,12 @@ function writeEnvFile(filePath: string, required: Record<string, string>) {
   fs.writeFileSync(filePath, `${lines.join("\n")}\n`, "utf8");
 }
 
+function loadDotenv(): Record<string, string> {
+  const envPath = path.join(ROOT, ".env");
+  if (!fs.existsSync(envPath)) return {};
+  return Object.fromEntries(parseEnv(fs.readFileSync(envPath, "utf8")));
+}
+
 function npmCommand(): string { return process.platform === "win32" ? "npm.cmd" : "npm"; }
 function tsxCommand(): string { return process.platform === "win32" ? "tsx.cmd" : "tsx"; }
 
@@ -72,6 +78,10 @@ export function run(lanMode = false) {
   const host = lanMode ? "0.0.0.0" : "127.0.0.1";
   const lanIp = lanMode ? lanIPv4() : null;
   const apiBaseUrl = `http://${lanMode && lanIp ? lanIp : "127.0.0.1"}:${API_PORT}`;
+
+  // Load .env so ANTHROPIC_API_KEY and other secrets are passed to child processes
+  const dotenvVars = loadDotenv();
+
   writeEnvFile(path.join(ROOT, ".env.local"), { PORT: API_PORT, API_AUTH_TOKEN: DEV_TOKEN });
   writeEnvFile(path.join(ROOT, "apps/control-plane/.env.local"), {
     PORT: UI_PORT,
@@ -82,21 +92,21 @@ export function run(lanMode = false) {
 
   const apiEnv = {
     ...process.env,
+    ...dotenvVars,
     PORT: API_PORT,
     HOST: host,
     API_AUTH_TOKEN: DEV_TOKEN,
-    // Clear OIDC so the API falls back to bearer-token auth for local dev
     OIDC_ISSUER_URL: "",
     OIDC_CLIENT_ID: "",
     OIDC_AUDIENCE: "",
     AUTH0_CLIENT_SECRET: "",
-    // In-memory mode for local dev (Supabase may be network-restricted)
     PROJECT_REPOSITORY_MODE: "memory",
     QUEUE_BACKEND: "memory",
     RUNTIME_MODE: "development",
   };
   const uiEnv = {
     ...process.env,
+    ...dotenvVars,
     PORT: UI_PORT,
     HOSTNAME: host,
     NEXT_PUBLIC_BOTOMATIC_API_TOKEN: DEV_TOKEN,
