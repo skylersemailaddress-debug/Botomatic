@@ -1493,6 +1493,19 @@ async function processJob(config: RuntimeConfig, job: QueueJobRecord) {
     recomputeProjectStatus(project);
     await persistProject(config, project);
     await finalizeJob(job.job_id, "succeeded");
+
+    // Re-queue any packets whose dependencies are now fully complete (wave progression)
+    const completedIds = new Set(getPackets(project).filter((p: any) => p.status === "complete").map((p: any) => p.packetId));
+    const nowUnblocked = getPackets(project).filter((p: any) =>
+      (p.status === "queued" || p.status === "pending") &&
+      ((p.dependencies as string[] | undefined) ?? []).every((dep: string) => completedIds.has(dep))
+    );
+    for (const unblocked of nowUnblocked) {
+      try {
+        const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        await enqueueJob({ job_id: jobId, project_id: project.projectId, packet_id: unblocked.packetId });
+      } catch (_e) { /* already queued or unavailable — tolerate */ }
+    }
   } catch (error: any) {
     packetFailureCount += 1;
     recordOpsError("packet_failed", String(error?.message || error), {
@@ -3098,11 +3111,10 @@ export function buildApp(config: RuntimeConfig) {
           if (!["queued", "running", "succeeded"].includes(String(project.status))) {
             const compiled = compileProjectWithIntake(project);
             const plan = generatePlan((compiled as any).masterTruth);
+            (compiled as any).plan = plan;
             compiled.status = "queued";
-            compiled.runs = { ...((compiled.runs as any) ?? {}), ...((project.runs as any) ?? {}) };
-            const contract = generateBuildContract(compiled.projectId, getMasterSpec(compiled) as any);
-            const approvedContract = approveBuildContract({ ...contract, readyToBuild: true, blockers: [] }, actor.actorId);
-            setBuildContract(compiled, approvedContract);
+            // Preserve autonomous build run and other project runs set before compile
+            compiled.runs = { ...((project.runs as any) ?? {}), ...((compiled.runs as any) ?? {}) };
             await repo.upsertProject(compiled);
             const allPackets = (plan as any)?.packets ?? [];
             packetCount = allPackets.length;
