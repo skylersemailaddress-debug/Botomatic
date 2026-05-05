@@ -241,3 +241,14 @@ export async function postJsonSafe<TResponse, TBody>(url: string, body: TBody): 
     return { ok: false, state: "not_connected", message };
   }
 }
+
+export async function patchJson<T>(url: string, body?: unknown): Promise<T> {
+  const finalUrl = buildApiUrl(url);
+  const response = await fetch(finalUrl, {
+    method: "PATCH",
+    headers: buildHeaders({ "Content-Type": "application/json" }),
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!response.ok) throw await buildFetchError(response, finalUrl);
+  return response.json() as Promise<T>;
+}
