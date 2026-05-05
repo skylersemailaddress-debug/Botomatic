@@ -79,7 +79,21 @@ export function run(lanMode = false) {
     NEXT_PUBLIC_API_BASE_URL: apiBaseUrl,
   });
 
-  const apiEnv = { ...process.env, PORT: API_PORT, HOST: host, API_AUTH_TOKEN: DEV_TOKEN };
+  const apiEnv = {
+    ...process.env,
+    PORT: API_PORT,
+    HOST: host,
+    API_AUTH_TOKEN: DEV_TOKEN,
+    // Clear OIDC so the API falls back to bearer-token auth for local dev
+    OIDC_ISSUER_URL: "",
+    OIDC_CLIENT_ID: "",
+    OIDC_AUDIENCE: "",
+    AUTH0_CLIENT_SECRET: "",
+    // In-memory mode for local dev (Supabase may be network-restricted)
+    PROJECT_REPOSITORY_MODE: "memory",
+    QUEUE_BACKEND: "memory",
+    RUNTIME_MODE: "development",
+  };
   const uiEnv = {
     ...process.env,
     PORT: UI_PORT,
