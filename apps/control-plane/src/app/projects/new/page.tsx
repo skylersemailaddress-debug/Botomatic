@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { postJson } from "@/services/api";
 import { uploadIntakeFile } from "@/services/intake";
 import type { IntakeResponse } from "@/services/intake";
+import { intakeGithub } from "@/services/intakeSources";
 
 type IntakeTab = "idea" | "upload" | "github";
 
@@ -51,7 +52,21 @@ export default function NewProjectPage() {
     e.preventDefault();
     const url = githubUrl.trim();
     if (!url) return;
-    await createProject(`Import: ${url.split("/").pop() ?? url}`, `Import and analyze the GitHub repository: ${url}`);
+    setLoading(true);
+    setError(null);
+    try {
+      const repoName = url.replace(/\/$/, "").split("/").pop() ?? "repo";
+      const created = await postJson<IntakeResponse>("/api/projects/intake", {
+        name: `Import: ${repoName}`.slice(0, 60),
+        request: `Analyze and build from GitHub repository: ${url}`,
+      });
+      // Fire-and-forget the actual GitHub intake — it runs async in the orchestrator
+      void intakeGithub(created.projectId, { sourceUrl: url, allowClone: true }).catch(() => undefined);
+      router.replace(`/projects/${created.projectId}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Import failed");
+      setLoading(false);
+    }
   }
 
   async function handleFile(file: File) {

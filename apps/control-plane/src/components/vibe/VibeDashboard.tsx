@@ -8,6 +8,7 @@ import { useLiveUIBuilderVibe } from "./useLiveUIBuilderVibe";
 import { getFirstRunFallback, getFirstRunState, type FirstRunState } from "@/services/firstRun";
 import { getProjectRuntimeState } from "@/services/runtimeStatus";
 import { requestDeploy } from "@/services/launchProof";
+import { getJsonSafe } from "@/services/api";
 import type { OrchestrationStage } from "@/services/orchestration";
 
 const SUGGESTION_CHIPS = [
@@ -28,10 +29,10 @@ const ACTION_CHIPS = [
 ];
 
 const WHAT_NEXT = [
-  { icon: "🌐", label: "Connect Domain", desc: "Make your site live" },
-  { icon: "🖼", label: "Add Logo", desc: "Brand your site" },
-  { icon: "💳", label: "Payment Setup", desc: "Accept payments" },
-  { icon: "✉️", label: "Email Notifications", desc: "Send confirmations" },
+  { icon: "🌐", label: "Connect Domain",       desc: "Make your site live",   action: "domain" },
+  { icon: "🖼",  label: "Add Logo",             desc: "Brand your site",       action: "logo" },
+  { icon: "💳", label: "Payment Setup",         desc: "Accept payments",       action: "payments" },
+  { icon: "✉️", label: "Email Notifications",  desc: "Send confirmations",    action: "email" },
 ];
 
 type CanvasTab = "vibe" | "diff" | "code";
@@ -108,6 +109,7 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
   const [chatTab, setChatTab] = useState<"chat" | "plan" | "history">("chat");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputRows, setInputRows] = useState(1);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -115,12 +117,35 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
     Promise.all([
       getProjectRuntimeState(projectId),
       getFirstRunState(projectId),
-    ]).then(([, firstRun]) => {
+      getJsonSafe<{ previewUrl?: string | null; verifiedPreviewUrl?: string | null; derivedPreviewUrl?: string | null }>(
+        `/api/projects/${projectId}/runtime`
+      ),
+    ]).then(([, firstRun, runtime]) => {
       if (!active) return;
       if (firstRun.ok) setFirstRunState(firstRun.data);
+      if (runtime.ok) {
+        const url = runtime.data.verifiedPreviewUrl ?? runtime.data.previewUrl ?? runtime.data.derivedPreviewUrl ?? null;
+        setPreviewUrl(url);
+      }
     }).catch(() => undefined);
     return () => { active = false; };
   }, [projectId]);
+
+  // Re-poll runtime URL every 15s when no preview yet
+  useEffect(() => {
+    if (previewUrl) return;
+    const interval = setInterval(() => {
+      getJsonSafe<{ previewUrl?: string | null; verifiedPreviewUrl?: string | null; derivedPreviewUrl?: string | null }>(
+        `/api/projects/${projectId}/runtime`
+      ).then((r) => {
+        if (r.ok) {
+          const url = r.data.verifiedPreviewUrl ?? r.data.previewUrl ?? r.data.derivedPreviewUrl ?? null;
+          if (url) setPreviewUrl(url);
+        }
+      }).catch(() => undefined);
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [projectId, previewUrl]);
 
   useEffect(() => {
     const { graph } = orchestration;
@@ -389,11 +414,20 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
             <div className="vibe-canvas-area">
               {canvasTab === "vibe" && (
                 <div className={frameClass}>
-                  <div className="vibe-canvas-placeholder">
-                    <div className="vibe-canvas-placeholder-icon">🖼</div>
-                    <h3>Live Preview</h3>
-                    <p>Your app will render here as it's built. Start chatting to begin.</p>
-                  </div>
+                  {previewUrl ? (
+                    <iframe
+                      src={previewUrl}
+                      title="Live preview"
+                      style={{ width: "100%", height: "100%", minHeight: 500, border: "none", borderRadius: 8 }}
+                      sandbox="allow-scripts allow-same-origin allow-forms"
+                    />
+                  ) : (
+                    <div className="vibe-canvas-placeholder">
+                      <div className="vibe-canvas-placeholder-icon">🖼</div>
+                      <h3>Live Preview</h3>
+                      <p>Your app will render here once built. Start chatting to begin.</p>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -461,7 +495,20 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
                 <div className="rail-card-body">
                   <div className="next-grid">
                     {WHAT_NEXT.map((item) => (
-                      <button key={item.label} type="button" className="next-item">
+                      <button
+                        key={item.label}
+                        type="button"
+                        className="next-item"
+                        onClick={() => {
+                          const prompts: Record<string, string> = {
+                            domain:   "Help me connect a custom domain to this app",
+                            logo:     "Help me add a logo and update the brand identity",
+                            payments: "Integrate Stripe payments with a checkout flow",
+                            email:    "Set up email notifications with transactional email",
+                          };
+                          orchestration.setPrompt(prompts[item.action] ?? item.label);
+                        }}
+                      >
                         <div className="next-item-icon">{item.icon}</div>
                         <div className="next-item-label">{item.label}</div>
                         <div className="next-item-desc">{item.desc}</div>

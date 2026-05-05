@@ -134,6 +134,19 @@ export async function postJson<T>(url: string, body?: unknown): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+export async function patchJson<T>(url: string, body?: unknown): Promise<T> {
+  const finalUrl = buildApiUrl(url);
+  const response = await fetch(finalUrl, {
+    method: "PATCH",
+    headers: buildHeaders({ "Content-Type": "application/json" }),
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!response.ok) {
+    throw await buildFetchError(response, finalUrl);
+  }
+  return response.json() as Promise<T>;
+}
+
 export async function postMultipart<T>(url: string, formData: FormData): Promise<T> {
   const finalUrl = buildApiUrl(url);
   // Do not set Content-Type; browser sets it with boundary automatically.

@@ -4088,6 +4088,43 @@ export function buildApp(config: RuntimeConfig) {
     }
   });
 
+  app.patch("/api/projects/:projectId/settings", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+
+      const allowed = ["strict", "guided", "autopilot", "enterprise"] as const;
+      const input = req.body || {};
+
+      if (input.name !== undefined) {
+        if (typeof input.name !== "string" || !input.name.trim()) {
+          return res.status(400).json({ error: "name must be a non-empty string" });
+        }
+        project.name = input.name.trim().slice(0, 120);
+      }
+
+      if (input.approvalMode !== undefined) {
+        if (!allowed.includes(input.approvalMode)) {
+          return res.status(400).json({ error: "Invalid approvalMode", allowed });
+        }
+        project.approvalMode = input.approvalMode;
+      }
+
+      await persistProject(config, project);
+
+      return res.json({
+        success: true,
+        projectId: project.projectId,
+        name: project.name,
+        approvalMode: project.approvalMode,
+        actorId: actor.actorId,
+      });
+    } catch (error) {
+      return handleRouteError(res, config, error, "PATCH /api/projects/:projectId/settings", actor);
+    }
+  });
+
   app.post("/api/projects/:projectId/deploy/promote", requireRole("admin", config), async (req, res) => {
     const actor = await getRequestActor(req, config);
     try {
