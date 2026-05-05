@@ -1,4 +1,4 @@
-import ProjectWorkspaceShell from "@/components/project/ProjectWorkspaceShell";
+import { AppShell } from "@/components/shell/AppShell";
 import GatePanel from "@/components/overview/GatePanel";
 import SecurityCenterPanel from "@/components/overview/SecurityCenterPanel";
 import LaunchReadinessPanel from "@/components/overview/LaunchReadinessPanel";
@@ -7,7 +7,7 @@ export default async function ProjectSettingsPage({ params }: { params: { projec
   const projectId = params.projectId;
 
   return (
-    <ProjectWorkspaceShell projectId={projectId} mode="settings">
+    <AppShell projectId={projectId}>
       <header className="northstar-workspace-topbar">
         <div>
           <div className="northstar-eyebrow">Settings</div>
@@ -24,6 +24,6 @@ export default async function ProjectSettingsPage({ params }: { params: { projec
           </section>
         </main>
       </div>
-    </ProjectWorkspaceShell>
+    </AppShell>
   );
 }

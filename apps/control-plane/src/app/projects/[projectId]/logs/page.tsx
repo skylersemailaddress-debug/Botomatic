@@ -1,4 +1,4 @@
-import ProjectWorkspaceShell from "@/components/project/ProjectWorkspaceShell";
+import { AppShell } from "@/components/shell/AppShell";
 import AuditPanel from "@/components/overview/AuditPanel";
 import DeploymentHistoryPanel from "@/components/overview/DeploymentHistoryPanel";
 import AutonomousBuildRunPanel from "@/components/overview/AutonomousBuildRunPanel";
@@ -7,7 +7,7 @@ export default async function ProjectLogsPage({ params }: { params: { projectId:
   const projectId = params.projectId;
 
   return (
-    <ProjectWorkspaceShell projectId={projectId} mode="logs">
+    <AppShell projectId={projectId}>
       <header className="northstar-workspace-topbar">
         <div>
           <div className="northstar-eyebrow">Logs</div>
@@ -24,6 +24,6 @@ export default async function ProjectLogsPage({ params }: { params: { projectId:
           </section>
         </main>
       </div>
-    </ProjectWorkspaceShell>
+    </AppShell>
   );
 }

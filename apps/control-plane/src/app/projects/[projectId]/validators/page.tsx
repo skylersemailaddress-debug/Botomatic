@@ -1,4 +1,4 @@
-import ProjectWorkspaceShell from "@/components/project/ProjectWorkspaceShell";
+import { AppShell } from "@/components/shell/AppShell";
 import AutonomousBuildRunPanel from "@/components/overview/AutonomousBuildRunPanel";
 import SpecCompletenessPanel from "@/components/overview/SpecCompletenessPanel";
 import BuildContractPanel from "@/components/overview/BuildContractPanel";
@@ -9,7 +9,7 @@ export default async function ProjectValidatorsPage({ params }: { params: { proj
   const projectId = params.projectId;
 
   return (
-    <ProjectWorkspaceShell projectId={projectId} mode="validators">
+    <AppShell projectId={projectId}>
       <header className="northstar-workspace-topbar">
         <div>
           <div className="northstar-eyebrow">Validators</div>
@@ -28,6 +28,6 @@ export default async function ProjectValidatorsPage({ params }: { params: { proj
           </section>
         </main>
       </div>
-    </ProjectWorkspaceShell>
+    </AppShell>
   );
 }
