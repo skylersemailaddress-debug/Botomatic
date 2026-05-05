@@ -59,9 +59,16 @@ export async function submitVibeIntake(projectId: string, prompt: string): Promi
   const operatorBody = { message: prompt };
   const operatorResult = await postJsonSafe<unknown, typeof operatorBody>(operatorEndpoint, operatorBody);
   if (operatorResult.ok) {
+    // Use the response directly if it already carries a graph with stages.
+    const direct = fromPayload(projectId, operatorResult.data);
+    if (direct.graph.stages.length > 0) return { ok: true, data: direct };
+    // Otherwise try the status endpoint for a richer view.
     const status = await getOrchestrationStatus(projectId);
     if (status.ok) return { ok: true, data: status.data };
-    return { ok: true, data: fromPayload(projectId, operatorResult.data) };
+    return { ok: true, data: direct };
+  }
+  if (!operatorResult.ok && !operatorResult.status) {
+    return { ok: false, state: "not_connected", message: "API server unreachable — make sure the local server is running", status: undefined };
   }
   if (operatorResult.status && operatorResult.status !== 404) {
     return { ok: false, state: operatorResult.state, message: "Planner unavailable", status: operatorResult.status };

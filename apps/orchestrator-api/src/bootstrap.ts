@@ -53,16 +53,19 @@ let runnerProcess: ChildProcess | null = null;
 
 function spawnClaudeRunner() {
   if (process.env.EXECUTOR !== "claude") return;
+  if (process.env.EXTERNAL_CLAUDE_RUNNER === "true") return;
 
   const runnerScript = resolve(process.cwd(), "apps/claude-runner/src/server.ts");
   const runnerPort   = parseInt(process.env.CLAUDE_EXECUTOR_URL?.split(":").pop() ?? "4000", 10);
 
+  const isWin = process.platform === "win32";
   runnerProcess = spawn(
-    "npx",
+    isWin ? "npx.cmd" : "npx",
     ["tsx", "--no-warnings", runnerScript],
     {
       env: { ...process.env, PORT: String(runnerPort) },
       stdio: ["ignore", "inherit", "inherit"],
+      shell: isWin,
     }
   );
 

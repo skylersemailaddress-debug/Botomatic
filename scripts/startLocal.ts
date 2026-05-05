@@ -28,10 +28,17 @@ function writeEnvFile(filePath: string, required: Record<string, string>) {
   fs.writeFileSync(filePath, `${lines.join("\n")}\n`, "utf8");
 }
 
-function npmCommand(): string { return process.platform === "win32" ? "npm.cmd" : "npm"; }
+function loadDotenv(): Record<string, string> {
+  const envPath = path.join(ROOT, ".env");
+  if (!fs.existsSync(envPath)) return {};
+  return Object.fromEntries(parseEnv(fs.readFileSync(envPath, "utf8")));
+}
 
-function start(name: string, args: string[], env: NodeJS.ProcessEnv): ChildProcess {
-  const child = spawn(npmCommand(), args, { stdio: "inherit", env, cwd: ROOT });
+function npmCommand(): string { return process.platform === "win32" ? "npm.cmd" : "npm"; }
+function tsxCommand(): string { return process.platform === "win32" ? "tsx.cmd" : "tsx"; }
+
+function start(name: string, cmd: string, args: string[], env: NodeJS.ProcessEnv): ChildProcess {
+  const child = spawn(cmd, args, { stdio: "inherit", env, cwd: ROOT, shell: process.platform === "win32" });
   child.on("exit", (code, signal) => {
     if (!shuttingDown) {
       console.error(`[${name}] exited unexpectedly (code=${code ?? "null"}, signal=${signal ?? "null"})`);
@@ -71,6 +78,10 @@ export function run(lanMode = false) {
   const host = lanMode ? "0.0.0.0" : "127.0.0.1";
   const lanIp = lanMode ? lanIPv4() : null;
   const apiBaseUrl = `http://${lanMode && lanIp ? lanIp : "127.0.0.1"}:${API_PORT}`;
+
+  // Load .env so ANTHROPIC_API_KEY and other secrets are passed to child processes
+  const dotenvVars = loadDotenv();
+
   writeEnvFile(path.join(ROOT, ".env.local"), { PORT: API_PORT, API_AUTH_TOKEN: DEV_TOKEN });
   writeEnvFile(path.join(ROOT, "apps/control-plane/.env.local"), {
     PORT: UI_PORT,
@@ -81,21 +92,25 @@ export function run(lanMode = false) {
 
   const apiEnv = {
     ...process.env,
+    ...dotenvVars,
     PORT: API_PORT,
     HOST: host,
     API_AUTH_TOKEN: DEV_TOKEN,
-    // Clear OIDC so the API falls back to bearer-token auth for local dev
     OIDC_ISSUER_URL: "",
     OIDC_CLIENT_ID: "",
     OIDC_AUDIENCE: "",
     AUTH0_CLIENT_SECRET: "",
-    // In-memory mode for local dev (Supabase may be network-restricted)
     PROJECT_REPOSITORY_MODE: "memory",
     QUEUE_BACKEND: "memory",
     RUNTIME_MODE: "development",
+    EXECUTOR: "claude",
+    CLAUDE_EXECUTOR_URL: "http://localhost:4000",
+    CLAUDE_EXECUTOR_KEY: DEV_TOKEN,
+    EXTERNAL_CLAUDE_RUNNER: "true",
   };
   const uiEnv = {
     ...process.env,
+    ...dotenvVars,
     PORT: UI_PORT,
     HOSTNAME: host,
     NEXT_PUBLIC_BOTOMATIC_API_TOKEN: DEV_TOKEN,
@@ -103,9 +118,18 @@ export function run(lanMode = false) {
     NEXT_PUBLIC_API_BASE_URL: apiBaseUrl,
   };
 
+  const executorEnv = {
+    ...process.env,
+    ...dotenvVars,
+    PORT: "4000",
+    HOST: host,
+    RUNTIME_MODE: "development",
+  };
+
   children = [
-    start("api", ["run", "api:dev"], apiEnv),
-    start("ui", ["--prefix", "apps/control-plane", "run", "dev", "--", "-H", host, "-p", UI_PORT], uiEnv),
+    start("api",      tsxCommand(), ["apps/orchestrator-api/src/bootstrap.ts"], apiEnv),
+    start("executor", tsxCommand(), ["apps/claude-runner/src/server.ts"],       executorEnv),
+    start("ui",       npmCommand(), ["--prefix", "apps/control-plane", "run", "dev", "--", "-H", host, "-p", UI_PORT], uiEnv),
   ];
 
   console.log("\nBotomatic local launch ready");
