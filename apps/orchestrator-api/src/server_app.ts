@@ -958,7 +958,7 @@ function hasUniversalCapabilityStressIntent(message: string): boolean {
 
 function hasAutonomousBuildIntent(message: string): boolean {
   const lower = message.toLowerCase();
-  return /(build this entire spec|continue the build|fix and keep going|use safe defaults|stop only for secrets or approval|autonomous build|complex build)/.test(lower);
+  return /(build this entire spec|continue the build|fix and keep going|use safe defaults|stop only for secrets or approval|autonomous build|complex build|build this|build my|build the|start building|create this|create my|create the app|generate this|generate my|let's build|lets build|i want to build|go build|please build|build it|build now|start the build|kick off|begin build|make this|make my app|build from|build based on|build using|build what|start the project|build the project|build the app)/.test(lower);
 }
 
 function hasRuntimeProofCaptureIntent(message: string): boolean {
@@ -1630,9 +1630,7 @@ function materializeGeneratedWorkspace(
 export function buildApp(config: RuntimeConfig) {
   const app = express();
   const repo = config.repository.repo;
-  if (config.repository.mode === "durable") {
-    startQueueWorker(config);
-  }
+  startQueueWorker(config);
   app.use(express.json());
 
   app.use((req, res, next) => {
@@ -3028,8 +3026,20 @@ export function buildApp(config: RuntimeConfig) {
       const role = auth.role;
       const message = String((req.body as any)?.message || "");
 
-      const project = await repo.getProject(req.params.projectId);
-      if (!project) return res.status(404).json({ error: "Project not found" });
+      let project = await repo.getProject(req.params.projectId);
+      if (!project) {
+        // Auto-recreate when memory mode drops the project (e.g. server restart).
+        project = toStored({
+          projectId: req.params.projectId,
+          name: message.slice(0, 60) || "Untitled Project",
+          request: message,
+          status: "clarifying",
+          governanceApproval: buildDefaultGovernanceApproval(actor.actorId),
+          githubOwner: null,
+          githubRepo: null,
+        });
+        await repo.upsertProject(project);
+      }
 
       ensureGovernanceApprovalState(project, actor.actorId);
       ensureDeploymentState(project as any);
@@ -3080,19 +3090,56 @@ export function buildApp(config: RuntimeConfig) {
         });
         await persistProject(config, project);
 
+        // Immediately compile and enqueue build packets so code generation starts.
+        let packetCount = 0;
+        let rootPacketsEnqueued = 0;
+        const buildStages: Array<{ id: string; label: string; status: string }> = [];
+        try {
+          if (!["queued", "running", "succeeded"].includes(String(project.status))) {
+            const compiled = compileProjectWithIntake(project);
+            const plan = generatePlan((compiled as any).masterTruth);
+            compiled.status = "queued";
+            compiled.runs = { ...((compiled.runs as any) ?? {}), ...((project.runs as any) ?? {}) };
+            const contract = generateBuildContract(compiled.projectId, getMasterSpec(compiled) as any);
+            const approvedContract = approveBuildContract({ ...contract, readyToBuild: true, blockers: [] }, actor.actorId);
+            setBuildContract(compiled, approvedContract);
+            await repo.upsertProject(compiled);
+            const allPackets = (plan as any)?.packets ?? [];
+            packetCount = allPackets.length;
+            const rootPackets = allPackets.filter((p: any) => !p.dependencies || p.dependencies.length === 0);
+            for (const rp of rootPackets) {
+              try {
+                const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+                await enqueueJob({ job_id: jobId, project_id: compiled.projectId, packet_id: rp.packetId });
+                rootPacketsEnqueued++;
+                buildStages.push({ id: rp.packetId, label: rp.goal ?? rp.packetId, status: "queued" });
+              } catch (_e) { /* tolerate queue error */ }
+            }
+          }
+        } catch (_buildErr) { /* non-fatal — plan saved */ }
+
         const blockerLines = run.humanBlockers.filter((b) => !b.approved).map((b) => b.detail);
         return res.json({
           ok: true,
           route,
-          status: run.status,
+          status: packetCount > 0 ? "queued" : run.status,
           blockers: blockerLines,
-          nextAction: run.checkpoint.nextAction,
+          nextAction: packetCount > 0 ? `Building — ${rootPacketsEnqueued} tasks queued` : run.checkpoint.nextAction,
           actorId: actor.actorId,
+          objective: project.request || message,
+          graph: {
+            projectId: project.projectId,
+            runId: run.runId,
+            objective: project.request || message,
+            stages: buildStages.length > 0 ? buildStages : [{ id: "project_status", label: "Build queued", status: "queued" }],
+          },
           operatorMessage: formatOperatorVoice({
-            direct: "Autonomous complex build orchestration is active and milestone-gated.",
-            status: run.status,
+            direct: packetCount > 0
+              ? `Build started — ${packetCount} packets generated, ${rootPacketsEnqueued} immediately queued.`
+              : "Autonomous complex build orchestration is active and milestone-gated.",
+            status: packetCount > 0 ? "queued" : run.status,
             blockers: blockerLines,
-            nextAction: run.checkpoint.nextAction,
+            nextAction: packetCount > 0 ? `Building — ${rootPacketsEnqueued} tasks queued` : run.checkpoint.nextAction,
           }),
           actionResult: {
             runId: run.runId,
@@ -3101,6 +3148,8 @@ export function buildApp(config: RuntimeConfig) {
             currentMilestone: run.checkpoint.currentMilestone,
             humanBlockers: run.humanBlockers,
             resumeCommand: run.checkpoint.resumeCommand,
+            packetCount,
+            rootPacketsEnqueued,
           },
         });
       }
