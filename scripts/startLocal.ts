@@ -114,9 +114,18 @@ export function run(lanMode = false) {
     NEXT_PUBLIC_API_BASE_URL: apiBaseUrl,
   };
 
+  const executorEnv = {
+    ...process.env,
+    ...dotenvVars,
+    PORT: "4000",
+    HOST: host,
+    RUNTIME_MODE: "development",
+  };
+
   children = [
-    start("api", tsxCommand(), ["apps/orchestrator-api/src/bootstrap.ts"], apiEnv),
-    start("ui", npmCommand(), ["--prefix", "apps/control-plane", "run", "dev", "--", "-H", host, "-p", UI_PORT], uiEnv),
+    start("api",      tsxCommand(), ["apps/orchestrator-api/src/bootstrap.ts"], apiEnv),
+    start("executor", tsxCommand(), ["apps/claude-runner/src/server.ts"],       executorEnv),
+    start("ui",       npmCommand(), ["--prefix", "apps/control-plane", "run", "dev", "--", "-H", host, "-p", UI_PORT], uiEnv),
   ];
 
   console.log("\nBotomatic local launch ready");
