@@ -106,6 +106,7 @@ export function run(lanMode = false) {
     EXECUTOR: "claude",
     CLAUDE_EXECUTOR_URL: "http://localhost:4000",
     CLAUDE_EXECUTOR_KEY: DEV_TOKEN,
+    EXTERNAL_CLAUDE_RUNNER: "true",
   };
   const uiEnv = {
     ...process.env,
