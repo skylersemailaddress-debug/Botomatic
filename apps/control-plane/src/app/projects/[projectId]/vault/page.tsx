@@ -1,11 +1,11 @@
-import ProjectWorkspaceShell from "@/components/project/ProjectWorkspaceShell";
+import { AppShell } from "@/components/shell/AppShell";
 import SecretsCredentialsPanel from "@/components/overview/SecretsCredentialsPanel";
 
 export default async function ProjectVaultPage({ params }: { params: { projectId: string } }) {
   const projectId = params.projectId;
 
   return (
-    <ProjectWorkspaceShell projectId={projectId} mode="vault">
+    <AppShell projectId={projectId}>
       <header className="northstar-workspace-topbar">
         <div>
           <div className="northstar-eyebrow">Vault</div>
@@ -20,6 +20,6 @@ export default async function ProjectVaultPage({ params }: { params: { projectId
           </section>
         </main>
       </div>
-    </ProjectWorkspaceShell>
+    </AppShell>
   );
 }
