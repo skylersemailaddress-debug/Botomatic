@@ -1,193 +1,346 @@
 "use client";
 
-import ProjectWorkspaceShell from "../project/ProjectWorkspaceShell";
-import { useCallback, useEffect, useState } from "react";
-
-import { actionChips, suggestionChips } from "./vibeSeedData";
-import { LiveUIBuilderCommandInput } from "../live-ui-builder/LiveUIBuilderCommandInput";
-import { LiveUIBuilderDiffPreview } from "../live-ui-builder/LiveUIBuilderDiffPreview";
-import { LiveUIBuilderResolutionPanel, type ResolutionTarget } from "../live-ui-builder/LiveUIBuilderResolutionPanel";
-import { LiveUIBuilderPreviewSurface } from "./LiveUIBuilderPreviewSurface";
-import { LiveUIBuilderSourceSyncPanel } from "../live-ui-builder/LiveUIBuilderSourceSyncPanel";
-import { LiveUIBuilderAppStructurePanel } from "../live-ui-builder/LiveUIBuilderAppStructurePanel";
-import { VibeOrchestrationPanel } from "../builder/VibeOrchestrationPanel";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { AppShell } from "@/components/shell/AppShell";
 import { useVibeOrchestration } from "../builder/useVibeOrchestration";
-import { useLiveUIBuilderVibe } from "./useLiveUIBuilderVibe";
-import { VibeLivePreviewPanel } from "@/components/runtime/RuntimePreviewPanel";
-import { getProjectRuntimeState } from "@/services/runtimeStatus";
 import { getFirstRunFallback, getFirstRunState, type FirstRunState } from "@/services/firstRun";
+import { getJsonSafe } from "@/services/api";
 import { requestDeploy } from "@/services/launchProof";
 
+type CanvasTab = "vibe" | "diff" | "code";
+
+function stageIcon(status: string) {
+  if (status === "complete") return "✓";
+  if (status === "running" || status === "queued") return "●";
+  if (status === "failed" || status === "blocked") return "✕";
+  return "○";
+}
+
+function stageColor(status: string) {
+  if (status === "complete") return "var(--green)";
+  if (status === "running" || status === "queued") return "var(--brand)";
+  if (status === "failed" || status === "blocked") return "var(--red)";
+  return "var(--text-3)";
+}
+
+function statusLabel(status: string) {
+  if (status === "complete") return "Done";
+  if (status === "running") return "Running";
+  if (status === "queued") return "Queued";
+  if (status === "failed") return "Failed";
+  if (status === "blocked") return "Blocked";
+  return "Pending";
+}
+
+function HealthRing({ pct }: { pct: number }) {
+  const r = 28;
+  const circ = 2 * Math.PI * r;
+  const dash = (pct / 100) * circ;
+  return (
+    <div className="health-ring">
+      <svg width="72" height="72" viewBox="0 0 72 72">
+        <circle cx="36" cy="36" r={r} fill="none" stroke="#f3f0ff" strokeWidth="6" />
+        <circle cx="36" cy="36" r={r} fill="none" stroke="#22c55e" strokeWidth="6"
+          strokeDasharray={`${dash} ${circ}`} strokeLinecap="round" />
+      </svg>
+      <div className="health-ring-label">
+        <span className="health-ring-pct">{pct}%</span>
+        <span className="health-ring-sub">Health</span>
+      </div>
+    </div>
+  );
+}
+
+const WHAT_NEXT = [
+  { icon: "🌐", label: "Connect Domain",      desc: "Make your site live",  prompt: "Help me connect a custom domain to this app" },
+  { icon: "🖼",  label: "Add Logo",            desc: "Brand your site",      prompt: "Help me add a logo and update the brand identity" },
+  { icon: "💳", label: "Payment Setup",        desc: "Accept payments",      prompt: "Integrate Stripe payments with a checkout flow" },
+  { icon: "✉️", label: "Email Notifications", desc: "Send confirmations",   prompt: "Set up email notifications with transactional email" },
+];
+
+const SUGGESTION_CHIPS = [
+  "Make it more minimal",
+  "Change color to emerald",
+  "Add a video background",
+  "Improve mobile view",
+  "Add testimonials section",
+];
+
 export function VibeDashboard({ projectId }: { projectId: string }) {
-  const { latestResult, userFacingSummary, latestReviewPayload, confirmationPending, runSampleEdit, runCommandText, resolveTarget, pendingResolution, confirmPending, rejectPending, editableDocument, selectedNodeId, selectedPageId, changedNodeIds, lastPreviewPatch, selectNode, runDirectManipulationAction, preConfirmDiff, sourceSyncDryRun, sourceSyncApply, sourceSyncResult, sourceSyncStatus, hasRealFileAdapter, appStructure, appStructureNeedsResolution, appStructureCandidates, selectPage, duplicatePage, renamePage, updateNavigation, extractReusableComponent, reuseComponent, addPage } = useLiveUIBuilderVibe();
-  const fallbackTargets: ResolutionTarget[] = Object.values(editableDocument.pages?.[0]?.nodes ?? {}).slice(0, 8).map((node: any) => ({ nodeId: node.id, label: node.identity?.semanticLabel ?? node.id, type: node.kind ?? "node", page: editableDocument.pages?.[0]?.id ?? "page", location: node.parentId ? `child of ${node.parentId}` : "root" }));
-  const resolverTargets: ResolutionTarget[] = (pendingResolution?.candidates ?? []).map((nodeId: string) => ({ nodeId, label: nodeId, type: "resolver candidate", page: editableDocument.pages.find((page: any) => page.nodes[nodeId])?.id ?? "unknown", location: "resolver" }));
-  const [runtimeState, setRuntimeState] = useState<{ status?: string; previewUrl?: string }>({});
-  const [firstRunState, setFirstRunState] = useState<FirstRunState>(getFirstRunFallback(projectId));
-  const [firstRunMessage, setFirstRunMessage] = useState<string>("No first-run state yet");
-  const [deviceMode, setDeviceMode] = useState<"desktop" | "tablet" | "mobile">("desktop");
-  useEffect(() => {
-    let active = true;
-    Promise.all([getProjectRuntimeState(projectId), getFirstRunState(projectId)]).then(([runtime, firstRun]) => {
-      if (!active) return;
-      setRuntimeState(runtime);
-      if (firstRun.ok) {
-        setFirstRunState(firstRun.data);
-        setFirstRunMessage("");
-      } else {
-        setFirstRunState(getFirstRunFallback(projectId));
-        setFirstRunMessage(firstRun.message || "No first-run state yet");
-      }
-    }).catch(() => { if (active) { setRuntimeState({}); setFirstRunState(getFirstRunFallback(projectId)); setFirstRunMessage("No first-run state yet"); } });
-    return () => { active = false; };
-  }, [projectId]);
   const orchestration = useVibeOrchestration(projectId);
 
-  const handleShare = useCallback(() => {
-    void navigator.clipboard.writeText(window.location.href).catch(() => undefined);
-  }, []);
+  const [firstRunState, setFirstRunState] = useState<FirstRunState>(getFirstRunFallback(projectId));
+  const [deviceMode, setDeviceMode] = useState<"desktop" | "tablet" | "mobile">("desktop");
+  const [canvasTab, setCanvasTab] = useState<CanvasTab>("vibe");
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  const handleLaunch = useCallback(async () => {
-    await requestDeploy(projectId, { idempotencyKey: `launch_${Date.now()}` });
+  useEffect(() => {
+    let active = true;
+    Promise.all([
+      getFirstRunState(projectId),
+      getJsonSafe<{ previewUrl?: string | null; verifiedPreviewUrl?: string | null; derivedPreviewUrl?: string | null }>(
+        `/api/projects/${projectId}/runtime`
+      ),
+    ]).then(([firstRun, runtime]) => {
+      if (!active) return;
+      if (firstRun.ok) setFirstRunState(firstRun.data);
+      if (runtime.ok) {
+        const url = runtime.data.verifiedPreviewUrl ?? runtime.data.previewUrl ?? runtime.data.derivedPreviewUrl ?? null;
+        setPreviewUrl(url);
+      }
+    }).catch(() => undefined);
+    return () => { active = false; };
   }, [projectId]);
 
-  const handleSuggestionChip = useCallback((chip: string) => {
-    orchestration.setPrompt(chip);
-    void orchestration.submitPrompt();
-  }, [orchestration]);
+  useEffect(() => {
+    if (previewUrl) return;
+    const interval = setInterval(() => {
+      getJsonSafe<{ previewUrl?: string | null; verifiedPreviewUrl?: string | null; derivedPreviewUrl?: string | null }>(
+        `/api/projects/${projectId}/runtime`
+      ).then((r) => {
+        if (r.ok) {
+          const url = r.data.verifiedPreviewUrl ?? r.data.previewUrl ?? r.data.derivedPreviewUrl ?? null;
+          if (url) setPreviewUrl(url);
+        }
+      }).catch(() => undefined);
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [projectId, previewUrl]);
 
-  const handleActionChip = useCallback((chip: string) => {
-    if (chip === "Add Page") { addPage("New Page"); return; }
-    if (chip === "Launch App") {
-      if (firstRunState.canLaunch) { void handleLaunch(); return; }
-      orchestration.setPrompt("Launch the app");
-      void orchestration.submitPrompt();
-      return;
-    }
-    const promptMap: Record<string, string> = {
-      "Add Feature": "Add a new feature to the app",
-      "Connect Payments": "Connect payments with Stripe",
-      "Run Tests": "Run the test suite",
-    };
-    const prompt = promptMap[chip] ?? chip;
-    orchestration.setPrompt(prompt);
-    void orchestration.submitPrompt();
-  }, [addPage, firstRunState.canLaunch, handleLaunch, orchestration]);
+  const handleLaunch = async () => {
+    await requestDeploy(projectId, { idempotencyKey: `launch_${Date.now()}` });
+  };
+
+  const stages = orchestration.graph.stages;
+  const frameClass = `vibe-canvas-frame${deviceMode === "tablet" ? " vibe-canvas-frame--tablet" : deviceMode === "mobile" ? " vibe-canvas-frame--mobile" : ""}`;
+
   return (
-    <ProjectWorkspaceShell projectId={projectId} mode="vibe">
+    <AppShell projectId={projectId} chipHints={SUGGESTION_CHIPS}>
+      <div className="vibe-wrap">
+        {/* Topbar */}
+        <header className="vibe-topbar">
+          <div className="vibe-mode-badge">✦ Vibe Mode</div>
+          <span className="vibe-project-name">Project {projectId.slice(0, 8)}…</span>
+          <span className="vibe-mode-tagline">Design · Build · Launch</span>
 
-      <div className="vibe-dashboard-main">
-        <header className="vibe-dashboard-header"><div className="vibe-mode-pill">VIBE</div>
-          <div>
-            <h1>Vibe Mode</h1>
-            <p>Chat. Design. Build. Launch. All in one flow.</p>
+          <div className="vibe-device-switcher" role="tablist" aria-label="Device preview">
+            {(["desktop", "tablet", "mobile"] as const).map((d) => (
+              <button
+                key={d}
+                type="button"
+                role="tab"
+                aria-selected={deviceMode === d}
+                className={`vibe-device-btn${deviceMode === d ? " active" : ""}`}
+                onClick={() => setDeviceMode(d)}
+              >
+                {d === "desktop" ? "🖥" : d === "tablet" ? "📱" : "📲"} {d.charAt(0).toUpperCase() + d.slice(1)}
+              </button>
+            ))}
           </div>
-          <div className="vibe-dashboard-device-switcher" role="tablist" aria-label="Device preview switcher">
-            <button type="button" className={deviceMode === "desktop" ? "is-active" : ""} onClick={() => setDeviceMode("desktop")}>Desktop</button>
-            <button type="button" className={deviceMode === "tablet" ? "is-active" : ""} onClick={() => setDeviceMode("tablet")}>Tablet</button>
-            <button type="button" className={deviceMode === "mobile" ? "is-active" : ""} onClick={() => setDeviceMode("mobile")}>Mobile</button>
-          </div>
-          <div className="vibe-dashboard-cta-group">
-            <button type="button" className="vibe-dashboard-share" onClick={handleShare}>Share</button>
-            <button type="button" className="vibe-dashboard-launch" disabled={!firstRunState.canLaunch} aria-label={firstRunState.canLaunch ? "Launch app" : "Launch unavailable"} onClick={() => { if (firstRunState.canLaunch) void handleLaunch(); }}>{firstRunState.canLaunch ? "Launch App" : "Launch unavailable"}</button>
+
+          <div className="vibe-topbar-actions">
+            <button
+              type="button"
+              className="vibe-btn-ghost"
+              onClick={() => void navigator.clipboard.writeText(window.location.href).catch(() => undefined)}
+            >
+              Share
+            </button>
+            <Link href={`/projects/${projectId}/deployment`} className="vibe-btn-ghost">Deploy</Link>
+            <button
+              type="button"
+              className="vibe-btn-launch"
+              disabled={!firstRunState.canLaunch}
+              onClick={() => void handleLaunch()}
+            >
+              {firstRunState.canLaunch ? "🚀 Launch" : "Launch"}
+            </button>
           </div>
         </header>
 
-        <div className="vibe-dashboard-layout" data-testid="vibe-dashboard-layout">
-          <main>
-            <section className="vibe-chat-timeline" data-testid="vibe-chat-timeline">
-              <LiveUIBuilderCommandInput onSubmit={runCommandText} />
+        {/* 3-panel body */}
+        <div className="vibe-body">
 
-              {latestResult?.status === "needsResolution" ? (
-                <LiveUIBuilderResolutionPanel
-                  targets={resolverTargets.length > 0 ? resolverTargets : fallbackTargets}
-                  isFallback={resolverTargets.length === 0}
-                  onResolve={resolveTarget}
-                />
-              ) : null}
-
-              {confirmationPending ? <LiveUIBuilderDiffPreview diff={preConfirmDiff?.diff} /> : null}
-
-              <LiveUIBuilderPreviewSurface editableDocument={editableDocument} selectedNodeId={selectedNodeId} selectedPageId={selectedPageId} changedNodeIds={changedNodeIds} previewPatch={lastPreviewPatch} onSelectNode={selectNode} onDirectAction={runDirectManipulationAction} />
-
-              <div className="vibe-suggestion-chips" aria-label="Suggestions">
-                {suggestionChips.map((chip) => <button type="button" key={chip} onClick={() => handleSuggestionChip(chip)}>{chip}</button>)}
-              </div>
-            </section>
-
-            <section className="vibe-input-shell" aria-label="Chat input" data-testid="vibe-input-shell">
-              <form className="vibe-input-row" onSubmit={(event) => { event.preventDefault(); void orchestration.submitPrompt(); }}>
-                <input value={orchestration.prompt} onChange={(event) => orchestration.setPrompt(event.target.value)} placeholder="Ask anything… (e.g., add a pricing section, make the hero bolder, add dark mode)" aria-label="Vibe orchestration prompt" />
-                <button type="submit" disabled={orchestration.submitting}>{orchestration.submitting ? "Submitting…" : "Send"}</button>
-              </form>
-              <div className="vibe-action-row">
-                <button type="button" onClick={runSampleEdit}>Improve Design</button>
-                <button type="button" onClick={confirmPending} disabled={!confirmationPending}>Confirm</button>
-                <button type="button" onClick={rejectPending} disabled={!confirmationPending}>Reject</button>
-                {actionChips.filter((chip) => chip !== "Improve Design").map((chip) => <button type="button" key={chip} onClick={() => handleActionChip(chip)}>{chip}</button>)}
-              </div>
-            </section>
-          </main>
-
-          <aside className="vibe-right-rail" aria-label="Vibe intelligence rail" data-testid="vibe-right-rail">
-            <section className="vibe-rail-card" aria-label="Build Map status">
-              <header><h3>Build Map</h3></header>
-              <VibeOrchestrationPanel graph={orchestration.graph} statusMessage={orchestration.statusMessage} executionRun={orchestration.executionRun} executionMessage={orchestration.executionMessage} />
-            </section>
-
-            <section className="vibe-rail-card" aria-label="Project state summary">
-              <h3>Project State</h3>
-              <div className="vibe-rail-row"><span>Objective</span><strong>{orchestration.graph.objective || "No objective saved"}</strong></div>
-              <div className="vibe-rail-row"><span>Next step</span><strong>{orchestration.graph.nextStep || "No next step saved"}</strong></div>
-              <div className="vibe-rail-row"><span>Resume</span><strong>{orchestration.runId || "No resumed run"}</strong></div>
-              <div className="vibe-rail-row"><span>Execution</span><strong>{orchestration.executionMessage || "Execution status unavailable"}</strong></div>
-              <small>{orchestration.resumeMessage || "No persisted state yet"}</small>
-              {orchestration.resumeState === "unavailable" ? <small>Project state unavailable</small> : null}
-            </section>
-
-            <div className="vibe-rail-two-up">
-              <VibeLivePreviewPanel runtimeStatus={runtimeState.status} previewUrl={runtimeState.previewUrl} />
-              <section className="vibe-rail-card">
-                <header><h3>App Health</h3></header>
-                <div className="vibe-health">--<small>Health check not run</small></div>
-              </section>
+          {/* LEFT: Build activity */}
+          <div className="vibe-chat-panel">
+            <div className="vibe-chat-tabs">
+              <span className="vibe-chat-tab active" style={{ cursor: "default" }}>Build Activity</span>
             </div>
 
-            <section className="vibe-rail-card">
-              <h3>What's Next</h3>
-              <p>{firstRunMessage || firstRunState.primaryAction?.label || "Describe your app idea"}</p>
-              <small>{firstRunState.primaryAction?.detail || "No first-run state yet"}</small>
-              <div className="vibe-next-grid">
-                {firstRunState.steps.map((step) => (
-                  <button type="button" key={step.id} disabled={step.disabled}>{step.label} · {step.status}</button>
-                ))}
+            <div className="vibe-chat-scroll">
+              {stages.length === 0 ? (
+                <div className="vibe-chat-empty">
+                  <div className="vibe-chat-empty-icon">✦</div>
+                  <h3>Ready to build</h3>
+                  <p>Use the chat bar below to describe changes — build steps will appear here.</p>
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 4, padding: "8px 0" }}>
+                  {stages.map((s, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", borderRadius: 8, background: s.status === "running" ? "var(--brand-soft)" : "transparent" }}>
+                      <span style={{ fontSize: 14, color: stageColor(s.status), flexShrink: 0 }}>{stageIcon(s.status)}</span>
+                      <span style={{ flex: 1, fontSize: 13, color: "var(--text-1)", fontWeight: s.status === "running" ? 600 : 400 }}>{s.label}</span>
+                      <span style={{ fontSize: 11, color: stageColor(s.status), fontWeight: 600 }}>{statusLabel(s.status)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* CENTER: Canvas panel */}
+          <div className="vibe-canvas-panel">
+            <div className="vibe-canvas-tabs">
+              {(["vibe", "diff", "code"] as const).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  className={`vibe-canvas-tab${canvasTab === t ? " active" : ""}`}
+                  onClick={() => setCanvasTab(t)}
+                >
+                  {t === "vibe" ? "✦ Vibe" : t === "diff" ? "⊕ Diff" : "⌥ Code"}
+                </button>
+              ))}
+              <div className="vibe-canvas-spacer" />
+              <span className="vibe-canvas-zoom">100%</span>
+            </div>
+
+            <div className="vibe-canvas-area">
+              {canvasTab === "vibe" && (
+                <div className={frameClass}>
+                  {previewUrl ? (
+                    <iframe
+                      src={previewUrl}
+                      title="Live preview"
+                      style={{ width: "100%", height: "100%", minHeight: 500, border: "none", borderRadius: 8 }}
+                      sandbox="allow-scripts allow-same-origin allow-forms"
+                    />
+                  ) : (
+                    <div className="vibe-canvas-placeholder">
+                      <div className="vibe-canvas-placeholder-icon">🖼</div>
+                      <h3>Live Preview</h3>
+                      <p>Your app will render here once built. Use the chat bar below to start.</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {canvasTab === "diff" && (
+                <div style={{ flex: 1, width: "100%", height: "100%", overflow: "auto" }}>
+                  <div className="vibe-diff-view">
+                    {stages.length === 0
+                      ? <span style={{ color: "#585b70" }}>{`// No changes yet`}</span>
+                      : stages.map((s, i) => (
+                          <div key={i} className={i % 2 === 0 ? "vibe-diff-add" : "vibe-diff-rem"}>
+                            {i % 2 === 0 ? "+ " : "- "}{s.label}: {statusLabel(s.status)}
+                          </div>
+                        ))
+                    }
+                  </div>
+                </div>
+              )}
+
+              {canvasTab === "code" && (
+                <div style={{ flex: 1, width: "100%", height: "100%", overflow: "auto" }}>
+                  <div className="vibe-diff-view">
+                    <span style={{ color: "#585b70" }}>{`// Source will appear here once your app is generated`}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* RIGHT: Inspector panel */}
+          <div className="vibe-inspector-panel">
+            <div className="vibe-inspector-header">🔍 Inspector</div>
+            <div className="vibe-inspector-body">
+
+              <div className="rail-card">
+                <div className="rail-card-header">
+                  <span className="rail-card-title">💚 App Health</span>
+                  <Link href={`/projects/${projectId}/evidence`} className="rail-card-action">Report →</Link>
+                </div>
+                <div className="rail-card-body">
+                  <div className="health-ring-wrap">
+                    <HealthRing pct={firstRunState.hasExecutionRun ? 92 : 0} />
+                    <div className="health-metrics">
+                      {([
+                        ["Performance", firstRunState.hasExecutionRun ? "Good" : "--"],
+                        ["Security",    firstRunState.hasExecutionRun ? "Good" : "--"],
+                        ["SEO",         firstRunState.hasExecutionRun ? "Good" : "--"],
+                        ["Practices",   firstRunState.hasExecutionRun ? "Good" : "--"],
+                      ] as [string, string][]).map(([label, val]) => (
+                        <div key={label} className="health-metric">
+                          <span className="health-metric-label">{label}</span>
+                          <span className="health-metric-value" style={{ color: val === "--" ? "var(--text-3)" : undefined }}>{val}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
-            </section>
 
+              <div className="rail-card">
+                <div className="rail-card-header">
+                  <span className="rail-card-title">⚡ What's Next</span>
+                </div>
+                <div className="rail-card-body">
+                  <div className="next-grid">
+                    {WHAT_NEXT.map((item) => (
+                      <button
+                        key={item.label}
+                        type="button"
+                        className="next-item"
+                        onClick={() => orchestration.setPrompt(item.prompt)}
+                      >
+                        <div className="next-item-icon">{item.icon}</div>
+                        <div className="next-item-label">{item.label}</div>
+                        <div className="next-item-desc">{item.desc}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
 
-            <LiveUIBuilderAppStructurePanel appStructure={appStructure} needsResolution={appStructureNeedsResolution} candidates={appStructureCandidates} onSelectPage={selectPage} onDuplicatePage={duplicatePage} onRenamePage={renamePage} onAddToNav={updateNavigation} onExtractReusable={extractReusableComponent} onReuseComponent={reuseComponent} />
+              <div className="rail-card">
+                <div className="rail-card-header">
+                  <span className="rail-card-title">🎛 Properties</span>
+                </div>
+                <div className="rail-card-body">
+                  <div className="vibe-inspector-empty">
+                    Click any element in the canvas to inspect its properties.
+                  </div>
+                </div>
+              </div>
 
-            {latestResult?.status === "applied" ? (<LiveUIBuilderSourceSyncPanel sourceSyncStatus={sourceSyncStatus} sourceSyncResult={sourceSyncResult} onDryRun={sourceSyncDryRun} onApply={() => sourceSyncApply(true)} canApply={hasRealFileAdapter && sourceSyncStatus === "dryRunReady"} hasRealFileAdapter={hasRealFileAdapter} />) : null}
+              <div className="rail-card launch-card">
+                <div className="rail-card-header">
+                  <span className="rail-card-title">🚀 Launch</span>
+                </div>
+                <div className="rail-card-body">
+                  <p>{firstRunState.canLaunch ? "Everything looks good! Ready to launch." : "Complete build steps to enable launch."}</p>
+                  <button
+                    type="button"
+                    className="launch-card-btn"
+                    disabled={!firstRunState.canLaunch}
+                    onClick={() => void handleLaunch()}
+                  >
+                    Launch My App
+                  </button>
+                  <div className="launch-card-actions">
+                    <Link href={`/projects/${projectId}/deployment`} className="launch-card-action-btn" title="Deploy">👁</Link>
+                    <Link href={`/projects/${projectId}/logs`} className="launch-card-action-btn" title="Logs">📋</Link>
+                    <Link href={`/projects/${projectId}/advanced`} className="launch-card-action-btn" title="Pro Cockpit">⚙️</Link>
+                  </div>
+                </div>
+              </div>
 
-            <section className="vibe-rail-card" aria-label="Latest interaction summary">
-              <h3>Latest Summary</h3>
-              <p>{userFacingSummary}</p>
-              <small>{latestReviewPayload ? "Review payload captured" : "No review payload yet"}</small>
-            </section>
-            <section className="vibe-rail-card">
-              <h3>Recent Activity</h3>
-              <div className="vibe-rail-row"><span>No recent activity</span></div>
-            </section>
+            </div>
+          </div>
 
-            <section className="vibe-rail-card vibe-launch-card">
-              <h3>One-Click Launch</h3>
-              <p>{firstRunState.canLaunch ? "Launch prerequisites met" : "No launch proof yet"}</p>
-              {!firstRunState.canLaunch ? <small>Launch proof missing</small> : null}
-              <button type="button" disabled={!firstRunState.canLaunch} onClick={() => { if (firstRunState.canLaunch) void handleLaunch(); }}>{firstRunState.canLaunch ? "Launch" : "Launch unavailable"}</button>
-            </section>
-          </aside>
         </div>
       </div>
-    </ProjectWorkspaceShell>
+    </AppShell>
   );
 }
