@@ -73,11 +73,11 @@ const WHAT_NEXT = [
 ];
 
 const SUGGESTION_CHIPS = [
-  "Make it more minimal",
-  "Change color to emerald",
-  "Add a video background",
-  "Improve mobile view",
-  "Add testimonials section",
+  "Build this now",
+  "Build the app from my spec",
+  "Start building the project",
+  "Build it with a dark theme",
+  "Build it and make it minimal",
 ];
 
 export function VibeDashboard({ projectId }: { projectId: string }) {

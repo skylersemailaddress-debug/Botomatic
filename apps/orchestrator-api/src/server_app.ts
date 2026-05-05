@@ -1164,7 +1164,7 @@ function hasUniversalCapabilityStressIntent(message: string): boolean {
 
 function hasAutonomousBuildIntent(message: string): boolean {
   const lower = message.toLowerCase();
-  return /(build this entire spec|continue the build|fix and keep going|use safe defaults|stop only for secrets or approval|autonomous build|complex build)/.test(lower);
+  return /(build this entire spec|continue the build|fix and keep going|use safe defaults|stop only for secrets or approval|autonomous build|complex build|build this|build my|build the|start building|create this|create my|create the app|generate this|generate my|let's build|lets build|i want to build|go build|please build|build it|build now|start the build|kick off|begin build|make this|make my app|build from|build based on|build using|build what|start the project|build the project|build the app)/.test(lower);
 }
 
 function hasRuntimeProofCaptureIntent(message: string): boolean {
