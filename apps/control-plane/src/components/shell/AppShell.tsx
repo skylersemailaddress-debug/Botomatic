@@ -1,31 +1,93 @@
-import ProjectTopBar from "./ProjectTopBar";
+"use client";
 
-type AppShellMode = "dashboard" | "page";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import type { ReactNode } from "react";
 
-type AppShellProps = {
-  projectName: string;
-  environment: string;
-  runStatus?: string;
-  mode?: AppShellMode;
-  children: React.ReactNode;
-};
+const NAV = [
+  { label: "Home",          href: "/",                    icon: "⌂" },
+  { label: "Projects",      href: "/projects/new",         icon: "▤" },
+  { label: "Templates",     href: "/projects/new?t=1",     icon: "⊞" },
+  { label: "Design Studio", href: "/projects/new?s=design",icon: "✦" },
+  { label: "Brand Kit",     href: "/projects/new?s=brand", icon: "◈" },
+  { label: "Launch",        href: "/projects/new?s=launch",icon: "▲" },
+  { label: "Learn",         href: "/projects/new?s=learn", icon: "◎" },
+];
 
-export default function AppShell({
-  projectName,
-  environment,
-  runStatus,
-  mode = "page",
-  children,
-}: AppShellProps) {
+const RECENT_PLACEHOLDER = [
+  { label: "Luxury Booking Site", color: "#22c55e", time: "Just now" },
+  { label: "SaaS Dashboard",      color: "#f59e0b", time: "2h ago" },
+  { label: "AI Landing Page",     color: "#6366f1", time: "1d ago" },
+];
+
+interface AppShellProps {
+  children: ReactNode;
+  projectId?: string;
+}
+
+export function AppShell({ children, projectId }: AppShellProps) {
+  const pathname = usePathname();
+
   return (
-    <div className={`app-shell app-shell--${mode}`}>
-      <div className="app-shell-inner">
-        <ProjectTopBar projectId={projectName} environment={environment} />
-        <main className={`app-main app-main--${mode}`}>
-          <div style={{ fontSize: 0, height: 0 }} aria-hidden>{runStatus || "idle"}</div>
-          {children}
-        </main>
-      </div>
+    <div className="app-shell">
+      <aside className="app-sidebar" aria-label="Botomatic navigation">
+        <Link href="/" className="sidebar-brand" aria-label="Botomatic home">
+          <span className="sidebar-brand-mark">B</span>
+          <span className="sidebar-brand-name">
+            <strong>Botomatic</strong>
+            <small>NEXUS</small>
+          </span>
+        </Link>
+
+        <Link href="/projects/new" className="sidebar-new-project">
+          + New Project
+        </Link>
+
+        <nav className="sidebar-nav" aria-label="Product navigation">
+          {NAV.map((item) => (
+            <Link
+              key={item.label}
+              href={item.href}
+              className={`sidebar-nav-item${pathname === item.href ? " active" : ""}`}
+            >
+              <span className="sidebar-nav-icon" aria-hidden="true">{item.icon}</span>
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+
+        <div className="sidebar-divider" />
+
+        <span className="sidebar-section-label">Recent Projects</span>
+        <div className="sidebar-recent">
+          {RECENT_PLACEHOLDER.map((p) => (
+            <div key={p.label} className="sidebar-recent-item">
+              <span className="sidebar-recent-dot" style={{ background: p.color }} />
+              <span className="sidebar-recent-name">{p.label}</span>
+              <span className="sidebar-recent-time">{p.time}</span>
+            </div>
+          ))}
+          <Link href="/projects/new" className="sidebar-view-all">View all projects →</Link>
+        </div>
+
+        <div className="sidebar-upgrade">
+          <strong>🚀 Go Pro Anytime</strong>
+          <p>Unlock advanced features, team collaboration, and priority support.</p>
+          <button type="button" className="sidebar-upgrade-btn">Upgrade to Pro</button>
+        </div>
+
+        <div className="sidebar-account">
+          <div className="sidebar-avatar">B</div>
+          <div className="sidebar-account-info">
+            <strong>Botomatic User</strong>
+            <small>Signed in workspace</small>
+          </div>
+        </div>
+      </aside>
+
+      <main className="app-main">{children}</main>
     </div>
   );
 }
+
+export default AppShell;
