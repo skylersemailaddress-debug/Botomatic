@@ -41,12 +41,8 @@ export default function SettingsPage({ params }: { params: { projectId: string }
     setSaving(true);
     setSaveResult(null);
     try {
-      const res = await patchJson(`/api/projects/${projectId}/settings`, { name, approvalMode });
-      if (res && typeof res === "object" && (res as Record<string, unknown>).ok !== false) {
-        setSaveResult({ ok: true, message: "Settings saved successfully." });
-      } else {
-        setSaveResult({ ok: false, message: "Failed to save settings." });
-      }
+      await patchJson(`/api/projects/${projectId}/settings`, { name, approvalMode });
+      setSaveResult({ ok: true, message: "Settings saved successfully." });
     } catch (err) {
       setSaveResult({ ok: false, message: err instanceof Error ? err.message : "Failed to save settings." });
     } finally {
