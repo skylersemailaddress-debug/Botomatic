@@ -29,9 +29,10 @@ function writeEnvFile(filePath: string, required: Record<string, string>) {
 }
 
 function npmCommand(): string { return process.platform === "win32" ? "npm.cmd" : "npm"; }
+function tsxCommand(): string { return process.platform === "win32" ? "tsx.cmd" : "tsx"; }
 
-function start(name: string, args: string[], env: NodeJS.ProcessEnv): ChildProcess {
-  const child = spawn(npmCommand(), args, { stdio: "inherit", env, cwd: ROOT, shell: process.platform === "win32" });
+function start(name: string, cmd: string, args: string[], env: NodeJS.ProcessEnv): ChildProcess {
+  const child = spawn(cmd, args, { stdio: "inherit", env, cwd: ROOT, shell: process.platform === "win32" });
   child.on("exit", (code, signal) => {
     if (!shuttingDown) {
       console.error(`[${name}] exited unexpectedly (code=${code ?? "null"}, signal=${signal ?? "null"})`);
@@ -104,8 +105,8 @@ export function run(lanMode = false) {
   };
 
   children = [
-    start("api", ["run", "api:dev"], apiEnv),
-    start("ui", ["--prefix", "apps/control-plane", "run", "dev", "--", "-H", host, "-p", UI_PORT], uiEnv),
+    start("api", tsxCommand(), ["apps/orchestrator-api/src/bootstrap.ts"], apiEnv),
+    start("ui", npmCommand(), ["--prefix", "apps/control-plane", "run", "dev", "--", "-H", host, "-p", UI_PORT], uiEnv),
   ];
 
   console.log("\nBotomatic local launch ready");
