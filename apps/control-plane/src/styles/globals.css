@@ -278,6 +278,9 @@ a:hover {
   --dash-bg-layer: linear-gradient(180deg, #fcfbff 0%, #f3efff 100%);
   --dash-card-border: 1px solid #e9e6f8;
   --dash-card-shadow: 0 14px 28px rgba(54, 39, 118, 0.07);
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 16px;
   min-height: 100vh;
   padding: 20px;
   background:
@@ -379,6 +382,9 @@ a:hover {
 }
 
 .northstar-nav a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   border-radius: 12px;
   padding: 9px 10px;
   color: #594a78;
@@ -458,6 +464,8 @@ a:hover {
 
 .project-workspace-main {
   min-width: 0;
+  min-height: 0;
+  overflow: auto;
 }
 
 @media (max-width: 960px) {
