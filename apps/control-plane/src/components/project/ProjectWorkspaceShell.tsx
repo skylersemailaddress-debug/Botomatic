@@ -15,17 +15,18 @@ interface ProjectWorkspaceShellProps {
 interface ProductNavItem {
   label: string;
   href: string;
+  icon: string;
   testId?: string;
 }
 
 const productNav: ProductNavItem[] = [
-  { label: "Home", href: "/", testId: "nav-home" },
-  { label: "Projects", href: "/projects/new", testId: "nav-projects" },
-  { label: "Templates", href: "/projects/new?template=1", testId: "nav-templates" },
-  { label: "Design Studio", href: "/projects/new?studio=design", testId: "nav-design-studio" },
-  { label: "Brand Kit", href: "/projects/new?brand=kit", testId: "nav-brand-kit" },
-  { label: "Launch", href: "/projects/new?launch=1", testId: "nav-launch" },
-  { label: "Learn", href: "/projects/new?learn=1", testId: "nav-learn" },
+  { label: "Home", href: "/", testId: "nav-home", icon: "⌂" },
+  { label: "Projects", href: "/intake", testId: "nav-projects", icon: "▤" },
+  { label: "Templates", href: "/intake?template=1", testId: "nav-templates", icon: "⊞" },
+  { label: "Design Studio", href: "/intake?studio=design", testId: "nav-design-studio", icon: "✦" },
+  { label: "Brand Kit", href: "/intake?brand=kit", testId: "nav-brand-kit", icon: "◈" },
+  { label: "Launch", href: "/intake?launch=1", testId: "nav-launch", icon: "▲" },
+  { label: "Learn", href: "/intake?learn=1", testId: "nav-learn", icon: "◎" },
 ];
 
 function getWorkspaceVariant(mode: ProjectWorkspaceMode): "vibe" | "pro" {
@@ -52,7 +53,7 @@ export default function ProjectWorkspaceShell({ projectId, mode, children }: Pro
         <nav className="northstar-nav northstar-product-nav" aria-label="Main product navigation">
           {productNav.map((item) => (
             <Link key={item.label} href={item.href} className={item.label === "Home" && pathname?.startsWith(`/projects/${projectId}`) ? "is-active" : ""} data-testid={item.testId}>
-              <span className="northstar-nav-icon" aria-hidden="true">{item.label.slice(0, 1)}</span><strong>{item.label}</strong>
+              <span className="northstar-nav-icon" aria-hidden="true">{item.icon}</span><strong>{item.label}</strong>
             </Link>
           ))}
         </nav>
