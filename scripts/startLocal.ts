@@ -31,7 +31,7 @@ function writeEnvFile(filePath: string, required: Record<string, string>) {
 function npmCommand(): string { return process.platform === "win32" ? "npm.cmd" : "npm"; }
 
 function start(name: string, args: string[], env: NodeJS.ProcessEnv): ChildProcess {
-  const child = spawn(npmCommand(), args, { stdio: "inherit", env, cwd: ROOT });
+  const child = spawn(npmCommand(), args, { stdio: "inherit", env, cwd: ROOT, shell: process.platform === "win32" });
   child.on("exit", (code, signal) => {
     if (!shuttingDown) {
       console.error(`[${name}] exited unexpectedly (code=${code ?? "null"}, signal=${signal ?? "null"})`);
