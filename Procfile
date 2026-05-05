@@ -1,1 +1,1 @@
-web: npx tsx --no-warnings apps/orchestrator-api/src/bootstrap.ts
+web: PORT=8080 npx tsx --no-warnings apps/orchestrator-api/src/bootstrap.ts

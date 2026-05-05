@@ -4,7 +4,8 @@
   },
   "workspaces": [
     "apps/control-plane",
-    "apps/orchestrator-api"
+    "apps/orchestrator-api",
+    "apps/claude-runner"
   ],
   "scripts": {
     "build": "npm run ui:build",
