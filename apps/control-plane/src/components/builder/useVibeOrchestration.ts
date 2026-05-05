@@ -28,7 +28,10 @@ export function useVibeOrchestration(projectId: string) {
   const [executionRun, setExecutionRun] = useState<ExecutionRun | null>(null);
   const [executionMessage, setExecutionMessage] = useState("No execution run yet");
 
-  const activeRun = useMemo(() => Boolean(runId) && !isTerminal(graph.stages), [graph.stages, runId]);
+  const activeRun = useMemo(
+    () => (Boolean(runId) || hasSubmitted) && !isTerminal(graph.stages),
+    [graph.stages, runId, hasSubmitted]
+  );
 
   const refreshStatus = useCallback(async () => {
     const result = await getOrchestrationStatus(projectId, runId);

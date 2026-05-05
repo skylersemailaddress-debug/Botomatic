@@ -325,6 +325,30 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
 .pipeline-step--running .pipeline-label { color: var(--brand); font-weight: 600; }
 .pipeline-step--complete .pipeline-label { color: var(--green); }
 
+/* Build progress bar */
+.build-progress { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; padding: 8px; background: #fafafe; border-radius: 8px; border: var(--card-border); }
+.build-progress-header { display: flex; align-items: center; justify-content: space-between; }
+.build-progress-label { font-size: 11px; font-weight: 600; color: var(--text-2); display: flex; align-items: center; gap: 6px; }
+.build-progress-count { font-size: 11px; color: var(--text-3); font-weight: 500; }
+.build-progress-pct { font-size: 10px; font-weight: 700; color: var(--brand); text-align: right; }
+.build-progress-track { height: 6px; border-radius: 3px; background: #ede9fe; overflow: hidden; }
+.build-progress-fill { height: 100%; border-radius: 3px; background: var(--brand); transition: width .4s ease; }
+.build-progress-fill--active { background: linear-gradient(90deg, #7c3aed, #5b2be0, #7c3aed); background-size: 200%; animation: progress-shimmer 1.5s linear infinite; }
+.build-progress-fill--done { background: var(--green); }
+.build-progress-fill--failed { background: var(--red); }
+.build-progress-pulse { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--brand); animation: pulse 1.5s ease-in-out infinite; flex-shrink: 0; }
+@keyframes progress-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* Rail building badge */
+.rail-building-badge { font-size: 10px; font-weight: 600; color: var(--brand); animation: pulse 1.5s ease-in-out infinite; margin-left: 6px; }
+
+/* Thinking dots (loading indicator in chat) */
+.vibe-thinking { display: flex; gap: 4px; align-items: center; padding: 2px 0; }
+.vibe-thinking span { width: 7px; height: 7px; border-radius: 50%; background: var(--brand); opacity: .4; animation: thinking-dot 1.2s ease-in-out infinite; }
+.vibe-thinking span:nth-child(2) { animation-delay: .2s; }
+.vibe-thinking span:nth-child(3) { animation-delay: .4s; }
+@keyframes thinking-dot { 0%, 80%, 100% { opacity: .4; transform: scale(.85); } 40% { opacity: 1; transform: scale(1.1); } }
+
 .build-checklist { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
 .build-check { display: flex; align-items: center; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #f3f0ff; }
 .build-check:last-child { border-bottom: none; }

@@ -10,11 +10,11 @@ import { requestDeploy } from "@/services/launchProof";
 import type { OrchestrationStage } from "@/services/orchestration";
 
 const SUGGESTION_CHIPS = [
-  "Make it more minimal",
-  "Change the color to emerald",
-  "Add a video background",
-  "Improve mobile view",
-  "Add testimonials",
+  "Build my app now",
+  "Add a new feature",
+  "Improve the design",
+  "Add a pricing page",
+  "Connect payments",
 ];
 
 const ACTION_CHIPS = [
@@ -85,6 +85,35 @@ function HealthRing({ pct }: { pct: number }) {
         <span className="health-ring-pct">{pct}%</span>
         <span className="health-ring-sub">Health</span>
       </div>
+    </div>
+  );
+}
+
+function BuildProgress({ stages }: { stages: OrchestrationStage[] }) {
+  if (stages.length === 0) return null;
+  const total = stages.length;
+  const done = stages.filter((s) => s.status === "complete").length;
+  const running = stages.filter((s) => s.status === "running" || s.status === "queued").length;
+  const failed = stages.filter((s) => s.status === "failed" || s.status === "blocked").length;
+  const pct = Math.round((done / total) * 100);
+  const isActive = running > 0;
+
+  return (
+    <div className="build-progress">
+      <div className="build-progress-header">
+        <span className="build-progress-label">
+          {isActive && <span className="build-progress-pulse" />}
+          {isActive ? "Building…" : done === total ? "Build complete" : failed > 0 ? "Build stalled" : "Build queued"}
+        </span>
+        <span className="build-progress-count">{done}/{total} steps</span>
+      </div>
+      <div className="build-progress-track">
+        <div
+          className={`build-progress-fill${isActive ? " build-progress-fill--active" : done === total ? " build-progress-fill--done" : failed > 0 ? " build-progress-fill--failed" : ""}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <div className="build-progress-pct">{pct}%</div>
     </div>
   );
 }
@@ -167,6 +196,12 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
   }, []);
 
   const stages = orchestration.graph.stages;
+  const completedCount = stages.filter((s) => s.status === "complete").length;
+  const healthPct = stages.length > 0
+    ? Math.round((completedCount / stages.length) * 100)
+    : firstRunState.hasExecutionRun ? 92 : 0;
+  const isBuilding = stages.some((s) => s.status === "running" || s.status === "queued");
+
   const pipelineSteps = stages.length > 0
     ? stages.slice(0, 5)
     : [
@@ -244,6 +279,16 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
                   </div>
                 ))
               )}
+              {orchestration.submitting && (
+                <div className="vibe-msg vibe-msg--ai">
+                  <div className="vibe-msg-avatar">✦</div>
+                  <div className="vibe-msg-bubble">
+                    <div className="vibe-thinking">
+                      <span /><span /><span />
+                    </div>
+                  </div>
+                </div>
+              )}
               <div ref={chatEndRef} />
             </div>
 
@@ -295,10 +340,14 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
             {/* Build Map */}
             <div className="rail-card">
               <div className="rail-card-header">
-                <span className="rail-card-title">📋 Build Map</span>
+                <span className="rail-card-title">
+                  📋 Build Map
+                  {isBuilding && <span className="rail-building-badge">● Building</span>}
+                </span>
                 <a href="#" className="rail-card-action">View Audit →</a>
               </div>
               <div className="rail-card-body">
+                <BuildProgress stages={stages} />
                 <div className="build-pipeline">
                   {pipelineSteps.map((step, i) => (
                     <div key={i} className={`pipeline-step ${stageStatusClass(step.status)}`}>
@@ -333,7 +382,7 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
               </div>
               <div className="rail-card-body">
                 <div className="health-ring-wrap">
-                  <HealthRing pct={firstRunState.hasExecutionRun ? 92 : 0} />
+                  <HealthRing pct={healthPct} />
                   <div className="health-metrics">
                     {[
                       ["Performance", firstRunState.hasExecutionRun ? "Good" : "--"],
