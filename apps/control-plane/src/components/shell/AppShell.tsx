@@ -95,18 +95,15 @@ export function AppShell({ children, projectId, chipHints }: AppShellProps) {
       <aside className="app-sidebar" aria-label="Botomatic navigation">
         <Link href="/" className="sidebar-brand" aria-label="Botomatic home">
           <span className="sidebar-brand-mark">B</span>
-          <span className="sidebar-brand-name">
-            <strong>Botomatic</strong>
-            <small>NEXUS</small>
-          </span>
         </Link>
 
         <button
           type="button"
           className="sidebar-new-project"
+          aria-label="New Project"
           onClick={() => router.push("/")}
         >
-          + New Project
+          +
         </button>
 
         <nav className="sidebar-nav" aria-label={projectId ? "Project navigation" : "Product navigation"}>
@@ -118,44 +115,21 @@ export function AppShell({ children, projectId, chipHints }: AppShellProps) {
                 key={item.label}
                 href={item.href}
                 className={`sidebar-nav-item${isActive ? " active" : ""}`}
+                title={item.label}
               >
                 <span className="sidebar-nav-icon" aria-hidden="true">{item.icon}</span>
-                {item.label}
+                <span className="sidebar-nav-label">{item.label}</span>
               </Link>
             );
           })}
         </nav>
 
-        <div className="sidebar-divider" />
-
-        {!projectId && (
-          <>
-            <span className="sidebar-section-label">Recent Projects</span>
-            <div className="sidebar-recent">
-              {RECENT_PLACEHOLDER.map((p) => (
-                <div key={p.label} className="sidebar-recent-item">
-                  <span className="sidebar-recent-dot" style={{ background: p.color }} />
-                  <span className="sidebar-recent-name">{p.label}</span>
-                  <span className="sidebar-recent-time">{p.time}</span>
-                </div>
-              ))}
-            </div>
-            <div className="sidebar-divider" />
-          </>
-        )}
-
-        <div className="sidebar-upgrade">
-          <strong>🚀 Go Pro</strong>
-          <p>Advanced features, team collaboration, priority support.</p>
-          <button type="button" className="sidebar-upgrade-btn">Upgrade to Pro</button>
-        </div>
-
-        <div className="sidebar-account">
-          <div className="sidebar-avatar">B</div>
-          <div className="sidebar-account-info">
-            <strong>Botomatic User</strong>
-            <small>Signed in workspace</small>
-          </div>
+        <div className="sidebar-bottom">
+          <Link href="/?s=settings" className="sidebar-nav-item" title="Settings">
+            <span className="sidebar-nav-icon" aria-hidden="true">⚙</span>
+            <span className="sidebar-nav-label">Settings</span>
+          </Link>
+          <div className="sidebar-avatar" aria-label="User account">B</div>
         </div>
       </aside>
 

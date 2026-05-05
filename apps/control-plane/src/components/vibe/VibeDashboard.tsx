@@ -10,6 +10,7 @@ import { requestDeploy } from "@/services/launchProof";
 import type { OrchestrationStage } from "@/services/orchestration";
 
 type CanvasTab = "vibe" | "diff" | "code";
+type InspectorTab = "properties" | "styles" | "actions";
 
 interface ChatMessage {
   role: "user" | "ai";
@@ -85,6 +86,7 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
   const [firstRunState, setFirstRunState] = useState<FirstRunState>(getFirstRunFallback(projectId));
   const [deviceMode, setDeviceMode] = useState<"desktop" | "tablet" | "mobile">("desktop");
   const [canvasTab, setCanvasTab] = useState<CanvasTab>("vibe");
+  const [inspectorTab, setInspectorTab] = useState<InspectorTab>("properties");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -320,88 +322,175 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
           {/* RIGHT: Inspector panel */}
           <div className="vibe-inspector-panel">
             <div className="vibe-inspector-header">🔍 Inspector</div>
-            <div className="vibe-inspector-body">
 
-              <div className="rail-card">
-                <div className="rail-card-header">
-                  <span className="rail-card-title">💚 App Health</span>
-                  <Link href={`/projects/${projectId}/evidence`} className="rail-card-action">Report →</Link>
-                </div>
-                <div className="rail-card-body">
-                  <div className="health-ring-wrap">
-                    <HealthRing pct={firstRunState.hasExecutionRun ? 92 : 0} />
-                    <div className="health-metrics">
-                      {([
-                        ["Performance", firstRunState.hasExecutionRun ? "Good" : "--"],
-                        ["Security",    firstRunState.hasExecutionRun ? "Good" : "--"],
-                        ["SEO",         firstRunState.hasExecutionRun ? "Good" : "--"],
-                        ["Practices",   firstRunState.hasExecutionRun ? "Good" : "--"],
-                      ] as [string, string][]).map(([label, val]) => (
-                        <div key={label} className="health-metric">
-                          <span className="health-metric-label">{label}</span>
-                          <span className="health-metric-value" style={{ color: val === "--" ? "var(--text-3)" : undefined }}>{val}</span>
-                        </div>
-                      ))}
+            {/* Inspector tabs */}
+            <div className="inspector-tabs">
+              {(["properties", "styles", "actions"] as const).map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  className={`inspector-tab${inspectorTab === tab ? " active" : ""}`}
+                  onClick={() => setInspectorTab(tab)}
+                >
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                </button>
+              ))}
+            </div>
+
+            <div className="vibe-inspector-body">
+              {inspectorTab === "properties" && (
+                <>
+                  {/* Project-level properties */}
+                  <div className="vibe-inspector-section">
+                    <div className="vibe-inspector-section-title">Project</div>
+                    <div style={{ padding: "10px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
+                      <div className="inspector-field">
+                        <label className="inspector-label">Project Name</label>
+                        <input
+                          className="inspector-input"
+                          type="text"
+                          defaultValue={orchestration.graph.objective ?? `Project ${projectId.slice(0, 8)}`}
+                          placeholder="Project name…"
+                        />
+                      </div>
+                      <div className="inspector-field">
+                        <label className="inspector-label">Status</label>
+                        <span className={`status-badge ${stages.some(s => s.status === "running") ? "status-badge--blue" : stages.length > 0 ? "status-badge--amber" : "status-badge--grey"}`}>
+                          {stages.some(s => s.status === "running") ? "Running" : stages.length > 0 ? "Has changes" : "Idle"}
+                        </span>
+                      </div>
+                      <div className="inspector-field">
+                        <label className="inspector-label">Stage Count</label>
+                        <span className="inspector-value">{stages.length}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
 
-              <div className="rail-card">
-                <div className="rail-card-header">
-                  <span className="rail-card-title">⚡ What's Next</span>
+                  {/* Proposed Edit section */}
+                  {stages.length > 0 && (
+                    <div className="proposed-edit">
+                      <div className="proposed-edit-header">
+                        <span className="proposed-edit-title">Proposed Edit</span>
+                        <span className={`proposed-edit-badge${stages.some(s => s.status === "running" || s.status === "queued") ? " proposed-edit-badge--working" : ""}`}>
+                          {stages.some(s => s.status === "running" || s.status === "queued") ? "Working…" : "Ready to apply"}
+                        </span>
+                      </div>
+                      <p className="proposed-edit-desc">
+                        {stages.find(s => s.status === "running" || s.status === "queued")?.label
+                          ?? stages[0]?.label
+                          ?? "Processing changes…"}
+                      </p>
+                      <div className="build-checklist">
+                        {stages.map((stage, i) => (
+                          <div key={i} className="build-check">
+                            <div className="build-check-left">
+                              <span
+                                className={`build-check-dot build-check-dot--${stage.status === "complete" ? "complete" : stage.status === "running" || stage.status === "queued" ? "running" : stage.status === "failed" || stage.status === "blocked" ? "failed" : "pending"}`}
+                              />
+                              {stage.label}
+                            </div>
+                            <span className={`build-check-status build-check-status--${stage.status === "complete" ? "complete" : stage.status === "running" || stage.status === "queued" ? "running" : stage.status === "failed" || stage.status === "blocked" ? "failed" : "pending"}`}>
+                              {statusLabel(stage.status)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="proposed-edit-actions">
+                        <button
+                          type="button"
+                          className="btn btn--primary"
+                          style={{ flex: 1, justifyContent: "center" }}
+                          onClick={() => orchestration.prompt ? void orchestration.submitPrompt?.() : undefined}
+                        >
+                          Apply Changes
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn--ghost"
+                          style={{ flex: 1, justifyContent: "center" }}
+                          onClick={() => orchestration.setPrompt("")}
+                        >
+                          Discard
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Source Sync section */}
+                  <div className="source-sync">
+                    <div className="source-sync-header">
+                      <span className="source-sync-title">Source Sync</span>
+                      {stages.length > 0 && (
+                        <span className="source-sync-badge source-sync-badge--pending">Pending</span>
+                      )}
+                    </div>
+                    {stages.length === 0 ? (
+                      <p className="source-sync-empty">No pending changes</p>
+                    ) : (
+                      <div className="source-sync-files">
+                        {stages.map((stage, i) => (
+                          <div key={i} className="source-sync-file">
+                            <span className="source-sync-file-name">{stage.label}</span>
+                            <span className="source-sync-file-badge">MODIFIED</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {inspectorTab === "styles" && (
+                <div className="vibe-inspector-empty">
+                  Select an element in the canvas to inspect its styles.
                 </div>
-                <div className="rail-card-body">
-                  <div className="next-grid">
-                    {WHAT_NEXT.map((item) => (
+              )}
+
+              {inspectorTab === "actions" && (
+                <>
+                  <div className="vibe-inspector-section">
+                    <div className="vibe-inspector-section-title">Quick Actions</div>
+                    <div style={{ padding: "10px 14px", display: "flex", flexDirection: "column", gap: 8 }}>
+                      <div className="next-grid">
+                        {WHAT_NEXT.map((item) => (
+                          <button
+                            key={item.label}
+                            type="button"
+                            className="next-item"
+                            onClick={() => orchestration.setPrompt(item.prompt)}
+                          >
+                            <div className="next-item-icon">{item.icon}</div>
+                            <div className="next-item-label">{item.label}</div>
+                            <div className="next-item-desc">{item.desc}</div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rail-card launch-card">
+                    <div className="rail-card-header">
+                      <span className="rail-card-title">🚀 Launch</span>
+                    </div>
+                    <div className="rail-card-body">
+                      <p>{firstRunState.canLaunch ? "Everything looks good! Ready to launch." : "Complete build steps to enable launch."}</p>
                       <button
-                        key={item.label}
                         type="button"
-                        className="next-item"
-                        onClick={() => orchestration.setPrompt(item.prompt)}
+                        className="launch-card-btn"
+                        disabled={!firstRunState.canLaunch}
+                        onClick={() => void handleLaunch()}
                       >
-                        <div className="next-item-icon">{item.icon}</div>
-                        <div className="next-item-label">{item.label}</div>
-                        <div className="next-item-desc">{item.desc}</div>
+                        Launch My App
                       </button>
-                    ))}
+                      <div className="launch-card-actions">
+                        <Link href={`/projects/${projectId}/deployment`} className="launch-card-action-btn" title="Deploy">👁</Link>
+                        <Link href={`/projects/${projectId}/logs`} className="launch-card-action-btn" title="Logs">📋</Link>
+                        <Link href={`/projects/${projectId}/advanced`} className="launch-card-action-btn" title="Pro Cockpit">⚙️</Link>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-
-              <div className="rail-card">
-                <div className="rail-card-header">
-                  <span className="rail-card-title">🎛 Properties</span>
-                </div>
-                <div className="rail-card-body">
-                  <div className="vibe-inspector-empty">
-                    Click any element in the canvas to inspect its properties.
-                  </div>
-                </div>
-              </div>
-
-              <div className="rail-card launch-card">
-                <div className="rail-card-header">
-                  <span className="rail-card-title">🚀 Launch</span>
-                </div>
-                <div className="rail-card-body">
-                  <p>{firstRunState.canLaunch ? "Everything looks good! Ready to launch." : "Complete build steps to enable launch."}</p>
-                  <button
-                    type="button"
-                    className="launch-card-btn"
-                    disabled={!firstRunState.canLaunch}
-                    onClick={() => void handleLaunch()}
-                  >
-                    Launch My App
-                  </button>
-                  <div className="launch-card-actions">
-                    <Link href={`/projects/${projectId}/deployment`} className="launch-card-action-btn" title="Deploy">👁</Link>
-                    <Link href={`/projects/${projectId}/logs`} className="launch-card-action-btn" title="Logs">📋</Link>
-                    <Link href={`/projects/${projectId}/advanced`} className="launch-card-action-btn" title="Pro Cockpit">⚙️</Link>
-                  </div>
-                </div>
-              </div>
-
+                </>
+              )}
             </div>
           </div>
 
