@@ -1851,7 +1851,8 @@ async function processJob(config: RuntimeConfig, job: QueueJobRecord) {
     const unblocked = getNewlyUnblockedPackets(project, packet.packetId);
     for (const unblockedPacket of unblocked) {
       try {
-        await enqueueJob(project.projectId, unblockedPacket.packetId);
+        const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        await enqueueJob({ job_id: jobId, project_id: project.projectId, packet_id: unblockedPacket.packetId });
       } catch (_e) { /* already queued or queue unavailable — tolerate */ }
     }
 
@@ -2166,9 +2167,7 @@ export function buildApp(config: RuntimeConfig) {
 
   const app = express();
   const repo = config.repository.repo;
-  if (config.repository.mode === "durable") {
-    startQueueWorker(config);
-  }
+  startQueueWorker(config);
 
   // ── Security headers ────────────────────────────────────────────────────────
   app.use(helmet({
@@ -3614,7 +3613,8 @@ export function buildApp(config: RuntimeConfig) {
       const enqueueErrors: string[] = [];
       for (const rootPacket of rootPackets) {
         try {
-          await enqueueJob(compiled.projectId, rootPacket.packetId);
+          const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+          await enqueueJob({ job_id: jobId, project_id: compiled.projectId, packet_id: rootPacket.packetId });
         } catch (e: any) {
           enqueueErrors.push(`${rootPacket.packetId}: ${String(e?.message ?? e)}`);
         }
@@ -3982,8 +3982,21 @@ export function buildApp(config: RuntimeConfig) {
       const role = auth.role;
       const message = String((req.body as any)?.message || "");
 
-      const project = await repo.getProject(req.params.projectId);
-      if (!project) return res.status(404).json({ error: "Project not found" });
+      let project = await repo.getProject(req.params.projectId);
+      if (!project) {
+        // Auto-recreate the project when memory mode drops it (e.g. after server restart).
+        // This keeps the URL working and lets the user continue building.
+        project = toStored({
+          projectId: req.params.projectId,
+          name: message.slice(0, 60) || "Untitled Project",
+          request: message,
+          status: "clarifying",
+          governanceApproval: buildDefaultGovernanceApproval(actor.actorId),
+          githubOwner: null,
+          githubRepo: null,
+        });
+        await repo.upsertProject(project);
+      }
 
       ensureGovernanceApprovalState(project, actor.actorId);
       ensureDeploymentState(project as any);
@@ -4034,19 +4047,58 @@ export function buildApp(config: RuntimeConfig) {
         });
         await persistProject(config, project);
 
+        // Immediately compile and enqueue build packets so actual code generation starts.
+        let packetCount = 0;
+        let rootPacketsEnqueued = 0;
+        const buildStages: Array<{ id: string; label: string; status: string }> = [];
+        try {
+          if (!["queued", "running", "succeeded"].includes(String(project.status))) {
+            const compiled = compileProjectWithIntake(project);
+            const plan = generatePlan((compiled as any).masterTruth);
+            compiled.status = "queued";
+            compiled.runs = { ...((compiled.runs as any) ?? {}), ...((project.runs as any) ?? {}) };
+            const contract = generateBuildContract(compiled.projectId, getMasterSpec(compiled) as any);
+            const approvedContract = approveBuildContract({ ...contract, readyToBuild: true, blockers: [] }, actor.actorId);
+            setBuildContract(compiled, approvedContract);
+            await repo.upsertProject(compiled);
+            const allPackets = (plan as any)?.packets ?? [];
+            packetCount = allPackets.length;
+            const rootPackets = allPackets.filter((p: any) => !p.dependencies || p.dependencies.length === 0);
+            for (const rp of rootPackets) {
+              try {
+                const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+                await enqueueJob({ job_id: jobId, project_id: compiled.projectId, packet_id: rp.packetId });
+                rootPacketsEnqueued++;
+                buildStages.push({ id: rp.packetId, label: rp.goal ?? rp.packetId, status: "queued" });
+              } catch (_e) { /* tolerate queue error */ }
+            }
+          }
+        } catch (_buildErr) {
+          // Non-fatal — plan is saved, will retry on next send
+        }
+
         const blockerLines = run.humanBlockers.filter((b) => !b.approved).map((b) => b.detail);
         return res.json({
           ok: true,
           route,
-          status: run.status,
+          status: packetCount > 0 ? "queued" : run.status,
           blockers: blockerLines,
-          nextAction: run.checkpoint.nextAction,
+          nextAction: packetCount > 0 ? `Building — ${rootPacketsEnqueued} tasks queued` : run.checkpoint.nextAction,
           actorId: actor.actorId,
+          objective: project.request || message,
+          graph: {
+            projectId: project.projectId,
+            runId: run.runId,
+            objective: project.request || message,
+            stages: buildStages.length > 0 ? buildStages : [{ id: "project_status", label: "Build queued", status: "queued" }],
+          },
           operatorMessage: formatOperatorVoice({
-            direct: "Autonomous complex build orchestration is active and milestone-gated.",
-            status: run.status,
+            direct: packetCount > 0
+              ? `Build started — ${packetCount} packets generated, ${rootPacketsEnqueued} immediately queued.`
+              : "Autonomous complex build orchestration is active and milestone-gated.",
+            status: packetCount > 0 ? "queued" : run.status,
             blockers: blockerLines,
-            nextAction: run.checkpoint.nextAction,
+            nextAction: packetCount > 0 ? `Building — ${rootPacketsEnqueued} tasks queued` : run.checkpoint.nextAction,
           }),
           actionResult: {
             runId: run.runId,
@@ -4055,6 +4107,8 @@ export function buildApp(config: RuntimeConfig) {
             currentMilestone: run.checkpoint.currentMilestone,
             humanBlockers: run.humanBlockers,
             resumeCommand: run.checkpoint.resumeCommand,
+            packetCount,
+            rootPacketsEnqueued,
           },
         });
       }
@@ -5650,7 +5704,8 @@ export function buildApp(config: RuntimeConfig) {
         repatchedPackets.push(packet.packetId);
 
         try {
-          await enqueueJob(project.projectId, packet.packetId);
+          const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+          await enqueueJob({ job_id: jobId, project_id: project.projectId, packet_id: packet.packetId });
         } catch (_e) { /* queue unavailable — packet will be picked up on next poll */ }
       }
 
