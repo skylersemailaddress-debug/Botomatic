@@ -103,6 +103,9 @@ export function run(lanMode = false) {
     PROJECT_REPOSITORY_MODE: "memory",
     QUEUE_BACKEND: "memory",
     RUNTIME_MODE: "development",
+    EXECUTOR: "claude",
+    CLAUDE_EXECUTOR_URL: "http://localhost:4000",
+    CLAUDE_EXECUTOR_KEY: DEV_TOKEN,
   };
   const uiEnv = {
     ...process.env,
