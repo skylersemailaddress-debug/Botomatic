@@ -869,6 +869,87 @@ input, textarea, select { font: inherit; }
 .vibe-send-btn:hover:not(:disabled) { box-shadow: 0 4px 14px rgba(124,58,237,.45); transform: scale(1.06); }
 .vibe-send-btn:disabled { opacity: .35; cursor: not-allowed; transform: none; box-shadow: none; }
 
+/* ─── Chat bar attach button ─────────────────────────────────────────── */
+.app-chatbar-attach {
+  flex-shrink: 0;
+  width: 34px; height: 34px;
+  border-radius: var(--radius-md);
+  background: none; border: none;
+  color: var(--text-3);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: var(--transition);
+}
+.app-chatbar-attach:hover:not(:disabled) {
+  color: var(--brand);
+  background: var(--brand-soft);
+}
+.app-chatbar-attach:disabled { opacity: .3; cursor: not-allowed; }
+
+/* ─── File attachment preview ────────────────────────────────────────── */
+.app-chatbar-file {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border: 1.5px solid var(--brand-border);
+  box-shadow: var(--shadow-sm);
+  animation: fade-up .18s ease both;
+}
+.app-chatbar-file-icon {
+  font-size: 22px; flex-shrink: 0; line-height: 1;
+}
+.app-chatbar-file-info {
+  flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px;
+}
+.app-chatbar-file-name {
+  font-size: 13px; font-weight: 600; color: var(--text-1);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.app-chatbar-file-size {
+  font-size: 11px; color: var(--text-3);
+}
+.app-chatbar-file-remove {
+  flex-shrink: 0; background: none; border: none; cursor: pointer;
+  color: var(--text-3); font-size: 13px; padding: 4px 6px;
+  border-radius: var(--radius-sm); transition: var(--transition);
+  line-height: 1;
+}
+.app-chatbar-file-remove:hover { color: var(--red); background: var(--red-soft); }
+
+/* Upload progress */
+.app-chatbar-file-progress {
+  flex-shrink: 0; display: flex; align-items: center; gap: 8px; min-width: 100px;
+}
+.app-chatbar-file-progress-bar-track {
+  flex: 1; height: 4px; background: var(--surface-2);
+  border-radius: var(--radius-full); overflow: hidden;
+}
+.app-chatbar-file-progress {
+  flex-shrink: 0;
+  display: flex; align-items: center; gap: 8px;
+  min-width: 120px;
+  background: var(--surface-2);
+  border-radius: var(--radius-full);
+  height: 6px;
+  overflow: hidden;
+  position: relative;
+}
+.app-chatbar-file-progress-bar {
+  height: 100%;
+  background: var(--brand-grad);
+  border-radius: var(--radius-full);
+  transition: width .2s ease;
+}
+.app-chatbar-file-progress-label {
+  position: absolute; right: -32px;
+  font-size: 10px; font-weight: 700; color: var(--brand);
+  white-space: nowrap;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 /* ─── Global page layouts (templates, design-studio, etc.) ──────────── */
 .global-page-grid {
   display: grid;
