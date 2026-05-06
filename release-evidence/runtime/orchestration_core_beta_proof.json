@@ -1,6 +1,6 @@
 {
   "status": "passed",
-  "generatedAt": "2026-05-06T17:51:40.105Z",
+  "generatedAt": "2026-05-06T23:42:19.498Z",
   "storageMode": "durable-file",
   "artifactPath": "release-evidence/runtime/orchestration_core_beta_proof.json",
   "signals": {
@@ -8,13 +8,13 @@
       "passed": true,
       "evidence": {
         "projectId": "durable-orchestration-beta-proof",
-        "storePath": "/workspace/Botomatic/release-evidence/runtime/orchestration-core-beta/durable-state.json"
+        "storePath": "/home/user/Botomatic/release-evidence/runtime/orchestration-core-beta/durable-state.json"
       }
     },
     "compile_created_build_contract": {
       "passed": true,
       "evidence": {
-        "contractId": "contract_durable-orchestration-beta-proof_1778089900088",
+        "contractId": "contract_durable-orchestration-beta-proof_1778110939488",
         "readyToBuild": true
       }
     },
@@ -30,7 +30,7 @@
       "evidence": {
         "jobId": "job_durable-orchestration-beta-proof_durable-orchestration-beta-proof-m1-p1",
         "workerId": "worker_after_restart",
-        "claimedAt": "2026-05-06T17:51:40.095Z"
+        "claimedAt": "2026-05-06T23:42:19.492Z"
       }
     },
     "worker_executed_job": {
@@ -44,7 +44,7 @@
     "materialized_output_verified": {
       "passed": true,
       "evidence": {
-        "workspacePath": "/workspace/Botomatic/release-evidence/runtime/orchestration-core-beta/generated-apps/durable-orchestration-beta-proof/job_durable-orchestration-beta-proof_durable-orchestration-beta-proof-m1-p1",
+        "workspacePath": "/home/user/Botomatic/release-evidence/runtime/orchestration-core-beta/generated-apps/durable-orchestration-beta-proof/job_durable-orchestration-beta-proof_durable-orchestration-beta-proof-m1-p1",
         "files": [
           "package.json",
           "server.mjs",
@@ -93,8 +93,8 @@
         "claimedAt": null,
         "completedAt": null,
         "lastError": null,
-        "createdAt": "2026-05-06T17:51:40.091Z",
-        "updatedAt": "2026-05-06T17:51:40.091Z"
+        "createdAt": "2026-05-06T23:42:19.490Z",
+        "updatedAt": "2026-05-06T23:42:19.490Z"
       }
     ],
     "afterRestart": [
@@ -107,8 +107,8 @@
         "claimedAt": null,
         "completedAt": null,
         "lastError": null,
-        "createdAt": "2026-05-06T17:51:40.091Z",
-        "updatedAt": "2026-05-06T17:51:40.091Z"
+        "createdAt": "2026-05-06T23:42:19.490Z",
+        "updatedAt": "2026-05-06T23:42:19.490Z"
       }
     ],
     "afterCompletion": [
@@ -118,26 +118,26 @@
         "packetId": "durable-orchestration-beta-proof-m1-p1",
         "status": "succeeded",
         "workerId": "worker_after_restart",
-        "claimedAt": "2026-05-06T17:51:40.095Z",
-        "completedAt": "2026-05-06T17:51:40.103Z",
+        "claimedAt": "2026-05-06T23:42:19.492Z",
+        "completedAt": "2026-05-06T23:42:19.497Z",
         "lastError": null,
-        "createdAt": "2026-05-06T17:51:40.091Z",
-        "updatedAt": "2026-05-06T17:51:40.103Z"
+        "createdAt": "2026-05-06T23:42:19.490Z",
+        "updatedAt": "2026-05-06T23:42:19.497Z"
       }
     ]
   },
   "preview": {
     "projectId": "durable-orchestration-beta-proof",
     "status": "queued",
-    "projectPath": "/workspace/Botomatic/release-evidence/runtime/orchestration-core-beta/generated-apps/durable-orchestration-beta-proof/job_durable-orchestration-beta-proof_durable-orchestration-beta-proof-m1-p1",
+    "projectPath": "/home/user/Botomatic/release-evidence/runtime/orchestration-core-beta/generated-apps/durable-orchestration-beta-proof/job_durable-orchestration-beta-proof_durable-orchestration-beta-proof-m1-p1",
     "artifactId": "artifact_durable-orchestration-beta-proof",
     "buildStatus": "passed",
     "runStatus": "passed",
     "smokeStatus": "passed"
   },
   "evidence": {
-    "storePath": "/workspace/Botomatic/release-evidence/runtime/orchestration-core-beta/durable-state.json",
-    "materializedWorkspace": "/workspace/Botomatic/release-evidence/runtime/orchestration-core-beta/generated-apps/durable-orchestration-beta-proof/job_durable-orchestration-beta-proof_durable-orchestration-beta-proof-m1-p1",
+    "storePath": "/home/user/Botomatic/release-evidence/runtime/orchestration-core-beta/durable-state.json",
+    "materializedWorkspace": "/home/user/Botomatic/release-evidence/runtime/orchestration-core-beta/generated-apps/durable-orchestration-beta-proof/job_durable-orchestration-beta-proof_durable-orchestration-beta-proof-m1-p1",
     "validationRecord": {
       "projectId": "durable-orchestration-beta-proof",
       "packetId": "durable-orchestration-beta-proof-m1-p1",
@@ -148,8 +148,8 @@
         "typecheck"
       ],
       "summary": "All checks passed (mock)",
-      "createdAt": "2026-05-06T17:51:40.098Z",
-      "updatedAt": "2026-05-06T17:51:40.098Z"
+      "createdAt": "2026-05-06T23:42:19.495Z",
+      "updatedAt": "2026-05-06T23:42:19.495Z"
     },
     "firstJob": {
       "jobId": "job_durable-orchestration-beta-proof_durable-orchestration-beta-proof-m1-p1",
@@ -160,8 +160,8 @@
       "claimedAt": null,
       "completedAt": null,
       "lastError": null,
-      "createdAt": "2026-05-06T17:51:40.091Z",
-      "updatedAt": "2026-05-06T17:51:40.091Z"
+      "createdAt": "2026-05-06T23:42:19.490Z",
+      "updatedAt": "2026-05-06T23:42:19.490Z"
     }
   }
 }

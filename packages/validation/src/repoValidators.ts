@@ -188,7 +188,7 @@ export function validateUIReadiness(root: string): RepoValidatorResult {
   const uiText = uiFiles.map((filePath) => read(root, path.relative(root, filePath))).join("\n").toLowerCase();
 
   const routeShellAlignment =
-    projectPage.includes("VibeDashboard") &&
+    (projectPage.includes("VibeDashboard") || projectPage.includes("BetaHQ")) &&
     vibeDashboard.includes("<AppShell") &&
     appShell.includes("app-sidebar") &&
     appShell.includes("Product navigation");
@@ -900,7 +900,7 @@ export function validateUIControlPlaneIntegration(root: string): RepoValidatorRe
     deploySvc.includes("/deploy/promote");
   const ok =
     fileOk &&
-    page.includes("VibeDashboard") &&
+    (page.includes("VibeDashboard") || page.includes("BetaHQ")) &&
     vibeDashboard.includes("<AppShell") &&
     vibeDashboard.includes("useVibeOrchestration") &&
     vibeDashboard.includes("useLiveUIBuilderVibe") &&
