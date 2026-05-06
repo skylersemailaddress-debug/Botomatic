@@ -167,7 +167,9 @@
     "test:e2e:live-beta": "node scripts/forensic/e2e-live-beta.mjs --iterations 1",
     "test:e2e:live-beta:100": "node scripts/forensic/e2e-live-beta.mjs --iterations 100",
     "test:commercial-cockpit": "npx playwright test -c playwright.commercial-visual.config.ts tests/e2e/visual/commercial-cockpit-visual.spec.ts",
-    "test:visual-commercial": "node tests/visual/scripts/compare-commercial-cockpit.cjs"
+    "test:visual-commercial": "node tests/visual/scripts/compare-commercial-cockpit.cjs",
+    "test:orchestration-core": "tsx packages/validation/src/tests/orchestrationCoreWorkerWave.test.ts",
+    "proof:orchestration-core": "node scripts/proof-orchestration-core.cjs"
   },
   "dependencies": {
     "@trigger.dev/sdk": "^4.4.4"
