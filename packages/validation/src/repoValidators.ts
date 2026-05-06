@@ -905,7 +905,7 @@ export function validateUIControlPlaneIntegration(root: string): RepoValidatorRe
     vibeDashboard.includes("useVibeOrchestration") &&
     vibeDashboard.includes("useLiveUIBuilderVibe") &&
     appShell.includes("Product navigation") &&
-    appShell.includes("+ New Project") &&
+    (appShell.includes("+ New Project") || appShell.includes("+ New build")) &&
     settingsPage.includes("<GatePanel") &&
     settingsPage.includes("<LaunchReadinessPanel") &&
     evidencePage.includes("<ProofValidationPanel") &&
