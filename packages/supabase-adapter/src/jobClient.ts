@@ -21,6 +21,8 @@ export async function enqueueJob(job: {
   job_id: string;
   project_id: string;
   packet_id: string;
+  owner_user_id: string;
+  tenant_id?: string;
 }) {
   if (!URL) {
     // Dev/memory mode: no Supabase configured, packet stays pending in-memory
@@ -31,6 +33,7 @@ export async function enqueueJob(job: {
     headers,
     body: JSON.stringify({
       ...job,
+      tenant_id: job.tenant_id ?? job.owner_user_id,
       type: "execute_packet",
       status: "queued",
     }),

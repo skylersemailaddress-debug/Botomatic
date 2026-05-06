@@ -1,4 +1,4 @@
-import { ProjectRepository, StoredProjectRecord } from "./types";
+import { actorOwnsProject, ProjectRepository, StoredProjectRecord } from "./types";
 
 type DurableProjectRepositoryOptions = {
   baseUrl: string;
@@ -8,6 +8,8 @@ type DurableProjectRepositoryOptions = {
 
 type ProjectRow = {
   project_id: string;
+  owner_user_id: string;
+  tenant_id: string | null;
   name: string;
   request: string;
   status: string;
@@ -29,6 +31,8 @@ function normalizeBaseUrl(url: string): string {
 function toRow(record: StoredProjectRecord): ProjectRow {
   return {
     project_id: record.projectId,
+    owner_user_id: record.ownerUserId,
+    tenant_id: record.tenantId ?? record.ownerUserId,
     name: record.name,
     request: record.request,
     status: record.status,
@@ -47,6 +51,8 @@ function toRow(record: StoredProjectRecord): ProjectRow {
 function fromRow(row: ProjectRow): StoredProjectRecord {
   return {
     projectId: row.project_id,
+    ownerUserId: row.owner_user_id,
+    tenantId: row.tenant_id,
     name: row.name,
     request: row.request,
     status: row.status,
@@ -129,6 +135,35 @@ export class DurableProjectRepository implements ProjectRepository {
     return fromRow(rows[0]);
   }
 
+  async getProjectForActor(projectId: string, actorId: string): Promise<StoredProjectRecord | null> {
+    const url = joinUrl(
+      this.baseUrl,
+      `${this.tableName}?project_id=eq.${encodeURIComponent(projectId)}&owner_user_id=eq.${encodeURIComponent(actorId)}&select=*`
+    );
+
+    const res = await fetch(url, {
+      method: "GET",
+      headers: {
+        ...this.authHeaders,
+        Accept: "application/json",
+      },
+    });
+
+    if (!res.ok) {
+      const body = await parseJsonSafe(res);
+      throw new Error(
+        `Durable repository getProjectForActor failed ${res.status}: ${JSON.stringify(body)}`
+      );
+    }
+
+    const rows = (await parseJsonSafe(res)) as ProjectRow[] | null;
+    if (!rows || rows.length === 0) {
+      return null;
+    }
+
+    return fromRow(rows[0]);
+  }
+
   private async assertReadable(projectId: string): Promise<void> {
     const readback = await this.getProject(projectId);
     if (!readback) {
@@ -195,5 +230,16 @@ export class DurableProjectRepository implements ProjectRepository {
     }
 
     await this.assertReadable(normalized.projectId);
+  }
+
+  async upsertProjectForActor(record: StoredProjectRecord, actorId: string): Promise<void> {
+    const existing = await this.getProject(record.projectId);
+    if (existing && !actorOwnsProject(existing, actorId)) {
+      throw new Error("Project ownership mismatch");
+    }
+    if (record.ownerUserId !== actorId) {
+      throw new Error("Project owner must match actor");
+    }
+    await this.upsertProject(record);
   }
 }

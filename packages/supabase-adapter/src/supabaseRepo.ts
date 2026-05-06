@@ -1,4 +1,4 @@
-import { ProjectRepository, StoredProjectRecord } from "./types";
+import { actorOwnsProject, ProjectRepository, StoredProjectRecord } from "./types";
 
 /**
  * Supabase-backed repository adapter.
@@ -19,6 +19,11 @@ export class SupabaseProjectRepository implements ProjectRepository {
     return data as StoredProjectRecord;
   }
 
+  async getProjectForActor(projectId: string, actorId: string): Promise<StoredProjectRecord | null> {
+    const project = await this.getProject(projectId);
+    return actorOwnsProject(project, actorId) ? project : null;
+  }
+
   async upsertProject(record: StoredProjectRecord): Promise<void> {
     const { error } = await this.client
       .from("projects")
@@ -27,5 +32,16 @@ export class SupabaseProjectRepository implements ProjectRepository {
     if (error) {
       throw new Error(`Supabase upsert failed: ${error.message}`);
     }
+  }
+
+  async upsertProjectForActor(record: StoredProjectRecord, actorId: string): Promise<void> {
+    const existing = await this.getProject(record.projectId);
+    if (existing && !actorOwnsProject(existing, actorId)) {
+      throw new Error("Project ownership mismatch");
+    }
+    if (record.ownerUserId !== actorId) {
+      throw new Error("Project owner must match actor");
+    }
+    await this.upsertProject(record);
   }
 }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireControlPlaneProjectAccess } from "@/server/projectAccess";
 import { ALLOWLISTED_JOB_TYPES, appendRunLogs, executeAllowlistedJob, routeStatusFromJobs } from "@/server/executionRunner";
 import { appendLog, createRun, loadProjectState, saveProjectState, sanitizeProjectId } from "@/server/executionStore";
 
@@ -6,6 +7,8 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest, { params }: { params: { projectId: string } }) {
   const projectId = sanitizeProjectId(params.projectId);
+  const accessDenied = requireControlPlaneProjectAccess(request, projectId);
+  if (accessDenied) return accessDenied;
   const body = await request.json().catch(() => ({}));
   const idempotencyKey = typeof body?.idempotencyKey === "string" ? body.idempotencyKey : "";
   const jobType = typeof body?.jobType === "string" ? body.jobType : "";
