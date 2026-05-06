@@ -136,6 +136,35 @@ type OpsErrorEvent = {
 };
 
 const recentOpsErrors: OpsErrorEvent[] = [];
+
+// Token-bucket rate limiter for /operator/send — prevents runaway AI cost from a single actor.
+// Defaults: 20 requests per 60-second window per actor.
+const RATE_LIMIT_MAX = Number(process.env.OPERATOR_RATE_LIMIT_MAX || 20);
+const RATE_LIMIT_WINDOW_MS = Number(process.env.OPERATOR_RATE_LIMIT_WINDOW_MS || 60_000);
+const operatorRateBuckets = new Map<string, { count: number; windowStart: number }>();
+
+function checkOperatorRateLimit(actorId: string): { allowed: boolean; remaining: number; resetAt: number } {
+  const now = Date.now();
+  const bucket = operatorRateBuckets.get(actorId);
+  if (!bucket || now - bucket.windowStart >= RATE_LIMIT_WINDOW_MS) {
+    operatorRateBuckets.set(actorId, { count: 1, windowStart: now });
+    return { allowed: true, remaining: RATE_LIMIT_MAX - 1, resetAt: now + RATE_LIMIT_WINDOW_MS };
+  }
+  if (bucket.count >= RATE_LIMIT_MAX) {
+    return { allowed: false, remaining: 0, resetAt: bucket.windowStart + RATE_LIMIT_WINDOW_MS };
+  }
+  bucket.count += 1;
+  return { allowed: true, remaining: RATE_LIMIT_MAX - bucket.count, resetAt: bucket.windowStart + RATE_LIMIT_WINDOW_MS };
+}
+
+// Periodically purge stale rate-limit buckets to prevent unbounded memory growth.
+setInterval(() => {
+  const cutoff = Date.now() - RATE_LIMIT_WINDOW_MS * 2;
+  for (const [key, bucket] of operatorRateBuckets) {
+    if (bucket.windowStart < cutoff) operatorRateBuckets.delete(key);
+  }
+}, 120_000);
+
 let packetSuccessCount = 0;
 let packetFailureCount = 0;
 let validationPassCount = 0;
@@ -287,10 +316,15 @@ function getExecutor() {
 }
 
 function getGitHub() {
+  const owner = process.env.GITHUB_OWNER;
+  const repo = process.env.GITHUB_REPO;
+  if (!owner || !repo) {
+    throw new Error("GITHUB_OWNER and GITHUB_REPO must be set to use GitHub integration");
+  }
   return new GitHubRuntime({
     token: process.env.GITHUB_TOKEN!,
-    owner: "skylersemailaddress-debug",
-    repo: "Botomatic",
+    owner,
+    repo,
   });
 }
 
@@ -1525,7 +1559,13 @@ async function processJob(config: RuntimeConfig, job: QueueJobRecord) {
 async function workerTick(config: RuntimeConfig) {
   if (activeWorkers >= workerConcurrency) return;
   const availableSlots = workerConcurrency - activeWorkers;
-  const claims = await Promise.all(Array.from({ length: availableSlots }, () => claimJob(workerId, leaseMs)));
+  let claims: (QueueJobRecord | null)[];
+  try {
+    claims = await Promise.all(Array.from({ length: availableSlots }, () => claimJob(workerId, leaseMs)));
+  } catch (err: any) {
+    console.error(JSON.stringify({ event: "queue_claim_error", workerId, message: String(err?.message || err), timestamp: now() }));
+    return;
+  }
   const jobs = claims.filter(Boolean) as QueueJobRecord[];
   for (const job of jobs) {
     activeWorkers += 1;
@@ -1549,13 +1589,14 @@ function isAllowedCorsOrigin(origin: string): boolean {
     "http://localhost:3000",
   ]);
 
-  if (allowedOrigins.has(origin)) {
-    return true;
+  // Support comma-separated list of allowed origins via env var (e.g. your Vercel UI URL).
+  const extraOrigins = process.env.ALLOWED_ORIGINS || process.env.ALLOWED_ORIGIN || "";
+  for (const o of extraOrigins.split(",").map((s) => s.trim()).filter(Boolean)) {
+    allowedOrigins.add(o);
   }
 
-  const isProduction = process.env.NODE_ENV === "production";
-  if (isProduction) {
-    return false;
+  if (allowedOrigins.has(origin)) {
+    return true;
   }
 
   return /^https:\/\/[a-z0-9-]+\.app\.github\.dev$/i.test(origin);
@@ -3034,6 +3075,17 @@ export function buildApp(config: RuntimeConfig) {
 
   app.post("/api/projects/:projectId/operator/send", async (req, res) => {
     const actor = await getRequestActor(req, config);
+    const rateKey = actor.actorId !== "anonymous" ? actor.actorId : (req.ip || "anonymous");
+    const rateCheck = checkOperatorRateLimit(rateKey);
+    if (!rateCheck.allowed) {
+      res.setHeader("X-RateLimit-Limit", String(RATE_LIMIT_MAX));
+      res.setHeader("X-RateLimit-Remaining", "0");
+      res.setHeader("X-RateLimit-Reset", String(Math.ceil(rateCheck.resetAt / 1000)));
+      return res.status(429).json({ error: "Rate limit exceeded. Too many requests.", resetAt: new Date(rateCheck.resetAt).toISOString() });
+    }
+    res.setHeader("X-RateLimit-Limit", String(RATE_LIMIT_MAX));
+    res.setHeader("X-RateLimit-Remaining", String(rateCheck.remaining));
+    res.setHeader("X-RateLimit-Reset", String(Math.ceil(rateCheck.resetAt / 1000)));
     try {
       const auth = await getVerifiedAuth(req, config);
       const role = auth.role;

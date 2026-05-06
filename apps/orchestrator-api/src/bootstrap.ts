@@ -111,9 +111,16 @@ async function start() {
   if (wantsDurable || wantsSupabaseQueue) {
     const supabaseReachable = await probeSupabase();
     if (!supabaseReachable) {
+      const isCommercial = process.env.RUNTIME_MODE === "commercial";
+      if (isCommercial) {
+        console.error(JSON.stringify({
+          event: "startup_fatal",
+          message: "Supabase is unreachable and RUNTIME_MODE=commercial. Cannot start with in-memory storage in commercial mode — data loss risk. Fix Supabase connectivity (check Network Restrictions) or set RUNTIME_MODE=development.",
+        }));
+        process.exit(1);
+      }
       if (wantsDurable) {
         process.env.PROJECT_REPOSITORY_MODE = "memory";
-        process.env.RUNTIME_MODE = "development"; // avoid the commercial/durable guard
         console.warn(JSON.stringify({
           event: "supabase_fallback",
           message: "Supabase unreachable — running with in-memory project store. Data will NOT persist across restarts.",

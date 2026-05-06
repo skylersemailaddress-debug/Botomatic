@@ -43,6 +43,10 @@ export async function enqueueJob(job: {
 }
 
 export async function claimJob(workerId: string, leaseMs: number) {
+  if (!URL) {
+    // Dev/memory mode: no Supabase configured, no jobs to claim.
+    return null;
+  }
   const res = await fetch(`${URL}/rest/v1/rpc/claim_job`, {
     method: "POST",
     headers,
@@ -66,6 +70,10 @@ export async function finalizeJob(
   status: string,
   error?: string
 ) {
+  if (!URL) {
+    // Dev/memory mode: no Supabase configured, nothing to finalize.
+    return;
+  }
   const res = await fetch(`${URL}/rest/v1/orchestrator_jobs?job_id=eq.${jobId}`, {
     method: "PATCH",
     headers,
