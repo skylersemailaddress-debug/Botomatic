@@ -1,0 +1,122 @@
+name: Full Build Path Proof
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  full-build-path-proof:
+    name: Full build-path proof
+    runs-on: ubuntu-latest
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Secret preflight
+        shell: bash
+        run: |
+          missing=0
+          if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
+            echo "ANTHROPIC_API_KEY present: yes"
+          else
+            echo "ANTHROPIC_API_KEY present: no"
+            missing=1
+          fi
+          if [ -n "${OPENAI_API_KEY:-}" ]; then
+            echo "OPENAI_API_KEY present: yes"
+          else
+            echo "OPENAI_API_KEY present: no"
+            missing=1
+          fi
+          exit "$missing"
+
+      - name: Build
+        run: npm run -s build
+
+      - name: Test
+        run: npm run -s test
+
+      - name: Validate all
+        run: npm run -s validate:all
+
+      - name: Full build-path proof command
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Full build-path proof command: API startup + AtlasCRM intake/compile/plan smoke"
+          npm run -s api:start > api-start.log 2>&1 &
+          api_pid=$!
+          cleanup() {
+            if kill -0 "$api_pid" 2>/dev/null; then
+              kill "$api_pid" 2>/dev/null || true
+              wait "$api_pid" 2>/dev/null || true
+            fi
+          }
+          trap cleanup EXIT
+
+          for _ in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:3001/api/health >/tmp/botomatic-api-health.json; then
+              echo "API startup smoke passed"
+              cat /tmp/botomatic-api-health.json
+              break
+            fi
+            if ! kill -0 "$api_pid" 2>/dev/null; then
+              echo "API exited before health check passed"
+              cat api-start.log
+              exit 1
+            fi
+            sleep 1
+          done
+
+          if ! curl -fsS http://127.0.0.1:3001/api/health >/dev/null; then
+            echo "API did not become healthy within timeout"
+            cat api-start.log
+            exit 1
+          fi
+
+          prompt='Build a small commercial landing page app for a fictional product called AtlasCRM. It needs a hero section, pricing cards, testimonials, FAQ, contact form UI, and a launch-readiness checklist. Generate real app files and validation evidence.'
+          intake_payload=$(jq -n --arg request "$prompt" '{name:"AtlasCRM proof", request:$request}')
+          intake_response=$(curl -fsS -X POST http://127.0.0.1:3001/api/projects/intake \
+            -H 'Content-Type: application/json' \
+            --data "$intake_payload")
+          project_id=$(printf '%s' "$intake_response" | jq -r '.projectId // empty')
+          if [ -z "$project_id" ]; then
+            echo "Fresh project intake did not return projectId"
+            printf '%s\n' "$intake_response"
+            exit 1
+          fi
+          echo "Fresh proof project ID: $project_id"
+
+          curl -fsS -X POST "http://127.0.0.1:3001/api/projects/$project_id/compile" >/tmp/botomatic-compile.json
+          echo "Compile response captured for $project_id"
+
+          plan_status=$(curl -sS -o /tmp/botomatic-plan.json -w '%{http_code}' -X POST "http://127.0.0.1:3001/api/projects/$project_id/plan")
+          if [ "$plan_status" -ge 400 ]; then
+            echo "Plan step visibly failed or blocked for $project_id (status $plan_status)"
+            cat /tmp/botomatic-plan.json
+            exit 1
+          fi
+          echo "Plan response captured for $project_id"
+
+          curl -fsS "http://127.0.0.1:3001/api/projects/$project_id/status" >/tmp/botomatic-status.json
+          packet_count=$(jq '.plan.packets | length // 0' /tmp/botomatic-status.json)
+          echo "Persisted packet count: $packet_count"
+          if [ "$packet_count" -le 0 ]; then
+            echo "No persisted packets found for $project_id"
+            exit 1
+          fi
