@@ -14,7 +14,7 @@ const bad = normalizeAndValidateUIDataStateApiWiring({
   bindings: [{ bindingId: "b", nodeId: "", propertyPath: "", expression: "javascript:alert(1)" } as any],
   stateBindings: [{ stateKey: "", initialValue: "() => 1", scope: "global" as any }],
   stateActions: [{ actionId: "a", actionType: "mutate" as any, stateKey: "", payload: "function(){}" }],
-  apiEndpoints: [{ endpointId: "", method: "GET", url: "http://bad.com", headers: { Authorization: "Bearer superSecretToken" } }, { endpointId: "js", method: "GET", url: "javascript:alert(1)" }, { endpointId: "data", method: "GET", url: "data:text/plain,1" }, { endpointId: "file", method: "GET", url: "file:///tmp/a" }, { endpointId: "local", method: "GET", url: "http://127.0.0.1:3000" }],
+  apiEndpoints: [{ endpointId: "", method: "GET", url: "http://bad.com", headers: { Authorization: "Bearer <required_secret_ref>" } }, { endpointId: "js", method: "GET", url: "javascript:alert(1)" }, { endpointId: "data", method: "GET", url: "data:text/plain,1" }, { endpointId: "file", method: "GET", url: "file:///tmp/a" }, { endpointId: "local", method: "GET", url: "http://127.0.0.1:3000" }],
   apiRequestBindings: [{ requestBindingId: "rb", endpointId: "missing", responseMappings: [{ propertyPath: "", expression: "<script>" }] } as any]
 });
 assert(bad.issues.length > 0);

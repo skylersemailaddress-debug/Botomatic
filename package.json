@@ -172,7 +172,9 @@
     "proof:orchestration-core": "node scripts/proof-orchestration-core.cjs",
     "test:tenant-isolation": "tsx packages/validation/src/tests/tenantIsolation.test.ts",
     "beta:readiness": "npm run -s test:tenant-isolation && tsx packages/validation/src/repoValidators/tenantIsolationReadiness.ts",
-    "validate:route-auth": "tsx packages/validation/src/repoValidators/routeAuthorizationReadiness.ts"
+    "validate:route-auth": "tsx packages/validation/src/repoValidators/routeAuthorizationReadiness.ts",
+    "proof:no-secrets-beta": "tsx packages/validation/src/runtime/noSecretsBetaProof.ts",
+    "test:no-secrets-beta-proof": "tsx packages/validation/src/tests/noSecretsBetaProof.test.ts"
   },
   "dependencies": {
     "@trigger.dev/sdk": "^4.4.4"
