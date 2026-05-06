@@ -1791,6 +1791,12 @@ export function buildApp(config: RuntimeConfig) {
     });
   });
 
+  app.use(createRoutePolicyMiddleware({
+    config,
+    getVerifiedAuth,
+    recordAuthFailure: (message, metadata) => recordOpsError("auth_failed", message, metadata),
+  }));
+
   const buildHealthPayload = (
     auth: { role: string | null; userId: string | null; issuer: string | null },
     requestId: string | null

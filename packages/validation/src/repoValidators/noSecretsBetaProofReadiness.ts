@@ -4,12 +4,12 @@ import type { RepoValidatorResult } from "../repoValidators";
 import { writeNoSecretsBetaProof } from "../runtime/noSecretsBetaProof";
 
 const REQUIRED_SIGNALS = [
-  "source_scan_clean",
-  "git_history_scan_clean",
-  "release_evidence_scan_clean",
-  "logs_scan_clean",
-  "generated_apps_scan_clean",
-  "ui_api_response_redaction_verified",
+  "source_secret_scan_passed",
+  "git_history_secret_scan_passed",
+  "release_evidence_secret_scan_passed",
+  "logs_secret_scan_passed",
+  "generated_apps_secret_scan_passed",
+  "ui_api_secret_scan_passed",
 ] as const;
 
 function result(ok: boolean, summary: string, checks: string[]): RepoValidatorResult {
