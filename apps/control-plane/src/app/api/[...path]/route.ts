@@ -22,7 +22,24 @@ function isLocalDevelopment(): boolean {
   return process.env.NODE_ENV === "development" && !["production", "prod", "beta", "preview", "staging"].includes(environment);
 }
 
+function isLoopbackUrl(url: string): boolean {
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    return host === "localhost" || host === "127.0.0.1" || host === "0.0.0.0";
+  } catch {
+    return true;
+  }
+}
+
+function getBetaAuthToken(): string {
+  return (process.env.BOTOMATIC_BETA_AUTH_TOKEN || "").trim();
+}
+
 function getAuthToken(): string {
+  // BOTOMATIC_BETA_AUTH_TOKEN is the preferred token for local→hosted Railway sessions.
+  const betaToken = getBetaAuthToken();
+  if (betaToken) return betaToken;
+
   const configuredToken = (
     process.env.BOTOMATIC_API_TOKEN ||
     process.env.API_AUTH_TOKEN ||
@@ -37,7 +54,8 @@ function getAuthToken(): string {
 
 async function proxy(request: NextRequest, pathSegments: string[]) {
   const path = pathSegments.join("/");
-  const targetUrl = `${getProxyBaseUrl()}/api/${path}${request.nextUrl.search}`;
+  const proxyBase = getProxyBaseUrl();
+  const targetUrl = `${proxyBase}/api/${path}${request.nextUrl.search}`;
   const headers = new Headers(request.headers);
 
   headers.delete("host");
@@ -45,7 +63,19 @@ async function proxy(request: NextRequest, pathSegments: string[]) {
 
   if (!headers.has("authorization")) {
     const token = getAuthToken();
-    if (token) headers.set("authorization", `Bearer ${token}`);
+    if (token) {
+      headers.set("authorization", `Bearer ${token}`);
+      // When using the beta auth token against a hosted remote API, assert admin role.
+      if (getBetaAuthToken() && token === getBetaAuthToken()) {
+        headers.set("x-role", "admin");
+      }
+    } else if (!isLoopbackUrl(proxyBase) && !["GET", "HEAD"].includes(request.method.toUpperCase())) {
+      // Mutating request targeting a remote API with no auth token configured.
+      return NextResponse.json(
+        { error: "Hosted API auth token is not configured for this local UI session.", hint: "Set BOTOMATIC_BETA_AUTH_TOKEN in your terminal and restart the dev server." },
+        { status: 401 },
+      );
+    }
   }
 
   const init: RequestInit = {
