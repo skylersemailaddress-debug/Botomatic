@@ -13,6 +13,7 @@ import { validateLiveDeploymentExecutionReadiness } from "./repoValidators/liveD
 import { validateFinalCommercialReleaseEvidence } from "./repoValidators/finalCommercialReleaseEvidence";
 import { validateFinalReleaseEvidenceLock } from "./repoValidators/finalReleaseEvidenceLock";
 import { validateSecretsCredentialManagementReadiness } from "./repoValidators/secretsCredentialManagementReadiness";
+import { validateNoSecretsBetaProofReadiness } from "./repoValidators/noSecretsBetaProofReadiness";
 import { validateAutonomousComplexBuildReadiness } from "./repoValidators/autonomousComplexBuildReadiness";
 import { validateDomainQualityScorecardsReadiness } from "./repoValidators/domainQualityScorecardsReadiness";
 import { validateEvalSuiteReadiness } from "./repoValidators/evalSuiteReadiness";
@@ -1332,6 +1333,7 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateFinalCommercialReleaseEvidence(root),
     validateFinalReleaseEvidenceLock(root),
     validateSecretsCredentialManagementReadiness(root),
+    validateNoSecretsBetaProofReadiness(root),
     validateAutonomousComplexBuildReadiness(root),
     validateDomainQualityScorecardsReadiness(root),
     validateEvalSuiteReadiness(root),
