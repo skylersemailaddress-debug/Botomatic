@@ -4,6 +4,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AppShell } from "@/components/shell/AppShell";
 import { useVibeOrchestration } from "../builder/useVibeOrchestration";
 import { useLiveUIBuilderVibe } from "./useLiveUIBuilderVibe";
+import { LiveUIBuilderPreviewSurface } from "./LiveUIBuilderPreviewSurface";
+import { LiveUIBuilderCommandInput } from "@/components/live-ui-builder/LiveUIBuilderCommandInput";
+import { LiveUIBuilderResolutionPanel } from "@/components/live-ui-builder/LiveUIBuilderResolutionPanel";
+import { LiveUIBuilderDiffPreview } from "@/components/live-ui-builder/LiveUIBuilderDiffPreview";
+import { LiveUIBuilderSourceSyncPanel } from "@/components/live-ui-builder/LiveUIBuilderSourceSyncPanel";
+import { LiveUIBuilderAppStructurePanel } from "@/components/live-ui-builder/LiveUIBuilderAppStructurePanel";
 import { getFirstRunFallback, getFirstRunState, type FirstRunState } from "@/services/firstRun";
 import { getProjectRuntimeState } from "@/services/runtimeStatus";
 import { requestDeploy } from "@/services/launchProof";
@@ -97,7 +103,9 @@ interface ChatMessage {
 
 export function VibeDashboard({ projectId }: { projectId: string }) {
   const orchestration = useVibeOrchestration(projectId);
-  const { addPage } = useLiveUIBuilderVibe();
+  const liveUIBuilder = useLiveUIBuilderVibe();
+  const { addPage } = liveUIBuilder;
+  const confirmationPending = liveUIBuilder.confirmationPending;
 
   const [firstRunState, setFirstRunState] = useState<FirstRunState>(getFirstRunFallback(projectId));
   const [deviceMode, setDeviceMode] = useState<"desktop" | "tablet" | "mobile">("desktop");
@@ -288,6 +296,50 @@ export function VibeDashboard({ projectId }: { projectId: string }) {
                 </button>
               ))}
             </div>
+
+            <section className="live-ui-builder-workbench" aria-label="Live UI Builder workbench">
+              <LiveUIBuilderPreviewSurface
+                editableDocument={liveUIBuilder.editableDocument}
+                selectedNodeId={liveUIBuilder.selectedNodeId}
+                changedNodeIds={liveUIBuilder.changedNodeIds}
+                previewPatch={liveUIBuilder.lastPreviewPatch}
+                onSelectNode={liveUIBuilder.selectNode}
+              />
+              <LiveUIBuilderCommandInput onSubmit={(value) => liveUIBuilder.runCommandText(value)} />
+              <LiveUIBuilderResolutionPanel
+                candidates={(liveUIBuilder.pendingResolution?.candidates ?? []).map((candidate: any) => ({
+                  id: candidate.nodeId ?? candidate.id,
+                  nodeId: candidate.nodeId,
+                  label: candidate.label ?? candidate.semanticLabel ?? "Unresolved target",
+                  type: candidate.type ?? candidate.kind ?? "node",
+                  page: candidate.page ?? candidate.pageId ?? liveUIBuilder.selectedPageId ?? "current page",
+                  location: candidate.location ?? candidate.path ?? "document",
+                }))}
+                onResolve={(candidate) => liveUIBuilder.resolveTarget(candidate.nodeId ?? candidate.id ?? "")}
+              />
+              <button type="button" disabled={!confirmationPending} onClick={liveUIBuilder.confirmPending}>Apply Change</button>
+              <LiveUIBuilderDiffPreview diff={liveUIBuilder.preConfirmDiff as any} />
+              <LiveUIBuilderAppStructurePanel
+                appStructure={liveUIBuilder.appStructure}
+                needsResolution={liveUIBuilder.appStructureNeedsResolution}
+                candidates={liveUIBuilder.appStructureCandidates}
+                onSelectPage={liveUIBuilder.selectPage}
+                onReuseComponent={(componentId) => liveUIBuilder.reuseComponent(componentId, liveUIBuilder.selectedPageId)}
+              />
+              <LiveUIBuilderSourceSyncPanel
+                latestResult={liveUIBuilder.latestResult}
+                sourceSyncResult={liveUIBuilder.sourceSyncResult}
+                sourceSyncStatus={liveUIBuilder.sourceSyncStatus}
+                hasRealFileAdapter={liveUIBuilder.hasRealFileAdapter}
+                rollbackAvailable={liveUIBuilder.rollbackAvailable}
+                rollbackStatus={liveUIBuilder.rollbackStatus}
+                adapterDisabledReason={liveUIBuilder.adapterDisabledReason}
+                sourceSyncDryRun={() => liveUIBuilder.sourceSyncDryRun()}
+                sourceSyncApply={() => liveUIBuilder.sourceSyncApply()}
+                sourceRollbackDryRun={() => liveUIBuilder.sourceRollbackDryRun}
+                appStructure={liveUIBuilder.appStructure}
+              />
+            </section>
           </div>
 
           {/* Right rail */}

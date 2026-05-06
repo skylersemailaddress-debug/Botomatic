@@ -21,44 +21,44 @@ function result(ok: boolean, summary: string, checks: string[]): RepoValidatorRe
 
 export function validateDashboardRouteIntegrityReadiness(root: string): RepoValidatorResult {
   const checks: string[] = [];
-  const vibePage = "apps/control-plane/src/app/projects/[projectId]/vibe/page.tsx";
-  const advancedPage = "apps/control-plane/src/app/projects/[projectId]/advanced/page.tsx";
+  const canonicalProjectPage = "apps/control-plane/src/app/projects/[projectId]/page.tsx";
+  const appShell = "apps/control-plane/src/components/shell/AppShell.tsx";
+  const vibeDashboard = "apps/control-plane/src/components/vibe/VibeDashboard.tsx";
   const dashboardComponent = "apps/control-plane/src/components/dashboard/RepositorySuccessDashboard.tsx";
   const dashboardRoute = "apps/control-plane/src/app/api/local-repo-dashboard/route.ts";
   const hybridRoute = "apps/control-plane/src/app/api/hybrid-ci/route.ts";
   const nextConfig = "apps/control-plane/next.config.mjs";
+  const legacyVibePage = "apps/control-plane/src/app/projects/[projectId]/vibe/page.tsx";
+  const legacyAdvancedPage = "apps/control-plane/src/app/projects/[projectId]/advanced/page.tsx";
 
-  if (!has(root, vibePage)) {
-    return result(false, `Vibe project route is missing: ${vibePage}`, checks);
+  for (const rel of [canonicalProjectPage, appShell, vibeDashboard]) {
+    if (!has(root, rel)) return result(false, `Canonical dashboard surface is missing: ${rel}`, checks);
+    checks.push(`Canonical dashboard surface exists: ${rel}`);
   }
-  checks.push("Vibe project route exists");
 
-  if (!has(root, advancedPage)) {
-    return result(false, `Advanced project route is missing: ${advancedPage}`, checks);
+  if (has(root, legacyVibePage) || has(root, legacyAdvancedPage)) {
+    return result(false, "Legacy /vibe or /advanced project routes should not be restored without a new canonical product decision.", checks);
   }
-  checks.push("Advanced project route exists");
+  checks.push("Legacy /vibe and /advanced project routes are not required by the canonical route map");
 
-  if (!has(root, dashboardComponent)) {
-    return result(false, `RepositorySuccessDashboard component is missing: ${dashboardComponent}`, checks);
+  const projectPageText = read(root, canonicalProjectPage);
+  const vibeDashboardText = read(root, vibeDashboard);
+  const appShellText = read(root, appShell);
+  if (!projectPageText.includes("VibeDashboard") || !vibeDashboardText.includes("<AppShell") || !appShellText.includes("Product navigation")) {
+    return result(false, "Canonical project route does not wire VibeDashboard through AppShell navigation.", checks);
   }
-  const dashboardText = read(root, dashboardComponent);
-  const supportsModes =
-    dashboardText.includes("mode?: \"vibe\" | \"pro\"") &&
-    dashboardText.includes("projectId?: string");
-  if (!supportsModes) {
-    return result(false, "RepositorySuccessDashboard does not support both vibe and pro modes with projectId.", checks);
-  }
-  checks.push("RepositorySuccessDashboard supports projectId and mode vibe|pro");
+  checks.push("Canonical /projects/[projectId] route wires VibeDashboard through AppShell");
 
-  if (dashboardText.includes("/api/local-repo-dashboard") && !has(root, dashboardRoute)) {
-    return result(false, `Dashboard UI references /api/local-repo-dashboard but route file is missing: ${dashboardRoute}`, checks);
+  if (has(root, dashboardComponent)) {
+    const dashboardText = read(root, dashboardComponent);
+    if (dashboardText.includes("/api/local-repo-dashboard") && !has(root, dashboardRoute)) {
+      return result(false, `Dashboard UI references /api/local-repo-dashboard but route file is missing: ${dashboardRoute}`, checks);
+    }
+    if (dashboardText.includes("/api/hybrid-ci") && !has(root, hybridRoute)) {
+      return result(false, `Dashboard UI references /api/hybrid-ci but route file is missing: ${hybridRoute}`, checks);
+    }
+    checks.push("RepositorySuccessDashboard legacy API route references remain backed when present");
   }
-  checks.push("Dashboard local-repo-dashboard route integrity is valid");
-
-  if (dashboardText.includes("/api/hybrid-ci") && !has(root, hybridRoute)) {
-    return result(false, `Dashboard UI references /api/hybrid-ci but route file is missing: ${hybridRoute}`, checks);
-  }
-  checks.push("Dashboard hybrid-ci route integrity is valid");
 
   if (!has(root, nextConfig)) {
     return result(false, `Next config is missing: ${nextConfig}`, checks);
@@ -84,5 +84,5 @@ export function validateDashboardRouteIntegrityReadiness(root: string): RepoVali
   }
   checks.push("next.config.mjs preserves dashboard routes before catch-all API proxy");
 
-  return result(true, "Dashboard route integrity readiness is satisfied across vibe/pro routes, dashboard API routes, and rewrite order.", checks);
+  return result(true, "Dashboard route integrity readiness is aligned to canonical /projects/[projectId] AppShell/VibeDashboard route and dashboard API rewrite order.", checks);
 }
