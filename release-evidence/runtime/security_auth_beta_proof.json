@@ -1,0 +1,17 @@
+{
+  "generatedAt": "2026-05-06T16:51:53.849Z",
+  "artifact": "release-evidence/runtime/security_auth_beta_proof.json",
+  "scope": "Beta/production auth fail-closed startup, mutation, role, and owner checks.",
+  "signals": {
+    "production_rejects_auth_disabled": true,
+    "production_rejects_development_runtime": true,
+    "unauthenticated_mutation_denied": true,
+    "wrong_role_denied": true,
+    "wrong_owner_denied": true,
+    "unauthenticated_requests_blocked": true,
+    "invalid_session_blocked": true,
+    "expired_session_blocked": true,
+    "privileged_routes_require_auth": true,
+    "production_beta_auth_fail_closed": true
+  }
+}

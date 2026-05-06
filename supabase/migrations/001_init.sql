@@ -6,6 +6,7 @@ create table if not exists orchestrator_projects (
   name                text not null,
   request             text not null,
   status              text not null,
+  owner_id            text,
   master_truth        jsonb,
   plan                jsonb,
   runs                jsonb,
@@ -23,8 +24,7 @@ create table if not exists orchestrator_projects (
 );
 
 create index if not exists idx_orchestrator_projects_status on orchestrator_projects(status);
-create index if not exists idx_orchestrator_projects_owner on orchestrator_projects(owner_user_id, project_id);
-create index if not exists idx_orchestrator_projects_tenant on orchestrator_projects(tenant_id, project_id);
+create index if not exists idx_orchestrator_projects_owner on orchestrator_projects(owner_id);
 create index if not exists idx_orchestrator_projects_updated on orchestrator_projects(updated_at desc);
 
 create table if not exists orchestrator_jobs (

@@ -111,19 +111,28 @@ async function start() {
   if (wantsDurable || wantsSupabaseQueue) {
     const supabaseReachable = await probeSupabase();
     if (!supabaseReachable) {
+      const hostedOrCommercial =
+        process.env.RUNTIME_MODE === "commercial" ||
+        ["production", "prod", "beta", "preview", "staging"].includes(
+          String(process.env.BOTOMATIC_DEPLOYMENT_ENV || process.env.BOTOMATIC_ENV || process.env.VERCEL_ENV || process.env.NODE_ENV || "").toLowerCase(),
+        );
+
+      if (hostedOrCommercial) {
+        throw new Error("Supabase unreachable in hosted beta/production; refusing in-memory fallback");
+      }
+
       if (wantsDurable) {
         process.env.PROJECT_REPOSITORY_MODE = "memory";
-        process.env.RUNTIME_MODE = "development"; // avoid the commercial/durable guard
         console.warn(JSON.stringify({
           event: "supabase_fallback",
-          message: "Supabase unreachable — running with in-memory project store. Data will NOT persist across restarts.",
+          message: "Supabase unreachable — local development only in-memory project store. Data will NOT persist across restarts.",
         }));
       }
       if (wantsSupabaseQueue) {
         process.env.QUEUE_BACKEND = "memory";
         console.warn(JSON.stringify({
           event: "queue_fallback",
-          message: "Supabase unreachable — job queue running in-memory. Multi-worker job distribution unavailable.",
+          message: "Supabase unreachable — local development only in-memory job queue. Multi-worker job distribution unavailable.",
         }));
       }
     } else {

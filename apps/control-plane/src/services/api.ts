@@ -83,13 +83,17 @@ export function buildApiUrl(path: string): string {
   return path;
 }
 
+function isLocalDevelopment(): boolean {
+  const environment = (process.env.BOTOMATIC_DEPLOYMENT_ENV || process.env.BOTOMATIC_ENV || process.env.VERCEL_ENV || process.env.NODE_ENV || "").toLowerCase();
+  return process.env.NODE_ENV === "development" && !["production", "prod", "beta", "preview", "staging"].includes(environment);
+}
+
 function buildHeaders(overrides: Record<string, string> = {}): Record<string, string> {
   const headers: Record<string, string> = {};
 
-  // Allow explicit public token for local authenticated stacks (production-mode local runs included).
   if (process.env.NEXT_PUBLIC_BOTOMATIC_API_TOKEN) {
     headers["Authorization"] = `Bearer ${process.env.NEXT_PUBLIC_BOTOMATIC_API_TOKEN}`;
-  } else if (process.env.NEXT_PUBLIC_DEV_BEARER_TOKEN) {
+  } else if (isLocalDevelopment() && process.env.NEXT_PUBLIC_DEV_BEARER_TOKEN) {
     headers["Authorization"] = `Bearer ${process.env.NEXT_PUBLIC_DEV_BEARER_TOKEN}`;
   }
 

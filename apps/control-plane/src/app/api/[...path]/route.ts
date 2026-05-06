@@ -17,14 +17,22 @@ function getProxyBaseUrl(): string {
   );
 }
 
+function isLocalDevelopment(): boolean {
+  const environment = (process.env.BOTOMATIC_DEPLOYMENT_ENV || process.env.BOTOMATIC_ENV || process.env.VERCEL_ENV || process.env.NODE_ENV || "").toLowerCase();
+  return process.env.NODE_ENV === "development" && !["production", "prod", "beta", "preview", "staging"].includes(environment);
+}
+
 function getAuthToken(): string {
-  return (
+  const configuredToken = (
     process.env.BOTOMATIC_API_TOKEN ||
     process.env.API_AUTH_TOKEN ||
     process.env.NEXT_PUBLIC_BOTOMATIC_API_TOKEN ||
-    process.env.NEXT_PUBLIC_DEV_BEARER_TOKEN ||
     ""
   ).trim();
+
+  if (configuredToken) return configuredToken;
+
+  return isLocalDevelopment() ? (process.env.NEXT_PUBLIC_DEV_BEARER_TOKEN || "").trim() : "";
 }
 
 async function proxy(request: NextRequest, pathSegments: string[]) {
