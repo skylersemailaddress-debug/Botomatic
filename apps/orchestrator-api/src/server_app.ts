@@ -84,6 +84,7 @@ import { intakeCloudLink } from "./intake/cloudIntake";
 import { validateLocalFolderManifest } from "./intake/localManifest";
 import { isBlockedFileExtension, suspiciousBinaryHook } from "./intake/intakeSafety";
 import { assertProviderPromoteGate, assertProviderRollbackGate, loadProviderDeploymentContracts } from "./deployProviderGates";
+import { createRoutePolicyMiddleware } from "./security/routePolicies";
 
 type VerifiedRequestAuth = AuthContext & { issuer?: string };
 
@@ -1716,6 +1717,14 @@ export function buildApp(config: RuntimeConfig) {
     res.setHeader("x-request-id", requestId);
     next();
   });
+
+  app.use(
+    createRoutePolicyMiddleware({
+      config,
+      getVerifiedAuth,
+      recordAuthFailure: (message, metadata) => recordOpsError("auth_failed", message, metadata),
+    })
+  );
 
   const buildHealthPayload = (
     auth: { role: string | null; userId: string | null; issuer: string | null },
