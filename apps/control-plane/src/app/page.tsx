@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { BetaHQ } from "@/components/beta-hq/BetaHQ";
 
 export default function RootPage() {
-  redirect("/projects/new");
+  return <BetaHQ />;
 }
