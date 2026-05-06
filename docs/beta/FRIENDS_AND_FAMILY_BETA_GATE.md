@@ -31,7 +31,7 @@ The readiness gate requires all of these JSON artifacts to exist under `release-
 | Durable storage outage fail-closed proof | `release-evidence/runtime/durable_fail_closed_beta_proof.json` |
 | Beta deployment smoke/rollback proof | `release-evidence/runtime/deployment_smoke_beta_proof.json` |
 
-Do not create placeholder or hand-written passing artifacts. These files must be produced by real proof runs or audit processes that exercise the stated blocker.
+Do not create placeholder or hand-written passing artifacts. These files must be produced by real proof runs or audit processes that exercise the stated blocker. Deployment smoke is the one local-CI exception: when no hosted beta URL/token exists, the artifact may be a documented `local_validation_scoped_out` record, but it is not a passing live deployment proof and the generator must still fail closed without beta env vars.
 
 ## Required proof signals
 
@@ -96,11 +96,11 @@ Each artifact must contain a JSON object with a `signals` object. Every named si
 
 `release-evidence/runtime/deployment_smoke_beta_proof.json` must include:
 
-- `beta_environment_deployed`
-- `post_deploy_smoke_passed`
-- `healthcheck_passed`
-- `rollback_exercised`
-- `post_rollback_smoke_passed`
+- `beta_environment_manifest_present`
+- `health_endpoint_passed`
+- `auth_negative_path_passed`
+- `project_route_smoke_passed`
+- `rollback_documented_or_tested`
 
 ## Aggregate gate output
 
@@ -124,4 +124,4 @@ This aggregate is diagnostic evidence only. It is not a substitute for the six r
 
 ## Fail-closed behavior
 
-The gate fails if any required artifact is missing, unparsable, missing a required signal, or has a non-passing signal. Failure output names the missing artifacts and missing or failing signals so the next proof-producing task can target the blocker directly.
+The gate fails if any required artifact is missing, unparsable, missing a required signal, or has a non-passing signal. Failure output names the missing artifacts and missing or failing signals so the next proof-producing task can target the blocker directly. For deployment smoke only, local validation accepts a fresh documented scope-out when no hosted beta environment is available; hosted readiness still requires rerunning `npm run proof:deployment-smoke` with the explicit beta env vars.

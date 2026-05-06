@@ -1,0 +1,40 @@
+{
+  "generatedAt": "2026-05-06T18:08:00.000Z",
+  "artifact": "release-evidence/runtime/deployment_smoke_beta_proof.json",
+  "pathId": "deployment_smoke_beta",
+  "status": "local_validation_scoped_out",
+  "proofMode": "hosted_beta_http_smoke_required",
+  "documentation": "docs/beta/DEPLOYMENT_SMOKE_AND_ROLLBACK.md",
+  "manifestPath": "release-evidence/runtime/beta_environment_manifest.json",
+  "localValidationScope": {
+    "deploymentProofOutsideLocalValidation": true,
+    "documentedReason": "No live hosted friends-and-family beta URL or beta auth token is available in local CI. The proof generator remains fail-closed and must be rerun with BOTOMATIC_BETA_BASE_URL, BOTOMATIC_BETA_AUTH_TOKEN, and BOTOMATIC_BETA_PROJECT_ID to create a passing hosted-beta HTTP proof."
+  },
+  "signals": {
+    "beta_environment_manifest_present": {
+      "passed": false,
+      "status": "not_run",
+      "detail": "Shape-only local validation: real manifest verification is performed by npm run proof:deployment-smoke when beta env vars are present."
+    },
+    "health_endpoint_passed": {
+      "passed": false,
+      "status": "not_run",
+      "detail": "No live hosted beta URL is available in local CI."
+    },
+    "auth_negative_path_passed": {
+      "passed": false,
+      "status": "not_run",
+      "detail": "No live hosted beta URL and invalid-auth route check is available in local CI."
+    },
+    "project_route_smoke_passed": {
+      "passed": false,
+      "status": "not_run",
+      "detail": "No live hosted beta project ID and auth token are available in local CI."
+    },
+    "rollback_documented_or_tested": {
+      "passed": false,
+      "status": "not_run",
+      "detail": "Rollback procedure is documented; live rollback drill must be asserted only after it is actually performed."
+    }
+  }
+}

@@ -177,7 +177,8 @@
     "test:no-secrets-beta-proof": "tsx packages/validation/src/tests/noSecretsBetaProof.test.ts",
     "beta:gate": "npm run -s build && npm run -s test && npm run -s validate:all && npm run -s beta:readiness",
     "test:security-auth-beta": "tsx packages/validation/src/tests/securityAuthBetaFailClosed.test.ts",
-    "test:durable-fail-closed-beta": "tsx packages/validation/src/tests/durableFailClosedBeta.test.ts"
+    "test:durable-fail-closed-beta": "tsx packages/validation/src/tests/durableFailClosedBeta.test.ts",
+    "proof:deployment-smoke": "tsx scripts/deploymentSmokeBetaProof.ts"
   },
   "dependencies": {
     "@trigger.dev/sdk": "^4.4.4"
