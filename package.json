@@ -151,7 +151,7 @@
     "test:ui-generated-app-runtime-smoke-model": "tsx packages/ui-preview-engine/src/tests/uiGeneratedAppRuntimeSmokeModel.test.ts",
     "test:ui-generated-app-runtime-smoke-planner": "tsx packages/ui-preview-engine/src/tests/uiGeneratedAppRuntimeSmokePlanner.test.ts",
     "test:generated-app-runtime-smoke-runner": "tsx packages/validation/src/tests/generatedAppRuntimeSmokeRunner.test.ts",
-    "test": "npm run -s test:wave-025 && npm run -s test:wave-026",
+    "test": "npm run -s test:wave-025 && npm run -s test:wave-026 && npm run -s test:tenant-isolation",
     "test:wave-025": "tsx packages/validation/src/tests/proDashboardTruthState.test.ts",
     "test:wave-026": "tsx packages/validation/src/tests/wave026LiveOrchestrationLoop.test.ts",
     "test:wave-038": "tsx packages/validation/src/tests/wave038LaunchProofDeployGating.test.ts",
@@ -169,7 +169,9 @@
     "test:commercial-cockpit": "npx playwright test -c playwright.commercial-visual.config.ts tests/e2e/visual/commercial-cockpit-visual.spec.ts",
     "test:visual-commercial": "node tests/visual/scripts/compare-commercial-cockpit.cjs",
     "test:orchestration-core": "tsx packages/validation/src/tests/orchestrationCoreWorkerWave.test.ts",
-    "proof:orchestration-core": "node scripts/proof-orchestration-core.cjs"
+    "proof:orchestration-core": "node scripts/proof-orchestration-core.cjs",
+    "test:tenant-isolation": "tsx packages/validation/src/tests/tenantIsolation.test.ts",
+    "beta:readiness": "npm run -s test:tenant-isolation && tsx packages/validation/src/repoValidators/tenantIsolationReadiness.ts"
   },
   "dependencies": {
     "@trigger.dev/sdk": "^4.4.4"

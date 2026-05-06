@@ -1,0 +1,21 @@
+{
+  "generatedAt": "2026-05-06T16:35:23.222Z",
+  "source": "packages/validation/src/tests/tenantIsolation.test.ts",
+  "repositoryAdapter": "InMemoryProjectRepository",
+  "signals": {
+    "user_a_cannot_read_user_b_project": true,
+    "user_a_cannot_write_user_b_project": true,
+    "user_a_cannot_read_user_b_jobs": true,
+    "user_a_cannot_read_user_b_evidence": true,
+    "owner_scope_enforced": true,
+    "user_a_cannot_read_user_b_logs_artifacts_vault_deployment_state": true,
+    "user_a_cannot_read_user_b_runtime_state_or_generated_outputs": true
+  },
+  "negativePathAssertions": [
+    "User A cannot read User B project",
+    "User A cannot mutate User B project",
+    "User A cannot read User B jobs",
+    "User A cannot read User B evidence",
+    "User A cannot read User B logs/artifacts/vault/deployment state/runtime state/generated outputs"
+  ]
+}

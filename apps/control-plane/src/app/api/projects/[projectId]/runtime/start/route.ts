@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireControlPlaneProjectAccess } from "@/server/projectAccess";
 import { appendRuntimeLog, checksum, emptyRuntime, loadRuntime, sanitizeRuntimeUrl, saveRuntime } from "@/server/runtimeStore";
 import { sanitizeProjectId } from "@/server/executionStore";
 
@@ -20,6 +21,8 @@ async function verifyTarget(url: string): Promise<{ ok: boolean; status?: number
 
 export async function POST(request: NextRequest, { params }: { params: { projectId: string } }) {
   const projectId = sanitizeProjectId(params.projectId);
+  const accessDenied = requireControlPlaneProjectAccess(request, projectId);
+  if (accessDenied) return accessDenied;
   const body = await readBody(request);
   const idempotencyKey = typeof body?.idempotencyKey === "string" ? body.idempotencyKey : "";
   if (!idempotencyKey) return NextResponse.json({ error: { code: "bad_request", message: "idempotencyKey is required", retryable: false, details: {} } }, { status: 400 });

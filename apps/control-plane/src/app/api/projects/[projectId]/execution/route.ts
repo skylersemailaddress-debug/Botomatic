@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireControlPlaneProjectAccess } from "@/server/projectAccess";
 import { createRun, loadProjectState, saveProjectState, sanitizeProjectId } from "@/server/executionStore";
 import { ALLOWLISTED_JOB_TYPES, appendRunLogs, executeAllowlistedJob, routeStatusFromJobs } from "@/server/executionRunner";
 
@@ -6,8 +7,10 @@ export const dynamic = "force-dynamic";
 
 const readBody = async (request: NextRequest) => request.json().catch(() => ({}));
 
-export async function GET(_: NextRequest, { params }: { params: { projectId: string } }) {
+export async function GET(request: NextRequest, { params }: { params: { projectId: string } }) {
   const projectId = sanitizeProjectId(params.projectId);
+  const accessDenied = requireControlPlaneProjectAccess(request, projectId);
+  if (accessDenied) return accessDenied;
   const state = loadProjectState(projectId);
   const latest = state.runs.at(-1);
   if (!latest) return NextResponse.json({ runId: `${projectId}_none`, projectId, status: "queued", jobs: [], logs: [], updatedAt: new Date().toISOString() });
@@ -16,6 +19,8 @@ export async function GET(_: NextRequest, { params }: { params: { projectId: str
 
 export async function POST(request: NextRequest, { params }: { params: { projectId: string } }) {
   const projectId = sanitizeProjectId(params.projectId);
+  const accessDenied = requireControlPlaneProjectAccess(request, projectId);
+  if (accessDenied) return accessDenied;
   const body = await readBody(request);
   const idempotencyKey = typeof body?.idempotencyKey === "string" ? body.idempotencyKey : "";
   if (!idempotencyKey) return NextResponse.json({ error: { code: "bad_request", message: "idempotencyKey is required", retryable: false, details: {} } }, { status: 400 });
