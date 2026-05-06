@@ -1,0 +1,81 @@
+{
+  "status": "blocked",
+  "score": 0,
+  "branch": "work",
+  "commitSha": "3d5ef82cb2b40a83a62b86b2fae525278e32d1ed",
+  "environment": {
+    "nodeVersion": "v20.19.6",
+    "npmVersion": "11.4.2",
+    "repoMode": "memory",
+    "executorAvailable": false,
+    "durableStorageAvailable": false,
+    "authMode": "disabled"
+  },
+  "project": {
+    "projectId": "",
+    "prompt": "Build a small commercial landing page app for a fictional product called AtlasCRM. It needs a hero section, pricing cards, testimonials, FAQ, contact form UI, and a launch-readiness checklist. Generate real app files and validation evidence.",
+    "created": false,
+    "persisted": false
+  },
+  "checks": {
+    "intakeCreatesProject": false,
+    "compileRuns": false,
+    "planPersistedBeforeQueue": false,
+    "packetsExist": false,
+    "rootJobsEnqueued": false,
+    "workerStarts": false,
+    "jobsClaimed": false,
+    "waveZeroCompletes": false,
+    "dependentWavesEnqueued": false,
+    "allWavesCompleteOrVisibleFailure": false,
+    "workspaceMaterialized": false,
+    "generatedFilesExist": false,
+    "previewAvailable": false,
+    "validatorsRun": false,
+    "evidenceWritten": false,
+    "failureVisible": true,
+    "restartResumeTested": false,
+    "restartResumePassed": false
+  },
+  "metrics": {
+    "packetCount": 0,
+    "rootPacketCount": 0,
+    "waveCount": 0,
+    "jobsEnqueued": 0,
+    "jobsClaimed": 0,
+    "jobsCompleted": 0,
+    "jobsFailed": 0,
+    "generatedFileCount": 0,
+    "evidenceArtifactCount": 3
+  },
+  "artifacts": {
+    "generatedFiles": [],
+    "evidenceFiles": [
+      "BOTOMATIC_FULL_BUILD_PROOF.md",
+      "botomatic-full-build-proof.json",
+      ".github/workflows/full-build-path-proof.yml"
+    ],
+    "logFiles": []
+  },
+  "failures": [
+    {
+      "step": "api_startup",
+      "message": "npm run api:start exited with code 1 and logged {\"event\":\"startup_env_error\",\"missing\":[\"ANTHROPIC_API_KEY\"]}.",
+      "likelyCause": "The orchestrator bootstrap requires ANTHROPIC_API_KEY before starting; no Anthropic key is present in this environment.",
+      "recommendedFix": "Provide a real ANTHROPIC_API_KEY and configure a real executor path before rerunning full build proof. Do not use the mock executor or static seeded artifacts as production proof."
+    },
+    {
+      "step": "durable_storage",
+      "message": "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are missing, so durable repository and queue mode are unavailable.",
+      "likelyCause": "No Supabase credentials were provided in the proof environment.",
+      "recommendedFix": "Provision Supabase URL/service-role credentials, set PROJECT_REPOSITORY_MODE=durable and QUEUE_BACKEND=supabase, then rerun restart/resume proof."
+    },
+    {
+      "step": "auth",
+      "message": "API_AUTH_TOKEN and OIDC issuer/client settings are missing, so auth mode resolves to disabled in development mode.",
+      "likelyCause": "No bearer token or OIDC configuration was provided in the proof environment.",
+      "recommendedFix": "Set API_AUTH_TOKEN for local proof or OIDC_ISSUER_URL/OIDC_CLIENT_ID/OIDC_AUDIENCE for OIDC proof before exercising protected build routes."
+    }
+  ],
+  "launchImplication": "Blocked locally: the Codex task shell cannot access GitHub repository secrets unless they are explicitly injected, so this local proof still cannot create a fresh project with ANTHROPIC_API_KEY. GitHub Actions now has a manual Full Build Path Proof workflow that safely maps ANTHROPIC_API_KEY and OPENAI_API_KEY from repository secrets, runs baseline checks, starts the API, creates a fresh AtlasCRM project, runs compile/plan, and fails visibly if persisted packet checks do not pass; live workflow results must still be reviewed before any pass/launch claim."
+}
