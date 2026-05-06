@@ -6,7 +6,7 @@
   "scripts": {
     "build": "npm run ui:build",
     "api:start": "PORT=3001 tsx apps/orchestrator-api/src/bootstrap.ts",
-    "api:dev": "PORT=3001 tsx apps/orchestrator-api/src/bootstrap.ts",
+    "api:dev": "PORT=3001 BOTOMATIC_DEPLOYMENT_ENV=local RUNTIME_MODE=development PROJECT_REPOSITORY_MODE=memory BOTOMATIC_ALLOW_LOCAL_MEMORY_FALLBACK=true tsx apps/orchestrator-api/src/bootstrap.ts",
     "doctor": "tsx scripts/doctor.ts",
     "start:easy": "tsx scripts/startEasy.ts",
     "start:easy:dry-run": "tsx scripts/startEasy.ts --dry-run",
@@ -151,7 +151,7 @@
     "test:ui-generated-app-runtime-smoke-model": "tsx packages/ui-preview-engine/src/tests/uiGeneratedAppRuntimeSmokeModel.test.ts",
     "test:ui-generated-app-runtime-smoke-planner": "tsx packages/ui-preview-engine/src/tests/uiGeneratedAppRuntimeSmokePlanner.test.ts",
     "test:generated-app-runtime-smoke-runner": "tsx packages/validation/src/tests/generatedAppRuntimeSmokeRunner.test.ts",
-    "test": "npm run -s test:wave-025 && npm run -s test:wave-026 && npm run -s test:security-auth-beta",
+    "test": "npm run -s test:wave-025 && npm run -s test:wave-026 && npm run -s test:security-auth-beta && npm run -s test:durable-fail-closed-beta",
     "test:wave-025": "tsx packages/validation/src/tests/proDashboardTruthState.test.ts",
     "test:wave-026": "tsx packages/validation/src/tests/wave026LiveOrchestrationLoop.test.ts",
     "test:wave-038": "tsx packages/validation/src/tests/wave038LaunchProofDeployGating.test.ts",
@@ -172,7 +172,8 @@
     "proof:orchestration-core": "node scripts/proof-orchestration-core.cjs",
     "beta:readiness": "tsx scripts/validateBetaReadiness.ts",
     "beta:gate": "npm run -s build && npm run -s test && npm run -s validate:all && npm run -s beta:readiness",
-    "test:security-auth-beta": "tsx packages/validation/src/tests/securityAuthBetaFailClosed.test.ts"
+    "test:security-auth-beta": "tsx packages/validation/src/tests/securityAuthBetaFailClosed.test.ts",
+    "test:durable-fail-closed-beta": "tsx packages/validation/src/tests/durableFailClosedBeta.test.ts"
   },
   "dependencies": {
     "@trigger.dev/sdk": "^4.4.4"
