@@ -110,18 +110,35 @@ async function getCountForStatus(status: string): Promise<number> {
   return Number.isFinite(total) ? total : 0;
 }
 
+async function getStaleLeaseCount(): Promise<number> {
+  if (!URL) return 0;
+  const res = await fetch(
+    `${URL}/rest/v1/orchestrator_jobs?status=eq.running&lease_expires_at=lt.${encodeURIComponent(new Date().toISOString())}&select=job_id`,
+    {
+      method: "GET",
+      headers: { ...headers, Prefer: "count=exact" },
+    }
+  );
+  if (!res.ok) return 0;
+  const contentRange = res.headers.get("content-range") || "";
+  const total = Number(contentRange.split("/")[1] || 0);
+  return Number.isFinite(total) ? total : 0;
+}
+
 export async function getQueueStats(): Promise<{
   queued: number;
   running: number;
   succeeded: number;
   failed: number;
+  staleLeases: number;
   total: number;
 }> {
-  const [queued, running, succeeded, failed] = await Promise.all([
+  const [queued, running, succeeded, failed, staleLeases] = await Promise.all([
     getCountForStatus("queued"),
     getCountForStatus("running"),
     getCountForStatus("succeeded"),
     getCountForStatus("failed"),
+    getStaleLeaseCount(),
   ]);
 
   return {
@@ -129,6 +146,7 @@ export async function getQueueStats(): Promise<{
     running,
     succeeded,
     failed,
+    staleLeases,
     total: queued + running + succeeded + failed,
   };
 }

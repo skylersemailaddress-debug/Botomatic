@@ -211,6 +211,41 @@ const PROVIDER_CHAINS: Record<TaskType, ProviderSpec[]> = {
 
 // ── Main execution with fallback chain ───────────────────────────────────────
 
+function isTransientError(err: any): boolean {
+  const msg = String(err?.message || err).toLowerCase();
+  const status = Number(err?.status || err?.statusCode || 0);
+  return status === 429 || status === 503 || status === 502 || msg.includes("rate limit") || msg.includes("overloaded") || msg.includes("timeout");
+}
+
+async function callWithRetry(
+  provider: ProviderSpec,
+  system: string,
+  user: string,
+  attempts: string[]
+): Promise<ProviderResult | null> {
+  const maxRetries = isTransientError ? 1 : 0;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const result = await provider.call(provider.model, system, user);
+      attempts.push(`ok:${provider.name}/${provider.model}${attempt > 0 ? `(retry${attempt})` : ""}`);
+      return result;
+    } catch (err: any) {
+      const msg = String(err?.message || err).slice(0, 120);
+      if (attempt < maxRetries && isTransientError(err)) {
+        const delayMs = 2000 * (attempt + 1);
+        attempts.push(`retry:${provider.name}/${provider.model}:${msg}:wait${delayMs}ms`);
+        console.warn(JSON.stringify({ event: "provider_retry", provider: provider.name, model: provider.model, attempt, delayMs, error: msg }));
+        await new Promise((r) => setTimeout(r, delayMs));
+        continue;
+      }
+      attempts.push(`err:${provider.name}/${provider.model}:${msg}`);
+      console.warn(JSON.stringify({ event: "provider_fallback", provider: provider.name, model: provider.model, error: msg }));
+      return null;
+    }
+  }
+  return null;
+}
+
 export async function executeWithRouter(
   task: TaskType,
   system: string,
@@ -224,14 +259,9 @@ export async function executeWithRouter(
       attempts.push(`skip:${provider.name}/${provider.model}:no_key`);
       continue;
     }
-    try {
-      const result = await provider.call(provider.model, system, user);
-      attempts.push(`ok:${provider.name}/${provider.model}`);
+    const result = await callWithRetry(provider, system, user, attempts);
+    if (result) {
       return { ...result, task, attempts };
-    } catch (err: any) {
-      const msg = String(err?.message || err).slice(0, 120);
-      attempts.push(`err:${provider.name}/${provider.model}:${msg}`);
-      console.warn(JSON.stringify({ event: "provider_fallback", provider: provider.name, model: provider.model, error: msg }));
     }
   }
 

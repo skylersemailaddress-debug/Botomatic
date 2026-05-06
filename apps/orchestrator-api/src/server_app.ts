@@ -310,6 +310,7 @@ function getExecutor() {
     return new ClaudeCodeExecutor({
       baseUrl: process.env.CLAUDE_EXECUTOR_URL!,
       apiKey: process.env.CLAUDE_EXECUTOR_KEY,
+      timeoutMs: Number(process.env.EXECUTOR_TIMEOUT_MS || 300_000),
     });
   }
   return MockExecutor;
@@ -416,7 +417,11 @@ function handleRouteError(res: express.Response, _config: RuntimeConfig, error: 
     timestamp: occurredAt,
   });
   console.error(JSON.stringify({ event: "route_error", route, actorId: actor?.actorId || "unknown", message, workerId, requestId, timestamp: occurredAt }));
-  return res.status(500).json({ error: message, workerId, requestId });
+  // In commercial mode, never return raw internal error text — reference ID lets ops correlate logs.
+  const clientError = _config.runtimeMode === "commercial"
+    ? `Internal error — reference: ${requestId}`
+    : message;
+  return res.status(500).json({ error: clientError, workerId, requestId });
 }
 
 type RouteErrorAlertPayload = {
@@ -1599,7 +1604,11 @@ function isAllowedCorsOrigin(origin: string): boolean {
     return true;
   }
 
-  return /^https:\/\/[a-z0-9-]+\.app\.github\.dev$/i.test(origin);
+  // GitHub Codespaces wildcard only in development — never in commercial mode.
+  if (process.env.RUNTIME_MODE !== "commercial") {
+    return /^https:\/\/[a-z0-9-]+\.app\.github\.dev$/i.test(origin);
+  }
+  return false;
 }
 
 export function classifyLocalExecutionOutcome(outcome: {
@@ -1685,7 +1694,8 @@ export function buildApp(config: RuntimeConfig) {
   const app = express();
   const repo = config.repository.repo;
   startQueueWorker(config);
-  app.use(express.json());
+  const bodySizeLimitMb = Number(process.env.BODY_SIZE_LIMIT_MB || 10);
+  app.use(express.json({ limit: `${bodySizeLimitMb}mb` }));
 
   app.use((req, res, next) => {
     const origin = req.header("origin");
@@ -2315,7 +2325,12 @@ export function buildApp(config: RuntimeConfig) {
       if (!uploadedFile) return res.status(400).json({ error: "No file uploaded" });
 
       const sizeBytes = uploadedFile.size;
-      const fileName = uploadedFile.originalname;
+      const rawFileName = uploadedFile.originalname;
+      // Reject names with control characters or suspiciously long names (DoS prevention).
+      if (rawFileName.length > 255 || /[\x00-\x1f\x7f]/.test(rawFileName)) {
+        return res.status(400).json({ error: "Invalid filename: contains control characters or exceeds 255 characters." });
+      }
+      const fileName = rawFileName;
       const mimeType = uploadedFile.mimetype;
       const sourceType = classifyUploadedSourceType(fileName, mimeType || "");
       const uploadedAt = now();
@@ -4308,6 +4323,23 @@ export function buildApp(config: RuntimeConfig) {
       return res.json({ events: (project as any).auditEvents.slice(0, 100), actorId: actor.actorId });
     } catch (error) {
       return handleRouteError(res, config, error, "GET audit", actor);
+    }
+  });
+
+  // Global error handler — catches any middleware or route that calls next(err) or throws
+  // synchronously. Express requires exactly 4 arguments to recognise it as an error handler.
+  app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    const requestId = String((res.locals as any)?.requestId || makeRequestId());
+    const message = String(err?.message || err || "Unknown error");
+    routeErrorCount += 1;
+    updateTelemetryTimestamp();
+    recordOpsError("route_error", message, { route: "global_error_handler", requestId, workerId });
+    console.error(JSON.stringify({ event: "unhandled_route_error", message, requestId, workerId, timestamp: now() }));
+    if (!res.headersSent) {
+      const clientError = config.runtimeMode === "commercial"
+        ? `Internal error — reference: ${requestId}`
+        : message;
+      res.status(err?.status || 500).json({ error: clientError, requestId });
     }
   });
 

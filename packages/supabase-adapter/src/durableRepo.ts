@@ -152,9 +152,13 @@ export class DurableProjectRepository implements ProjectRepository {
     const encodedProjectId = encodeURIComponent(normalized.projectId);
 
     if (existing) {
+      // Use the previous updated_at as an ETag — if another worker already wrote a newer
+      // version, the PATCH matches 0 rows and we throw a conflict rather than silently
+      // overwriting concurrent changes (last-write-wins race condition).
+      const encodedPrevUpdatedAt = encodeURIComponent(existing.updatedAt);
       const updateUrl = joinUrl(
         this.baseUrl,
-        `${this.tableName}?project_id=eq.${encodedProjectId}`
+        `${this.tableName}?project_id=eq.${encodedProjectId}&updated_at=eq.${encodedPrevUpdatedAt}`
       );
 
       const updateRes = await fetch(updateUrl, {
@@ -173,7 +177,13 @@ export class DurableProjectRepository implements ProjectRepository {
         );
       }
 
-      await this.assertReadable(normalized.projectId);
+      const updated = await parseJsonSafe(updateRes);
+      if (!Array.isArray(updated) || updated.length === 0) {
+        throw new Error(
+          `Durable repository conflict: project ${normalized.projectId} was modified by another worker. Re-read and retry.`
+        );
+      }
+
       return;
     }
 
