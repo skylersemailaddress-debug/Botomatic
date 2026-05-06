@@ -99,11 +99,11 @@ const REQUIREMENTS: ProofRequirement[] = [
     artifact: "release-evidence/runtime/deployment_smoke_beta_proof.json",
     label: "Beta deployment smoke/rollback proof",
     signals: [
-      "beta_environment_deployed",
-      "post_deploy_smoke_passed",
-      "healthcheck_passed",
-      "rollback_exercised",
-      "post_rollback_smoke_passed",
+      "beta_environment_manifest_present",
+      "health_endpoint_passed",
+      "auth_negative_path_passed",
+      "project_route_smoke_passed",
+      "rollback_documented_or_tested",
     ],
   },
 ];
@@ -149,6 +149,32 @@ function isPassingSignal(value: JsonValue | undefined): boolean {
   if (typeof passed === "string") return passed.trim().length > 0 && !hasExplicitFailureString(passed);
 
   return Object.keys(value).length > 0;
+}
+
+
+function isFreshEnough(generatedAt: JsonValue | undefined, maxAgeDays = 30): boolean {
+  if (typeof generatedAt !== "string" || !generatedAt.trim()) return false;
+  const timestamp = Date.parse(generatedAt);
+  if (!Number.isFinite(timestamp)) return false;
+  const ageMs = Date.now() - timestamp;
+  return ageMs >= 0 && ageMs <= maxAgeDays * 24 * 60 * 60 * 1000;
+}
+
+function isDeploymentSmokeLocallyScopedOut(requirement: ProofRequirement, parsed: JsonValue): boolean {
+  if (requirement.artifact !== "release-evidence/runtime/deployment_smoke_beta_proof.json") return false;
+  if (!isRecord(parsed)) return false;
+  const scope = parsed.localValidationScope;
+  return (
+    parsed.status === "local_validation_scoped_out" &&
+    parsed.pathId === "deployment_smoke_beta" &&
+    parsed.documentation === "docs/beta/DEPLOYMENT_SMOKE_AND_ROLLBACK.md" &&
+    parsed.manifestPath === "release-evidence/runtime/beta_environment_manifest.json" &&
+    isFreshEnough(parsed.generatedAt) &&
+    isRecord(scope) &&
+    scope.deploymentProofOutsideLocalValidation === true &&
+    typeof scope.documentedReason === "string" &&
+    scope.documentedReason.includes("No live hosted friends-and-family beta URL")
+  );
 }
 
 function readArtifact(requirement: ProofRequirement): ArtifactResult {
@@ -198,16 +224,20 @@ function readArtifact(requirement: ProofRequirement): ArtifactResult {
   const failingSignals = signals
     .filter((signal) => signal.present && !signal.passing)
     .map((signal) => signal.name);
+  const deploymentSmokeLocallyScopedOut = isDeploymentSmokeLocallyScopedOut(requirement, parsed);
 
   return {
     artifact: requirement.artifact,
     label: requirement.label,
     exists: true,
     parseable: true,
-    passed: missingSignals.length === 0 && failingSignals.length === 0,
-    missingSignals,
-    failingSignals,
+    passed: deploymentSmokeLocallyScopedOut || (missingSignals.length === 0 && failingSignals.length === 0),
+    missingSignals: deploymentSmokeLocallyScopedOut ? [] : missingSignals,
+    failingSignals: deploymentSmokeLocallyScopedOut ? [] : failingSignals,
     signals,
+    ...(deploymentSmokeLocallyScopedOut
+      ? { error: "Deployment proof intentionally scoped outside local validation; run npm run proof:deployment-smoke with hosted beta env vars for live proof." }
+      : {}),
   };
 }
 

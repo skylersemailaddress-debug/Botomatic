@@ -64,6 +64,7 @@ import { validateGeneratedAppRuntimeSmokeReadiness } from "./repoValidators/gene
 
 import { validateTenantIsolationReadiness } from "./repoValidators/tenantIsolationReadiness";
 import { validateRouteAuthorizationReadiness } from "./repoValidators/routeAuthorizationReadiness";
+import { validateDeploymentSmokeBetaReadiness } from "./repoValidators/deploymentSmokeBetaReadiness";
 export type RepoValidatorResult = {
   name: string;
   status: "passed" | "failed";
@@ -1376,5 +1377,6 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateGeneratedAppRuntimeSmokeReadiness(root),
     validateTenantIsolationReadiness(root),
     validateRouteAuthorizationReadiness(root),
+    validateDeploymentSmokeBetaReadiness(root),
   ];
 }
