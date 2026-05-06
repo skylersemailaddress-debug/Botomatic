@@ -66,8 +66,12 @@ const DEFAULT_SKIP_DIRS = new Set([".git", "node_modules", "dist", "build", ".ne
 const HISTORICAL_REMEDIATED_EXAMPLE_FINDINGS = new Set([
   "supabase_project_url:DEPLOY.md:c2ecce5e2c6aeabc",
   "bearer_token:packages/ui-preview-engine/src/tests/uiDataStateApiWiringNormalizer.test.ts:832874966eafb488",
+  // Old test-example fingerprints (pre-DEPLOY-001 refactor)
   "openai_or_provider_key:packages/validation/src/tests/secretLeakPrevention.test.ts:894fcc12300916ee",
   "github_token:packages/validation/src/tests/secretLeakPrevention.test.ts:84886ca21ec4dab9",
+  // Post-DEPLOY-001 synthetic test-example fingerprints (commit 1a318f49e58c)
+  "openai_or_provider_key:packages/validation/src/tests/secretLeakPrevention.test.ts:90ba0790b3c585b8",
+  "github_token:packages/validation/src/tests/secretLeakPrevention.test.ts:851ec3cfed8ba2d2",
 ]);
 
 function isRemediatedHistoricalExample(finding: SecretFinding): boolean {
