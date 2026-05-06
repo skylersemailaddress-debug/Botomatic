@@ -18,13 +18,9 @@ function getProxyBaseUrl(): string {
 }
 
 function getAuthToken(): string {
-  return (
-    process.env.BOTOMATIC_API_TOKEN ||
-    process.env.API_AUTH_TOKEN ||
-    process.env.NEXT_PUBLIC_BOTOMATIC_API_TOKEN ||
-    process.env.NEXT_PUBLIC_DEV_BEARER_TOKEN ||
-    ""
-  ).trim();
+  // Only read server-side env vars — NEXT_PUBLIC_* are baked into the client bundle
+  // and must never carry credentials.
+  return (process.env.BOTOMATIC_API_TOKEN || process.env.API_AUTH_TOKEN || "").trim();
 }
 
 async function proxy(request: NextRequest, pathSegments: string[]) {

@@ -2429,6 +2429,16 @@ export function buildApp(config: RuntimeConfig) {
         return res.status(400).json({ error: "Invalid filename: contains control characters or exceeds 255 characters." });
       }
       const fileName = rawFileName;
+
+      // Binary safety gate — block known-dangerous extensions, flag suspicious ones.
+      if (isBlockedFileExtension(fileName)) {
+        return res.status(400).json({ error: `File type not permitted: ${path.extname(fileName).toLowerCase()}`, code: "BLOCKED_FILE_TYPE" });
+      }
+      const binaryScan = suspiciousBinaryHook(fileName);
+      if (binaryScan.status === "blocked") {
+        return res.status(400).json({ error: binaryScan.reason, code: "BLOCKED_FILE_TYPE" });
+      }
+
       const mimeType = uploadedFile.mimetype;
       const sourceType = classifyUploadedSourceType(fileName, mimeType || "");
       const uploadedAt = now();
@@ -2618,16 +2628,16 @@ export function buildApp(config: RuntimeConfig) {
       if (uploadedFile?.path) {
         try {
           fs.rmSync(uploadedFile.path, { force: true });
-        } catch {
-          // keep error handling non-fatal when cleanup fails
+        } catch (cleanupErr: any) {
+          console.warn(JSON.stringify({ event: "intake_cleanup_failed", path: uploadedFile.path, error: String(cleanupErr?.message || cleanupErr) }));
         }
       }
       const intakeWorkDir = (req as any).__intakeWorkDir as string | undefined;
       if (intakeWorkDir) {
         try {
           fs.rmSync(intakeWorkDir, { recursive: true, force: true });
-        } catch {
-          // keep error handling non-fatal when cleanup fails
+        } catch (cleanupErr: any) {
+          console.warn(JSON.stringify({ event: "intake_cleanup_failed", path: intakeWorkDir, error: String(cleanupErr?.message || cleanupErr) }));
         }
       }
 
@@ -3189,6 +3199,9 @@ export function buildApp(config: RuntimeConfig) {
   app.post("/api/projects/:projectId/operator/send", async (req, res) => {
     const actor = await getRequestActor(req, config);
     const rateKey = actor.actorId !== "anonymous" ? actor.actorId : (req.ip || "anonymous");
+    if (actor.actorId === "anonymous" && config.runtimeMode === "commercial") {
+      console.warn(JSON.stringify({ event: "rate_limit_ip_fallback", ip: req.ip || "unknown", path: req.path }));
+    }
     const rateCheck = checkOperatorRateLimit(rateKey);
     if (!rateCheck.allowed) {
       res.setHeader("X-RateLimit-Limit", String(RATE_LIMIT_MAX));

@@ -248,14 +248,14 @@ function nowIso(): string {
 }
 
 function canUseStorage(): boolean {
-  return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+  return typeof window !== "undefined" && typeof window.sessionStorage !== "undefined";
 }
 
 function readJson<T>(key: string, fallback: T): T {
   if (!canUseStorage()) {
     return fallback;
   }
-  const raw = window.localStorage.getItem(key);
+  const raw = window.sessionStorage.getItem(key);
   if (!raw) {
     return fallback;
   }
@@ -270,7 +270,7 @@ function writeJson<T>(key: string, value: T): void {
   if (!canUseStorage()) {
     return;
   }
-  window.localStorage.setItem(key, JSON.stringify(value));
+  window.sessionStorage.setItem(key, JSON.stringify(value));
 }
 
 function createLocalMetadataStore(): SecretReferenceStore {

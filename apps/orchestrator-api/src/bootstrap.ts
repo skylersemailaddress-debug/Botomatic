@@ -166,7 +166,7 @@ async function start() {
   );
 
   app.listen(config.port, () => {
-    console.log(`API running on ${config.port}`);
+    console.log(JSON.stringify({ event: "api_ready", port: config.port }));
   });
 }
 

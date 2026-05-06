@@ -86,11 +86,16 @@ export function buildApiUrl(path: string): string {
 function buildHeaders(overrides: Record<string, string> = {}): Record<string, string> {
   const headers: Record<string, string> = {};
 
-  // Allow explicit public token for local authenticated stacks (production-mode local runs included).
-  if (process.env.NEXT_PUBLIC_BOTOMATIC_API_TOKEN) {
-    headers["Authorization"] = `Bearer ${process.env.NEXT_PUBLIC_BOTOMATIC_API_TOKEN}`;
-  } else if (process.env.NEXT_PUBLIC_DEV_BEARER_TOKEN) {
-    headers["Authorization"] = `Bearer ${process.env.NEXT_PUBLIC_DEV_BEARER_TOKEN}`;
+  // Only add Authorization on the server side (React Server Components, API routes).
+  // Client-side fetches are routed through /api/[...path] which adds auth server-side.
+  // NEXT_PUBLIC_ vars are compiled into the browser bundle and must NOT carry credentials.
+  if (typeof window === "undefined") {
+    const token = (
+      process.env.BOTOMATIC_API_TOKEN ||
+      process.env.API_AUTH_TOKEN ||
+      ""
+    ).trim();
+    if (token) headers["Authorization"] = `Bearer ${token}`;
   }
 
   return { ...headers, ...overrides };
