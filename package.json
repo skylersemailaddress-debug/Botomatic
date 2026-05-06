@@ -69,6 +69,7 @@
     "test:dirty-repo-evidence": "tsx packages/validation/src/tests/dirtyRepoEvidence.test.ts",
     "test:dirty-repo-completion-v2": "tsx packages/validation/src/tests/dirtyRepoCompletionContractV2.test.ts",
     "test:deploy-route-gates": "tsx packages/validation/src/tests/deployRouteGates.test.ts",
+    "test:private-beta-hardening": "tsx packages/validation/src/tests/privateBetaHardening.test.ts",
     "test:dirty-repo-repair-loop-proof": "tsx packages/validation/src/tests/dirtyRepoRepairLoopProof.test.ts",
     "test:final-release-evidence-lock": "tsx packages/validation/src/tests/finalReleaseEvidenceLock.test.ts",
     "test:master-truth-spec-readiness": "tsx packages/validation/src/tests/masterTruthSpecReadiness.test.ts",

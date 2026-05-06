@@ -1,5 +1,10 @@
 import { ProjectRepository, StoredProjectRecord } from "./types";
 
+/** Result from mergeProjectRuns — either success or a stale-write conflict. */
+export type MergeRunsResult =
+  | { ok: true }
+  | { ok: false; conflict: true; message: string };
+
 type DurableProjectRepositoryOptions = {
   baseUrl: string;
   serviceRoleKey: string;
@@ -205,5 +210,47 @@ export class DurableProjectRepository implements ProjectRepository {
     }
 
     await this.assertReadable(normalized.projectId);
+  }
+
+  /**
+   * Atomically merge partial `runs` updates using the JSONB `||` operator at the
+   * DB layer. Prevents last-write-wins when two workers update different packets
+   * inside the same project's `runs` field concurrently.
+   *
+   * Returns `{ ok: false, conflict: true }` when `expectedUpdatedAt` no longer
+   * matches (another writer committed first). Caller should re-read and retry.
+   */
+  async mergeProjectRuns(
+    projectId: string,
+    expectedUpdatedAt: string,
+    partialRuns: Record<string, unknown>
+  ): Promise<MergeRunsResult> {
+    const url = joinUrl(this.baseUrl, `rpc/merge_project_runs`);
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { ...this.jsonHeaders, Prefer: "return=representation" },
+      body: JSON.stringify({
+        p_project_id: projectId,
+        p_expected_updated_at: expectedUpdatedAt,
+        p_runs: partialRuns,
+      }),
+    });
+
+    if (!res.ok) {
+      const body = await parseJsonSafe(res);
+      throw new Error(
+        `mergeProjectRuns RPC failed ${res.status}: ${JSON.stringify(body)}`
+      );
+    }
+
+    const rows = (await parseJsonSafe(res)) as ProjectRow[] | null;
+    if (!rows || rows.length === 0) {
+      return {
+        ok: false,
+        conflict: true,
+        message: `Concurrent write detected for project ${projectId} — re-read and retry.`,
+      };
+    }
+    return { ok: true };
   }
 }

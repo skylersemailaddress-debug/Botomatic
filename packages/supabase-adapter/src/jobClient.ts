@@ -7,6 +7,103 @@ const headers = {
   "Content-Type": "application/json",
 };
 
+// ── Dead Letter Queue ──────────────────────────────────────────────────────────
+// In-memory fallback for DLQ when Supabase is absent (memory/dev mode).
+const inMemoryDLQ = new Map<string, DLQEntry>();
+
+export type DLQEntry = {
+  id: string;
+  job_id: string;
+  project_id: string;
+  packet_id: string | null;
+  attempt_count: number;
+  error_message: string;
+  safe_stack: string;
+  retryable: boolean;
+  original_payload: { packetId: string; goal?: string } | null;
+  first_failed_at: string;
+  last_failed_at: string;
+  created_at: string;
+};
+
+export async function sendToDLQ(entry: DLQEntry): Promise<void> {
+  if (!URL) {
+    inMemoryDLQ.set(entry.id, entry);
+    return;
+  }
+  const res = await fetch(`${URL}/rest/v1/dead_letter_jobs`, {
+    method: "POST",
+    headers: {
+      ...headers,
+      Prefer: "resolution=merge-duplicates",
+    },
+    body: JSON.stringify(entry),
+  });
+  if (!res.ok) {
+    const body = await parseJsonSafe(res);
+    // Fall back to in-memory if Supabase insert fails
+    inMemoryDLQ.set(entry.id, entry);
+    console.error(`sendToDLQ Supabase failed ${res.status}: ${JSON.stringify(body)} — saved to in-memory DLQ`);
+  }
+}
+
+export async function getDLQEntries(limit = 100): Promise<DLQEntry[]> {
+  if (!URL) {
+    return Array.from(inMemoryDLQ.values()).slice(0, limit);
+  }
+  const res = await fetch(
+    `${URL}/rest/v1/dead_letter_jobs?order=created_at.desc&limit=${limit}`,
+    { method: "GET", headers: { ...headers, Accept: "application/json" } }
+  );
+  if (!res.ok) {
+    // Fall back to in-memory
+    return Array.from(inMemoryDLQ.values()).slice(0, limit);
+  }
+  const data = await parseJsonSafe(res);
+  return Array.isArray(data) ? data : [];
+}
+
+export async function retryDLQEntry(id: string): Promise<DLQEntry | null> {
+  let entry: DLQEntry | null = null;
+
+  if (!URL) {
+    entry = inMemoryDLQ.get(id) ?? null;
+  } else {
+    const res = await fetch(`${URL}/rest/v1/dead_letter_jobs?id=eq.${encodeURIComponent(id)}`, {
+      method: "GET",
+      headers: { ...headers, Accept: "application/json" },
+    });
+    if (res.ok) {
+      const rows = await parseJsonSafe(res);
+      entry = Array.isArray(rows) && rows.length > 0 ? (rows[0] as DLQEntry) : null;
+    }
+  }
+
+  if (!entry) return null;
+
+  // Re-enqueue to orchestrator_jobs
+  const newJobId = `job_dlq_retry_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  await enqueueJob({
+    job_id: newJobId,
+    project_id: entry.project_id,
+    packet_id: entry.packet_id ?? "",
+  });
+
+  // Mark as non-retryable in DLQ so it won't get re-processed again immediately
+  const updated: DLQEntry = { ...entry, retryable: false, last_failed_at: new Date().toISOString() };
+  if (!URL) {
+    inMemoryDLQ.set(id, updated);
+  } else {
+    await fetch(`${URL}/rest/v1/dead_letter_jobs?id=eq.${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({ retryable: false, last_failed_at: updated.last_failed_at }),
+    });
+  }
+
+  return entry;
+}
+
 async function parseJsonSafe(res: Response) {
   const text = await res.text();
   if (!text) return null;

@@ -42,6 +42,51 @@ create index if not exists idx_jobs_project on orchestrator_jobs(project_id);
 create index if not exists idx_jobs_lease on orchestrator_jobs(lease_expires_at) where status = 'running';
 
 -- ── claim_job RPC (atomic: pick oldest queued or re-lease expired running) ──
+-- ── dead_letter_jobs (DLQ for failed jobs after retry exhaustion) ───────────
+create table if not exists dead_letter_jobs (
+  id text primary key,
+  job_id text not null,
+  project_id text not null,
+  packet_id text,
+  attempt_count int not null default 0,
+  error_message text,
+  safe_stack text,
+  retryable boolean not null default true,
+  original_payload jsonb,
+  first_failed_at timestamptz not null default now(),
+  last_failed_at timestamptz not null default now(),
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_dlq_project on dead_letter_jobs(project_id);
+create index if not exists idx_dlq_retryable on dead_letter_jobs(retryable) where retryable = true;
+
+-- ── merge_project_runs RPC (JSONB-level merge — prevents last-write-wins on runs) ─
+create or replace function merge_project_runs(
+  p_project_id text,
+  p_expected_updated_at timestamptz,
+  p_runs jsonb
+)
+returns setof orchestrator_projects
+language plpgsql
+as $$
+declare
+  result orchestrator_projects;
+begin
+  update orchestrator_projects
+  set runs       = coalesce(runs, '{}'::jsonb) || p_runs,
+      updated_at = now()
+  where project_id = p_project_id
+    and updated_at  = p_expected_updated_at
+  returning * into result;
+
+  if not found then
+    return;
+  end if;
+
+  return next result;
+end;
+$$;
+
 create or replace function claim_job(worker_id text, lease_ms bigint)
 returns setof orchestrator_jobs
 language plpgsql

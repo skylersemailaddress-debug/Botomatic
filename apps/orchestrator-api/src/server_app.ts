@@ -62,7 +62,8 @@ import { ClaudeCodeExecutor } from "../../../packages/executor-adapters/src/clau
 import { runValidation } from "../../../packages/validation/src/runner";
 import { createGitOperation, GitOperationRequest, GitOperationResult } from "../../../packages/github-adapter/src/operations";
 import { GitHubRuntime } from "../../../packages/github-adapter/src/githubRuntime";
-import { enqueueJob, claimJob, finalizeJob, getQueueStats } from "../../../packages/supabase-adapter/src/jobClient";
+import { enqueueJob, claimJob, finalizeJob, getQueueStats, sendToDLQ, getDLQEntries, retryDLQEntry } from "../../../packages/supabase-adapter/src/jobClient";
+import { storageCircuit } from "./storageCircuitBreaker";
 import { GovernanceApprovalState, StoredProjectRecord } from "../../../packages/supabase-adapter/src/types";
 import { startAutonomousBuildRun, resumeAutonomousBuildRun, type AutonomousBuildRunState } from "../../../packages/autonomous-build/src";
 import { RuntimeConfig } from "./config";
@@ -125,6 +126,12 @@ const autonomousBuildRunKey = "__autonomousBuildRun";
 const generatedWorkspaceRunKey = "__generatedWorkspace";
 let workerStarted = false;
 let activeWorkers = 0;
+
+/** DLQ retry backoff schedule: attempt 0→1 waits 5s, 1→2 waits 30s, 2→3 waits 120s. */
+const DLQ_BACKOFF_MS = [5_000, 30_000, 120_000];
+const MAX_JOB_ATTEMPTS = 3;
+/** Tracks per (project_id:packet_id) how many times a job has been attempted. */
+const jobAttemptMap = new Map<string, number>();
 
 type OpsErrorType = "route_error" | "packet_failed" | "promotion_failed" | "auth_failed" | "alert_delivery_failed";
 type OpsErrorEvent = {
@@ -814,7 +821,13 @@ function validateChangedFiles(changedFiles: ChangedFile[]) {
 async function persistProject(config: RuntimeConfig, project: StoredProjectRecord) {
   ensureGovernanceApprovalState(project);
   (project as any).updatedAt = now();
-  await config.repository.repo.upsertProject(project);
+  try {
+    await config.repository.repo.upsertProject(project);
+    storageCircuit.recordSuccess(project.projectId, project);
+  } catch (err) {
+    storageCircuit.recordFailure();
+    throw err;
+  }
 }
 
 function buildOverview(project: StoredProjectRecord) {
@@ -1547,21 +1560,64 @@ async function processJob(config: RuntimeConfig, job: QueueJobRecord) {
     }
   } catch (error: any) {
     packetFailureCount += 1;
-    recordOpsError("packet_failed", String(error?.message || error), {
+    const errMsg = String(error?.message || error);
+    recordOpsError("packet_failed", errMsg, {
       projectId: project.projectId,
       packetId: packet.packetId,
     });
+
+    const attemptKey = `${project.projectId}:${packet.packetId}`;
+    const attemptsDone = (jobAttemptMap.get(attemptKey) ?? 0) + 1;
+    jobAttemptMap.set(attemptKey, attemptsDone);
+
+    if (attemptsDone < MAX_JOB_ATTEMPTS) {
+      const delayMs = DLQ_BACKOFF_MS[attemptsDone - 1] ?? 120_000;
+      console.warn(JSON.stringify({ event: "job_retry_scheduled", projectId: project.projectId, packetId: packet.packetId, attempt: attemptsDone, delayMs, error: errMsg }));
+      await finalizeJob(job.job_id, "failed", errMsg);
+      setTimeout(async () => {
+        try {
+          const retryJobId = `job_retry_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+          await enqueueJob({ job_id: retryJobId, project_id: project.projectId, packet_id: packet.packetId });
+        } catch (reEnqueueErr) {
+          console.error(JSON.stringify({ event: "job_retry_enqueue_failed", projectId: project.projectId, packetId: packet.packetId, error: String((reEnqueueErr as any)?.message || reEnqueueErr) }));
+        }
+      }, delayMs);
+    } else {
+      // Max attempts exhausted — move to DLQ.
+      jobAttemptMap.delete(attemptKey);
+      const safeStack = String(error?.stack || "").slice(0, 2000);
+      await sendToDLQ({
+        id: `dlq_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        job_id: job.job_id,
+        project_id: project.projectId,
+        packet_id: packet.packetId,
+        attempt_count: attemptsDone,
+        error_message: errMsg,
+        safe_stack: safeStack,
+        retryable: true,
+        original_payload: { packetId: packet.packetId, goal: packet.goal },
+        first_failed_at: now(),
+        last_failed_at: now(),
+        created_at: now(),
+      });
+      console.error(JSON.stringify({ event: "job_sent_to_dlq", projectId: project.projectId, packetId: packet.packetId, attempts: attemptsDone, error: errMsg }));
+      await finalizeJob(job.job_id, "failed", `DLQ after ${attemptsDone} attempts: ${errMsg}`);
+    }
+
     const failedState = markPacketFailed({ projectId: project.projectId, status: project.status as any, packets: getPackets(project), runs: project.runs as any }, packet.packetId);
     project.plan = { ...((project.plan as any) || {}), packets: (failedState as any).packets };
     project.runs = (failedState as any).runs || project.runs;
     recomputeProjectStatus(project);
-    emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "packet_failed", actorId: workerId, role: "system", timestamp: now(), metadata: { packetId: packet.packetId, error: String(error?.message || error) } });
+    emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "packet_failed", actorId: workerId, role: "system", timestamp: now(), metadata: { packetId: packet.packetId, error: errMsg } });
     await persistProject(config, project);
-    await finalizeJob(job.job_id, "failed", String(error?.message || error));
   }
 }
 
 async function workerTick(config: RuntimeConfig) {
+  if (storageCircuit.isDegraded()) {
+    console.warn(JSON.stringify({ event: "worker_paused_storage_degraded", workerId, timestamp: now() }));
+    return;
+  }
   if (activeWorkers >= workerConcurrency) return;
   const availableSlots = workerConcurrency - activeWorkers;
   let claims: (QueueJobRecord | null)[];
@@ -1690,10 +1746,28 @@ function materializeGeneratedWorkspace(
   };
 }
 
+function makeRouteTimeout(ms: number): express.RequestHandler {
+  return (_req, res, next) => {
+    const timer = setTimeout(() => {
+      if (!res.headersSent) {
+        res.status(408).json({ error: "Request timeout", timeoutMs: ms });
+      }
+    }, ms);
+    res.on("finish", () => clearTimeout(timer));
+    res.on("close", () => clearTimeout(timer));
+    next();
+  };
+}
+
 export function buildApp(config: RuntimeConfig) {
   const app = express();
   const repo = config.repository.repo;
   startQueueWorker(config);
+
+  const SHORT_TIMEOUT  = makeRouteTimeout(Number(process.env.ROUTE_TIMEOUT_SHORT_MS  || 10_000));
+  const MEDIUM_TIMEOUT = makeRouteTimeout(Number(process.env.ROUTE_TIMEOUT_MEDIUM_MS || 60_000));
+  const LONG_TIMEOUT   = makeRouteTimeout(Number(process.env.ROUTE_TIMEOUT_LONG_MS   || 300_000));
+
   const bodySizeLimitMb = Number(process.env.BODY_SIZE_LIMIT_MB || 10);
   app.use(express.json({ limit: `${bodySizeLimitMb}mb` }));
 
@@ -1737,6 +1811,7 @@ export function buildApp(config: RuntimeConfig) {
     commitSha: config.commitSha,
     startupTimestamp: config.startupTimestamp,
     queueEnabled: config.repository.mode === "durable",
+    storageHealth: storageCircuit.getHealthPayload(),
     activeWorkers,
     workerConcurrency,
     workerId,
@@ -1758,10 +1833,11 @@ export function buildApp(config: RuntimeConfig) {
     }
   };
 
-  app.get("/health", respondHealth);
-  app.get("/api/health", respondHealth);
+  app.get("/health", SHORT_TIMEOUT, respondHealth);
+  app.get("/api/health", SHORT_TIMEOUT, respondHealth);
 
   app.use("/api/ops", requireApiAuth(config));
+  app.use("/api/ops", SHORT_TIMEOUT);
 
   app.get("/api/ops/metrics", requireRole("reviewer", config), async (req, res) => {
     const actor = await getRequestActor(req, config);
@@ -1797,9 +1873,31 @@ export function buildApp(config: RuntimeConfig) {
     }
   });
 
+  app.get("/api/ops/dlq", requireRole("reviewer", config), async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const limit = Math.min(Number(req.query.limit) || 100, 500);
+      const entries = await getDLQEntries(limit);
+      return res.json({ entries, count: entries.length, actorId: actor.actorId });
+    } catch (error) {
+      return handleRouteError(res, config, error, "GET /api/ops/dlq", actor);
+    }
+  });
+
+  app.post("/api/ops/dlq/:id/retry", requireRole("admin", config), async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const entry = await retryDLQEntry(req.params.id);
+      if (!entry) return res.status(404).json({ error: "DLQ entry not found" });
+      return res.json({ ok: true, retriedEntry: entry, actorId: actor.actorId });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/ops/dlq/:id/retry", actor);
+    }
+  });
+
   app.use("/api/projects", requireApiAuth(config));
 
-  app.post("/api/projects/intake", async (req, res) => {
+  app.post("/api/projects/intake", MEDIUM_TIMEOUT, async (req, res) => {
     const actor = await getRequestActor(req, config);
     try {
       const { name, request, prompt, projectName } = req.body as Record<string, unknown>;
@@ -2585,7 +2683,7 @@ export function buildApp(config: RuntimeConfig) {
     }
   });
 
-  app.post("/api/projects/:projectId/spec/analyze", async (req, res) => {
+  app.post("/api/projects/:projectId/spec/analyze", MEDIUM_TIMEOUT, async (req, res) => {
     const actor = await getRequestActor(req, config);
     try {
       const project = await repo.getProject(req.params.projectId);
@@ -2946,7 +3044,7 @@ export function buildApp(config: RuntimeConfig) {
     }
   });
 
-  app.post("/api/projects/:projectId/autonomous-build/start", requireRole("reviewer", config), async (req, res) => {
+  app.post("/api/projects/:projectId/autonomous-build/start", requireRole("reviewer", config), LONG_TIMEOUT, async (req, res) => {
     const actor = await getRequestActor(req, config);
     try {
       const project = await repo.getProject(req.params.projectId);
@@ -3771,7 +3869,7 @@ export function buildApp(config: RuntimeConfig) {
     }
   });
 
-  app.post("/api/projects/:projectId/compile", async (req, res) => {
+  app.post("/api/projects/:projectId/compile", MEDIUM_TIMEOUT, async (req, res) => {
     const actor = await getRequestActor(req, config);
     try {
       const project = await repo.getProject(req.params.projectId);
@@ -3804,7 +3902,7 @@ export function buildApp(config: RuntimeConfig) {
     }
   });
 
-  app.post("/api/projects/:projectId/dispatch/execute-next", requireRole("reviewer", config), async (req, res) => {
+  app.post("/api/projects/:projectId/dispatch/execute-next", requireRole("reviewer", config), LONG_TIMEOUT, async (req, res) => {
     const actor = await getRequestActor(req, config);
     try {
       const project = await repo.getProject(req.params.projectId);
