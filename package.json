@@ -170,9 +170,9 @@
     "test:visual-commercial": "node tests/visual/scripts/compare-commercial-cockpit.cjs",
     "test:orchestration-core": "tsx packages/validation/src/tests/orchestrationCoreWorkerWave.test.ts",
     "proof:orchestration-core": "node scripts/proof-orchestration-core.cjs",
-    "beta:readiness": "tsx scripts/validateBetaReadiness.ts",
-    "beta:gate": "npm run -s build && npm run -s test && npm run -s validate:all && npm run -s beta:readiness",
-    "test:security-auth-beta": "tsx packages/validation/src/tests/securityAuthBetaFailClosed.test.ts"
+    "test:tenant-isolation": "tsx packages/validation/src/tests/tenantIsolation.test.ts",
+    "beta:readiness": "npm run -s test:tenant-isolation && tsx packages/validation/src/repoValidators/tenantIsolationReadiness.ts",
+    "validate:route-auth": "tsx packages/validation/src/repoValidators/routeAuthorizationReadiness.ts"
   },
   "dependencies": {
     "@trigger.dev/sdk": "^4.4.4"
