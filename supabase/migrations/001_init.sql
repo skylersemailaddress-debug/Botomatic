@@ -1,6 +1,8 @@
 -- ── orchestrator_projects ───────────────────────────────────────────────────
 create table if not exists orchestrator_projects (
   project_id          text primary key,
+  owner_user_id       text not null,
+  tenant_id           text not null,
   name                text not null,
   request             text not null,
   status              text not null,
@@ -28,6 +30,8 @@ create index if not exists idx_orchestrator_projects_updated on orchestrator_pro
 create table if not exists orchestrator_jobs (
   job_id           text primary key,
   project_id       text not null references orchestrator_projects(project_id) on delete cascade,
+  owner_user_id    text not null,
+  tenant_id        text not null,
   packet_id        text not null,
   type             text not null default 'execute_packet',
   status           text not null default 'queued',
@@ -40,6 +44,7 @@ create table if not exists orchestrator_jobs (
 
 create index if not exists idx_jobs_status on orchestrator_jobs(status);
 create index if not exists idx_jobs_project on orchestrator_jobs(project_id);
+create index if not exists idx_jobs_owner_project on orchestrator_jobs(owner_user_id, project_id);
 
 create or replace function claim_job(worker_id text, lease_ms bigint)
 returns setof orchestrator_jobs

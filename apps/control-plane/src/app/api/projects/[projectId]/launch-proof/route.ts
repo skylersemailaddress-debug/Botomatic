@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireControlPlaneProjectAccess } from "@/server/projectAccess";
 import { getProofStore } from "@/server/launchProofStore";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +17,8 @@ export async function GET(
 ) {
   try {
     const { projectId } = params;
+    const accessDenied = requireControlPlaneProjectAccess(request, projectId);
+    if (accessDenied) return accessDenied;
     
     if (!projectId) {
       return NextResponse.json(
@@ -65,6 +68,8 @@ export async function POST(
 ) {
   try {
     const { projectId } = params;
+    const accessDenied = requireControlPlaneProjectAccess(request, projectId);
+    if (accessDenied) return accessDenied;
     
     if (!projectId) {
       return NextResponse.json(

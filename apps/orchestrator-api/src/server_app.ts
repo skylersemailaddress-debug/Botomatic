@@ -66,7 +66,7 @@ import { enqueueJob, claimJob, finalizeJob, getQueueStats } from "../../../packa
 import { GovernanceApprovalState, StoredProjectRecord } from "../../../packages/supabase-adapter/src/types";
 import { startAutonomousBuildRun, resumeAutonomousBuildRun, type AutonomousBuildRunState } from "../../../packages/autonomous-build/src";
 import { RuntimeConfig } from "./config";
-import { type AuthContext } from "./auth/roles";
+import { resolveRole, type AuthContext } from "./auth/roles";
 import { verifyOidcBearerToken } from "./auth/oidc";
 import {
   formatMaxUploadLabel,
@@ -191,10 +191,14 @@ function toStored(record: {
   gitResults?: Record<string, any>;
   deployments?: Record<string, any>;
   auditEvents?: any[];
+  ownerUserId: string;
+  tenantId?: string | null;
 }): StoredProjectRecord {
   const timestamp = now();
   return {
     projectId: record.projectId,
+    ownerUserId: record.ownerUserId,
+    tenantId: record.tenantId ?? record.ownerUserId,
     name: record.name,
     request: record.request,
     status: record.status,
@@ -308,7 +312,10 @@ async function getVerifiedAuth(req: express.Request, config: RuntimeConfig): Pro
 
   if (config.auth.implementation === "bearer_token" && config.auth.token) {
     if (token !== config.auth.token) throw new Error("Unauthorized");
-    return { userId: `api_token:${String(config.auth.token).slice(0, 6)}`, role: "admin" };
+    const devActor = resolveRole(req.headers as Record<string, any>);
+    const explicitRole = req.header("x-role") as AuthContext["role"] | undefined;
+    const role = explicitRole === "operator" || explicitRole === "reviewer" || explicitRole === "admin" ? explicitRole : "admin";
+    return { userId: devActor.userId === "anonymous" ? `api_token:${String(config.auth.token).slice(0, 6)}` : devActor.userId, role };
   }
 
   if (config.auth.implementation === "local_test_headers" && config.runtimeMode === "development" && !config.hosted) {
@@ -334,7 +341,7 @@ async function getRequestActor(req: express.Request, config: RuntimeConfig): Pro
       actorSource: config.auth.implementation === "oidc" ? "oidc" : config.auth.implementation === "bearer_token" ? "bearer_token" : config.auth.implementation === "local_test_headers" ? "local_test_headers" : "anonymous",
     };
   } catch {
-    return { actorId: "anonymous", actorSource: "anonymous" };
+    return { actorId: "anonymous", role: "operator", actorSource: "anonymous" };
   }
 }
 
@@ -357,6 +364,43 @@ function requireRole(required: AuthContext["role"], config: RuntimeConfig): expr
       recordOpsError("auth_failed", String(error?.message || error), {
         route: `${req.method} ${req.path}`,
         requiredRole: required,
+      });
+      return res.status(401).json({ error: String(error?.message || error) });
+    }
+  };
+}
+
+function roleRank(role: AuthContext["role"]): number {
+  const rank: Record<AuthContext["role"], number> = { operator: 1, reviewer: 2, admin: 3 };
+  return rank[role] ?? 0;
+}
+
+function requireProjectAccess(required: AuthContext["role"], config: RuntimeConfig): express.RequestHandler {
+  return async (req, res, next) => {
+    try {
+      const auth = await getVerifiedAuth(req, config);
+      if (!auth.userId || auth.userId === "anonymous") {
+        return res.status(401).json({ error: "Authenticated actor required" });
+      }
+      if (roleRank(auth.role) < roleRank(required)) {
+        return res.status(403).json({ error: "Forbidden", requiredRole: required, actualRole: auth.role });
+      }
+      const project = await config.repository.repo.getProjectForActor(req.params.projectId, auth.userId);
+      if (!project) {
+        recordOpsError("auth_failed", "Project ownership check denied", {
+          route: `${req.method} ${req.path}`,
+          projectId: req.params.projectId,
+          actorId: auth.userId,
+        });
+        return res.status(404).json({ error: "Project not found" });
+      }
+      (res.locals as any).tenantProject = project;
+      return next();
+    } catch (error: any) {
+      recordOpsError("auth_failed", String(error?.message || error), {
+        route: `${req.method} ${req.path}`,
+        requiredRole: required,
+        projectId: req.params.projectId,
       });
       return res.status(401).json({ error: String(error?.message || error) });
     }
@@ -1550,7 +1594,7 @@ async function processJob(config: RuntimeConfig, job: QueueJobRecord) {
     for (const unblocked of nowUnblocked) {
       try {
         const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-        await enqueueJob({ job_id: jobId, project_id: project.projectId, packet_id: unblocked.packetId });
+        await enqueueJob({ job_id: jobId, project_id: project.projectId, packet_id: unblocked.packetId, owner_user_id: project.ownerUserId, tenant_id: project.tenantId ?? project.ownerUserId });
       } catch (_e) { /* already queued or unavailable — tolerate */ }
     }
   } catch (error: any) {
@@ -1800,6 +1844,9 @@ export function buildApp(config: RuntimeConfig) {
   app.post("/api/projects/intake", async (req, res) => {
     const actor = await getRequestActor(req, config);
     try {
+      if (!actor.actorId || actor.actorId === "anonymous") {
+        return res.status(401).json({ error: "Authenticated actor required" });
+      }
       const { name, request, prompt, projectName } = req.body as Record<string, unknown>;
       const safeRequest = typeof request === "string" && request.trim() ? request : typeof prompt === "string" ? prompt : "";
       if (!safeRequest.trim()) {
@@ -1812,6 +1859,8 @@ export function buildApp(config: RuntimeConfig) {
       const projectId = makeProjectId();
       const project = toStored({
         projectId,
+        ownerUserId: actor.actorId,
+        tenantId: actor.actorId,
         name: deriveProjectName({ name, request: safeRequest, prompt, projectName }),
         request: safeRequest,
         status: "clarifying",
@@ -1825,7 +1874,7 @@ export function buildApp(config: RuntimeConfig) {
       setSpecClarifications(project, analyzed.clarifications);
       project.runs = { ...((project.runs || {}) as Record<string, unknown>), [specStyleRunKey]: analyzed.style };
       emitEvent(project as any, { id: `evt_${Date.now()}`, projectId, type: "intake", actorId: actor.actorId, timestamp: now(), metadata: { name: project.name } });
-      await repo.upsertProject(project);
+      await repo.upsertProjectForActor(project, actor.actorId);
       return res.json({ projectId, status: project.status, actorId: actor.actorId });
     } catch (error) {
       return handleRouteError(res, config, error, "POST /api/projects/intake", actor);
@@ -3096,6 +3145,8 @@ export function buildApp(config: RuntimeConfig) {
         // Auto-recreate when memory mode drops the project (e.g. server restart).
         project = toStored({
           projectId: req.params.projectId,
+          ownerUserId: actor.actorId,
+          tenantId: actor.actorId,
           name: message.slice(0, 60) || "Untitled Project",
           request: message,
           status: "clarifying",
@@ -3174,7 +3225,7 @@ export function buildApp(config: RuntimeConfig) {
             for (const rp of rootPackets) {
               try {
                 const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-                await enqueueJob({ job_id: jobId, project_id: compiled.projectId, packet_id: rp.packetId });
+                await enqueueJob({ job_id: jobId, project_id: compiled.projectId, packet_id: rp.packetId, owner_user_id: compiled.ownerUserId, tenant_id: compiled.tenantId ?? compiled.ownerUserId });
                 rootPacketsEnqueued++;
                 buildStages.push({ id: rp.packetId, label: rp.goal ?? rp.packetId, status: "queued" });
               } catch (_e) { /* tolerate queue error */ }
@@ -3662,7 +3713,7 @@ export function buildApp(config: RuntimeConfig) {
 
         route = "execute_next";
         const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-        await enqueueJob({ job_id: jobId, project_id: project.projectId, packet_id: pendingPacket.packetId });
+        await enqueueJob({ job_id: jobId, project_id: project.projectId, packet_id: pendingPacket.packetId, owner_user_id: project.ownerUserId, tenant_id: project.tenantId ?? project.ownerUserId });
         emitEvent(project as any, {
           id: `evt_${Date.now()}`,
           projectId: project.projectId,
@@ -3801,7 +3852,7 @@ export function buildApp(config: RuntimeConfig) {
       const packet = getNextPendingPacket(project);
       if (!packet) return res.status(409).json({ error: "No pending packet", actorId: actor.actorId });
       const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-      await enqueueJob({ job_id: jobId, project_id: project.projectId, packet_id: packet.packetId });
+      await enqueueJob({ job_id: jobId, project_id: project.projectId, packet_id: packet.packetId, owner_user_id: project.ownerUserId, tenant_id: project.tenantId ?? project.ownerUserId });
       return res.status(202).json({ accepted: true, queued: true, jobId, packetId: packet.packetId, actorId: actor.actorId, workerId });
     } catch (error) {
       return handleRouteError(res, config, error, "POST /api/projects/:projectId/dispatch/execute-next", actor);
@@ -3830,7 +3881,7 @@ export function buildApp(config: RuntimeConfig) {
         clearReplayState(project, packet.packetId);
         setPacketStatus(project, packet.packetId, "pending");
         const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-        await enqueueJob({ job_id: jobId, project_id: project.projectId, packet_id: packet.packetId });
+        await enqueueJob({ job_id: jobId, project_id: project.projectId, packet_id: packet.packetId, owner_user_id: project.ownerUserId, tenant_id: project.tenantId ?? project.ownerUserId });
         replayed.push(packet.packetId);
       }
       recomputeProjectStatus(project);

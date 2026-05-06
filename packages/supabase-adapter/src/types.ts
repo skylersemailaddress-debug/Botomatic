@@ -1,5 +1,7 @@
 export interface StoredProjectRecord {
 projectId: string;
+ownerUserId: string;
+tenantId?: string | null;
 name: string;
 request: string;
 status: string;
@@ -43,5 +45,11 @@ updatedBy: string;
 
 export interface ProjectRepository {
 getProject(projectId: string): Promise<StoredProjectRecord | null>;
+getProjectForActor(projectId: string, actorId: string): Promise<StoredProjectRecord | null>;
 upsertProject(record: StoredProjectRecord): Promise<void>;
+upsertProjectForActor(record: StoredProjectRecord, actorId: string): Promise<void>;
+}
+
+export function actorOwnsProject(record: Pick<StoredProjectRecord, "ownerUserId"> | null, actorId: string): boolean {
+  return Boolean(record && record.ownerUserId === actorId);
 }
