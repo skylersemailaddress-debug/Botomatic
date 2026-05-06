@@ -169,7 +169,9 @@
     "test:commercial-cockpit": "npx playwright test -c playwright.commercial-visual.config.ts tests/e2e/visual/commercial-cockpit-visual.spec.ts",
     "test:visual-commercial": "node tests/visual/scripts/compare-commercial-cockpit.cjs",
     "test:orchestration-core": "tsx packages/validation/src/tests/orchestrationCoreWorkerWave.test.ts",
-    "proof:orchestration-core": "node scripts/proof-orchestration-core.cjs"
+    "proof:orchestration-core": "node scripts/proof-orchestration-core.cjs",
+    "beta:readiness": "tsx scripts/validateBetaReadiness.ts",
+    "beta:gate": "npm run -s build && npm run -s test && npm run -s validate:all && npm run -s beta:readiness"
   },
   "dependencies": {
     "@trigger.dev/sdk": "^4.4.4"
