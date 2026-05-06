@@ -23,8 +23,8 @@ This matrix is the human-readable view of `apps/orchestrator-api/src/security/ro
 | --- | --- | --- | --- | --- | --- |
 | GET /health | public | no | no | no | Runtime health check exposes only service metadata and auth status. |
 | GET /api/health | public | no | no | no | API health check exposes only service metadata and auth status. |
-| GET /ready | public | no | no | no | Readiness check exposes only service metadata and auth status. |
-| GET /api/ready | public | no | no | no | Readiness check exposes only service metadata and auth status. |
+| GET /ready | public | no | no | no | Runtime readiness check exposes only service metadata and auth status. |
+| GET /api/ready | public | no | no | no | API readiness check exposes only service metadata and auth status. |
 | GET /registry/capabilities | authenticated | no | no | yes | Capability inventory is beta surface metadata and should not be anonymously enumerable. |
 | GET /api/registry/capabilities | authenticated | no | no | yes | Capability inventory is beta surface metadata and should not be anonymously enumerable. |
 | GET /api/ops/metrics | operator | no | no | yes | Operational metrics can reveal tenant activity and runtime health. |

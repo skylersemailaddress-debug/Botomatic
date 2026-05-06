@@ -38,8 +38,8 @@ const global = (method: RouteHttpMethod, path: string, policy: RoutePolicyName, 
 export const ROUTE_AUTHORIZATION_POLICIES: readonly RoutePolicy[] = [
   global("GET", "/health", "public", false, false, "Runtime health check exposes only service metadata and auth status."),
   global("GET", "/api/health", "public", false, false, "API health check exposes only service metadata and auth status."),
-  global("GET", "/ready", "public", false, false, "Readiness check exposes only service metadata and auth status."),
-  global("GET", "/api/ready", "public", false, false, "Readiness check exposes only service metadata and auth status."),
+  global("GET", "/ready", "public", false, false, "Runtime readiness check exposes only service metadata and auth status."),
+  global("GET", "/api/ready", "public", false, false, "API readiness check exposes only service metadata and auth status."),
   global("GET", "/registry/capabilities", "authenticated", false, true, "Capability inventory is beta surface metadata and should not be anonymously enumerable."),
   global("GET", "/api/registry/capabilities", "authenticated", false, true, "Capability inventory is beta surface metadata and should not be anonymously enumerable."),
   global("GET", "/api/ops/metrics", "operator", false, true, "Operational metrics can reveal tenant activity and runtime health."),
@@ -164,7 +164,7 @@ export function createRoutePolicyMiddleware(options: RoutePolicyMiddlewareOption
             projectId,
             actorId: auth.userId,
           });
-          return res.status(403).json({ error: "Forbidden", policy: policy.policy });
+          return res.status(403).json({ error: "Project access denied", policy: policy.policy });
         }
         (res.locals as any).tenantProject = project;
       }

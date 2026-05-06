@@ -4,12 +4,12 @@ import fs from "node:fs";
 import path from "node:path";
 
 export type NoSecretsSignalName =
-  | "source_scan_clean"
-  | "git_history_scan_clean"
-  | "release_evidence_scan_clean"
-  | "logs_scan_clean"
-  | "generated_apps_scan_clean"
-  | "ui_api_response_redaction_verified";
+  | "source_secret_scan_passed"
+  | "git_history_secret_scan_passed"
+  | "release_evidence_secret_scan_passed"
+  | "logs_secret_scan_passed"
+  | "generated_apps_secret_scan_passed"
+  | "ui_api_secret_scan_passed";
 
 export type SecretFinding = {
   category: string;
@@ -226,12 +226,12 @@ export function generateNoSecretsBetaProof(root: string): NoSecretsBetaProof {
   };
   const redaction = verifyRedaction();
   const signals: Record<NoSecretsSignalName, boolean> = {
-    source_scan_clean: scans.source.clean,
-    git_history_scan_clean: scans.git_history.clean,
-    release_evidence_scan_clean: scans.release_evidence.clean,
-    logs_scan_clean: scans.logs.clean,
-    generated_apps_scan_clean: scans.generated_apps.clean,
-    ui_api_response_redaction_verified: redaction.clean,
+    source_secret_scan_passed: scans.source.clean,
+    git_history_secret_scan_passed: scans.git_history.clean,
+    release_evidence_secret_scan_passed: scans.release_evidence.clean,
+    logs_secret_scan_passed: scans.logs.clean,
+    generated_apps_secret_scan_passed: scans.generated_apps.clean,
+    ui_api_secret_scan_passed: redaction.clean,
   };
   return {
     generated_at: new Date().toISOString(),

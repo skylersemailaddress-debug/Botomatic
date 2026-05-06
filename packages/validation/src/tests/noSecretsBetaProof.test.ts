@@ -30,11 +30,11 @@ function testCleanProofPasses() {
   const root = fixtureRoot();
   base(root);
   const proof = generateNoSecretsBetaProof(root);
-  assert.strictEqual(proof.signals.source_scan_clean, true);
-  assert.strictEqual(proof.signals.release_evidence_scan_clean, true);
-  assert.strictEqual(proof.signals.logs_scan_clean, true);
-  assert.strictEqual(proof.signals.generated_apps_scan_clean, true);
-  assert.strictEqual(proof.signals.ui_api_response_redaction_verified, true);
+  assert.strictEqual(proof.signals.source_secret_scan_passed, true);
+  assert.strictEqual(proof.signals.release_evidence_secret_scan_passed, true);
+  assert.strictEqual(proof.signals.logs_secret_scan_passed, true);
+  assert.strictEqual(proof.signals.generated_apps_secret_scan_passed, true);
+  assert.strictEqual(proof.signals.ui_api_secret_scan_passed, true);
 }
 
 function testSeededFixtureSecretFails() {
@@ -42,7 +42,7 @@ function testSeededFixtureSecretFails() {
   base(root);
   write(root, "tests/fixtures/seeded-api-response.json", JSON.stringify({ apiKey: obviousFakeSecret() }));
   const proof = generateNoSecretsBetaProof(root);
-  assert.strictEqual(proof.signals.source_scan_clean, false);
+  assert.strictEqual(proof.signals.source_secret_scan_passed, false);
   assert(proof.scans.source.findings.some((finding) => finding.file.endsWith("tests/fixtures/seeded-api-response.json")));
 }
 

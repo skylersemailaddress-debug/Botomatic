@@ -51,6 +51,11 @@ Each artifact must contain a JSON object with a `signals` object. Every named si
 
 `release-evidence/runtime/security_auth_beta_proof.json` must include:
 
+- `production_rejects_auth_disabled`
+- `production_rejects_development_runtime`
+- `unauthenticated_mutation_denied`
+- `wrong_role_denied`
+- `wrong_owner_denied`
 - `unauthenticated_requests_blocked`
 - `invalid_session_blocked`
 - `expired_session_blocked`
@@ -61,12 +66,12 @@ Each artifact must contain a JSON object with a `signals` object. Every named si
 
 `release-evidence/runtime/no_secrets_beta_proof.json` must include:
 
-- `source_scan_clean`
-- `git_history_scan_clean`
-- `release_evidence_scan_clean`
-- `logs_scan_clean`
-- `generated_apps_scan_clean`
-- `ui_api_response_redaction_verified`
+- `source_secret_scan_passed`
+- `git_history_secret_scan_passed`
+- `release_evidence_secret_scan_passed`
+- `logs_secret_scan_passed`
+- `generated_apps_secret_scan_passed`
+- `ui_api_secret_scan_passed`
 
 ### Durable orchestration E2E proof
 
@@ -82,11 +87,10 @@ Each artifact must contain a JSON object with a `signals` object. Every named si
 
 `release-evidence/runtime/durable_fail_closed_beta_proof.json` must include:
 
-- `storage_outage_detected`
-- `writes_blocked_during_outage`
-- `unsafe_reads_blocked_during_outage`
-- `no_in_memory_success_fallback`
-- `service_recovered_after_storage_restore`
+- `production_supabase_outage_blocks_startup_or_readiness`
+- `beta_does_not_fallback_to_memory`
+- `development_memory_fallback_explicit_only`
+- `public_traffic_not_accepted_without_durable_repo`
 
 ### Beta deployment smoke/rollback proof
 

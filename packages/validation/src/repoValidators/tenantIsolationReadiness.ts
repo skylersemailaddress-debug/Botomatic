@@ -3,11 +3,11 @@ import path from "path";
 import type { RepoValidatorResult } from "../repoValidators";
 
 const requiredSignals = [
-  "user_a_cannot_read_user_b_project",
-  "user_a_cannot_write_user_b_project",
-  "user_a_cannot_read_user_b_jobs",
-  "user_a_cannot_read_user_b_evidence",
-  "owner_scope_enforced",
+  "cross_tenant_read_blocked",
+  "cross_tenant_write_blocked",
+  "project_scope_enforced",
+  "tenant_context_required",
+  "isolation_regression_suite_passed",
 ] as const;
 
 function readJson(filePath: string): any | null {

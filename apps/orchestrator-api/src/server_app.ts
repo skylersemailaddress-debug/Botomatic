@@ -1799,7 +1799,7 @@ export function buildApp(config: RuntimeConfig) {
   app.use(createRoutePolicyMiddleware({
     config,
     getVerifiedAuth,
-    recordAuthFailure,
+    recordAuthFailure: (message, metadata) => recordOpsError("auth_failed", message, metadata),
   }));
 
   const buildHealthPayload = (

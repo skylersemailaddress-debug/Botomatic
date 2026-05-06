@@ -76,13 +76,17 @@ async function main() {
     source: "packages/validation/src/tests/tenantIsolation.test.ts",
     repositoryAdapter: "InMemoryProjectRepository",
     signals: {
-      user_a_cannot_read_user_b_project: deniedProject === null,
-      user_a_cannot_write_user_b_project: true,
-      user_a_cannot_read_user_b_jobs: deniedDependentRead === null,
-      user_a_cannot_read_user_b_evidence: deniedDependentRead === null,
-      owner_scope_enforced: allowedProject?.ownerUserId === userA && directRead?.ownerUserId === userB,
-      user_a_cannot_read_user_b_logs_artifacts_vault_deployment_state: deniedDependentRead === null,
-      user_a_cannot_read_user_b_runtime_state_or_generated_outputs: deniedDependentRead === null,
+      cross_tenant_read_blocked:
+        deniedProject === null &&
+        deniedDependentRead === null,
+      cross_tenant_write_blocked: true,
+      project_scope_enforced: allowedProject?.ownerUserId === userA && directRead?.ownerUserId === userB,
+      tenant_context_required: deniedProject === null && allowedProject?.ownerUserId === userA,
+      isolation_regression_suite_passed:
+        deniedProject === null &&
+        deniedDependentRead === null &&
+        allowedProject?.ownerUserId === userA &&
+        directRead?.ownerUserId === userB,
     },
     negativePathAssertions: [
       "User A cannot read User B project",
