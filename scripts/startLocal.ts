@@ -101,6 +101,7 @@ export function run(lanMode = false) {
     OIDC_AUDIENCE: "",
     AUTH0_CLIENT_SECRET: "",
     PROJECT_REPOSITORY_MODE: "memory",
+    BOTOMATIC_ALLOW_LOCAL_MEMORY_FALLBACK: "true",
     QUEUE_BACKEND: "memory",
     RUNTIME_MODE: "development",
     EXECUTOR: "claude",

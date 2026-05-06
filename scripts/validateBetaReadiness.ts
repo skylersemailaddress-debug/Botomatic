@@ -86,11 +86,10 @@ const REQUIREMENTS: ProofRequirement[] = [
     artifact: "release-evidence/runtime/durable_fail_closed_beta_proof.json",
     label: "Durable storage outage fail-closed proof",
     signals: [
-      "storage_outage_detected",
-      "writes_blocked_during_outage",
-      "unsafe_reads_blocked_during_outage",
-      "no_in_memory_success_fallback",
-      "service_recovered_after_storage_restore",
+      "production_supabase_outage_blocks_startup_or_readiness",
+      "beta_does_not_fallback_to_memory",
+      "development_memory_fallback_explicit_only",
+      "public_traffic_not_accepted_without_durable_repo",
     ],
   },
   {

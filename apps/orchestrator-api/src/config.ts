@@ -5,6 +5,7 @@ import path from "path";
 import { getIntakeLimitsFromEnv, type IntakeLimits } from "./intake/largeFileIntake";
 
 export type RepositoryMode = "memory" | "durable";
+export const EXPLICIT_LOCAL_MEMORY_FALLBACK_ENV = "BOTOMATIC_ALLOW_LOCAL_MEMORY_FALLBACK";
 export type AuthImplementation = "bearer_token" | "oidc" | "local_test_headers" | "disabled";
 export type RuntimeMode = "commercial" | "development";
 export type DeploymentEnvironment = "local" | "beta" | "production";
@@ -88,7 +89,15 @@ function requireEnv(name: string): string {
   return value;
 }
 
-function createRepositoryContext(runtimeMode: RuntimeMode): RepositoryContext {
+function isExplicitLocalMemoryFallbackAllowed(deploymentEnvironment: DeploymentEnvironment, runtimeMode: RuntimeMode): boolean {
+  return (
+    deploymentEnvironment === "local" &&
+    runtimeMode === "development" &&
+    process.env[EXPLICIT_LOCAL_MEMORY_FALLBACK_ENV] === "true"
+  );
+}
+
+function createRepositoryContext(runtimeMode: RuntimeMode, deploymentEnvironment: DeploymentEnvironment): RepositoryContext {
   const mode = getRepositoryMode();
 
   if (mode === "durable") {
@@ -107,6 +116,10 @@ function createRepositoryContext(runtimeMode: RuntimeMode): RepositoryContext {
 
   if (runtimeMode === "commercial") {
     throw new Error("Commercial mode requires PROJECT_REPOSITORY_MODE=durable");
+  }
+
+  if (!isExplicitLocalMemoryFallbackAllowed(deploymentEnvironment, runtimeMode)) {
+    throw new Error(`${EXPLICIT_LOCAL_MEMORY_FALLBACK_ENV}=true is required for local development memory repository mode`);
   }
 
   return {
@@ -177,7 +190,7 @@ export function createRuntimeConfig(): RuntimeConfig {
     throw new Error("Hosted beta/production cannot run with RUNTIME_MODE=development");
   }
   const durableEnvPresent = Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
-  const repository = createRepositoryContext(runtimeMode);
+  const repository = createRepositoryContext(runtimeMode, deploymentEnvironment);
   const auth = createAuthContext(runtimeMode, hosted);
   const alertWebhookUrl = process.env.BOTOMATIC_ALERT_WEBHOOK_URL || process.env.SLACK_WEBHOOK_URL || null;
   const limits = getIntakeLimitsFromEnv(process.env);

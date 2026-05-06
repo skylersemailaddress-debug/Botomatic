@@ -48,6 +48,7 @@ function buildLocalHeaderAuthApp() {
       NODE_ENV: "test",
       BOTOMATIC_DEPLOYMENT_ENV: "local",
       PROJECT_REPOSITORY_MODE: "memory",
+      BOTOMATIC_ALLOW_LOCAL_MEMORY_FALLBACK: "true",
       BOTOMATIC_LOCAL_TEST_AUTH: "true",
       API_AUTH_TOKEN: undefined,
       OIDC_ISSUER_URL: undefined,

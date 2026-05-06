@@ -1376,11 +1376,6 @@ function buildUniversalCapabilityArtifacts(project: StoredProjectRecord, inputTe
   };
 }
 
-function roleRank(role: AuthContext["role"]): number {
-  if (role === "admin") return 3;
-  if (role === "reviewer") return 2;
-  return 1;
-}
 
 function buildPacketList(project: StoredProjectRecord) {
   return getPackets(project).map((p: any) => ({ packetId: p.packetId, status: p.status, goal: p.goal, branchName: p.branchName }));
@@ -1635,6 +1630,27 @@ function startQueueWorker(config: RuntimeConfig) {
   setInterval(() => { void workerTick(config); }, Number(process.env.QUEUE_POLL_INTERVAL_MS || 2000));
 }
 
+const LOCAL_TRAFFIC_HOSTS = new Set(["127.0.0.1", "localhost", "::1"]);
+
+function parseHostname(value: string | undefined): string | null {
+  if (!value) return null;
+  try {
+    return new URL(value.includes("://") ? value : `http://${value}`).hostname.toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
+function isLocalTraffic(req: express.Request): boolean {
+  const originHost = parseHostname(req.header("origin") || undefined);
+  const host = parseHostname(req.header("host") || undefined);
+  const remote = req.socket.remoteAddress?.replace(/^::ffff:/, "").toLowerCase();
+
+  if (originHost && !LOCAL_TRAFFIC_HOSTS.has(originHost)) return false;
+  if (host && !LOCAL_TRAFFIC_HOSTS.has(host)) return false;
+  return !remote || LOCAL_TRAFFIC_HOSTS.has(remote);
+}
+
 function isAllowedCorsOrigin(origin: string): boolean {
   const allowedOrigins = new Set([
     "http://127.0.0.1:3000",
@@ -1765,13 +1781,15 @@ export function buildApp(config: RuntimeConfig) {
     next();
   });
 
-  app.use(
-    createRoutePolicyMiddleware({
-      config,
-      getVerifiedAuth,
-      recordAuthFailure: (message, metadata) => recordOpsError("auth_failed", message, metadata),
-    })
-  );
+  app.use((req, res, next) => {
+    if (config.repository.mode === "durable" || isLocalTraffic(req)) return next();
+    return res.status(503).json({
+      error: "Durable repository required for public traffic",
+      status: "maintenance",
+      repositoryMode: config.repository.mode,
+      requestId: (res.locals as any).requestId,
+    });
+  });
 
   const buildHealthPayload = (
     auth: { role: string | null; userId: string | null; issuer: string | null },
@@ -1811,6 +1829,8 @@ export function buildApp(config: RuntimeConfig) {
 
   app.get("/health", respondHealth);
   app.get("/api/health", respondHealth);
+  app.get("/ready", respondHealth);
+  app.get("/api/ready", respondHealth);
 
   app.use("/api/ops", requireApiAuth(config));
 
