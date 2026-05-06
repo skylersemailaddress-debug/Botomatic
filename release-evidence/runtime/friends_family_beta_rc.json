@@ -1,0 +1,232 @@
+{
+  "gate": "friends_and_family_beta_release_candidate",
+  "timestamp": "2026-05-06T18:37:24.720Z",
+  "gitSha": "30ce6657cfd9e80cd47977b194c66a7ae0b874a7",
+  "branch": "work",
+  "commandResults": [
+    {
+      "name": "dependency/install sanity",
+      "command": "npm run -s deps:sanity",
+      "startedAt": "2026-05-06T18:37:24.744Z",
+      "finishedAt": "2026-05-06T18:37:31.556Z",
+      "durationMs": 6812,
+      "exitCode": 0,
+      "signal": null,
+      "passed": true,
+      "stdoutTail": "",
+      "stderrTail": ""
+    },
+    {
+      "name": "build",
+      "command": "npm run -s build",
+      "startedAt": "2026-05-06T18:37:31.557Z",
+      "finishedAt": "2026-05-06T18:38:57.314Z",
+      "durationMs": 85757,
+      "exitCode": 0,
+      "signal": null,
+      "passed": true,
+      "stdoutTail": "  ▲ Next.js 14.2.5\n\n   Creating an optimized production build ...\n ✓ Compiled successfully\n   Linting and checking validity of types ...\n   Collecting page data ...\n   Generating static pages (0/7) ...\n   Generating static pages (1/7) \r\n   Generating static pages (3/7) \r\n   Generating static pages (5/7) \r\n ✓ Generating static pages (7/7)\n   Finalizing page optimization ...\n   Collecting build traces ...\n\nRoute (app)                                      Size     First Load JS\n┌ ○ /                                            142 B          87.3 kB\n├ ○ /_not-found                                  873 B            88 kB\n├ ƒ /api/[...path]                               0 B                0 B\n├ ƒ /api/hybrid-ci                               0 B                0 B\n├ ƒ /api/local-repo-dashboard                    0 B                0 B\n├ ƒ /api/local-repo-dashboard/stream             0 B                0 B\n├ ƒ /api/projects/[projectId]/deploy             0 B                0 B\n├ ƒ /api/projects/[projectId]/deployments        0 B                0 B\n├ ƒ /api/projects/[projectId]/execution          0 B                0 B\n├ ƒ /api/projects/[projectId]/execution/[runId]  0 B                0 B\n├ ƒ /api/projects/[projectId]/jobs               0 B                0 B\n├ ƒ /api/projects/[projectId]/launch-proof       0 B                0 B\n├ ƒ /api/projects/[projectId]/launch/verify      0 B                0 B\n├ ƒ /api/projects/[projectId]/rollback           0 B                0 B\n├ ƒ /api/projects/[projectId]/runtime            0 B                0 B\n├ ƒ /api/projects/[projectId]/runtime/logs       0 B                0 B\n├ ƒ /api/projects/[projectId]/runtime/start      0 B                0 B\n├ ƒ /api/projects/[projectId]/runtime/stop       0 B                0 B\n├ ○ /projects                                    142 B          87.3 kB\n├ ƒ /projects/[projectId]                        164 kB          258 kB\n├ ƒ /projects/[projectId]/deployment             4.2 kB          101 kB\n├ ƒ /projects/[projectId]/evidence               3.51 kB         101 kB\n├ ƒ /projects/[projectId]/logs                   1.14 kB         102 kB\n├ ƒ /projects/[projectId]/onboarding             6.41 kB         100 kB\n├ ƒ /projects/[projectId]/settings               3.63 kB         101 kB\n├ ƒ /projects/[projectId]/validators             1.94 kB         102 kB\n├ ƒ /projects/[projectId]/vault                  6.53 kB         101 kB\n└ ○ /projects/new                                3.01 kB        90.1 kB\n+ First Load JS shared by all                    87.1 kB\n  ├ chunks/1dd3208c-6d9b8a15303666bc.js          53.6 kB\n  ├ chunks/286-b6e9a8ff13c63fff.js               31.5 kB\n  └ other shared chunks (total)                  1.96 kB\n\n\n○  (Static)   prerendered as static content\nƒ  (Dynamic)  server-rendered on demand\n\n",
+      "stderrTail": ""
+    },
+    {
+      "name": "test",
+      "command": "npm run -s test",
+      "startedAt": "2026-05-06T18:38:57.315Z",
+      "finishedAt": "2026-05-06T18:39:19.982Z",
+      "durationMs": 22667,
+      "exitCode": 0,
+      "signal": null,
+      "passed": true,
+      "stdoutTail": "proDashboardTruthState.test.ts passed\nwave026LiveOrchestrationLoop.test.ts passed\nsecurityAuthBetaFailClosed.test.ts passed\ndurableFailClosedBeta.test.ts passed\n",
+      "stderrTail": "{\"event\":\"supabase_fallback\",\"message\":\"Supabase unreachable — explicit local development only in-memory project store. Data will NOT persist across restarts.\"}\n{\"event\":\"queue_fallback\",\"message\":\"Supabase unreachable — explicit local development only in-memory job queue. Multi-worker job distribution unavailable.\"}\n"
+    },
+    {
+      "name": "lint",
+      "command": "npm run -s lint",
+      "startedAt": "2026-05-06T18:39:19.991Z",
+      "finishedAt": "2026-05-06T18:39:23.010Z",
+      "durationMs": 3019,
+      "exitCode": 0,
+      "signal": null,
+      "passed": true,
+      "stdoutTail": "\nBotomatic repository lint\n\nPASS — json:package.json\n  File exists.\nPASS — json-parse:package.json\n  JSON parses successfully.\nPASS — json:package-lock.json\n  File exists.\nPASS — json-parse:package-lock.json\n  JSON parses successfully.\nPASS — json:apps/control-plane/package.json\n  File exists.\nPASS — json-parse:apps/control-plane/package.json\n  JSON parses successfully.\nPASS — json:apps/orchestrator-api/package.json\n  File exists.\nPASS — json-parse:apps/orchestrator-api/package.json\n  JSON parses successfully.\nPASS — json:release-evidence/runtime/tenant_isolation_proof.json\n  File exists.\nPASS — json-parse:release-evidence/runtime/tenant_isolation_proof.json\n  JSON parses successfully.\nPASS — json:release-evidence/runtime/security_auth_beta_proof.json\n  File exists.\nPASS — json-parse:release-evidence/runtime/security_auth_beta_proof.json\n  JSON parses successfully.\nPASS — json:release-evidence/runtime/no_secrets_beta_proof.json\n  File exists.\nPASS — json-parse:release-evidence/runtime/no_secrets_beta_proof.json\n  JSON parses successfully.\nPASS — json:release-evidence/runtime/orchestration_core_beta_proof.json\n  File exists.\nPASS — json-parse:release-evidence/runtime/orchestration_core_beta_proof.json\n  JSON parses successfully.\nPASS — json:release-evidence/runtime/durable_fail_closed_beta_proof.json\n  File exists.\nPASS — json-parse:release-evidence/runtime/durable_fail_closed_beta_proof.json\n  JSON parses successfully.\nPASS — json:release-evidence/runtime/deployment_smoke_beta_proof.json\n  File exists.\nPASS — json-parse:release-evidence/runtime/deployment_smoke_beta_proof.json\n  JSON parses successfully.\nPASS — script:deps:sanity\n  npm ci --dry-run --ignore-scripts --no-audit --no-fund\nPASS — script:build\n  npm run ui:build\nPASS — script:test\n  npm run -s test:wave-025 && npm run -s test:wave-026 && npm run -s test:security-auth-beta && npm run -s test:durable-fail-closed-beta && npm run -s test:orchestration-core-beta-proof\nPASS — script:lint\n  tsx scripts/repoLint.ts\nPASS — script:typecheck\n  npm exec --workspace @botomatic/control-plane tsc -- --noEmit -p tsconfig.json --incremental false\nPASS — script:validate:all\n  tsx packages/validation/src/cli.ts\nPASS — script:beta:readiness\n  npm run -s test:tenant-isolation && npm run -s test:security-auth-beta && npm run -s test:durable-fail-closed-beta && npm run -s proof:no-secrets-beta && tsx scripts/validateBetaReadiness.ts\nPASS — script:beta:rc\n  tsx scripts/friendsFamilyBetaRc.ts\nPASS — doc:docs/beta/DEPLOYMENT_SMOKE_AND_ROLLBACK.md\n  4297 non-whitespace characters.\nPASS — doc-heading:docs/beta/DEPLOYMENT_SMOKE_AND_ROLLBACK.md\n  Markdown H1 heading check.\nPASS — doc-no-placeholders:docs/beta/DEPLOYMENT_SMOKE_AND_ROLLBACK.md\n  No unresolved placeholder tokens found.\nPASS — doc:docs/beta/FRIENDS_AND_FAMILY_BETA_GATE.md\n  5045 non-whitespace characters.\nPASS — doc-heading:docs/beta/FRIENDS_AND_FAMILY_BETA_GATE.md\n  Markdown H1 heading check.\nPASS — doc-no-placeholders:docs/beta/FRIENDS_AND_FAMILY_BETA_GATE.md\n  No unresolved placeholder tokens found.\nPASS — doc:docs/beta/RC_RUNBOOK.md\n  3229 non-whitespace characters.\nPASS — doc-heading:docs/beta/RC_RUNBOOK.md\n  Markdown H1 heading check.\nPASS — doc-no-placeholders:docs/beta/RC_RUNBOOK.md\n  No unresolved placeholder tokens found.\nPASS — proof-not-fake:release-evidence/runtime/tenant_isolation_proof.json\n  Proof artifact contains no explicit fake/fabricated-proof marker.\nPASS — proof-not-fake:release-evidence/runtime/security_auth_beta_proof.json\n  Proof artifact contains no explicit fake/fabricated-proof marker.\nPASS — proof-not-fake:release-evidence/runtime/no_secrets_beta_proof.json\n  Proof artifact contains no explicit fake/fabricated-proof marker.\nPASS — proof-not-fake:release-evidence/runtime/orchestration_core_beta_proof.json\n  Proof artifact contains no explicit fake/fabricated-proof marker.\nPASS — proof-not-fake:release-evidence/runtime/durable_fail_closed_beta_proof.json\n  Proof artifact contains no explicit fake/fabricated-proof marker.\nPASS — proof-not-fake:release-evidence/runtime/deployment_smoke_beta_proof.json\n  Proof artifact contains no explicit fake/fabricated-proof marker.\n\nSummary:\n  Passed: 43\n  Failed: 0\n",
+      "stderrTail": ""
+    },
+    {
+      "name": "typecheck",
+      "command": "npm run -s typecheck",
+      "startedAt": "2026-05-06T18:39:23.011Z",
+      "finishedAt": "2026-05-06T18:39:47.899Z",
+      "durationMs": 24888,
+      "exitCode": 0,
+      "signal": null,
+      "passed": true,
+      "stdoutTail": "",
+      "stderrTail": ""
+    },
+    {
+      "name": "validate:all",
+      "command": "npm run -s validate:all",
+      "startedAt": "2026-05-06T18:39:47.910Z",
+      "finishedAt": "2026-05-06T18:40:22.012Z",
+      "durationMs": 34102,
+      "exitCode": 0,
+      "signal": null,
+      "passed": true,
+      "stdoutTail": "umentation\n  Core scope, blockers, validation matrix, scorecard, and launch-truth alignment docs are consistent.\nPASS — Validate-Botomatic-AuthGovernanceGate4\n  Auth roles, OIDC wiring, and governance endpoints are present; runtime proof still required for Gate 4 closure\nPASS — Validate-Botomatic-UIControlPlaneIntegration\n  Canonical AppShell/VibeDashboard control-plane panels are mounted and backed by real API services.\nPASS — Validate-Botomatic-BuilderQualityBenchmarks\n  Builder quality benchmark passed strict thresholds (10/10 launchable, 10/10 universal, local proof).\nPASS — Validate-Botomatic-BehavioralRuntimeCoverage\n  Behavioral runtime negative-path checks passed (local proof).\nPASS — Validate-Botomatic-ObservabilityRuntimeEvidence\n  Observability runtime checks passed (local proof).\nPASS — Validate-Botomatic-ProductionProofProfile\n  Production-proof profile is internally consistent with launch claim posture.\nPASS — Validate-Botomatic-FinalLaunchReadiness\n  Final launch criteria are satisfied and enterprise launch can be claimed.\nPASS — Validate-Botomatic-FileIngestion\n  Large-file upload route, secure archive safeguards, progress wiring, and config-driven UI limits are present.\nPASS — Validate-Botomatic-ChatFirstOperatorRouting\n  Chat-first operator route, advanced-only manual controls, and canonical spec v2 compilation are wired.\nPASS — Validate-Botomatic-ChatBehaviorExecution\n  Behavioral routing simulation confirms runtime intent classification, self-upgrade guardrails, canonical command dispatch, action-rail parity, unified intake normalization, and next-best-action outputs.\nPASS — Validate-Botomatic-LiveUIBuilderDataStateApiWiringReadiness\n  Data/state/API wiring readiness is fail-closed and fully wired.\nPASS — Validate-Botomatic-LiveUIBuilderReliabilityRepairReadiness\n  Live UI reliability repair planning readiness checks passed.\nPASS — Validate-Botomatic-LiveUIBuilderUXPolishReadiness\n  Live UI Builder UX polish readiness checks passed.\nPASS — Validate-Botomatic-LiveUIBuilderExportDeployReadiness\n  Live UI Builder export/deploy readiness checks passed.\nPASS — Validate-Botomatic-LiveUIBuilderPlatformBuilderReadiness\n  Platform builder dry-run planning, guardrails, panel summary, tests, and scripts are wired.\nPASS — Validate-Botomatic-UniversalBuilderReadiness\n  Universal builder readiness scaffolding and gates are present with benchmark coverage and chat-first constraints.\nPASS — Validate-Botomatic-SelfUpgradingFactoryReadiness\n  Self-upgrading factory foundations are present with anti-drift, memory, proof, domain, sandbox, repair, and capability controls.\nPASS — Validate-Botomatic-DirtyRepoRescueReadiness\n  Dirty-repo intake/audit/repair/completion flow is present and wired into API/operator path.\nPASS — Validate-Botomatic-UniversalCapabilityStressReadiness\n  Universal capability stress pipeline is wired with reusable engines and 10-output artifact contract.\nPASS — Validate-Botomatic-MultiDomainEmittedOutputReadiness\n  Required multi-domain emitted-output trees are present, non-empty, placeholder-clean, and proof-backed.\nPASS — Validate-Botomatic-DomainRuntimeCommandExecutionReadiness\n  Required domain runtime commands are proof-backed with machine-readable logs and fail-closed readiness status.\nPASS — Validate-Botomatic-ExternalIntegrationDeploymentReadiness\n  External integration and deployment readiness evidence is complete, machine-readable, and fail-closed across required domains.\nPASS — Validate-Botomatic-DeploymentDryRunReadiness\n  Deployment dry-run readiness evidence is complete across all required domains with smoke-test plans, rollback plans, and explicit live-deployment-skip justifications.\nPASS — Validate-Botomatic-CredentialedDeploymentReadiness\n  Credentialed deployment readiness is declared per required domain: credential manifests complete, approval gates blocked, provider adapters defined, secret policies pass, live deployment blocked by default.\nPASS — Validate-Botomatic-LiveDeploymentExecutionReadiness\n  Live deployment execution readiness is contract-backed, approval-gated, provider-aware, smoke-test-aware, rollback-aware, auditable, and blocked by default with no live execution performed.\nPASS — Validate-Botomatic-FinalCommercialReleaseEvidence\n  Final commercial release evidence is complete, consistent, and meets all commercial hardening criteria.\nPASS — Validate-Botomatic-FinalReleaseEvidenceLock\n  Final release evidence lock document is present and claim-bounded.\nPASS — Validate-Botomatic-SecretsCredentialManagementReadiness\n  DEPLOY-001 scope enforced with static secret pattern scanning across safe file set (scanned 1199 files) and explicit skip boundaries.\nPASS — Validate-Botomatic-NoSecretsBetaProofReadiness\n  Generated friends-and-family no-secrets proof with source=873, git_history=576, release_evidence=92, logs=74, generated_apps=408 scanned files and UI/API redaction fixtures verified.\nPASS — Validate-Botomatic-AutonomousComplexBuildReadiness\n  Autonomous complex build readiness is present: ingestion, milestone planning, checkpoint/resume, autonomous repair loop, high-risk escalation policy, and final release assembler are wired with readiness proof and no live-deployment claim.\nPASS — Validate-Botomatic-DomainQualityScorecardsReadiness\n  Per-domain quality scorecards are present with strict readiness scoring and representative caveat.\nPASS — Validate-Botomatic-EvalSuiteReadiness\n  Eval suite covers messy prompts, giant specs, dirty repos, games, mobile, bots, AI agents, and decide-for-me paths.\nPASS — Validate-Botomatic-SecurityCenterReadiness\n  Security Center includes threat model, RBAC matrix, data privacy, dependency risk, supply-chain checks, and audit log surface.\nPASS — Validate-Botomatic-FirstRunExperienceReadiness\n  First-run onboarding and What's Next workflow is present with actionable controls.\nPASS — Validate-Botomatic-ValidationCacheReadiness\n  Fast validation and content-hash cache commands are wired (validate:fast, validate:changed, proof:fast, cache:clear).\nPASS — Validate-Botomatic-InstallerRuntimeReadiness\n  Installer runtime readiness is present: cross-platform installers, doctor/easy-start wiring, repair/uninstall flow, and Linux executable permissions are valid.\nPASS — Validate-Botomatic-LargeFileIntakeReadiness\n  Large-file intake readiness is validated: config-driven high limits, disk-backed upload path, safe archive checks, progress events, and proof artifact all pass.\nPASS — Validate-Botomatic-MultiSourceIntakeReadiness\n  Multi-source intake readiness is validated across API routes, source model/router, adapters, Intake Hub UI, lifecycle events, and proof artifact coverage.\nPASS — Validate-Botomatic-FailureClassificationReadiness\n  Failure classification readiness is wired: taxonomy, inspection contract, policy engine, signature-aware repair budget, safe secret handling guidance, and chat explanation envelope are present.\nPASS — Validate-Botomatic-AdaptiveRepairStrategyReadiness\n  Adaptive repair strategy readiness is present: registry, selection engine, memory/outcome recording, safety gates, adaptive chat fields, and proof artifact all pass fail-closed checks.\nPASS — Validate-Botomatic-UploadPlanHandoffReadiness\n  Upload-plan handoff sequencing is correct: compile before plan, 413 classified, master truth gate enforced.\nPASS — Validate-Botomatic-LocalCrossPlatformLaunchReadiness\n  Cross-platform and LAN local launch readiness is wired.\nPASS — Validate-Botomatic-DashboardRouteIntegrityReadiness\n  Dashboard route integrity readiness is aligned to canonical /projects/[projectId] AppShell/VibeDashboard route and dashboard API rewrite order.\nPASS — Validate-Botomatic-ClaimBoundaryReadiness\n  Claim-boundary guard is enforced: required legal/evidence/marketing docs exist, README links are present, required caveats exist, and prohibited public claims are blocked outside explicit prohibited-example sections.\nPASS — Validate-Botomatic-Claim99EntitlementReadiness\n  99% claim entitlement gate is fail-closed and currently blocked pending live/statistical/audit proof classes.\nPASS — Validate-Botomatic-MasterTruthSpecReadiness\n  Canonical master truth spec and boundary safeguards are present.\nPASS — Validate-Botomatic-MaxPowerCompletionReadiness\n  Max-power completion gates are satisfied with exhaustive supported-domain proof evidence.\nPASS — Validate-Botomatic-GeneratedAppNoPlaceholderValidator\n  Generated-app no-placeholder validator is present with tests, docs, and universal test script wiring.\nPASS — Validate-Botomatic-GeneratedAppCommercialReadinessGate\n  Generated-app commercial readiness gate is present with required statuses, gates, tests, docs, and script wiring.\nPASS — Validate-Botomatic-GeneratedAppCorpusHarness\n  Generated app corpus harness is present with required schema, API surface, non-claim boundaries, tests, docs, and scripts.\nPASS — Validate-Botomatic-GeneratedAppRepresentativeCorpus\n  Representative generated app corpus is present with required IDs, bounded readiness expectations, docs caveats, tests, and script wiring.\nPASS — Validate-Botomatic-EditableUIDocumentModelReadiness\n  Editable UI document model foundation, caveat, exports, and tests are in place.\nPASS — Validate-Botomatic-UIEditCommandParserReadiness\n  UI edit command parser schema, caveat, exports, required kinds, and tests are in place.\nPASS — Validate-Botomatic-LiveUIBuilderCoreReadiness\n  Live UI selection/target-resolution/mutation-core readiness checks passed.\nPASS — Validate-Botomatic-LiveUIBuilderSafetyReadiness\n  Live UI builder safety readiness checks passed.\nPASS — Validate-Botomatic-LiveUIBuilderInteractionReadiness\n  Live UI builder interaction-contract readiness checks passed.\nPASS — Validate-Botomatic-LiveUIBuilderVisualReadiness\n  Live UI builder visual readiness checks passed.\nPASS — Validate-Botomatic-LiveUIBuilderInteractionUXReadiness\n  Live UI builder interaction UX readiness checks passed.\nPASS — Validate-Botomatic-LiveUIBuilderSourceSyncReadiness\n  Guarded source sync modules, tests, scripts, and claim boundaries are wired.\nPASS — Validate-Botomatic-LiveUIBuilderReactSourcePatchReadiness\n  React source patch readiness is wired with quality guards.\nPASS — Validate-Botomatic-LiveUIBuilderLocalFileAdapterReadiness\n  Local file adapter contract, safety gates, scripts, and validator wiring are present.\nPASS — Validate-Botomatic-LiveUIBuilderAppStructureReadiness\n  Live UI builder app structure readiness checks passed.\nPASS — Validate-Botomatic-LiveUIBuilderLocalApplyRollbackReadiness\n  Local apply transaction, rollback proof, scripts, and safeguards are wired.\nPASS — Validate-Botomatic-LiveUIBuilderDirectManipulationReadiness\n  Live UI direct manipulation readiness is wired and deterministic.\nPASS — Validate-Botomatic-LiveUIBuilderSourceIdentityReadiness\n  Live UI source identity readiness is parser-backed and guardrailed.\nPASS — Validate-Botomatic-LiveUIBuilderMultiFilePlanningReadiness\n  Multi-file planning readiness wired.\nPASS — Validate-Botomatic-LiveUIBuilderFullProjectGenerationReadiness\n  full project generation readiness validated\nPASS — Validate-Botomatic-LiveUIBuilderDesignSystemReadiness\n  design token/style control readiness validated\nPASS — Validate-Botomatic-GeneratedAppRuntimeSmokeReadiness\n  Generated app runtime smoke readiness is wired with local-only safety guards.\nPASS — Validate-Botomatic-TenantIsolationReadiness\n  Tenant/project owner scope is enforced in repositories, routes, schema, and executable proof.\nPASS — Validate-Botomatic-RouteAuthorizationMatrix\n  Route authorization matrix covers 65 live routes with explicit non-public policies for all sensitive and mutating routes.\nPASS — Validate-Botomatic-DeploymentSmokeBetaReadiness\n  Deployment smoke proof is intentionally scoped outside local validation because no hosted beta URL/token is available; the proof generator remains fail-closed for real hosted checks.\n\nSummary:\n  Mode: all\n  Executed: 82\n  Cached: 0\n  Passed: 82\n  Failed: 0\n",
+      "stderrTail": ""
+    },
+    {
+      "name": "beta:readiness",
+      "command": "npm run -s beta:readiness",
+      "startedAt": "2026-05-06T18:40:22.013Z",
+      "finishedAt": "2026-05-06T18:41:13.824Z",
+      "durationMs": 51811,
+      "exitCode": 0,
+      "signal": null,
+      "passed": true,
+      "stdoutTail": "Tenant isolation proof written to release-evidence/runtime/tenant_isolation_proof.json\nsecurityAuthBetaFailClosed.test.ts passed\ndurableFailClosedBeta.test.ts passed\nPASS — no-secrets beta proof written to release-evidence/runtime/no_secrets_beta_proof.json\nFriends-and-family beta readiness gate passed.\nAggregate gate evidence written to release-evidence/runtime/beta_readiness_gate.json\n",
+      "stderrTail": "{\"event\":\"supabase_fallback\",\"message\":\"Supabase unreachable — explicit local development only in-memory project store. Data will NOT persist across restarts.\"}\n{\"event\":\"queue_fallback\",\"message\":\"Supabase unreachable — explicit local development only in-memory job queue. Multi-worker job distribution unavailable.\"}\n"
+    }
+  ],
+  "proofArtifactSummary": [
+    {
+      "artifact": "release-evidence/runtime/tenant_isolation_proof.json",
+      "label": "Tenant/project isolation proof",
+      "exists": true,
+      "parseable": true,
+      "passed": true,
+      "missingSignals": [],
+      "failingSignals": [],
+      "generatedFakeProofDetected": false,
+      "localScopeOutDetected": false,
+      "generatedAt": "2026-05-06T18:40:25.208Z"
+    },
+    {
+      "artifact": "release-evidence/runtime/security_auth_beta_proof.json",
+      "label": "Production/beta auth fail-closed proof",
+      "exists": true,
+      "parseable": true,
+      "passed": true,
+      "missingSignals": [],
+      "failingSignals": [],
+      "generatedFakeProofDetected": false,
+      "localScopeOutDetected": false,
+      "generatedAt": "2026-05-06T18:40:30.757Z"
+    },
+    {
+      "artifact": "release-evidence/runtime/no_secrets_beta_proof.json",
+      "label": "No-secrets proof across source/history/evidence/logs/generated apps/UI/API",
+      "exists": true,
+      "parseable": true,
+      "passed": true,
+      "missingSignals": [],
+      "failingSignals": [],
+      "generatedFakeProofDetected": false,
+      "localScopeOutDetected": false,
+      "generatedAt": "2026-05-06T18:41:11.458Z"
+    },
+    {
+      "artifact": "release-evidence/runtime/orchestration_core_beta_proof.json",
+      "label": "Durable orchestration E2E proof",
+      "exists": true,
+      "parseable": true,
+      "passed": true,
+      "missingSignals": [],
+      "failingSignals": [],
+      "generatedFakeProofDetected": false,
+      "localScopeOutDetected": false,
+      "generatedAt": "2026-05-06T18:39:19.689Z",
+      "status": "passed"
+    },
+    {
+      "artifact": "release-evidence/runtime/durable_fail_closed_beta_proof.json",
+      "label": "Durable storage outage fail-closed proof",
+      "exists": true,
+      "parseable": true,
+      "passed": true,
+      "missingSignals": [],
+      "failingSignals": [],
+      "generatedFakeProofDetected": false,
+      "localScopeOutDetected": false,
+      "generatedAt": "2026-05-06T18:40:36.743Z"
+    },
+    {
+      "artifact": "release-evidence/runtime/deployment_smoke_beta_proof.json",
+      "label": "Hosted beta deployment smoke/rollback proof",
+      "exists": true,
+      "parseable": true,
+      "passed": false,
+      "missingSignals": [],
+      "failingSignals": [
+        "beta_environment_manifest_present",
+        "health_endpoint_passed",
+        "auth_negative_path_passed",
+        "project_route_smoke_passed",
+        "rollback_documented_or_tested"
+      ],
+      "generatedFakeProofDetected": false,
+      "localScopeOutDetected": true,
+      "generatedAt": "2026-05-06T18:08:00.000Z",
+      "status": "local_validation_scoped_out"
+    },
+    {
+      "artifact": "release-evidence/runtime/beta_readiness_gate.json",
+      "label": "Aggregate beta readiness gate",
+      "exists": true,
+      "parseable": true,
+      "passed": true,
+      "missingSignals": [],
+      "failingSignals": [],
+      "generatedFakeProofDetected": false,
+      "localScopeOutDetected": false,
+      "generatedAt": "2026-05-06T18:41:13.575Z"
+    }
+  ],
+  "docsSummary": [
+    {
+      "path": "docs/beta/FRIENDS_AND_FAMILY_BETA_GATE.md",
+      "exists": true,
+      "passed": true,
+      "heading": "Friends-and-Family Beta Readiness Gate",
+      "bytes": 5046,
+      "requiredPhrases": [
+        "friends-and-family",
+        "fail-closed",
+        "proof"
+      ],
+      "missingPhrases": []
+    },
+    {
+      "path": "docs/beta/DEPLOYMENT_SMOKE_AND_ROLLBACK.md",
+      "exists": true,
+      "passed": true,
+      "heading": "Beta Deployment Smoke and Rollback",
+      "bytes": 4308,
+      "requiredPhrases": [
+        "deployment",
+        "smoke",
+        "rollback"
+      ],
+      "missingPhrases": []
+    },
+    {
+      "path": "docs/beta/RC_RUNBOOK.md",
+      "exists": true,
+      "passed": true,
+      "heading": "Friends-and-Family Beta Release-Candidate Runbook",
+      "bytes": 3230,
+      "requiredPhrases": [
+        "npm run beta:rc",
+        "go/no-go",
+        "friends-and-family"
+      ],
+      "missingPhrases": []
+    }
+  ],
+  "finalDecision": "no-go",
+  "finalGo": false,
+  "noGoReasons": [
+    "Proof artifact is locally scoped out, not a live passing proof: release-evidence/runtime/deployment_smoke_beta_proof.json."
+  ]
+}
