@@ -4,4 +4,7 @@ const c = fs.readFileSync("apps/control-plane/src/components/live-ui-builder/Liv
 assert(c.includes("Enter a command first."));
 assert(c.includes("setValue(\"\")"));
 assert(c.includes("Could not parse command"));
+assert(c.includes("const textareaId = \"live-ui-builder-command-input\""));
+assert(c.includes("<label htmlFor={textareaId}>Live UI command</label>"));
+assert(c.includes("<textarea id={textareaId}"));
 console.log("liveUIBuilderCommandInput.test.ts passed");
