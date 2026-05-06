@@ -1,0 +1,9 @@
+{
+  "app": "AtlasCRM",
+  "hero": true,
+  "pricingCards": 3,
+  "testimonials": true,
+  "faq": true,
+  "contactFormUi": true,
+  "launchReadinessChecklist": true
+}

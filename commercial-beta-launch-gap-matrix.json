@@ -1,0 +1,135 @@
+{
+  "generatedAt": "2026-05-06T04:27:57.000Z",
+  "currentBranch": "work",
+  "mainReadinessStatus": "not_ready_for_public_launch; local orchestration-core proof can pass after this branch merges, but durable/external/deployment proof remains blocked",
+  "repositoryInspection": {
+    "localBranches": [
+      "work"
+    ],
+    "remoteBranchesVisible": [],
+    "missingReportedCommit": "fea564272060ec54e40d2935df3eb6a2f8be0933",
+    "missingReportedCommitVisible": false,
+    "workflowPresent": true,
+    "recoveredByRecreation": true
+  },
+  "proofSurface": {
+    "proofScriptPresent": true,
+    "proofScript": "scripts/proof-orchestration-core.cjs",
+    "packageScriptPresent": true,
+    "packageScript": "proof:orchestration-core",
+    "regressionTestPresent": true,
+    "regressionTest": "packages/validation/src/tests/orchestrationCoreWorkerWave.test.ts",
+    "workerWaveProofPresent": true,
+    "proofScore": 100,
+    "proofStatus": "orchestration_core_passed"
+  },
+  "blockers": {
+    "P0": [
+      {
+        "id": "P0-DURABLE-RESTART-RESUME",
+        "status": "open",
+        "category": "deployment blockers",
+        "summary": "Supabase durable queue/repository restart-resume proof is still not proven from this environment.",
+        "remediation": "Run the full proof with real SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in durable mode, then capture restart/resume evidence."
+      },
+      {
+        "id": "P0-EXTERNAL-EXECUTOR",
+        "status": "open",
+        "category": "proof blockers",
+        "summary": "External executor/API-key backed build path remains unproven by the local orchestration-core proof.",
+        "remediation": "Run the full build-path proof with a real executor credential and confirm generated output is produced by the intended executor path."
+      },
+      {
+        "id": "P0-PUBLIC-LAUNCH-CLAIM",
+        "status": "open",
+        "category": "claim/marketing blockers",
+        "summary": "Do not claim public launch readiness until proof passes from main with durable storage, auth, executor, and deployment gates proven.",
+        "remediation": "Merge proof/orchestration branch, rerun all required gates on main, and update claim boundaries only after green main evidence exists."
+      }
+    ],
+    "P1": [
+      {
+        "id": "P1-AUTH-PROOF",
+        "status": "open",
+        "category": "security/secrets blockers",
+        "summary": "Protected commercial route proof with configured auth is not proven locally.",
+        "remediation": "Use metadata-only secret references and real local/CI auth configuration to prove protected route behavior without hardcoding secrets."
+      },
+      {
+        "id": "P1-DEPLOYMENT-SMOKE",
+        "status": "open",
+        "category": "deployment blockers",
+        "summary": "Production/preview deployment smoke proof remains outside this local orchestration-core proof.",
+        "remediation": "Run credential-gated deployment dry-run or approved preview deployment proof and record rollback/smoke evidence."
+      }
+    ],
+    "branchMerge": [
+      {
+        "id": "MERGE-PROOF-ORCHESTRATION-CORE",
+        "status": "resolved_by_this_branch",
+        "summary": "The branch now contains the missing proof:orchestration-core script, worker/wave regression test, memory queue core, and proof artifacts.",
+        "mergeTarget": "main",
+        "branch": "work"
+      },
+      {
+        "id": "MISSING-FEA5642",
+        "status": "not_found",
+        "summary": "Reported commit fea564272060ec54e40d2935df3eb6a2f8be0933 is not present in the local object database, so the changes were recreated minimally instead of cherry-picked."
+      }
+    ],
+    "proof": [
+      {
+        "id": "PROOF-ORCHESTRATION-CORE",
+        "status": "closed_local",
+        "summary": "Local in-memory worker/wave proof passes with score 100."
+      },
+      {
+        "id": "PROOF-MAIN",
+        "status": "open_until_merged_and_rerun_on_main",
+        "summary": "Main cannot truthfully claim this proof until the PR is merged and proof:orchestration-core passes on main."
+      }
+    ],
+    "deployment": [
+      {
+        "id": "DEPLOYMENT-CREDENTIALS",
+        "status": "open",
+        "summary": "Live deployment execution requires approved credentials and must remain blocked-by-default without them."
+      }
+    ],
+    "securitySecrets": [
+      {
+        "id": "NO-HARDCODED-SECRETS",
+        "status": "closed_for_this_patch",
+        "summary": "No secrets were added; proof records credential gaps as blockers."
+      }
+    ],
+    "claimMarketing": [
+      {
+        "id": "CLAIM-BOUNDARY",
+        "status": "open",
+        "summary": "Allowed claim after this PR: local orchestration-core worker/wave proof exists and passes. Disallowed claim: public launch ready."
+      }
+    ],
+    "cleanupOnly": [
+      {
+        "id": "DUPLICATE-PROOF-JSON-NAMING",
+        "status": "cleanup_only",
+        "summary": "Repo now writes both botomatic-full-build-proof.json and BOTOMATIC_FULL_BUILD_PROOF.json for compatibility; future cleanup may standardize naming after downstream references are checked."
+      }
+    ]
+  },
+  "nextRemediationOrder": [
+    "Merge this proof/orchestration-worker-wave branch into main.",
+    "On main, run npm run build, npm run test, npm run validate:all, and npm run proof:orchestration-core.",
+    "Provision approved durable Supabase proof credentials and rerun durable queue/restart-resume proof.",
+    "Provision approved external executor/auth proof credentials without hardcoding secrets and rerun protected build path proof.",
+    "Run credential-gated deployment dry-run/preview proof and smoke/rollback evidence.",
+    "Only after all main proof gates pass, update marketing/launch claims."
+  ],
+  "buildTestValidateStatus": {
+    "build": "pass",
+    "test": "pass",
+    "validateAll": "pass",
+    "proofOrchestrationCore": "pass"
+  }
+}
