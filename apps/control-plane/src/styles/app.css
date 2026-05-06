@@ -582,6 +582,7 @@ code.bhq-result-value { font-family: "IBM Plex Mono", "Fira Code", monospace; fo
 .bhq-preview-placeholder { font-size: 13px; color: #9588b4; font-style: italic; }
 .bhq-preview-body { display: flex; flex-direction: column; gap: 8px; }
 .bhq-preview-step { font-size: 13px; color: #1a0a3d; }
+.bhq-preview-clarifying { font-size: 13px; color: #d97706; font-weight: 600; }
 .bhq-status-pill { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; padding: 3px 9px; border-radius: 12px; background: #e8f4fd; color: #0b67c2; display: inline-block; width: fit-content; }
 .bhq-status-pill--running { background: #fef3c7; color: #92400e; }
 .bhq-status-pill--failed { background: #fee2e2; color: #991b1b; }

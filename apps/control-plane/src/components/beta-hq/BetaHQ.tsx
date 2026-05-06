@@ -27,6 +27,31 @@ type UploadEntry = {
 
 const PIPELINE_LABELS = ["Intake", "Plan", "Build", "Validate", "Preview", "Launch"];
 
+// ── Internal string sanitization ──────────────────────────────────────────
+// These strings come from internal planner/adapter state and must never
+// be shown directly to beta users.
+
+const BLOCKED_INTERNAL_STRINGS = [
+  "pageRoot",
+  "component ·",
+  "componentRender",
+  "Awaiting edit command",
+  "dry-run only",
+  "adapter unavailable",
+  "blocked-until-real-project",
+];
+
+function sanitize(text: string | null | undefined): string | null {
+  if (!text) return null;
+  let out = text;
+  for (const s of BLOCKED_INTERNAL_STRINGS) {
+    if (out.includes(s)) {
+      out = out.split(s).join("[…]");
+    }
+  }
+  return out;
+}
+
 function derivePipelineStatus(
   label: string,
   projectId: string | null,
@@ -168,7 +193,7 @@ export function BetaHQ({ projectId: initialProjectId }: { projectId?: string }) 
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
           if (msg.includes("404")) {
-            addMsg("system", "Command endpoint not yet wired for this project. Command noted.");
+            addMsg("system", "Follow-up command endpoint is not wired yet — command noted locally.");
           } else {
             addMsg("error", msg);
           }
@@ -240,6 +265,7 @@ export function BetaHQ({ projectId: initialProjectId }: { projectId?: string }) 
 
   const canLaunch = !!projectId && pipeline.slice(0, 4).every((s) => s.status === "done");
   const latestStep = projectState?.nextStep || projectState?.objective || null;
+  const safeLatestStep = sanitize(latestStep);
   const activity = (projectState as any)?.activity as Array<{ label?: string; type?: string; timestamp?: string }> | undefined;
   const recentActivity = activity?.slice(-4) ?? [];
 
@@ -311,7 +337,9 @@ export function BetaHQ({ projectId: initialProjectId }: { projectId?: string }) 
               <textarea
                 className="bhq-chat-input"
                 placeholder={
-                  projectId
+                  projectStatus === "clarifying"
+                    ? "Botomatic needs more detail — describe what to build further…"
+                    : projectId
                     ? "Tell Botomatic what to build or change…"
                     : "Describe what you want to build…"
                 }
@@ -322,6 +350,7 @@ export function BetaHQ({ projectId: initialProjectId }: { projectId?: string }) 
                 }}
                 disabled={chatBusy}
                 rows={2}
+                aria-label="Build command input"
               />
               <button
                 type="submit"
@@ -432,8 +461,12 @@ export function BetaHQ({ projectId: initialProjectId }: { projectId?: string }) 
                     {projectStatus}
                   </span>
                 )}
-                {latestStep ? (
-                  <p className="bhq-preview-step">{latestStep}</p>
+                {projectStatus === "clarifying" ? (
+                  <p className="bhq-preview-clarifying">
+                    Botomatic needs more detail. Use the chat to describe what to build further.
+                  </p>
+                ) : safeLatestStep ? (
+                  <p className="bhq-preview-step">{safeLatestStep}</p>
                 ) : (
                   <p className="bhq-preview-placeholder">
                     Preview will appear here as Botomatic materializes the app.
@@ -523,7 +556,7 @@ export function BetaHQ({ projectId: initialProjectId }: { projectId?: string }) 
               <div className="bhq-logs-list">
                 {recentActivity.map((entry, i) => (
                   <div key={i} className="bhq-log-row">
-                    <span className="bhq-log-label">{entry.label ?? entry.type ?? "event"}</span>
+                    <span className="bhq-log-label">{sanitize(entry.label ?? entry.type ?? "event") || "event"}</span>
                     {entry.timestamp && (
                       <span className="bhq-log-time">
                         {new Date(entry.timestamp).toLocaleTimeString()}

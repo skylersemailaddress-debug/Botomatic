@@ -1295,6 +1295,49 @@ export function validateChatFirstOperatorRouting(root: string): RepoValidatorRes
 }
 
 
+export function validateBetaInternalStringGuard(root: string): RepoValidatorResult {
+  const betaHQPath = "apps/control-plane/src/components/beta-hq/BetaHQ.tsx";
+  const projectPagePath = "apps/control-plane/src/app/projects/[projectId]/page.tsx";
+  const checks = [betaHQPath, projectPagePath];
+
+  const blocked = [
+    "pageRoot",
+    "component ·",
+    "componentRender",
+    "Awaiting edit command",
+    "dry-run only",
+    "adapter unavailable",
+    "blocked-until-real-project",
+  ];
+
+  if (!has(root, betaHQPath) || !has(root, projectPagePath)) {
+    return result("Validate-Botomatic-BetaInternalStringGuard", false, "BetaHQ or project page source not found.", checks);
+  }
+
+  const betaHQ = read(root, betaHQPath);
+  const projectPage = read(root, projectPagePath);
+
+  if (!betaHQ.includes("BLOCKED_INTERNAL_STRINGS") || !betaHQ.includes("sanitize")) {
+    return result("Validate-Botomatic-BetaInternalStringGuard", false, "BetaHQ must define BLOCKED_INTERNAL_STRINGS and sanitize() to guard raw internal output.", checks);
+  }
+
+  if (!projectPage.includes("BetaHQ") || projectPage.includes("VibeDashboard") || projectPage.includes("AppShell")) {
+    return result("Validate-Botomatic-BetaInternalStringGuard", false, "Project route must render BetaHQ, not AppShell or VibeDashboard.", checks);
+  }
+
+  if (!betaHQ.includes("clarifying") || !betaHQ.includes("Botomatic needs more detail")) {
+    return result("Validate-Botomatic-BetaInternalStringGuard", false, 'BetaHQ must handle "clarifying" project status with a clear message.', checks);
+  }
+
+  for (const s of blocked) {
+    if (!betaHQ.includes(`"${s}"`)) {
+      return result("Validate-Botomatic-BetaInternalStringGuard", false, `BetaHQ.BLOCKED_INTERNAL_STRINGS is missing entry: "${s}".`, checks);
+    }
+  }
+
+  return result("Validate-Botomatic-BetaInternalStringGuard", true, "BetaHQ sanitizes internal strings, handles clarifying status, and is the sole beta project renderer.", checks);
+}
+
 export function runAllRepoValidators(root: string): RepoValidatorResult[] {
   return [
     validateArchitecture(root),
@@ -1380,5 +1423,6 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateRouteAuthorizationReadiness(root),
     validateDeploymentSmokeBetaReadiness(root),
     validateBetaDocsReadiness(root),
+    validateBetaInternalStringGuard(root),
   ];
 }
