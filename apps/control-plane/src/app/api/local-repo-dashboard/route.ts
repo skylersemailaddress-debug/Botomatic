@@ -197,7 +197,10 @@ function writeCache(gates: CommandResult[], sha: string, lastTrigger: DashboardC
 
 async function fetchPullRequests() {
   try {
-    const response = await fetch("https://api.github.com/repos/skylersemailaddress-debug/Botomatic/pulls?state=open&per_page=8", {
+    const owner = process.env.GITHUB_OWNER || process.env.NEXT_PUBLIC_GITHUB_OWNER || "";
+    const repo = process.env.GITHUB_REPO || process.env.NEXT_PUBLIC_GITHUB_REPO || "";
+    if (!owner || !repo) return { status: "unavailable", items: [] };
+    const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/pulls?state=open&per_page=8`, {
       headers: { Accept: "application/vnd.github+json", "User-Agent": "Botomatic-local-dashboard" },
       cache: "no-store",
     });

@@ -11,6 +11,16 @@ function validateEnv() {
     console.error(JSON.stringify({ event: "startup_env_error", missing }));
     process.exit(1);
   }
+
+  // If GitHub integration is configured, the token must also be present.
+  if ((process.env.GITHUB_OWNER || process.env.GITHUB_REPO) && !process.env.GITHUB_TOKEN) {
+    console.error(JSON.stringify({
+      event: "startup_env_error",
+      missing: ["GITHUB_TOKEN"],
+      message: "GITHUB_OWNER/GITHUB_REPO are set but GITHUB_TOKEN is missing — GitHub operations will fail at runtime.",
+    }));
+    process.exit(1);
+  }
 }
 
 // ── Supabase connectivity probe ───────────────────────────────────────────────

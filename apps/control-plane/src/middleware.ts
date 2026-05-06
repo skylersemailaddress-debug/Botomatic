@@ -31,7 +31,11 @@ async function isValidSession(token: string, secret: string): Promise<boolean> {
   const expected = await hmacSign(payload, secret);
   if (expected !== sig) return false;
   try {
-    const { exp } = JSON.parse(atob(payload));
+    // payload is base64url (no padding, - and _ instead of + and /).
+    // atob() requires standard base64 — convert before parsing.
+    const b64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = b64 + "=".repeat((4 - (b64.length % 4)) % 4);
+    const { exp } = JSON.parse(atob(padded));
     return typeof exp === "number" && exp > Date.now();
   } catch {
     return false;

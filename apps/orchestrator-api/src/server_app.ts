@@ -2431,12 +2431,17 @@ export function buildApp(config: RuntimeConfig) {
       const fileName = rawFileName;
 
       // Binary safety gate — block known-dangerous extensions, flag suspicious ones.
+      // Multer has already written the file to disk, so clean it up before rejecting.
+      const rejectUpload = (status: number, body: object) => {
+        try { fs.rmSync(uploadedFile.path, { force: true }); } catch {}
+        return res.status(status).json(body);
+      };
       if (isBlockedFileExtension(fileName)) {
-        return res.status(400).json({ error: `File type not permitted: ${path.extname(fileName).toLowerCase()}`, code: "BLOCKED_FILE_TYPE" });
+        return rejectUpload(400, { error: `File type not permitted: ${path.extname(fileName).toLowerCase()}`, code: "BLOCKED_FILE_TYPE" });
       }
       const binaryScan = suspiciousBinaryHook(fileName);
       if (binaryScan.status === "blocked") {
-        return res.status(400).json({ error: binaryScan.reason, code: "BLOCKED_FILE_TYPE" });
+        return rejectUpload(400, { error: binaryScan.reason, code: "BLOCKED_FILE_TYPE" });
       }
 
       const mimeType = uploadedFile.mimetype;

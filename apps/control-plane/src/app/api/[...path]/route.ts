@@ -46,7 +46,17 @@ async function proxy(request: NextRequest, pathSegments: string[]) {
     init.body = await request.arrayBuffer();
   }
 
-  const upstream = await fetch(targetUrl, init);
+  let upstream: Response;
+  try {
+    upstream = await fetch(targetUrl, init);
+  } catch (err: any) {
+    console.error(JSON.stringify({ event: "proxy_upstream_unreachable", target: targetUrl, error: String(err?.message || err) }));
+    return NextResponse.json(
+      { error: "Orchestrator API is unreachable. Please try again shortly.", code: "UPSTREAM_UNAVAILABLE" },
+      { status: 502 }
+    );
+  }
+
   const responseHeaders = new Headers(upstream.headers);
   responseHeaders.delete("content-encoding");
   responseHeaders.delete("transfer-encoding");
