@@ -151,7 +151,7 @@
     "test:ui-generated-app-runtime-smoke-model": "tsx packages/ui-preview-engine/src/tests/uiGeneratedAppRuntimeSmokeModel.test.ts",
     "test:ui-generated-app-runtime-smoke-planner": "tsx packages/ui-preview-engine/src/tests/uiGeneratedAppRuntimeSmokePlanner.test.ts",
     "test:generated-app-runtime-smoke-runner": "tsx packages/validation/src/tests/generatedAppRuntimeSmokeRunner.test.ts",
-    "test": "npm run -s test:wave-025 && npm run -s test:wave-026",
+    "test": "npm run -s test:wave-025 && npm run -s test:wave-026 && npm run -s test:orchestration-core",
     "test:wave-025": "tsx packages/validation/src/tests/proDashboardTruthState.test.ts",
     "test:wave-026": "tsx packages/validation/src/tests/wave026LiveOrchestrationLoop.test.ts",
     "test:wave-038": "tsx packages/validation/src/tests/wave038LaunchProofDeployGating.test.ts",
@@ -167,7 +167,10 @@
     "test:e2e:live-beta": "node scripts/forensic/e2e-live-beta.mjs --iterations 1",
     "test:e2e:live-beta:100": "node scripts/forensic/e2e-live-beta.mjs --iterations 100",
     "test:commercial-cockpit": "npx playwright test -c playwright.commercial-visual.config.ts tests/e2e/visual/commercial-cockpit-visual.spec.ts",
-    "test:visual-commercial": "node tests/visual/scripts/compare-commercial-cockpit.cjs"
+    "test:visual-commercial": "node tests/visual/scripts/compare-commercial-cockpit.cjs",
+    "test:orchestration-core": "tsx packages/validation/src/tests/orchestrationCoreWorkerWave.test.ts",
+    "proof:orchestration-core": "node scripts/proof-orchestration-core.cjs",
+    "audit:friends-family-beta": "node scripts/friends-family-beta-readiness.cjs"
   },
   "dependencies": {
     "@trigger.dev/sdk": "^4.4.4"

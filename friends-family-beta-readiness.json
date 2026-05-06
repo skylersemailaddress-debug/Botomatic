@@ -1,0 +1,93 @@
+{
+  "generatedAt": "2026-05-06T04:46:47.755Z",
+  "branch": "work",
+  "commitSha": "0d3ca183a5a4fe6b19d1875c42acf4c3d74cdbac",
+  "readiness": "not_ready_all_gaps_not_closed",
+  "unsupervisedCommercialBeta": "no_go",
+  "supervisedPilot": "blocked_until_listed_gates_close",
+  "noHardcodedSecrets": true,
+  "evidence": {
+    "localOrchestrationProof": true,
+    "operationsPacket": true,
+    "durableExternalEvidence": true,
+    "oidcExternalEvidence": true,
+    "credentialedDeploymentContract": true,
+    "deploymentDryRunContract": true
+  },
+  "env": {
+    "durableSupabaseConfigured": false,
+    "authConfigured": false,
+    "executorConfigured": false,
+    "deploymentConfigured": false
+  },
+  "gates": [
+    {
+      "id": "main_branch_proof",
+      "status": "blocked",
+      "reason": "rerun proof gates on main after merge"
+    },
+    {
+      "id": "local_orchestration_worker_wave",
+      "status": "passed",
+      "reason": "proof:orchestration-core passed with score 100"
+    },
+    {
+      "id": "operations_packet",
+      "status": "passed",
+      "reason": "friends-and-family operations packet exists"
+    },
+    {
+      "id": "durable_restart_resume",
+      "status": "evidence_present_needs_current_main_rerun",
+      "reason": "Supabase env is not present in this shell"
+    },
+    {
+      "id": "protected_auth",
+      "status": "evidence_present_needs_current_main_rerun",
+      "reason": "auth env is not present in this shell"
+    },
+    {
+      "id": "external_executor_generation",
+      "status": "blocked",
+      "reason": "executor credentials are not present in this shell"
+    },
+    {
+      "id": "deployment_or_preview",
+      "status": "contract_present_live_credentials_missing",
+      "reason": "deployment credentials are not present in this shell"
+    }
+  ],
+  "remainingGaps": [
+    {
+      "id": "main_branch_proof",
+      "status": "blocked",
+      "reason": "rerun proof gates on main after merge"
+    },
+    {
+      "id": "durable_restart_resume",
+      "status": "evidence_present_needs_current_main_rerun",
+      "reason": "Supabase env is not present in this shell"
+    },
+    {
+      "id": "protected_auth",
+      "status": "evidence_present_needs_current_main_rerun",
+      "reason": "auth env is not present in this shell"
+    },
+    {
+      "id": "external_executor_generation",
+      "status": "blocked",
+      "reason": "executor credentials are not present in this shell"
+    },
+    {
+      "id": "deployment_or_preview",
+      "status": "contract_present_live_credentials_missing",
+      "reason": "deployment credentials are not present in this shell"
+    }
+  ],
+  "nextActions": [
+    "Merge the proof branch into main and rerun build/test/validate/proof there.",
+    "Inject approved Supabase, auth, executor, and deployment credentials only through secret management when those capabilities are in pilot scope.",
+    "Run durable restart/resume, protected auth, external executor generation, and deployment/preview smoke proofs for the actual pilot environment.",
+    "Invite testers only with the operations packet caveats and manual monitoring in place."
+  ]
+}

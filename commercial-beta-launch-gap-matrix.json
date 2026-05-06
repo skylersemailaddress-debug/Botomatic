@@ -1,0 +1,231 @@
+{
+  "generatedAt": "2026-05-06T04:45:53.993Z",
+  "currentBranch": "work",
+  "auditedCommitBeforeThisUpdate": "0d3ca183a5a4fe6b19d1875c42acf4c3d74cdbac",
+  "mainReadinessStatus": "not_ready_to_claim_commercial_beta_from_main_until_branch_is_merged_and_proof_reruns_on_main",
+  "friendsAndFamilyBetaReadinessStatus": "no_go_for_unsupervised_beta; conditional_go_only_for_supervised_pilot_after_merge_to_main_and_bounded_tester_caveats",
+  "repositoryInspection": {
+    "localBranches": [
+      "work"
+    ],
+    "remoteBranchesVisible": [],
+    "missingReportedCommit": "fea564272060ec54e40d2935df3eb6a2f8be0933",
+    "missingReportedCommitVisible": false,
+    "workflowPresent": true,
+    "recoveredByRecreation": true
+  },
+  "commandResults": {
+    "build": {
+      "command": "npm run build",
+      "status": "pass"
+    },
+    "test": {
+      "command": "npm run test",
+      "status": "pass",
+      "includesOrchestrationCoreRegression": true
+    },
+    "validateAll": {
+      "command": "npm run validate:all",
+      "status": "pass",
+      "executed": 78,
+      "passed": 78,
+      "failed": 0,
+      "note": "Validators pass, but launch-claim readiness is bounded by this audit because durable/external/auth/deployment proof remains open."
+    },
+    "proofOrchestrationCore": {
+      "command": "npm run proof:orchestration-core",
+      "status": "pass",
+      "score": 100,
+      "scope": "local in-memory orchestration-core proof"
+    },
+    "friendsFamilyBetaAudit": {
+      "command": "npm run audit:friends-family-beta",
+      "status": "pass_audit_completed",
+      "readiness": "not_ready_all_gaps_not_closed",
+      "output": "friends-family-beta-readiness.json"
+    }
+  },
+  "proofSurface": {
+    "proofScriptPresent": true,
+    "proofScript": "scripts/proof-orchestration-core.cjs",
+    "packageScriptPresent": true,
+    "packageScript": "proof:orchestration-core",
+    "regularTestIncludesRegression": true,
+    "regressionTestPresent": true,
+    "regressionTest": "packages/validation/src/tests/orchestrationCoreWorkerWave.test.ts",
+    "workerWaveProofPresent": true,
+    "proofScore": 100,
+    "proofStatus": "orchestration_core_passed",
+    "operationsPacketPresent": true,
+    "operationsPacket": "FRIENDS_AND_FAMILY_BETA_OPERATIONS_PACKET.md",
+    "friendsFamilyAuditScriptPresent": true,
+    "friendsFamilyAuditScript": "audit:friends-family-beta"
+  },
+  "friendsAndFamilyScopeDecision": {
+    "unsupervisedCommercialBeta": "no_go",
+    "supervisedWorkflowPilot": "blocked_until_main_and_credentialed_scoped_gates_close; operations_packet_and_audit_script_now_present",
+    "requiredCaveats": [
+      "Not production ready",
+      "No durable restart/resume guarantee until Supabase proof passes",
+      "No external executor guarantee until credentialed proof passes",
+      "No protected commercial access guarantee until auth proof passes",
+      "No deployment or preview-sharing guarantee until smoke/rollback proof passes"
+    ]
+  },
+  "blockers": {
+    "P0": [
+      {
+        "id": "P0-MAIN-PROOF",
+        "status": "open",
+        "category": "branch/merge blockers",
+        "summary": "This branch contains the proof, but main cannot claim it until the branch is merged and the commands pass on main.",
+        "remediation": "Merge work into main, then rerun build/test/validate/proof on main."
+      },
+      {
+        "id": "P0-DURABLE-RESTART-RESUME",
+        "status": "open",
+        "category": "deployment blockers",
+        "summary": "Supabase durable queue/repository restart-resume proof is still not proven from this environment.",
+        "remediation": "Run the full proof with real SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in durable mode, then capture restart/resume evidence."
+      },
+      {
+        "id": "P0-EXTERNAL-EXECUTOR",
+        "status": "open",
+        "category": "proof blockers",
+        "summary": "External executor/API-key backed build path remains unproven by the local orchestration-core proof.",
+        "remediation": "Run the full build-path proof with a real executor credential and confirm generated output is produced by the intended executor path."
+      },
+      {
+        "id": "P0-AUTH-PROTECTED-ROUTES",
+        "status": "open",
+        "category": "security/secrets blockers",
+        "summary": "Protected commercial route proof with configured auth is not proven locally.",
+        "remediation": "Use approved secret injection and prove invited tester auth/authorization behavior."
+      },
+      {
+        "id": "P0-PUBLIC-LAUNCH-CLAIM",
+        "status": "open",
+        "category": "claim/marketing blockers",
+        "summary": "Do not claim public launch readiness until proof passes from main with durable storage, auth, executor, and deployment gates proven.",
+        "remediation": "Update claim boundaries only after green main evidence exists."
+      }
+    ],
+    "P1": [
+      {
+        "id": "P1-DEPLOYMENT-SMOKE",
+        "status": "open",
+        "category": "deployment blockers",
+        "summary": "Production/preview deployment smoke proof remains outside this local orchestration-core proof.",
+        "remediation": "Run credential-gated deployment dry-run or approved preview deployment proof and record rollback/smoke evidence if beta includes deployment."
+      },
+      {
+        "id": "P1-FF-OPERATIONS-PACKET",
+        "status": "closed_local",
+        "category": "deployment blockers",
+        "summary": "Friends-and-family operations packet now documents invite scope, caveats, support/escalation, incident response, disable/rollback, and privacy/logging notice.",
+        "remediation": "Use FRIENDS_AND_FAMILY_BETA_OPERATIONS_PACKET.md for every invite."
+      },
+      {
+        "id": "P1-TELEMETRY-FEEDBACK",
+        "status": "closed_local",
+        "category": "proof blockers",
+        "summary": "Operations packet and readiness audit define run IDs, failure evidence collection, support intake, and privacy boundaries.",
+        "remediation": "Run npm run audit:friends-family-beta before invites and attach friends-family-beta-readiness.json to the pilot record."
+      }
+    ],
+    "branchMerge": [
+      {
+        "id": "MERGE-PROOF-ORCHESTRATION-CORE",
+        "status": "resolved_by_this_branch_but_open_for_main",
+        "summary": "The branch contains proof:orchestration-core, regular test coverage for the regression, memory queue core, and proof artifacts.",
+        "mergeTarget": "main",
+        "branch": "work"
+      },
+      {
+        "id": "MISSING-FEA5642",
+        "status": "not_found",
+        "summary": "Reported commit fea564272060ec54e40d2935df3eb6a2f8be0933 is not present in the local object database, so the changes were recreated minimally instead of cherry-picked."
+      }
+    ],
+    "proof": [
+      {
+        "id": "PROOF-ORCHESTRATION-CORE",
+        "status": "closed_local",
+        "summary": "Local in-memory worker/wave proof passes with score 100."
+      },
+      {
+        "id": "PROOF-REGULAR-TEST-INCLUSION",
+        "status": "closed_local",
+        "summary": "npm run test now includes test:orchestration-core."
+      },
+      {
+        "id": "PROOF-FF-AUDIT-AUTOMATION",
+        "status": "closed_local",
+        "summary": "npm run audit:friends-family-beta writes friends-family-beta-readiness.json with explicit remaining gates."
+      },
+      {
+        "id": "PROOF-MAIN",
+        "status": "open_until_merged_and_rerun_on_main",
+        "summary": "Main cannot truthfully claim this proof until the PR is merged and proof:orchestration-core passes on main."
+      },
+      {
+        "id": "PROOF-REAL-BETA-PATH",
+        "status": "open",
+        "summary": "External executor output, durable restart/resume, auth, and deployment smoke/rollback remain unproven for real beta users."
+      }
+    ],
+    "deployment": [
+      {
+        "id": "DEPLOYMENT-CREDENTIALS",
+        "status": "open",
+        "summary": "Live deployment execution requires approved credentials and must remain blocked-by-default without them."
+      },
+      {
+        "id": "PREVIEW-SHARING",
+        "status": "open",
+        "summary": "Preview URL or generated workspace sharing must not be promised until preview/deployment proof is captured."
+      }
+    ],
+    "securitySecrets": [
+      {
+        "id": "NO-HARDCODED-SECRETS",
+        "status": "closed_for_this_patch",
+        "summary": "No secrets were added; proof records credential gaps as blockers."
+      },
+      {
+        "id": "FF-LEAST-PRIVILEGE",
+        "status": "open",
+        "summary": "Friends/family testers need least-privilege credentials and authorization proof before protected commercial access."
+      }
+    ],
+    "claimMarketing": [
+      {
+        "id": "CLAIM-BOUNDARY",
+        "status": "open",
+        "summary": "Allowed claim after main proof: supervised workflow/orchestration pilot with known limitations. Disallowed: public launch ready, durable queue ready, protected auth proven, deployment ready, or external executor proven."
+      }
+    ],
+    "cleanupOnly": [
+      {
+        "id": "DUPLICATE-PROOF-JSON-NAMING",
+        "status": "cleanup_only",
+        "summary": "Repo writes both botomatic-full-build-proof.json and BOTOMATIC_FULL_BUILD_PROOF.json for compatibility; future cleanup may standardize naming after downstream references are checked."
+      },
+      {
+        "id": "EVIDENCE-ONLY-GENERATED-WORKSPACE",
+        "status": "cleanup_only",
+        "summary": "The AtlasCRM workspace under release-evidence/runtime/generated-workspaces is evidence-only and not a real customer build."
+      }
+    ]
+  },
+  "nextRemediationOrder": [
+    "Merge this proof/orchestration-worker-wave branch into main.",
+    "On main, run npm run build, npm run test, npm run validate:all, npm run proof:orchestration-core, and npm run audit:friends-family-beta.",
+    "Decide whether friends-and-family beta includes real external executor generation; if yes, provision approved executor credentials and prove the fresh-project path.",
+    "Provision approved durable Supabase proof credentials and rerun durable queue/restart-resume proof in the actual pilot environment.",
+    "Configure and prove protected auth for invited testers in the actual pilot environment.",
+    "If beta includes deployment or preview sharing, run credential-gated deployment dry-run/preview proof and smoke/rollback evidence.",
+    "Use FRIENDS_AND_FAMILY_BETA_OPERATIONS_PACKET.md for invite scope, tester caveats, support channel, incident response, rollback/disable procedure, and privacy/logging notice.",
+    "Only after npm run audit:friends-family-beta reports no remaining gaps for the scoped pilot, invite friends/family testers with bounded claims."
+  ]
+}
