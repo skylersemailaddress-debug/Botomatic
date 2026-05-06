@@ -1295,6 +1295,52 @@ export function validateChatFirstOperatorRouting(root: string): RepoValidatorRes
 }
 
 
+export function validateBetaLocalLaunchReadiness(root: string): RepoValidatorResult {
+  const scriptPath = "scripts/launchBetaLocal.ps1";
+  const docPath = "docs/beta/LOCAL_BETA_LAUNCH.md";
+  const checks = [scriptPath, docPath, "package.json"];
+
+  if (!has(root, scriptPath)) {
+    return result("Validate-Botomatic-BetaLocalLaunchReadiness", false, `Beta local launch script missing: ${scriptPath}`, checks);
+  }
+
+  const script = read(root, scriptPath);
+  const pkg = read(root, "package.json");
+
+  const placeholders = ["YOUR_", "PASTE_", "REPLACE_", "changeme", "placeholder"];
+  const hasPlaceholderRejection = placeholders.every((p) => script.includes(`"${p}"`));
+  const hasJwtValidation = script.includes("eyJ");
+  const hasSecretsFile = script.includes("beta-launch.env");
+  const noHardcodedSecret = !script.includes('client_secret = "');
+  const hasBetaAuthToken = script.includes("BOTOMATIC_BETA_AUTH_TOKEN");
+  const hasPortKill = script.includes("3000") && script.includes("3001");
+  const hasCacheClean = script.includes(".next");
+  const hasUiDev = script.includes("ui:dev");
+  const hasLaunchScript = pkg.includes('"launch:beta:local"') && pkg.includes("launchBetaLocal.ps1");
+  const hasDoc = has(root, docPath) && read(root, docPath).includes("beta-launch.env");
+
+  const ok =
+    hasPlaceholderRejection &&
+    hasJwtValidation &&
+    hasSecretsFile &&
+    noHardcodedSecret &&
+    hasBetaAuthToken &&
+    hasPortKill &&
+    hasCacheClean &&
+    hasUiDev &&
+    hasLaunchScript &&
+    hasDoc;
+
+  return result(
+    "Validate-Botomatic-BetaLocalLaunchReadiness",
+    ok,
+    ok
+      ? "Beta local launcher wires Auth0 token fetch, placeholder guard, JWT validation, port cleanup, cache clear, and ui:dev start."
+      : "Beta local launcher is incomplete or missing required safety checks.",
+    checks,
+  );
+}
+
 export function validateBetaInternalStringGuard(root: string): RepoValidatorResult {
   const betaHQPath = "apps/control-plane/src/components/beta-hq/BetaHQ.tsx";
   const projectPagePath = "apps/control-plane/src/app/projects/[projectId]/page.tsx";
@@ -1424,5 +1470,6 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateDeploymentSmokeBetaReadiness(root),
     validateBetaDocsReadiness(root),
     validateBetaInternalStringGuard(root),
+    validateBetaLocalLaunchReadiness(root),
   ];
 }
