@@ -84,6 +84,7 @@ import { intakeCloudLink } from "./intake/cloudIntake";
 import { validateLocalFolderManifest } from "./intake/localManifest";
 import { isBlockedFileExtension, suspiciousBinaryHook } from "./intake/intakeSafety";
 import { assertProviderPromoteGate, assertProviderRollbackGate, loadProviderDeploymentContracts } from "./deployProviderGates";
+import { createRoutePolicyMiddleware } from "./security/routePolicies";
 
 type VerifiedRequestAuth = AuthContext & { issuer?: string };
 
