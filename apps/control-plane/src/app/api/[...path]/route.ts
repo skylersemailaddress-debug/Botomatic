@@ -61,18 +61,40 @@ async function proxy(request: NextRequest, pathSegments: string[]) {
   headers.delete("host");
   headers.delete("connection");
 
-  if (!headers.has("authorization")) {
+  const betaToken = getBetaAuthToken();
+
+  if (betaToken) {
+    // Validate token format before contacting Railway.
+    if (!betaToken.startsWith("eyJ")) {
+      return NextResponse.json(
+        {
+          error: "BOTOMATIC_BETA_AUTH_TOKEN does not look like a JWT (must start with eyJ). Check your local env and restart the dev server.",
+          tokenSource: "BOTOMATIC_BETA_AUTH_TOKEN",
+          tokenLooksLikeJwt: false,
+          actorHeadersInjected: false,
+        },
+        { status: 401 },
+      );
+    }
+
+    // Always overwrite — never let a client-supplied header take precedence.
+    headers.set("authorization", `Bearer ${betaToken}`);
+    headers.set("x-role", "admin");
+    headers.set("x-user-id", (process.env.BOTOMATIC_BETA_USER_ID || "beta-smoke-admin").trim());
+    headers.set("x-tenant-id", (process.env.BOTOMATIC_BETA_TENANT_ID || "beta-smoke-tenant").trim());
+  } else if (!headers.has("authorization")) {
     const token = getAuthToken();
     if (token) {
       headers.set("authorization", `Bearer ${token}`);
-      // When using the beta auth token against a hosted remote API, assert admin role.
-      if (getBetaAuthToken() && token === getBetaAuthToken()) {
-        headers.set("x-role", "admin");
-      }
     } else if (!isLoopbackUrl(proxyBase) && !["GET", "HEAD"].includes(request.method.toUpperCase())) {
-      // Mutating request targeting a remote API with no auth token configured.
       return NextResponse.json(
-        { error: "Hosted API auth token is not configured for this local UI session.", hint: "Set BOTOMATIC_BETA_AUTH_TOKEN in your terminal and restart the dev server." },
+        {
+          error: "Hosted API auth token is not configured for this local UI session.",
+          hint: "Set BOTOMATIC_BETA_AUTH_TOKEN in your terminal and restart the dev server.",
+          tokenSource: null,
+          tokenLooksLikeJwt: false,
+          actorHeadersInjected: false,
+        },
         { status: 401 },
       );
     }
