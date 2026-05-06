@@ -151,7 +151,7 @@
     "test:ui-generated-app-runtime-smoke-model": "tsx packages/ui-preview-engine/src/tests/uiGeneratedAppRuntimeSmokeModel.test.ts",
     "test:ui-generated-app-runtime-smoke-planner": "tsx packages/ui-preview-engine/src/tests/uiGeneratedAppRuntimeSmokePlanner.test.ts",
     "test:generated-app-runtime-smoke-runner": "tsx packages/validation/src/tests/generatedAppRuntimeSmokeRunner.test.ts",
-    "test": "npm run -s test:wave-025 && npm run -s test:wave-026 && npm run -s test:security-auth-beta && npm run -s test:durable-fail-closed-beta",
+    "test": "npm run -s test:wave-025 && npm run -s test:wave-026 && npm run -s test:security-auth-beta && npm run -s test:durable-fail-closed-beta && npm run -s test:orchestration-core-beta-proof",
     "test:wave-025": "tsx packages/validation/src/tests/proDashboardTruthState.test.ts",
     "test:wave-026": "tsx packages/validation/src/tests/wave026LiveOrchestrationLoop.test.ts",
     "test:wave-038": "tsx packages/validation/src/tests/wave038LaunchProofDeployGating.test.ts",
@@ -170,11 +170,12 @@
     "test:visual-commercial": "node tests/visual/scripts/compare-commercial-cockpit.cjs",
     "test:orchestration-core": "tsx packages/validation/src/tests/orchestrationCoreWorkerWave.test.ts",
     "proof:orchestration-core": "node scripts/proof-orchestration-core.cjs",
-    "test:tenant-isolation": "tsx packages/validation/src/tests/tenantIsolation.test.ts",
-    "beta:readiness": "npm run -s test:tenant-isolation && tsx packages/validation/src/repoValidators/tenantIsolationReadiness.ts",
-    "validate:route-auth": "tsx packages/validation/src/repoValidators/routeAuthorizationReadiness.ts",
-    "proof:no-secrets-beta": "tsx packages/validation/src/runtime/noSecretsBetaProof.ts",
-    "test:no-secrets-beta-proof": "tsx packages/validation/src/tests/noSecretsBetaProof.test.ts"
+    "beta:readiness": "tsx scripts/validateBetaReadiness.ts",
+    "beta:gate": "npm run -s build && npm run -s test && npm run -s validate:all && npm run -s beta:readiness",
+    "test:security-auth-beta": "tsx packages/validation/src/tests/securityAuthBetaFailClosed.test.ts",
+    "test:durable-fail-closed-beta": "tsx packages/validation/src/tests/durableFailClosedBeta.test.ts",
+    "test:orchestration-core-beta-proof": "tsx packages/validation/src/tests/orchestrationCoreBetaProof.test.ts",
+    "proof:orchestration-core-beta": "tsx packages/validation/src/tests/orchestrationCoreBetaProof.test.ts"
   },
   "dependencies": {
     "@trigger.dev/sdk": "^4.4.4"

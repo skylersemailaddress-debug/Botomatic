@@ -1,0 +1,167 @@
+{
+  "status": "passed",
+  "generatedAt": "2026-05-06T17:51:40.105Z",
+  "storageMode": "durable-file",
+  "artifactPath": "release-evidence/runtime/orchestration_core_beta_proof.json",
+  "signals": {
+    "intake_created_durable_project": {
+      "passed": true,
+      "evidence": {
+        "projectId": "durable-orchestration-beta-proof",
+        "storePath": "/workspace/Botomatic/release-evidence/runtime/orchestration-core-beta/durable-state.json"
+      }
+    },
+    "compile_created_build_contract": {
+      "passed": true,
+      "evidence": {
+        "contractId": "contract_durable-orchestration-beta-proof_1778089900088",
+        "readyToBuild": true
+      }
+    },
+    "plan_created_packets": {
+      "passed": true,
+      "evidence": {
+        "packetCount": 39,
+        "firstPacketId": "durable-orchestration-beta-proof-m1-p1"
+      }
+    },
+    "queue_claimed_job": {
+      "passed": true,
+      "evidence": {
+        "jobId": "job_durable-orchestration-beta-proof_durable-orchestration-beta-proof-m1-p1",
+        "workerId": "worker_after_restart",
+        "claimedAt": "2026-05-06T17:51:40.095Z"
+      }
+    },
+    "worker_executed_job": {
+      "passed": true,
+      "evidence": {
+        "executor": "local_filesystem_executor",
+        "summary": "Executed durable-orchestration-beta-proof-m1-p1 with deterministic local filesystem output",
+        "changedFileCount": 3
+      }
+    },
+    "materialized_output_verified": {
+      "passed": true,
+      "evidence": {
+        "workspacePath": "/workspace/Botomatic/release-evidence/runtime/orchestration-core-beta/generated-apps/durable-orchestration-beta-proof/job_durable-orchestration-beta-proof_durable-orchestration-beta-proof-m1-p1",
+        "files": [
+          "package.json",
+          "server.mjs",
+          "README.md"
+        ]
+      }
+    },
+    "validation_evidence_persisted": {
+      "passed": true,
+      "evidence": {
+        "packetId": "durable-orchestration-beta-proof-m1-p1",
+        "validationStatus": "passed"
+      }
+    },
+    "restart_resume_no_duplicate_or_lost_work": {
+      "passed": true,
+      "evidence": {
+        "noDuplicateJobs": true,
+        "noLostJobs": true,
+        "resumesFromDurableState": true,
+        "beforeRestartJobs": 1,
+        "afterRestartJobs": 1,
+        "afterCompletionJobs": 1
+      }
+    },
+    "durable_job_created": true,
+    "worker_restarted_and_resumed": true,
+    "state_persisted_across_restart": true,
+    "idempotent_retry_verified": true,
+    "end_to_end_completion_verified": true
+  },
+  "project": {
+    "projectId": "durable-orchestration-beta-proof",
+    "status": "queued",
+    "packetCount": 39,
+    "completedPackets": 1
+  },
+  "queue": {
+    "beforeRestart": [
+      {
+        "jobId": "job_durable-orchestration-beta-proof_durable-orchestration-beta-proof-m1-p1",
+        "projectId": "durable-orchestration-beta-proof",
+        "packetId": "durable-orchestration-beta-proof-m1-p1",
+        "status": "queued",
+        "workerId": null,
+        "claimedAt": null,
+        "completedAt": null,
+        "lastError": null,
+        "createdAt": "2026-05-06T17:51:40.091Z",
+        "updatedAt": "2026-05-06T17:51:40.091Z"
+      }
+    ],
+    "afterRestart": [
+      {
+        "jobId": "job_durable-orchestration-beta-proof_durable-orchestration-beta-proof-m1-p1",
+        "projectId": "durable-orchestration-beta-proof",
+        "packetId": "durable-orchestration-beta-proof-m1-p1",
+        "status": "queued",
+        "workerId": null,
+        "claimedAt": null,
+        "completedAt": null,
+        "lastError": null,
+        "createdAt": "2026-05-06T17:51:40.091Z",
+        "updatedAt": "2026-05-06T17:51:40.091Z"
+      }
+    ],
+    "afterCompletion": [
+      {
+        "jobId": "job_durable-orchestration-beta-proof_durable-orchestration-beta-proof-m1-p1",
+        "projectId": "durable-orchestration-beta-proof",
+        "packetId": "durable-orchestration-beta-proof-m1-p1",
+        "status": "succeeded",
+        "workerId": "worker_after_restart",
+        "claimedAt": "2026-05-06T17:51:40.095Z",
+        "completedAt": "2026-05-06T17:51:40.103Z",
+        "lastError": null,
+        "createdAt": "2026-05-06T17:51:40.091Z",
+        "updatedAt": "2026-05-06T17:51:40.103Z"
+      }
+    ]
+  },
+  "preview": {
+    "projectId": "durable-orchestration-beta-proof",
+    "status": "queued",
+    "projectPath": "/workspace/Botomatic/release-evidence/runtime/orchestration-core-beta/generated-apps/durable-orchestration-beta-proof/job_durable-orchestration-beta-proof_durable-orchestration-beta-proof-m1-p1",
+    "artifactId": "artifact_durable-orchestration-beta-proof",
+    "buildStatus": "passed",
+    "runStatus": "passed",
+    "smokeStatus": "passed"
+  },
+  "evidence": {
+    "storePath": "/workspace/Botomatic/release-evidence/runtime/orchestration-core-beta/durable-state.json",
+    "materializedWorkspace": "/workspace/Botomatic/release-evidence/runtime/orchestration-core-beta/generated-apps/durable-orchestration-beta-proof/job_durable-orchestration-beta-proof_durable-orchestration-beta-proof-m1-p1",
+    "validationRecord": {
+      "projectId": "durable-orchestration-beta-proof",
+      "packetId": "durable-orchestration-beta-proof-m1-p1",
+      "status": "passed",
+      "checks": [
+        "build",
+        "lint",
+        "typecheck"
+      ],
+      "summary": "All checks passed (mock)",
+      "createdAt": "2026-05-06T17:51:40.098Z",
+      "updatedAt": "2026-05-06T17:51:40.098Z"
+    },
+    "firstJob": {
+      "jobId": "job_durable-orchestration-beta-proof_durable-orchestration-beta-proof-m1-p1",
+      "projectId": "durable-orchestration-beta-proof",
+      "packetId": "durable-orchestration-beta-proof-m1-p1",
+      "status": "queued",
+      "workerId": null,
+      "claimedAt": null,
+      "completedAt": null,
+      "lastError": null,
+      "createdAt": "2026-05-06T17:51:40.091Z",
+      "updatedAt": "2026-05-06T17:51:40.091Z"
+    }
+  }
+}

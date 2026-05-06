@@ -346,6 +346,11 @@ async function getRequestActor(req: express.Request, config: RuntimeConfig): Pro
   }
 }
 
+
+function recordAuthFailure(message: string, metadata: Record<string, unknown>) {
+  recordOpsError("auth_failed", message, metadata as Record<string, any>);
+}
+
 function requireRole(required: AuthContext["role"], config: RuntimeConfig): express.RequestHandler {
   const rank: Record<AuthContext["role"], number> = { operator: 1, reviewer: 2, admin: 3 };
   return async (req, res, next) => {
@@ -1790,6 +1795,12 @@ export function buildApp(config: RuntimeConfig) {
       requestId: (res.locals as any).requestId,
     });
   });
+
+  app.use(createRoutePolicyMiddleware({
+    config,
+    getVerifiedAuth,
+    recordAuthFailure,
+  }));
 
   const buildHealthPayload = (
     auth: { role: string | null; userId: string | null; issuer: string | null },
