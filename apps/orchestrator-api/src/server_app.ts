@@ -89,7 +89,7 @@ type VerifiedRequestAuth = AuthContext & { issuer?: string };
 
 type RequestActor = {
   actorId: string;
-  actorSource: "oidc" | "bearer_token" | "anonymous";
+  actorSource: "oidc" | "bearer_token" | "local_test_headers" | "anonymous";
 };
 
 type QueueJobRecord = {
@@ -181,6 +181,7 @@ function toStored(record: {
   name: string;
   request: string;
   status: string;
+  ownerId?: string | null;
   governanceApproval?: GovernanceApprovalState;
   masterTruth?: any;
   plan?: any;
@@ -197,6 +198,7 @@ function toStored(record: {
     name: record.name,
     request: record.request,
     status: record.status,
+    ownerId: record.ownerId ?? null,
     governanceApproval: record.governanceApproval ?? null,
     masterTruth: record.masterTruth ?? null,
     plan: record.plan ?? null,
@@ -309,6 +311,18 @@ async function getVerifiedAuth(req: express.Request, config: RuntimeConfig): Pro
     return { userId: `api_token:${String(config.auth.token).slice(0, 6)}`, role: "admin" };
   }
 
+  if (config.auth.implementation === "local_test_headers" && config.runtimeMode === "development" && !config.hosted) {
+    const userId = req.header("x-user-id");
+    const roleHeader = req.header("x-role");
+    if (!userId) throw new Error("Missing local test user");
+    const role = roleHeader === "admin" || roleHeader === "reviewer" || roleHeader === "operator" ? roleHeader : "operator";
+    return { userId, role };
+  }
+
+  if (config.hosted || config.runtimeMode === "commercial") {
+    throw new Error("API auth is not configured");
+  }
+
   return { userId: "anonymous", role: "operator" };
 }
 
@@ -317,7 +331,7 @@ async function getRequestActor(req: express.Request, config: RuntimeConfig): Pro
     const auth = await getVerifiedAuth(req, config);
     return {
       actorId: auth.userId,
-      actorSource: config.auth.implementation === "oidc" ? "oidc" : config.auth.implementation === "bearer_token" ? "bearer_token" : "anonymous",
+      actorSource: config.auth.implementation === "oidc" ? "oidc" : config.auth.implementation === "bearer_token" ? "bearer_token" : config.auth.implementation === "local_test_headers" ? "local_test_headers" : "anonymous",
     };
   } catch {
     return { actorId: "anonymous", actorSource: "anonymous" };
@@ -352,7 +366,8 @@ function requireRole(required: AuthContext["role"], config: RuntimeConfig): expr
 function requireApiAuth(config: RuntimeConfig): express.RequestHandler {
   return async (req, res, next) => {
     if (!config.auth.enabled) {
-      return next();
+      if (!config.hosted && config.runtimeMode === "development") return next();
+      return res.status(503).json({ error: "API auth is not configured", authImplementation: config.auth.implementation });
     }
     try {
       await getVerifiedAuth(req, config);
@@ -362,6 +377,38 @@ function requireApiAuth(config: RuntimeConfig): express.RequestHandler {
         route: `${req.method} ${req.path}`,
       });
       return res.status(401).json({ error: String(error?.message || error), authImplementation: config.auth.implementation });
+    }
+  };
+}
+
+function requireProjectOwner(config: RuntimeConfig): express.RequestHandler {
+  return async (req, res, next) => {
+    if (!req.params.projectId) return next();
+
+    if (!config.auth.enabled && !config.hosted && config.runtimeMode === "development") {
+      return next();
+    }
+
+    try {
+      const auth = await getVerifiedAuth(req, config);
+      const project = await config.repository.repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      if (!project.ownerId || project.ownerId !== auth.userId) {
+        recordOpsError("auth_failed", "Project owner check denied", {
+          route: `${req.method} ${req.path}`,
+          projectId: req.params.projectId,
+          userId: auth.userId,
+          ownerId: project.ownerId || null,
+        });
+        return res.status(403).json({ error: "Forbidden", code: "PROJECT_OWNER_REQUIRED" });
+      }
+      return next();
+    } catch (error: any) {
+      recordOpsError("auth_failed", String(error?.message || error), {
+        route: `${req.method} ${req.path}`,
+        projectId: req.params.projectId,
+      });
+      return res.status(401).json({ error: String(error?.message || error) });
     }
   };
 }
@@ -1643,7 +1690,9 @@ function materializeGeneratedWorkspace(
 export function buildApp(config: RuntimeConfig) {
   const app = express();
   const repo = config.repository.repo;
-  startQueueWorker(config);
+  if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    startQueueWorker(config);
+  }
   app.use(express.json());
 
   app.use((req, res, next) => {
@@ -1766,6 +1815,7 @@ export function buildApp(config: RuntimeConfig) {
         name: deriveProjectName({ name, request: safeRequest, prompt, projectName }),
         request: safeRequest,
         status: "clarifying",
+        ownerId: actor.actorId,
         governanceApproval: buildDefaultGovernanceApproval(actor.actorId),
       });
       ensureGovernanceApprovalState(project, actor.actorId);
@@ -1781,6 +1831,8 @@ export function buildApp(config: RuntimeConfig) {
       return handleRouteError(res, config, error, "POST /api/projects/intake", actor);
     }
   });
+
+  app.use("/api/projects/:projectId", requireProjectOwner(config));
 
   app.get("/api/projects/:projectId/intake/sources", async (req, res) => {
     const actor = await getRequestActor(req, config);

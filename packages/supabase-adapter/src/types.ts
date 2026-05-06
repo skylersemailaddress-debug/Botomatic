@@ -3,6 +3,7 @@ projectId: string;
 name: string;
 request: string;
 status: string;
+ownerId?: string | null;
 governanceApproval?: GovernanceApprovalState | null;
 masterTruth?: Record<string, unknown> | null;
 plan?: Record<string, unknown> | null;
