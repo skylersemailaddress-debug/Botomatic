@@ -26,7 +26,14 @@ const ensureRoot = () => fs.mkdirSync(DATA_ROOT, { recursive: true });
 const filePath = (projectId: string) => path.join(DATA_ROOT, `${sanitizeProjectId(projectId)}.json`);
 
 export const checksum = (value: unknown): string => crypto.createHash("sha256").update(JSON.stringify(value)).digest("hex");
-export const redactLine = (input: string): string => input.replace(/(token|secret|password|apikey|api_key)\s*[:=]\s*[^\s]+/gi, "$1=[REDACTED]").replace(/bearer\s+[a-z0-9\-_.]+/gi, "bearer [REDACTED]");
+export function redactLine(input: string): string {
+  return input
+    .replace(/\bBearer\s+(?!<[^>]+>)(?!\$\{[^}]+\})(?!\[REDACTED\])[A-Za-z0-9._\-]{16,}\b/gi, "Bearer [REDACTED]")
+    .replace(/\b(?:sk-(?:proj-|admin-)?[A-Za-z0-9_-]{20,}|sk-ant-[A-Za-z0-9_-]{16,}|gh[pousr]_[0-9A-Za-z_]{20,}|sb_(?:secret|service_role)_[A-Za-z0-9_-]{16,})\b/g, "[REDACTED]")
+    .replace(/https:\/\/[a-z0-9]{18,}\.supabase\.co\b/gi, "https://[REDACTED].supabase.co")
+    .replace(/(token|secret|password|apikey|api_key|service_role|jwt_secret)\s*[:=]\s*[^\s]+/gi, "$1=[REDACTED]")
+    .replace(/-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----/g, "-----BEGIN [REDACTED] PRIVATE KEY-----");
+}
 
 export function sanitizeRuntimeUrl(url?: string): string | undefined {
   if (!url) return undefined;

@@ -21,9 +21,9 @@ function base(root: string) {
 
 function testPlaintextSecretInDocsFails() { const r = fixtureRoot(); base(r); write(r, "docs/a.md", "leak sk_live_ABCDEF1234567890"); assert.strictEqual(validateSecretsCredentialManagementReadiness(r).status, "failed"); }
 function testSecretRefPasses() { const r = fixtureRoot(); base(r); const res=validateSecretsCredentialManagementReadiness(r); assert.strictEqual(res.status, "passed"); }
-function testEnvExampleRealisticFails() { const r = fixtureRoot(); base(r); write(r, ".env.example", "OPENAI_API_KEY=sk-abcdefghijklmnopqrstuvwxyz12345\n"); assert.strictEqual(validateSecretsCredentialManagementReadiness(r).status, "failed"); }
+function testEnvExampleRealisticFails() { const r = fixtureRoot(); base(r); write(r, ".env.example", "OPENAI_API_KEY=" + ["sk", "abcdefghijklmnopqrstuvwxyz12345"].join("-") + "\n"); assert.strictEqual(validateSecretsCredentialManagementReadiness(r).status, "failed"); }
 function testEnvExamplePlaceholderPasses() { const r = fixtureRoot(); base(r); write(r, ".env.example", "OPENAI_API_KEY=<REQUIRED_SECRET_REF>\nTOKEN=\n"); assert.strictEqual(validateSecretsCredentialManagementReadiness(r).status, "passed"); }
-function testSkippedDirsNotScanned() { const r = fixtureRoot(); base(r); write(r, "node_modules/a.js", "sk_live_ABCDEF1234567890"); write(r, "build/a.txt", "ghp_abcdefghijklmnopqrstuvwxyz12345"); assert.strictEqual(validateSecretsCredentialManagementReadiness(r).status, "passed"); }
+function testSkippedDirsNotScanned() { const r = fixtureRoot(); base(r); write(r, "node_modules/a.js", ["sk", "live", "ABCDEF1234567890"].join("_")); write(r, "build/a.txt", ["ghp", "abcdefghijklmnopqrstuvwxyz12345"].join("_")); assert.strictEqual(validateSecretsCredentialManagementReadiness(r).status, "passed"); }
 function testSummaryReportsScope() { const r = fixtureRoot(); base(r); const res = validateSecretsCredentialManagementReadiness(r); assert(res.summary.includes("scanned")); }
 function testOverclaimWordingFails() { const r = fixtureRoot(); base(r); write(r, "docs/secret-leak-prevention.md", "zero leaks proven"); assert.strictEqual(validateSecretsCredentialManagementReadiness(r).status, "failed"); }
 
