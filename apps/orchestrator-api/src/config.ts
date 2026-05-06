@@ -5,8 +5,9 @@ import path from "path";
 import { getIntakeLimitsFromEnv, type IntakeLimits } from "./intake/largeFileIntake";
 
 export type RepositoryMode = "memory" | "durable";
-export type AuthImplementation = "bearer_token" | "oidc" | "disabled";
+export type AuthImplementation = "bearer_token" | "oidc" | "local_test_headers" | "disabled";
 export type RuntimeMode = "commercial" | "development";
+export type DeploymentEnvironment = "local" | "beta" | "production";
 
 export type RepositoryContext = {
   repo: ProjectRepository;
@@ -36,6 +37,8 @@ export type RuntimeConfig = {
   durableEnvPresent: boolean;
   repository: RepositoryContext;
   auth: AuthContext;
+  deploymentEnvironment: DeploymentEnvironment;
+  hosted: boolean;
   alertWebhookUrl: string | null;
   intake: {
     limits: IntakeLimits;
@@ -49,6 +52,24 @@ function now(): string {
 
 function getRuntimeMode(): RuntimeMode {
   return process.env.RUNTIME_MODE === "commercial" ? "commercial" : "development";
+}
+
+function getDeploymentEnvironment(): DeploymentEnvironment {
+  const raw = (
+    process.env.BOTOMATIC_DEPLOYMENT_ENV ||
+    process.env.BOTOMATIC_ENV ||
+    process.env.VERCEL_ENV ||
+    process.env.NODE_ENV ||
+    "local"
+  ).toLowerCase();
+
+  if (["production", "prod"].includes(raw)) return "production";
+  if (["beta", "preview", "staging"].includes(raw)) return "beta";
+  return "local";
+}
+
+function isHostedEnvironment(deploymentEnvironment: DeploymentEnvironment): boolean {
+  return deploymentEnvironment === "beta" || deploymentEnvironment === "production";
 }
 
 function getRepositoryMode(): RepositoryMode {
@@ -95,9 +116,14 @@ function createRepositoryContext(runtimeMode: RuntimeMode): RepositoryContext {
   };
 }
 
-function createAuthContext(runtimeMode: RuntimeMode): AuthContext {
+function createAuthContext(runtimeMode: RuntimeMode, hosted: boolean): AuthContext {
   const oidcIssuer = process.env.OIDC_ISSUER_URL;
   const oidcClientId = process.env.OIDC_CLIENT_ID;
+  const oidcAudience = process.env.OIDC_AUDIENCE;
+
+  if ((oidcIssuer && !oidcClientId) || (!oidcIssuer && oidcClientId)) {
+    throw new Error("OIDC auth requires both OIDC_ISSUER_URL and OIDC_CLIENT_ID");
+  }
 
   if (oidcIssuer && oidcClientId) {
     return {
@@ -106,12 +132,23 @@ function createAuthContext(runtimeMode: RuntimeMode): AuthContext {
       oidc: {
         issuerUrl: oidcIssuer,
         clientId: oidcClientId,
-        audience: process.env.OIDC_AUDIENCE,
+        audience: oidcAudience,
       },
     };
   }
 
   const token = process.env.API_AUTH_TOKEN;
+
+  if (hosted) {
+    throw new Error("Hosted beta/production requires OIDC_ISSUER_URL and OIDC_CLIENT_ID");
+  }
+
+  if (runtimeMode === "development" && process.env.BOTOMATIC_LOCAL_TEST_AUTH === "true") {
+    return {
+      enabled: true,
+      implementation: "local_test_headers",
+    };
+  }
 
   if (token) {
     return {
@@ -122,7 +159,7 @@ function createAuthContext(runtimeMode: RuntimeMode): AuthContext {
   }
 
   if (runtimeMode === "commercial") {
-    throw new Error("Commercial mode requires OIDC or API_AUTH_TOKEN");
+    throw new Error("Commercial mode requires OIDC or API_AUTH_TOKEN outside hosted beta/production");
   }
 
   return {
@@ -133,9 +170,15 @@ function createAuthContext(runtimeMode: RuntimeMode): AuthContext {
 
 export function createRuntimeConfig(): RuntimeConfig {
   const runtimeMode = getRuntimeMode();
+  const deploymentEnvironment = getDeploymentEnvironment();
+  const hosted = isHostedEnvironment(deploymentEnvironment);
+
+  if (hosted && runtimeMode === "development") {
+    throw new Error("Hosted beta/production cannot run with RUNTIME_MODE=development");
+  }
   const durableEnvPresent = Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
   const repository = createRepositoryContext(runtimeMode);
-  const auth = createAuthContext(runtimeMode);
+  const auth = createAuthContext(runtimeMode, hosted);
   const alertWebhookUrl = process.env.BOTOMATIC_ALERT_WEBHOOK_URL || process.env.SLACK_WEBHOOK_URL || null;
   const limits = getIntakeLimitsFromEnv(process.env);
   const uploadDir = process.env.BOTOMATIC_UPLOAD_DIR || path.join(process.cwd(), "runtime", "uploads");
@@ -149,6 +192,8 @@ export function createRuntimeConfig(): RuntimeConfig {
     durableEnvPresent,
     repository,
     auth,
+    deploymentEnvironment,
+    hosted,
     alertWebhookUrl,
     intake: {
       limits,

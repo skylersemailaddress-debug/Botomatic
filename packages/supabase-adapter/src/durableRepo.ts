@@ -13,6 +13,7 @@ type ProjectRow = {
   name: string;
   request: string;
   status: string;
+  owner_id: string | null;
   master_truth: Record<string, unknown> | null;
   plan: Record<string, unknown> | null;
   runs: Record<string, unknown> | null;
@@ -36,6 +37,7 @@ function toRow(record: StoredProjectRecord): ProjectRow {
     name: record.name,
     request: record.request,
     status: record.status,
+    owner_id: record.ownerId ?? null,
     master_truth: record.masterTruth ?? null,
     plan: record.plan ?? null,
     runs: record.runs ?? null,
@@ -56,6 +58,7 @@ function fromRow(row: ProjectRow): StoredProjectRecord {
     name: row.name,
     request: row.request,
     status: row.status,
+    ownerId: row.owner_id ?? null,
     masterTruth: row.master_truth,
     plan: row.plan,
     runs: row.runs,

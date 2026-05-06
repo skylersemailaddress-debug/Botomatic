@@ -47,6 +47,11 @@ const REQUIREMENTS: ProofRequirement[] = [
     artifact: "release-evidence/runtime/security_auth_beta_proof.json",
     label: "Production/beta auth fail-closed proof",
     signals: [
+      "production_rejects_auth_disabled",
+      "production_rejects_development_runtime",
+      "unauthenticated_mutation_denied",
+      "wrong_role_denied",
+      "wrong_owner_denied",
       "unauthenticated_requests_blocked",
       "invalid_session_blocked",
       "expired_session_blocked",
