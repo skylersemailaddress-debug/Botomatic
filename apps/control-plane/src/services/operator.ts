@@ -3,15 +3,10 @@ import { postJson } from "./api";
 export type OperatorBlockingQuestion = {
   id: string;
   field: string;
-  plainEnglish: string;
-  technicalDetail?: string;
-  suggestedDefault: string;
-  label?: string;
   question: string;
-  category?: string;
-  risk?: string;
-  status?: string;
-  recommendedDefault?: string;
+  plainEnglish: string;
+  risk: string;
+  suggestedDefault: string | null;
 };
 
 export type OperatorSendResponse = {
@@ -27,11 +22,7 @@ export type OperatorSendResponse = {
   lockedReason?: string;
   blockingQuestions?: OperatorBlockingQuestion[];
   canUseRecommendedDefaults?: boolean;
-  missingArtifacts?: Array<{
-    id?: string;
-    label?: string;
-    reason?: string;
-  }>;
+  missingArtifacts?: string[];
   readinessScore?: number;
 };
 
