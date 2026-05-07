@@ -8,4 +8,4 @@ cmds = ["npm install"]
 cmds = ["npm run ui:build"]
 
 [start]
-cmd = "npx tsx --no-warnings apps/orchestrator-api/src/bootstrap.ts"
+cmd = "npm run start:commercial"

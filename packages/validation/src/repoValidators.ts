@@ -1593,6 +1593,76 @@ export function validateBetaFileUploadWiring(root: string): RepoValidatorResult 
   return result("Validate-Botomatic-BetaFileUploadWiring", true, "Intake/file route proxies to Railway with auth, BetaHQ tracks and surfaces artifact IDs, build/start validates and forwards artifactIds.", files);
 }
 
+export function validateHostedCommercialLaunch(root: string): RepoValidatorResult {
+  const files = [
+    "apps/control-plane/src/app/page.tsx",
+    "apps/control-plane/src/app/projects/[projectId]/page.tsx",
+    "apps/control-plane/src/app/login/page.tsx",
+    "apps/control-plane/src/middleware.ts",
+    "scripts/start-commercial.sh",
+    "railway.json",
+    "docs/beta/HOSTED_COMMERCIAL_LAUNCH.md",
+  ];
+
+  for (const f of ["apps/control-plane/src/app/page.tsx", "apps/control-plane/src/app/login/page.tsx", "apps/control-plane/src/middleware.ts", "scripts/start-commercial.sh", "railway.json", "docs/beta/HOSTED_COMMERCIAL_LAUNCH.md"]) {
+    if (!has(root, f)) {
+      return result("Validate-Botomatic-HostedCommercialLaunch", false, `Required file missing: ${f}`, files);
+    }
+  }
+
+  const rootPage = read(root, "apps/control-plane/src/app/page.tsx");
+  if (!rootPage.includes("BetaHQ")) {
+    return result("Validate-Botomatic-HostedCommercialLaunch", false, "Root page.tsx must render BetaHQ component.", files);
+  }
+
+  const middleware = read(root, "apps/control-plane/src/middleware.ts");
+  if (!middleware.includes("BOTOMATIC_UI_PASSWORD")) {
+    return result("Validate-Botomatic-HostedCommercialLaunch", false, "middleware.ts must gate routes using BOTOMATIC_UI_PASSWORD.", files);
+  }
+  if (middleware.includes("NEXT_PUBLIC_BOTOMATIC_UI_PASSWORD")) {
+    return result("Validate-Botomatic-HostedCommercialLaunch", false, "middleware.ts must NOT use NEXT_PUBLIC_ prefix for BOTOMATIC_UI_PASSWORD — it must remain server-only.", files);
+  }
+
+  const startScript = read(root, "scripts/start-commercial.sh");
+  if (!startScript.includes("PORT=3001") || !startScript.includes("bootstrap.ts")) {
+    return result("Validate-Botomatic-HostedCommercialLaunch", false, "start-commercial.sh must launch orchestrator API on port 3001 via bootstrap.ts.", files);
+  }
+
+  let railwayJson: Record<string, unknown>;
+  try {
+    railwayJson = JSON.parse(read(root, "railway.json"));
+  } catch {
+    return result("Validate-Botomatic-HostedCommercialLaunch", false, "railway.json must be valid JSON.", files);
+  }
+  const startCmd = String((railwayJson?.deploy as Record<string, unknown>)?.startCommand ?? "");
+  if (!startCmd.includes("commercial")) {
+    return result("Validate-Botomatic-HostedCommercialLaunch", false, `railway.json deploy.startCommand must reference commercial start, got: "${startCmd}".`, files);
+  }
+  const healthPath = String((railwayJson?.deploy as Record<string, unknown>)?.healthcheckPath ?? "");
+  if (!healthPath.startsWith("/api/")) {
+    return result("Validate-Botomatic-HostedCommercialLaunch", false, `railway.json healthcheckPath must route through Next.js proxy (/api/*), got: "${healthPath}".`, files);
+  }
+
+  const projectAccess = read(root, "apps/control-plane/src/server/projectAccess.ts");
+  if (!projectAccess.includes("BOTOMATIC_API_TOKEN")) {
+    return result("Validate-Botomatic-HostedCommercialLaunch", false, "projectAccess.ts must have BOTOMATIC_API_TOKEN commercial bypass.", files);
+  }
+  if (projectAccess.includes("NEXT_PUBLIC_BOTOMATIC_API_TOKEN")) {
+    return result("Validate-Botomatic-HostedCommercialLaunch", false, "projectAccess.ts must NOT use NEXT_PUBLIC_ prefix for BOTOMATIC_API_TOKEN.", files);
+  }
+
+  const launchDocs = read(root, "docs/beta/HOSTED_COMMERCIAL_LAUNCH.md");
+  if (!launchDocs.includes("BOTOMATIC_UI_PASSWORD") || !launchDocs.includes("BOTOMATIC_API_TOKEN")) {
+    return result("Validate-Botomatic-HostedCommercialLaunch", false, "HOSTED_COMMERCIAL_LAUNCH.md must document both BOTOMATIC_UI_PASSWORD and BOTOMATIC_API_TOKEN.", files);
+  }
+
+  if (!has(root, "apps/control-plane/src/app/api/projects/[projectId]/intake/file/route.ts")) {
+    return result("Validate-Botomatic-HostedCommercialLaunch", false, "Dedicated intake/file upload route must still exist (upload wiring not regressed).", files);
+  }
+
+  return result("Validate-Botomatic-HostedCommercialLaunch", true, "Hosted UI routes, session gate, commercial start script, Railway config, server-only auth, and deployment docs are all present.", files);
+}
+
 export function runAllRepoValidators(root: string): RepoValidatorResult[] {
   return [
     validateArchitecture(root),
@@ -1684,5 +1754,6 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateBetaScriptAsciiGuard(root),
     validateBetaBuildFlowAuth(root),
     validateBetaFileUploadWiring(root),
+    validateHostedCommercialLaunch(root),
   ];
 }

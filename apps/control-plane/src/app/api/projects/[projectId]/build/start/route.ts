@@ -17,8 +17,9 @@ function buildAuthHeaders(): Headers {
   const h = new Headers();
   h.set("content-type", "application/json");
   const betaToken = (process.env.BOTOMATIC_BETA_AUTH_TOKEN || "").trim();
-  if (betaToken) {
-    h.set("authorization", `Bearer ${betaToken}`);
+  const outboundToken = betaToken || (process.env.BOTOMATIC_API_TOKEN || "").trim();
+  if (outboundToken) {
+    h.set("authorization", `Bearer ${outboundToken}`);
     h.set("x-role", "admin");
     h.set("x-user-id", (process.env.BOTOMATIC_BETA_USER_ID || "beta-smoke-admin").trim());
     h.set("x-tenant-id", (process.env.BOTOMATIC_BETA_TENANT_ID || "beta-smoke-tenant").trim());

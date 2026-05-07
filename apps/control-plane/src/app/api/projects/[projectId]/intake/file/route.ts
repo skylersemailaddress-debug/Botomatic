@@ -27,8 +27,9 @@ export async function POST(
   headers.delete("connection");
 
   const betaToken = (process.env.BOTOMATIC_BETA_AUTH_TOKEN || "").trim();
-  if (betaToken) {
-    headers.set("authorization", `Bearer ${betaToken}`);
+  const outboundToken = betaToken || (process.env.BOTOMATIC_API_TOKEN || "").trim();
+  if (outboundToken) {
+    headers.set("authorization", `Bearer ${outboundToken}`);
     headers.set("x-role", "admin");
     headers.set("x-user-id", (process.env.BOTOMATIC_BETA_USER_ID || "beta-smoke-admin").trim());
     headers.set("x-tenant-id", (process.env.BOTOMATIC_BETA_TENANT_ID || "beta-smoke-tenant").trim());

@@ -53,6 +53,19 @@ export function getControlPlaneActor(request: NextRequest): { actorId: string; r
     };
   }
 
+  // Commercial beta fallback: when the Next.js server is deployed on Railway and a
+  // static API token is configured, grant admin actor so server-to-server calls to
+  // the orchestrator succeed without requiring a fresh JWT.
+  // Safe: BOTOMATIC_API_TOKEN has no NEXT_PUBLIC_ prefix (server-only); the UI is
+  // already gated by the BOTOMATIC_UI_PASSWORD session middleware.
+  const apiToken = (process.env.BOTOMATIC_API_TOKEN || "").trim();
+  if (apiToken) {
+    return {
+      actorId: (process.env.BOTOMATIC_BETA_USER_ID || "commercial-admin").trim(),
+      role: "admin",
+    };
+  }
+
   const actorId = request.headers.get("x-user-id") || request.headers.get("x-botomatic-user-id") || "";
   const rawRole = request.headers.get("x-role") || "operator";
   const role = rawRole === "admin" || rawRole === "reviewer" ? rawRole : "operator";
