@@ -43,7 +43,7 @@ type BlockingQuestion = {
   field: string;
   question: string;
   plainEnglish: string;
-  risk: string;
+  risk?: string;
   suggestedDefault: string | null;
 };
 

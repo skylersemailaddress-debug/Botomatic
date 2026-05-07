@@ -85,6 +85,7 @@ import { validateLocalFolderManifest } from "./intake/localManifest";
 import { isBlockedFileExtension, suspiciousBinaryHook } from "./intake/intakeSafety";
 import { assertProviderPromoteGate, assertProviderRollbackGate, loadProviderDeploymentContracts } from "./deployProviderGates";
 import { createRoutePolicyMiddleware } from "./security/routePolicies";
+import { createCommercialRateLimitMiddleware, createSameOriginCsrfMiddleware, createSecurityHeadersMiddleware, redactSensitive } from "./security/commercialHardening";
 
 type VerifiedRequestAuth = AuthContext & { issuer?: string; tenantId?: string; authImplementation?: string; source?: RequestActor["actorSource"] };
 
@@ -492,7 +493,7 @@ function requireProjectOwner(config: RuntimeConfig): express.RequestHandler {
 }
 
 function handleRouteError(res: express.Response, _config: RuntimeConfig, error: unknown, route: string, actor?: RequestActor) {
-  const message = String((error as any)?.message || error);
+  const message = String(redactSensitive(String((error as any)?.message || error)));
   const requestId = String((res.locals as any)?.requestId || "unknown");
   const occurredAt = now();
   routeErrorCount += 1;
@@ -506,7 +507,7 @@ function handleRouteError(res: express.Response, _config: RuntimeConfig, error: 
     actorId: actor?.actorId || "unknown",
     timestamp: occurredAt,
   });
-  console.error(JSON.stringify({ event: "route_error", route, actorId: actor?.actorId || "unknown", message, workerId, requestId, timestamp: occurredAt }));
+  console.error(JSON.stringify(redactSensitive({ event: "route_error", route, actorId: actor?.actorId || "unknown", message, workerId, requestId, timestamp: occurredAt })));
   return res.status(500).json({ error: message, workerId, requestId });
 }
 
@@ -1804,7 +1805,7 @@ async function workerTick(config: RuntimeConfig) {
   for (const job of jobs) {
     activeWorkers += 1;
     void processJob(config, job).catch((error: any) => {
-      console.error(JSON.stringify({ event: "queue_worker_error", workerId, message: String(error?.message || error), timestamp: now() }));
+      console.error(JSON.stringify(redactSensitive({ event: "queue_worker_error", workerId, message: String(error?.message || error), timestamp: now() })));
     }).finally(() => {
       activeWorkers -= 1;
     });
@@ -1942,6 +1943,8 @@ export function buildApp(config: RuntimeConfig) {
     startQueueWorker(config);
   }
   app.use(express.json());
+  app.use(createSecurityHeadersMiddleware());
+  app.use(createCommercialRateLimitMiddleware());
 
   app.use((req, res, next) => {
     const origin = req.header("origin");
@@ -1977,6 +1980,8 @@ export function buildApp(config: RuntimeConfig) {
       requestId: (res.locals as any).requestId,
     });
   });
+
+  app.use(createSameOriginCsrfMiddleware());
 
   app.use(createRoutePolicyMiddleware({
     config,
@@ -2563,6 +2568,15 @@ export function buildApp(config: RuntimeConfig) {
       files: 1,
     },
     fileFilter: (_req, file, cb) => {
+      if (isBlockedFileExtension(file.originalname)) {
+        cb(new Error("Blocked upload file extension."));
+        return;
+      }
+      const binaryScan = suspiciousBinaryHook(file.originalname);
+      if (binaryScan.status === "blocked") {
+        cb(new Error(binaryScan.reason));
+        return;
+      }
       if (isSupportedUploadType(file.originalname, file.mimetype || "")) {
         cb(null, true);
         return;
@@ -2689,7 +2703,9 @@ export function buildApp(config: RuntimeConfig) {
       const fullText = processed.extractedText;
       const extractedTextPreview = processed.extractedTextPreview;
 
-      const artifactId = `intake_file_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      const tenantPrefix = String((project as any).tenantId || project.ownerUserId || actor.actorId || "tenant").replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 48);
+      const projectPrefix = String(project.projectId).replace(/[^a-zA-Z0-9_-]/g, "_");
+      const artifactId = `${tenantPrefix}_${projectPrefix}_intake_file_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
       const artifact = {
         artifactId,
         fileName: processed.fileName,

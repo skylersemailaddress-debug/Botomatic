@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { applySecurityHeaders, blockCrossSiteMutation } from "./server/security";
 
 const SESSION_COOKIE = "botomatic_session";
 
@@ -52,19 +53,22 @@ export async function middleware(req: NextRequest) {
     pathname.startsWith("/_next") ||
     pathname === "/favicon.ico"
   ) {
-    return NextResponse.next();
+    return applySecurityHeaders(NextResponse.next());
   }
 
   const secret = getUiSecret();
   // If no password is configured (e.g. local dev without env), allow all access.
-  if (!secret) return NextResponse.next();
+  if (!secret) return applySecurityHeaders(NextResponse.next());
 
   const sessionToken = req.cookies.get(SESSION_COOKIE)?.value ?? "";
-  if (await isValidSession(sessionToken, secret)) return NextResponse.next();
+  const csrfBlocked = blockCrossSiteMutation(req);
+  if (csrfBlocked) return csrfBlocked;
+
+  if (await isValidSession(sessionToken, secret)) return applySecurityHeaders(NextResponse.next());
 
   const loginUrl = new URL("/login", req.url);
   if (pathname !== "/") loginUrl.searchParams.set("next", pathname);
-  return NextResponse.redirect(loginUrl);
+  return applySecurityHeaders(NextResponse.redirect(loginUrl));
 }
 
 export const config = {
