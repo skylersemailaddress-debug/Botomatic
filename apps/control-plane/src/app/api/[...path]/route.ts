@@ -43,7 +43,6 @@ function getAuthToken(): string {
   const configuredToken = (
     process.env.BOTOMATIC_API_TOKEN ||
     process.env.API_AUTH_TOKEN ||
-    process.env.NEXT_PUBLIC_BOTOMATIC_API_TOKEN ||
     ""
   ).trim();
 

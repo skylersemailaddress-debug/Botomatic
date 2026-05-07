@@ -92,9 +92,7 @@ function isLocalDevelopment(): boolean {
 function buildHeaders(overrides: Record<string, string> = {}): Record<string, string> {
   const headers: Record<string, string> = {};
 
-  if (process.env.NEXT_PUBLIC_BOTOMATIC_API_TOKEN) {
-    headers["Authorization"] = `Bearer ${process.env.NEXT_PUBLIC_BOTOMATIC_API_TOKEN}`;
-  } else if (isLocalDevelopment() && process.env.NEXT_PUBLIC_DEV_BEARER_TOKEN) {
+  if (isLocalDevelopment() && process.env.NEXT_PUBLIC_DEV_BEARER_TOKEN) {
     headers["Authorization"] = `Bearer ${process.env.NEXT_PUBLIC_DEV_BEARER_TOKEN}`;
   }
 
