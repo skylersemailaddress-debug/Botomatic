@@ -86,11 +86,11 @@ import { isBlockedFileExtension, suspiciousBinaryHook } from "./intake/intakeSaf
 import { assertProviderPromoteGate, assertProviderRollbackGate, loadProviderDeploymentContracts } from "./deployProviderGates";
 import { createRoutePolicyMiddleware } from "./security/routePolicies";
 
-type VerifiedRequestAuth = AuthContext & { issuer?: string };
+type VerifiedRequestAuth = AuthContext & { issuer?: string; tenantId?: string; authImplementation?: string; source?: RequestActor["actorSource"] };
 
 type RequestActor = {
   actorId: string;
-  actorSource: "oidc" | "bearer_token" | "local_test_headers" | "anonymous";
+  actorSource: "oidc" | "bearer_token" | "local_test_headers" | "botomatic_api_token" | "anonymous";
 };
 
 type QueueJobRecord = {
@@ -302,14 +302,41 @@ function getGitHub() {
   });
 }
 
+function getHostedOperatorTokens(): string[] {
+  return [process.env.BOTOMATIC_API_TOKEN, process.env.API_AUTH_TOKEN]
+    .map((value) => (value || "").trim())
+    .filter(Boolean);
+}
+
+function resolveStaticOperatorAuth(req: express.Request, token: string, config: RuntimeConfig): VerifiedRequestAuth | null {
+  if (!config.hosted && config.runtimeMode !== "commercial") return null;
+  const expectedTokens = getHostedOperatorTokens();
+  if (!expectedTokens.includes(token)) return null;
+
+  const roleHeader = req.header("x-role");
+  const role = roleHeader === "operator" || roleHeader === "admin" ? roleHeader : "admin";
+  const userId = (req.header("x-user-id") || "").trim() || "beta-smoke-admin";
+  const tenantId = (req.header("x-tenant-id") || "").trim() || "beta-smoke-tenant";
+
+  return {
+    userId,
+    tenantId,
+    role,
+    authImplementation: "botomatic_api_token",
+    source: "botomatic_api_token",
+  };
+}
+
 async function getVerifiedAuth(req: express.Request, config: RuntimeConfig): Promise<VerifiedRequestAuth> {
   const authorization = req.header("authorization") || "";
   const token = authorization.startsWith("Bearer ") ? authorization.slice(7) : "";
+  const staticOperatorAuth = token ? resolveStaticOperatorAuth(req, token, config) : null;
+  if (staticOperatorAuth) return staticOperatorAuth;
 
   if (config.auth.implementation === "oidc" && config.auth.oidc) {
     if (!token) throw new Error("Missing bearer token");
     const identity = await verifyOidcBearerToken(token, config.auth.oidc);
-    return { userId: identity.userId, role: identity.role, issuer: identity.issuer };
+    return { userId: identity.userId, role: identity.role, issuer: identity.issuer, source: "oidc" };
   }
 
   if (config.auth.implementation === "bearer_token" && config.auth.token) {
@@ -317,7 +344,7 @@ async function getVerifiedAuth(req: express.Request, config: RuntimeConfig): Pro
     const devActor = resolveRole(req.headers as Record<string, any>);
     const explicitRole = req.header("x-role") as AuthContext["role"] | undefined;
     const role = explicitRole === "operator" || explicitRole === "reviewer" || explicitRole === "admin" ? explicitRole : "admin";
-    return { userId: devActor.userId === "anonymous" ? `api_token:${String(config.auth.token).slice(0, 6)}` : devActor.userId, role };
+    return { userId: devActor.userId === "anonymous" ? `api_token:${String(config.auth.token).slice(0, 6)}` : devActor.userId, role, source: "bearer_token" };
   }
 
   if (config.auth.implementation === "local_test_headers" && config.runtimeMode === "development" && !config.hosted) {
@@ -325,14 +352,14 @@ async function getVerifiedAuth(req: express.Request, config: RuntimeConfig): Pro
     const roleHeader = req.header("x-role");
     if (!userId) throw new Error("Missing local test user");
     const role = roleHeader === "admin" || roleHeader === "reviewer" || roleHeader === "operator" ? roleHeader : "operator";
-    return { userId, role };
+    return { userId, role, source: "local_test_headers" };
   }
 
   if (config.hosted || config.runtimeMode === "commercial") {
     throw new Error("API auth is not configured");
   }
 
-  return { userId: "anonymous", role: "operator" };
+  return { userId: "anonymous", role: "operator", source: "anonymous" };
 }
 
 async function getRequestActor(req: express.Request, config: RuntimeConfig): Promise<RequestActor> {
@@ -340,7 +367,7 @@ async function getRequestActor(req: express.Request, config: RuntimeConfig): Pro
     const auth = await getVerifiedAuth(req, config);
     return {
       actorId: auth.userId,
-      actorSource: config.auth.implementation === "oidc" ? "oidc" : config.auth.implementation === "bearer_token" ? "bearer_token" : config.auth.implementation === "local_test_headers" ? "local_test_headers" : "anonymous",
+      actorSource: auth.source || (config.auth.implementation === "oidc" ? "oidc" : config.auth.implementation === "bearer_token" ? "bearer_token" : config.auth.implementation === "local_test_headers" ? "local_test_headers" : "anonymous"),
     };
   } catch {
     return { actorId: "anonymous", role: "operator", actorSource: "anonymous" };
@@ -1958,7 +1985,7 @@ export function buildApp(config: RuntimeConfig) {
   }));
 
   const buildHealthPayload = (
-    auth: { role: string | null; userId: string | null; issuer: string | null },
+    auth: { role: string | null; userId: string | null; issuer: string | null; authImplementation?: string | null; source?: string | null },
     requestId: string | null
   ) => ({
     status: "ok",
@@ -1968,7 +1995,8 @@ export function buildApp(config: RuntimeConfig) {
     repositoryImplementation: config.repository.implementation,
     durableEnvPresent: config.durableEnvPresent,
     authEnabled: config.auth.enabled,
-    authImplementation: config.auth.implementation,
+    authImplementation: auth.authImplementation || config.auth.implementation,
+    authSource: auth.source || null,
     commitSha: config.commitSha,
     startupTimestamp: config.startupTimestamp,
     queueEnabled: config.repository.mode === "durable",
@@ -1987,9 +2015,9 @@ export function buildApp(config: RuntimeConfig) {
     const requestId = String((res.locals as any).requestId || "");
     try {
       const auth = await getVerifiedAuth(req, config);
-      return res.json(buildHealthPayload({ role: auth.role, userId: auth.userId, issuer: auth.issuer || null }, requestId));
+      return res.json(buildHealthPayload({ role: auth.role, userId: auth.userId, issuer: auth.issuer || null, authImplementation: auth.authImplementation || null, source: auth.source || null }, requestId));
     } catch {
-      return res.json(buildHealthPayload({ role: null, userId: null, issuer: null }, requestId));
+      return res.json(buildHealthPayload({ role: null, userId: null, issuer: null, authImplementation: null, source: null }, requestId));
     }
   };
 
@@ -2004,7 +2032,7 @@ export function buildApp(config: RuntimeConfig) {
     const actor = await getRequestActor(req, config);
     try {
       const metrics = await buildOpsMetrics(config);
-      return res.json({ ...metrics, actorId: actor.actorId, requestId: (res.locals as any).requestId });
+      return res.json({ ...metrics, actorId: actor.actorId, actorSource: actor.actorSource, requestId: (res.locals as any).requestId });
     } catch (error) {
       return handleRouteError(res, config, error, "GET /api/ops/metrics", actor);
     }
