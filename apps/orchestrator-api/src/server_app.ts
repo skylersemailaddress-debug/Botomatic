@@ -84,6 +84,15 @@ import { intakeCloudLink } from "./intake/cloudIntake";
 import { validateLocalFolderManifest } from "./intake/localManifest";
 import { isBlockedFileExtension, suspiciousBinaryHook } from "./intake/intakeSafety";
 import { assertProviderPromoteGate, assertProviderRollbackGate, loadProviderDeploymentContracts } from "./deployProviderGates";
+import {
+  emitStructuredLog,
+  exportMetricsJson,
+  exportMetricsText,
+  getRecentStructuredLogs,
+  incrementMetric,
+  observeMetric,
+  setMetric,
+} from "./observability";
 import { createRoutePolicyMiddleware } from "./security/routePolicies";
 import { createCommercialRateLimitMiddleware, createSameOriginCsrfMiddleware, createSecurityHeadersMiddleware, redactSensitive } from "./security/commercialHardening";
 
@@ -91,7 +100,34 @@ type VerifiedRequestAuth = AuthContext & { issuer?: string; tenantId?: string; a
 
 type RequestActor = {
   actorId: string;
+  tenantId?: string | null;
   actorSource: "oidc" | "bearer_token" | "local_test_headers" | "botomatic_api_token" | "anonymous";
+};
+
+type SupportAuditEvent = {
+  id: string;
+  type: string;
+  actorId: string;
+  tenantId: string | null;
+  projectId: string | null;
+  route: string;
+  outcome: "success" | "error" | "rejected";
+  reason: string;
+  requestId: string | null;
+  timestamp: string;
+  metadata?: Record<string, unknown>;
+};
+
+type JobQueueSnapshot = {
+  jobId: string;
+  projectId: string;
+  packetId: string;
+  buildRunId: string | null;
+  tenantId: string | null;
+  actorId: string | null;
+  status: "queued" | "running" | "succeeded" | "failed" | "cancelled" | "replayed";
+  updatedAt: string;
+  detail?: string;
 };
 
 type QueueJobRecord = {
@@ -148,6 +184,10 @@ let routeErrorCount = 0;
 let alertDeliverySuccessCount = 0;
 let alertDeliveryFailureCount = 0;
 let telemetryUpdatedAt = now();
+const recentSupportAuditEvents: SupportAuditEvent[] = [];
+const recentJobQueueSnapshots: JobQueueSnapshot[] = [];
+const recentBuildRunProjectIds = new Map<string, string>();
+const idempotencyResponses = new Map<string, unknown>();
 
 function now(): string {
   return new Date().toISOString();
@@ -177,6 +217,34 @@ function recordOpsError(type: OpsErrorType, message: string, metadata?: Record<s
     recentOpsErrors.length = 200;
   }
   updateTelemetryTimestamp();
+}
+
+function recordSupportAuditEvent(event: SupportAuditEvent) {
+  recentSupportAuditEvents.unshift(event);
+  if (recentSupportAuditEvents.length > 300) {
+    recentSupportAuditEvents.length = 300;
+  }
+}
+
+function upsertJobQueueSnapshot(snapshot: JobQueueSnapshot) {
+  const existingIndex = recentJobQueueSnapshots.findIndex((entry) => entry.jobId === snapshot.jobId);
+  if (existingIndex >= 0) {
+    recentJobQueueSnapshots[existingIndex] = snapshot;
+  } else {
+    recentJobQueueSnapshots.unshift(snapshot);
+  }
+  if (recentJobQueueSnapshots.length > 300) {
+    recentJobQueueSnapshots.length = 300;
+  }
+}
+
+function rememberBuildRun(projectId: string, runId: string | null | undefined) {
+  if (!runId) return;
+  recentBuildRunProjectIds.set(runId, projectId);
+  if (recentBuildRunProjectIds.size > 300) {
+    const oldestKey = recentBuildRunProjectIds.keys().next().value;
+    if (oldestKey) recentBuildRunProjectIds.delete(oldestKey);
+  }
 }
 
 function toStored(record: {
@@ -332,12 +400,17 @@ async function getVerifiedAuth(req: express.Request, config: RuntimeConfig): Pro
   const authorization = req.header("authorization") || "";
   const token = authorization.startsWith("Bearer ") ? authorization.slice(7) : "";
   const staticOperatorAuth = token ? resolveStaticOperatorAuth(req, token, config) : null;
-  if (staticOperatorAuth) return staticOperatorAuth;
+  if (staticOperatorAuth) {
+    (req as any).__botomaticAuth = staticOperatorAuth;
+    return staticOperatorAuth;
+  }
 
   if (config.auth.implementation === "oidc" && config.auth.oidc) {
     if (!token) throw new Error("Missing bearer token");
     const identity = await verifyOidcBearerToken(token, config.auth.oidc);
-    return { userId: identity.userId, role: identity.role, issuer: identity.issuer, source: "oidc" };
+    const auth = { userId: identity.userId, role: identity.role, issuer: identity.issuer, source: "oidc" } as VerifiedRequestAuth;
+    (req as any).__botomaticAuth = auth;
+    return auth;
   }
 
   if (config.auth.implementation === "bearer_token" && config.auth.token) {
@@ -345,7 +418,9 @@ async function getVerifiedAuth(req: express.Request, config: RuntimeConfig): Pro
     const devActor = resolveRole(req.headers as Record<string, any>);
     const explicitRole = req.header("x-role") as AuthContext["role"] | undefined;
     const role = explicitRole === "operator" || explicitRole === "reviewer" || explicitRole === "admin" ? explicitRole : "admin";
-    return { userId: devActor.userId === "anonymous" ? `api_token:${String(config.auth.token).slice(0, 6)}` : devActor.userId, role, source: "bearer_token" };
+    const auth = { userId: devActor.userId === "anonymous" ? `api_token:${String(config.auth.token).slice(0, 6)}` : devActor.userId, role, tenantId: req.header("x-tenant-id") || null, source: "bearer_token" } as VerifiedRequestAuth;
+    (req as any).__botomaticAuth = auth;
+    return auth;
   }
 
   if (config.auth.implementation === "local_test_headers" && config.runtimeMode === "development" && !config.hosted) {
@@ -353,14 +428,18 @@ async function getVerifiedAuth(req: express.Request, config: RuntimeConfig): Pro
     const roleHeader = req.header("x-role");
     if (!userId) throw new Error("Missing local test user");
     const role = roleHeader === "admin" || roleHeader === "reviewer" || roleHeader === "operator" ? roleHeader : "operator";
-    return { userId, role, source: "local_test_headers" };
+    const auth = { userId, role, tenantId: req.header("x-tenant-id") || null, source: "local_test_headers" } as VerifiedRequestAuth;
+    (req as any).__botomaticAuth = auth;
+    return auth;
   }
 
   if (config.hosted || config.runtimeMode === "commercial") {
     throw new Error("API auth is not configured");
   }
 
-  return { userId: "anonymous", role: "operator", source: "anonymous" };
+  const auth = { userId: "anonymous", role: "operator", source: "anonymous" } as VerifiedRequestAuth;
+  (req as any).__botomaticAuth = auth;
+  return auth;
 }
 
 async function getRequestActor(req: express.Request, config: RuntimeConfig): Promise<RequestActor> {
@@ -368,10 +447,11 @@ async function getRequestActor(req: express.Request, config: RuntimeConfig): Pro
     const auth = await getVerifiedAuth(req, config);
     return {
       actorId: auth.userId,
+      tenantId: auth.tenantId || null,
       actorSource: auth.source || (config.auth.implementation === "oidc" ? "oidc" : config.auth.implementation === "bearer_token" ? "bearer_token" : config.auth.implementation === "local_test_headers" ? "local_test_headers" : "anonymous"),
     };
   } catch {
-    return { actorId: "anonymous", role: "operator", actorSource: "anonymous" };
+    return { actorId: "anonymous", tenantId: null, actorSource: "anonymous" };
   }
 }
 
@@ -392,6 +472,19 @@ function requireRole(required: AuthContext["role"], config: RuntimeConfig): expr
           actualRole: auth.role,
           userId: auth.userId,
         });
+        void appendDeniedAccessAudit(config, {
+          id: `audit_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+          type: "access_denied",
+          actorId: auth.userId,
+          tenantId: auth.tenantId || null,
+          projectId: req.params.projectId || null,
+          route: `${req.method} ${req.path}`,
+          outcome: "rejected",
+          reason: "insufficient_role",
+          requestId: String((res.locals as any).requestId || ""),
+          timestamp: now(),
+          metadata: { requiredRole: required, actualRole: auth.role },
+        });
         return res.status(403).json({ error: "Forbidden", requiredRole: required, actualRole: auth.role });
       }
       return next();
@@ -399,6 +492,59 @@ function requireRole(required: AuthContext["role"], config: RuntimeConfig): expr
       recordOpsError("auth_failed", String(error?.message || error), {
         route: `${req.method} ${req.path}`,
         requiredRole: required,
+      });
+      void appendDeniedAccessAudit(config, {
+        id: `audit_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        type: "access_denied",
+        actorId: "anonymous",
+        tenantId: null,
+        projectId: req.params.projectId || null,
+        route: `${req.method} ${req.path}`,
+        outcome: "rejected",
+        reason: "authentication_failed",
+        requestId: String((res.locals as any).requestId || ""),
+        timestamp: now(),
+        metadata: { requiredRole: required, error: String(error?.message || error) },
+      });
+      return res.status(401).json({ error: String(error?.message || error) });
+    }
+  };
+}
+
+function requireAnyRole(allowedRoles: AuthContext["role"][], config: RuntimeConfig): express.RequestHandler {
+  return async (req, res, next) => {
+    try {
+      const auth = await getVerifiedAuth(req, config);
+      if (!allowedRoles.includes(auth.role)) {
+        void appendDeniedAccessAudit(config, {
+          id: `audit_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+          type: "access_denied",
+          actorId: auth.userId,
+          tenantId: auth.tenantId || null,
+          projectId: req.params.projectId || null,
+          route: `${req.method} ${req.path}`,
+          outcome: "rejected",
+          reason: "insufficient_role",
+          requestId: String((res.locals as any).requestId || ""),
+          timestamp: now(),
+          metadata: { allowedRoles, actualRole: auth.role },
+        });
+        return res.status(403).json({ error: "Forbidden", allowedRoles, actualRole: auth.role });
+      }
+      return next();
+    } catch (error: any) {
+      void appendDeniedAccessAudit(config, {
+        id: `audit_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        type: "access_denied",
+        actorId: "anonymous",
+        tenantId: null,
+        projectId: req.params.projectId || null,
+        route: `${req.method} ${req.path}`,
+        outcome: "rejected",
+        reason: "authentication_failed",
+        requestId: String((res.locals as any).requestId || ""),
+        timestamp: now(),
+        metadata: { allowedRoles, error: String(error?.message || error) },
       });
       return res.status(401).json({ error: String(error?.message || error) });
     }
@@ -415,9 +561,34 @@ function requireProjectAccess(required: AuthContext["role"], config: RuntimeConf
     try {
       const auth = await getVerifiedAuth(req, config);
       if (!auth.userId || auth.userId === "anonymous") {
+        void appendDeniedAccessAudit(config, {
+          id: `audit_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+          type: "access_denied",
+          actorId: "anonymous",
+          tenantId: auth.tenantId || null,
+          projectId: req.params.projectId || null,
+          route: `${req.method} ${req.path}`,
+          outcome: "rejected",
+          reason: "authenticated_actor_required",
+          requestId: String((res.locals as any).requestId || ""),
+          timestamp: now(),
+        });
         return res.status(401).json({ error: "Authenticated actor required" });
       }
       if (roleRank(auth.role) < roleRank(required)) {
+        void appendDeniedAccessAudit(config, {
+          id: `audit_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+          type: "access_denied",
+          actorId: auth.userId,
+          tenantId: auth.tenantId || null,
+          projectId: req.params.projectId || null,
+          route: `${req.method} ${req.path}`,
+          outcome: "rejected",
+          reason: "insufficient_role",
+          requestId: String((res.locals as any).requestId || ""),
+          timestamp: now(),
+          metadata: { requiredRole: required, actualRole: auth.role },
+        });
         return res.status(403).json({ error: "Forbidden", requiredRole: required, actualRole: auth.role });
       }
       const project = await config.repository.repo.getProjectForActor(req.params.projectId, auth.userId);
@@ -426,6 +597,18 @@ function requireProjectAccess(required: AuthContext["role"], config: RuntimeConf
           route: `${req.method} ${req.path}`,
           projectId: req.params.projectId,
           actorId: auth.userId,
+        });
+        void appendDeniedAccessAudit(config, {
+          id: `audit_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+          type: "access_denied",
+          actorId: auth.userId,
+          tenantId: auth.tenantId || null,
+          projectId: req.params.projectId || null,
+          route: `${req.method} ${req.path}`,
+          outcome: "rejected",
+          reason: "project_access_denied",
+          requestId: String((res.locals as any).requestId || ""),
+          timestamp: now(),
         });
         return res.status(404).json({ error: "Project not found" });
       }
@@ -437,6 +620,19 @@ function requireProjectAccess(required: AuthContext["role"], config: RuntimeConf
         requiredRole: required,
         projectId: req.params.projectId,
       });
+      void appendDeniedAccessAudit(config, {
+        id: `audit_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        type: "access_denied",
+        actorId: "anonymous",
+        tenantId: null,
+        projectId: req.params.projectId || null,
+        route: `${req.method} ${req.path}`,
+        outcome: "rejected",
+        reason: "authentication_failed",
+        requestId: String((res.locals as any).requestId || ""),
+        timestamp: now(),
+        metadata: { requiredRole: required, error: String(error?.message || error) },
+      });
       return res.status(401).json({ error: String(error?.message || error) });
     }
   };
@@ -446,6 +642,18 @@ function requireApiAuth(config: RuntimeConfig): express.RequestHandler {
   return async (req, res, next) => {
     if (!config.auth.enabled) {
       if (!config.hosted && config.runtimeMode === "development") return next();
+      void appendDeniedAccessAudit(config, {
+        id: `audit_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        type: "access_denied",
+        actorId: "anonymous",
+        tenantId: null,
+        projectId: req.params.projectId || null,
+        route: `${req.method} ${req.path}`,
+        outcome: "error",
+        reason: "auth_not_configured",
+        requestId: String((res.locals as any).requestId || ""),
+        timestamp: now(),
+      });
       return res.status(503).json({ error: "API auth is not configured", authImplementation: config.auth.implementation });
     }
     try {
@@ -454,6 +662,19 @@ function requireApiAuth(config: RuntimeConfig): express.RequestHandler {
     } catch (error: any) {
       recordOpsError("auth_failed", String(error?.message || error), {
         route: `${req.method} ${req.path}`,
+      });
+      void appendDeniedAccessAudit(config, {
+        id: `audit_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        type: "access_denied",
+        actorId: "anonymous",
+        tenantId: null,
+        projectId: req.params.projectId || null,
+        route: `${req.method} ${req.path}`,
+        outcome: "rejected",
+        reason: "authentication_failed",
+        requestId: String((res.locals as any).requestId || ""),
+        timestamp: now(),
+        metadata: { error: String(error?.message || error) },
       });
       return res.status(401).json({ error: String(error?.message || error), authImplementation: config.auth.implementation });
     }
@@ -479,6 +700,19 @@ function requireProjectOwner(config: RuntimeConfig): express.RequestHandler {
           userId: auth.userId,
           ownerId: project.ownerId || null,
         });
+        void appendDeniedAccessAudit(config, {
+          id: `audit_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+          type: "access_denied",
+          actorId: auth.userId,
+          tenantId: auth.tenantId || null,
+          projectId: req.params.projectId || null,
+          route: `${req.method} ${req.path}`,
+          outcome: "rejected",
+          reason: "project_owner_required",
+          requestId: String((res.locals as any).requestId || ""),
+          timestamp: now(),
+          metadata: { ownerId: project.ownerId || null },
+        });
         return res.status(403).json({ error: "Forbidden", code: "PROJECT_OWNER_REQUIRED" });
       }
       return next();
@@ -486,6 +720,19 @@ function requireProjectOwner(config: RuntimeConfig): express.RequestHandler {
       recordOpsError("auth_failed", String(error?.message || error), {
         route: `${req.method} ${req.path}`,
         projectId: req.params.projectId,
+      });
+      void appendDeniedAccessAudit(config, {
+        id: `audit_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        type: "access_denied",
+        actorId: "anonymous",
+        tenantId: null,
+        projectId: req.params.projectId || null,
+        route: `${req.method} ${req.path}`,
+        outcome: "rejected",
+        reason: "authentication_failed",
+        requestId: String((res.locals as any).requestId || ""),
+        timestamp: now(),
+        metadata: { error: String(error?.message || error) },
       });
       return res.status(401).json({ error: String(error?.message || error) });
     }
@@ -495,6 +742,7 @@ function requireProjectOwner(config: RuntimeConfig): express.RequestHandler {
 function handleRouteError(res: express.Response, _config: RuntimeConfig, error: unknown, route: string, actor?: RequestActor) {
   const message = String(redactSensitive(String((error as any)?.message || error)));
   const requestId = String((res.locals as any)?.requestId || "unknown");
+  (res.locals as any).lastErrorMessage = message;
   const occurredAt = now();
   routeErrorCount += 1;
   updateTelemetryTimestamp();
@@ -507,8 +755,71 @@ function handleRouteError(res: express.Response, _config: RuntimeConfig, error: 
     actorId: actor?.actorId || "unknown",
     timestamp: occurredAt,
   });
-  console.error(JSON.stringify(redactSensitive({ event: "route_error", route, actorId: actor?.actorId || "unknown", message, workerId, requestId, timestamp: occurredAt })));
+  emitStructuredLog({
+    event: "route_error",
+    requestId,
+    actorId: actor?.actorId || "unknown",
+    tenantId: actor?.tenantId || null,
+    projectId: ((res.locals as any)?.projectId as string | null | undefined) ?? null,
+    buildRunId: ((res.locals as any)?.buildRunId as string | null | undefined) ?? null,
+    jobId: ((res.locals as any)?.jobId as string | null | undefined) ?? null,
+    route,
+    latency: null,
+    outcome: "error",
+    errorCategory: "internal",
+    statusCode: 500,
+    message,
+    workerId,
+  });
   return res.status(500).json({ error: message, workerId, requestId });
+}
+
+function classifyRequestOutcome(statusCode: number): "success" | "error" | "rejected" {
+  if (statusCode >= 500) return "error";
+  if (statusCode >= 400) return "rejected";
+  return "success";
+}
+
+function classifyRequestErrorCategory(statusCode: number, route: string, errorMessage?: string | null): "validation" | "auth" | "provider" | "internal" | null {
+  if (statusCode === 401 || statusCode === 403) return "auth";
+  if (statusCode === 400 || statusCode === 404 || statusCode === 409 || statusCode === 422 || errorMessage?.includes("required")) return "validation";
+  if (route.includes("github") || route.includes("cloud") || route.includes("upload") || route.includes("provider")) return "provider";
+  if (statusCode >= 500) return "internal";
+  return null;
+}
+
+function setResponseContext(res: express.Response, values: Record<string, unknown>) {
+  Object.assign(res.locals as Record<string, unknown>, values);
+}
+
+function readIdempotencyHit(req: express.Request): { key: string | null; cached: unknown | null } {
+  const idempotencyKey = String(req.header("idempotency-key") || "").trim();
+  if (!idempotencyKey) return { key: null, cached: null };
+  const key = `${req.method}:${req.path}:${idempotencyKey}`;
+  return { key, cached: idempotencyResponses.has(key) ? idempotencyResponses.get(key) ?? null : null };
+}
+
+function storeIdempotencyResponse(key: string | null, responseBody: unknown) {
+  if (!key) return;
+  idempotencyResponses.set(key, responseBody);
+  if (idempotencyResponses.size > 300) {
+    const oldestKey = idempotencyResponses.keys().next().value;
+    if (oldestKey) idempotencyResponses.delete(oldestKey);
+  }
+}
+
+async function appendDeniedAccessAudit(config: RuntimeConfig, event: SupportAuditEvent) {
+  recordSupportAuditEvent(event);
+  if (!event.projectId) return;
+  try {
+    const project = await config.repository.repo.getProject(event.projectId);
+    if (!project) return;
+    ensureAudit(project as any);
+    (project.auditEvents as any[]).unshift(event);
+    await persistProject(config, project);
+  } catch {
+    // Best-effort audit trail only.
+  }
 }
 
 type RouteErrorAlertPayload = {
@@ -789,6 +1100,8 @@ async function getQueueDepth(config: RuntimeConfig): Promise<number> {
 
 async function buildOpsQueue(config: RuntimeConfig) {
   const queueDepth = await getQueueDepth(config);
+  setMetric("botomatic_queue_depth", queueDepth);
+  setMetric("botomatic_worker_count", activeWorkers);
   return {
     queueDepth,
     activeWorkers,
@@ -803,6 +1116,9 @@ async function buildOpsQueue(config: RuntimeConfig) {
 
 async function buildOpsMetrics(config: RuntimeConfig) {
   const queueDepth = await getQueueDepth(config);
+  setMetric("botomatic_queue_depth", queueDepth);
+  setMetric("botomatic_worker_count", activeWorkers);
+  setMetric("botomatic_error_rate", packetSuccessCount + packetFailureCount + routeErrorCount > 0 ? (packetFailureCount + routeErrorCount) / Math.max(packetSuccessCount + packetFailureCount + routeErrorCount, 1) : 0);
   return {
     queueDepth,
     activeWorkers,
@@ -818,7 +1134,87 @@ async function buildOpsMetrics(config: RuntimeConfig) {
     alertSinkConfigured: Boolean(config.alertWebhookUrl),
     repositoryMode: config.repository.mode,
     lastUpdatedAt: telemetryUpdatedAt,
+    ...exportMetricsJson(),
   };
+}
+
+function recordJobLifecycleEvent(input: {
+  event: string;
+  projectId: string;
+  tenantId: string | null;
+  buildRunId?: string | null;
+  jobId: string;
+  packetId: string;
+  actorId?: string | null;
+  outcome: "success" | "error" | "rejected";
+  errorCategory: "validation" | "auth" | "provider" | "internal" | null;
+  detail?: string;
+  status: JobQueueSnapshot["status"];
+}) {
+  upsertJobQueueSnapshot({
+    jobId: input.jobId,
+    projectId: input.projectId,
+    packetId: input.packetId,
+    buildRunId: input.buildRunId || null,
+    tenantId: input.tenantId,
+    actorId: input.actorId || null,
+    status: input.status,
+    updatedAt: now(),
+    detail: input.detail,
+  });
+  emitStructuredLog({
+    event: input.event,
+    requestId: null,
+    actorId: input.actorId || "system",
+    tenantId: input.tenantId,
+    projectId: input.projectId,
+    buildRunId: input.buildRunId || null,
+    jobId: input.jobId,
+    route: "queue_worker",
+    latency: null,
+    outcome: input.outcome,
+    errorCategory: input.errorCategory,
+    packetId: input.packetId,
+    detail: input.detail || null,
+  });
+}
+
+async function enqueueObservedJob(project: StoredProjectRecord, packetId: string, actorId: string | null, detail = "queued") {
+  const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const buildRunId = getAutonomousBuildRun(project)?.runId || null;
+  try {
+    await enqueueJob({ job_id: jobId, project_id: project.projectId, packet_id: packetId, owner_user_id: project.ownerUserId, tenant_id: project.tenantId ?? project.ownerUserId });
+    recordJobLifecycleEvent({
+      event: "job_queued",
+      projectId: project.projectId,
+      tenantId: project.tenantId ?? project.ownerUserId,
+      buildRunId,
+      jobId,
+      packetId,
+      actorId,
+      outcome: "success",
+      errorCategory: null,
+      detail,
+      status: "queued",
+    });
+    return jobId;
+  } catch (error: any) {
+    incrementMetric("botomatic_duplicate_enqueue_prevented_total");
+    recordJobLifecycleEvent({
+      event: "job_enqueue_prevented",
+      projectId: project.projectId,
+      tenantId: project.tenantId ?? project.ownerUserId,
+      buildRunId,
+      jobId,
+      packetId,
+      actorId,
+      outcome: "rejected",
+      errorCategory: "validation",
+      detail: String(error?.message || error || "duplicate enqueue prevented"),
+      status: "failed",
+    });
+    throw error;
+  }
 }
 
 function recomputeProjectStatus(project: StoredProjectRecord) {
@@ -900,6 +1296,7 @@ function validateChangedFiles(changedFiles: ChangedFile[]) {
 
 async function persistProject(config: RuntimeConfig, project: StoredProjectRecord) {
   ensureGovernanceApprovalState(project);
+  rememberBuildRun(project.projectId, getAutonomousBuildRun(project)?.runId);
   (project as any).updatedAt = now();
   await config.repository.repo.upsertProject(project);
 }
@@ -1710,14 +2107,57 @@ async function processJob(config: RuntimeConfig, job: QueueJobRecord) {
     await finalizeJob(job.job_id, "failed", `Project not found: ${job.project_id}`);
     return;
   }
+  const buildRunId = getAutonomousBuildRun(project)?.runId || null;
+  recordJobLifecycleEvent({
+    event: "job_started",
+    projectId: project.projectId,
+    tenantId: project.tenantId ?? project.ownerUserId,
+    buildRunId,
+    jobId: job.job_id,
+    packetId: job.packet_id,
+    actorId: workerId,
+    outcome: "success",
+    errorCategory: null,
+    detail: "job claimed by worker",
+    status: "running",
+  });
   const packet = getPacket(project, job.packet_id);
   if (!packet) {
     await finalizeJob(job.job_id, "failed", `Packet not found: ${job.packet_id}`);
+    incrementMetric("botomatic_job_failure_total");
+    recordJobLifecycleEvent({
+      event: "job_failed",
+      projectId: project.projectId,
+      tenantId: project.tenantId ?? project.ownerUserId,
+      buildRunId,
+      jobId: job.job_id,
+      packetId: job.packet_id,
+      actorId: workerId,
+      outcome: "error",
+      errorCategory: "validation",
+      detail: `Packet not found: ${job.packet_id}`,
+      status: "failed",
+    });
     return;
   }
 
   if (["executing", "blocked", "failed", "complete"].includes(String(packet.status))) {
     await finalizeJob(job.job_id, "failed", `Duplicate or stale job ignored for packet ${packet.packetId} with status ${packet.status}`);
+    incrementMetric("botomatic_duplicate_enqueue_prevented_total");
+    incrementMetric("botomatic_job_failure_total");
+    recordJobLifecycleEvent({
+      event: "job_rejected",
+      projectId: project.projectId,
+      tenantId: project.tenantId ?? project.ownerUserId,
+      buildRunId,
+      jobId: job.job_id,
+      packetId: packet.packetId,
+      actorId: workerId,
+      outcome: "rejected",
+      errorCategory: "validation",
+      detail: `Duplicate or stale job ignored for packet ${packet.packetId} with status ${packet.status}`,
+      status: "failed",
+    });
     return;
   }
 
@@ -1742,6 +2182,20 @@ async function processJob(config: RuntimeConfig, job: QueueJobRecord) {
       emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "packet_failed", actorId: workerId, role: "system", timestamp: now(), metadata: { packetId: packet.packetId, summary: (result as any).summary } });
       await persistProject(config, project);
       await finalizeJob(job.job_id, "failed", (result as any).summary);
+      incrementMetric("botomatic_job_failure_total");
+      recordJobLifecycleEvent({
+        event: "job_failed",
+        projectId: project.projectId,
+        tenantId: project.tenantId ?? project.ownerUserId,
+        buildRunId,
+        jobId: job.job_id,
+        packetId: packet.packetId,
+        actorId: workerId,
+        outcome: "error",
+        errorCategory: "internal",
+        detail: String((result as any).summary || "executor returned unsuccessful result"),
+        status: "failed",
+      });
       return;
     }
 
@@ -1768,6 +2222,20 @@ async function processJob(config: RuntimeConfig, job: QueueJobRecord) {
     recomputeProjectStatus(project);
     await persistProject(config, project);
     await finalizeJob(job.job_id, "succeeded");
+    incrementMetric("botomatic_job_success_total");
+    recordJobLifecycleEvent({
+      event: "job_succeeded",
+      projectId: project.projectId,
+      tenantId: project.tenantId ?? project.ownerUserId,
+      buildRunId,
+      jobId: job.job_id,
+      packetId: packet.packetId,
+      actorId: workerId,
+      outcome: "success",
+      errorCategory: null,
+      detail: "job finalized successfully",
+      status: "succeeded",
+    });
 
     // Re-queue any packets whose dependencies are now fully complete (wave progression)
     const completedIds = new Set(getPackets(project).filter((p: any) => p.status === "complete").map((p: any) => p.packetId));
@@ -1777,8 +2245,7 @@ async function processJob(config: RuntimeConfig, job: QueueJobRecord) {
     );
     for (const unblocked of nowUnblocked) {
       try {
-        const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-        await enqueueJob({ job_id: jobId, project_id: project.projectId, packet_id: unblocked.packetId, owner_user_id: project.ownerUserId, tenant_id: project.tenantId ?? project.ownerUserId });
+        await enqueueObservedJob(project, unblocked.packetId, workerId, "dependency unblocked");
       } catch (_e) { /* already queued or unavailable — tolerate */ }
     }
   } catch (error: any) {
@@ -1794,6 +2261,20 @@ async function processJob(config: RuntimeConfig, job: QueueJobRecord) {
     emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "packet_failed", actorId: workerId, role: "system", timestamp: now(), metadata: { packetId: packet.packetId, error: String(error?.message || error) } });
     await persistProject(config, project);
     await finalizeJob(job.job_id, "failed", String(error?.message || error));
+    incrementMetric("botomatic_job_failure_total");
+    recordJobLifecycleEvent({
+      event: "job_failed",
+      projectId: project.projectId,
+      tenantId: project.tenantId ?? project.ownerUserId,
+      buildRunId,
+      jobId: job.job_id,
+      packetId: packet.packetId,
+      actorId: workerId,
+      outcome: "error",
+      errorCategory: "internal",
+      detail: String(error?.message || error),
+      status: "failed",
+    });
   }
 }
 
@@ -1802,12 +2283,28 @@ async function workerTick(config: RuntimeConfig) {
   const availableSlots = workerConcurrency - activeWorkers;
   const claims = await Promise.all(Array.from({ length: availableSlots }, () => claimJob(workerId, leaseMs)));
   const jobs = claims.filter(Boolean) as QueueJobRecord[];
+  setMetric("botomatic_worker_count", activeWorkers);
   for (const job of jobs) {
     activeWorkers += 1;
+    setMetric("botomatic_worker_count", activeWorkers);
     void processJob(config, job).catch((error: any) => {
-      console.error(JSON.stringify(redactSensitive({ event: "queue_worker_error", workerId, message: String(error?.message || error), timestamp: now() })));
+      emitStructuredLog({
+        event: "queue_worker_error",
+        requestId: null,
+        actorId: workerId,
+        tenantId: null,
+        projectId: null,
+        buildRunId: null,
+        jobId: job.job_id,
+        route: "queue_worker",
+        latency: null,
+        outcome: "error",
+        errorCategory: "internal",
+        message: String(error?.message || error),
+      });
     }).finally(() => {
       activeWorkers -= 1;
+      setMetric("botomatic_worker_count", activeWorkers);
     });
   }
 }
@@ -1955,7 +2452,7 @@ export function buildApp(config: RuntimeConfig) {
     }
 
     res.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
-    res.header("Access-Control-Allow-Headers", "Authorization,Content-Type,x-actor-id,x-user-email");
+    res.header("Access-Control-Allow-Headers", "Authorization,Content-Type,x-actor-id,x-user-email,x-request-id,x-tenant-id,Idempotency-Key");
 
     if (req.method === "OPTIONS") {
       return res.sendStatus(204);
@@ -1967,7 +2464,43 @@ export function buildApp(config: RuntimeConfig) {
   app.use((req, res, next) => {
     const requestId = req.header("x-request-id") || makeRequestId();
     (res.locals as any).requestId = requestId;
+    (res.locals as any).requestStartedAt = Date.now();
     res.setHeader("x-request-id", requestId);
+    next();
+  });
+
+  app.use((req, res, next) => {
+    res.on("finish", () => {
+      const requestStartedAt = Number((res.locals as any).requestStartedAt || Date.now());
+      const latency = Math.max(0, Date.now() - requestStartedAt);
+      const statusCode = res.statusCode || 200;
+      const route = `${req.method} ${req.route?.path || req.path}`;
+      const cachedAuth = ((req as any).__botomaticAuth || {}) as Partial<VerifiedRequestAuth>;
+      const outcome = classifyRequestOutcome(statusCode);
+      const errorCategory = classifyRequestErrorCategory(statusCode, route, typeof (res.locals as any).lastErrorMessage === "string" ? String((res.locals as any).lastErrorMessage) : null);
+      incrementMetric("botomatic_request_total", { route, method: req.method, outcome });
+      const requestTotals = (exportMetricsJson().metrics.botomatic_request_total || []) as Array<{ labels?: Record<string, string>; value?: number }>;
+      const totalRequests = requestTotals.reduce((sum, entry) => sum + Number(entry?.value || 0), 0);
+      const totalErrors = requestTotals
+        .filter((entry) => String(entry?.labels?.outcome || "") !== "success")
+        .reduce((sum, entry) => sum + Number(entry?.value || 0), 0);
+      setMetric("botomatic_error_rate", totalRequests > 0 ? totalErrors / totalRequests : 0);
+      emitStructuredLog({
+        event: "http_request",
+        requestId: String((res.locals as any).requestId || ""),
+        actorId: typeof cachedAuth.userId === "string" ? cachedAuth.userId : "anonymous",
+        tenantId: typeof cachedAuth.tenantId === "string" ? cachedAuth.tenantId : (req.header("x-tenant-id") || null),
+        projectId: (((res.locals as any).projectId as string | null | undefined) ?? req.params.projectId ?? null),
+        buildRunId: (((res.locals as any).buildRunId as string | null | undefined) ?? req.params.buildRunId ?? null),
+        jobId: (((res.locals as any).jobId as string | null | undefined) ?? req.params.jobId ?? null),
+        route,
+        latency,
+        outcome,
+        errorCategory,
+        method: req.method,
+        statusCode,
+      });
+    });
     next();
   });
 
@@ -1986,7 +2519,22 @@ export function buildApp(config: RuntimeConfig) {
   app.use(createRoutePolicyMiddleware({
     config,
     getVerifiedAuth,
-    recordAuthFailure: (message, metadata) => recordOpsError("auth_failed", message, metadata),
+    recordAuthFailure: (message, metadata) => {
+      recordOpsError("auth_failed", message, metadata);
+      void appendDeniedAccessAudit(config, {
+        id: `audit_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        type: "access_denied",
+        actorId: String((metadata.userId as string | undefined) || (metadata.actorId as string | undefined) || "anonymous"),
+        tenantId: null,
+        projectId: String((metadata.projectId as string | undefined) || "").trim() || null,
+        route: String(metadata.route || "unknown"),
+        outcome: "rejected",
+        reason: "route_policy_denied",
+        requestId: null,
+        timestamp: now(),
+        metadata,
+      });
+    },
   }));
 
   const buildHealthPayload = (
@@ -2032,16 +2580,25 @@ export function buildApp(config: RuntimeConfig) {
   app.get("/api/ready", respondHealth);
 
   app.use("/api/ops", requireApiAuth(config));
+  app.use("/ops", requireApiAuth(config));
+  app.use("/admin", requireApiAuth(config));
 
-  app.get("/api/ops/metrics", requireRole("reviewer", config), async (req, res) => {
+  const respondOpsMetrics = async (req: express.Request, res: express.Response) => {
     const actor = await getRequestActor(req, config);
     try {
       const metrics = await buildOpsMetrics(config);
+      if ((req.header("accept") || "").includes("text/plain")) {
+        res.type("text/plain").send(exportMetricsText());
+        return;
+      }
       return res.json({ ...metrics, actorId: actor.actorId, actorSource: actor.actorSource, requestId: (res.locals as any).requestId });
     } catch (error) {
-      return handleRouteError(res, config, error, "GET /api/ops/metrics", actor);
+      return handleRouteError(res, config, error, `GET ${req.path}`, actor);
     }
-  });
+  };
+
+  app.get("/api/ops/metrics", requireRole("reviewer", config), respondOpsMetrics);
+  app.get("/ops/metrics", requireRole("operator", config), respondOpsMetrics);
 
   app.get("/api/ops/errors", requireRole("reviewer", config), async (req, res) => {
     const actor = await getRequestActor(req, config);
@@ -2064,6 +2621,28 @@ export function buildApp(config: RuntimeConfig) {
       return res.json({ ...queue, actorId: actor.actorId, requestId: (res.locals as any).requestId });
     } catch (error) {
       return handleRouteError(res, config, error, "GET /api/ops/queue", actor);
+    }
+  });
+
+  app.get("/admin/job-queue", requireAnyRole(["operator", "admin"], config), async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const statusFilter = String(req.query.status || "").trim();
+      const projectIdFilter = String(req.query.projectId || "").trim();
+      const jobs = recentJobQueueSnapshots.filter((job) => {
+        if (statusFilter && job.status !== statusFilter) return false;
+        if (projectIdFilter && job.projectId !== projectIdFilter) return false;
+        return true;
+      });
+      return res.json({
+        jobs,
+        count: jobs.length,
+        filters: { status: statusFilter || null, projectId: projectIdFilter || null },
+        actorId: actor.actorId,
+        requestId: (res.locals as any).requestId,
+      });
+    } catch (error) {
+      return handleRouteError(res, config, error, "GET /admin/job-queue", actor);
     }
   });
 
@@ -2331,6 +2910,7 @@ export function buildApp(config: RuntimeConfig) {
       emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "intake_route_selected", actorId: actor.actorId, timestamp: now(), metadata: { sourceId: source.sourceId, route: route.recommendedIntakePath } });
       emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "remote_fetch_started", actorId: actor.actorId, timestamp: now(), metadata: { sourceId: source.sourceId } });
 
+      const githubStartedAt = Date.now();
       const github = intakeGithubSource({
         sourceUrl,
         rootDir: process.cwd(),
@@ -2338,6 +2918,7 @@ export function buildApp(config: RuntimeConfig) {
         allowClone: Boolean((req.body as any)?.allowClone),
         githubToken: String((req.body as any)?.githubToken || "") || undefined,
       });
+      observeMetric("botomatic_provider_latency_ms", Date.now() - githubStartedAt, { provider: "github" });
 
       emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "repo_scan_started", actorId: actor.actorId, timestamp: now(), metadata: { sourceId: source.sourceId } });
       emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "secret_scan_started", actorId: actor.actorId, timestamp: now(), metadata: { sourceId: source.sourceId } });
@@ -2404,6 +2985,7 @@ export function buildApp(config: RuntimeConfig) {
           : "GitHub source intake completed.",
       });
     } catch (error) {
+      incrementMetric("botomatic_provider_errors_total", { provider: "github", errorCategory: "provider" });
       return handleRouteError(res, config, error, "POST /api/projects/:projectId/intake/github", actor);
     }
   });
@@ -2428,7 +3010,9 @@ export function buildApp(config: RuntimeConfig) {
         hasConnectorCredentials,
       });
 
+      const cloudStartedAt = Date.now();
       const cloud = intakeCloudLink({ sourceUrl, hasConnectorCredentials, estimatedSizeBytes, largeDownloadApproval });
+      observeMetric("botomatic_provider_latency_ms", Date.now() - cloudStartedAt, { provider: cloud.provider });
       const status: IntakeSource["status"] = cloud.authRequired && cloud.authStatus === "missing"
         ? "blocked_requires_auth"
         : cloud.metadataOnly
@@ -2489,6 +3073,7 @@ export function buildApp(config: RuntimeConfig) {
       await persistProject(config, project);
       return res.json({ source, route, manifestPath, actorId: actor.actorId, message: cloud.reason });
     } catch (error) {
+      incrementMetric("botomatic_provider_errors_total", { provider: "cloud_storage", errorCategory: "provider" });
       return handleRouteError(res, config, error, "POST /api/projects/:projectId/intake/cloud-link", actor);
     }
   });
@@ -2689,6 +3274,7 @@ export function buildApp(config: RuntimeConfig) {
         metadata: { fileName, mimeType, sizeBytes },
       });
 
+      const uploadStartedAt = Date.now();
       const processed = await processUploadedFile({
         uploadPath: uploadedPath,
         originalName: fileName,
@@ -2699,6 +3285,7 @@ export function buildApp(config: RuntimeConfig) {
         fullRepoAudit,
         onProgressEvent: emitAndPersist,
       });
+      observeMetric("botomatic_provider_latency_ms", Date.now() - uploadStartedAt, { provider: "local_upload" });
 
       const fullText = processed.extractedText;
       const extractedTextPreview = processed.extractedTextPreview;
@@ -2857,6 +3444,8 @@ export function buildApp(config: RuntimeConfig) {
           // ignore secondary ingestion_failed emission errors
         }
 
+        incrementMetric("botomatic_upload_failures_total");
+        incrementMetric("botomatic_provider_errors_total", { provider: "local_upload", errorCategory: "validation" });
         return res.status(error.statusCode).json({
           error: error.message,
           code: error.code,
@@ -2865,6 +3454,8 @@ export function buildApp(config: RuntimeConfig) {
           configuredMaxZipFiles: config.intake.limits.maxZipFiles,
         });
       }
+      incrementMetric("botomatic_upload_failures_total");
+      incrementMetric("botomatic_provider_errors_total", { provider: "local_upload", errorCategory: "validation" });
       return handleRouteError(res, config, error, "POST /api/projects/:projectId/intake/file", actor);
     }
   });
@@ -3093,6 +3684,8 @@ export function buildApp(config: RuntimeConfig) {
       }
 
       const readiness = computeProjectReadiness(project);
+      incrementMetric(readiness.readyToBuild ? "botomatic_readiness_unlocked_total" : "botomatic_readiness_locked_total");
+      setResponseContext(res, { projectId: project.projectId });
       return res.json({ ok: true, actorId: actor.actorId, ...readiness });
     } catch (error) {
       return handleRouteError(res, config, error, "GET /api/projects/:projectId/readiness", actor);
@@ -3335,6 +3928,8 @@ export function buildApp(config: RuntimeConfig) {
       // request body trigger the missing-artifact block even when project.request differs.
       const readiness = computeProjectReadiness(project, message);
       if (!readiness.readyToBuild) {
+        incrementMetric("botomatic_readiness_locked_total");
+        setResponseContext(res, { projectId: project.projectId });
         await persistProject(config, project);
         return res.json({
           ok: true,
@@ -3348,6 +3943,7 @@ export function buildApp(config: RuntimeConfig) {
           actorId: actor.actorId,
         });
       }
+      incrementMetric("botomatic_readiness_unlocked_total");
 
       const runId = `${project.projectId}_autonomous_${Date.now()}`;
       const run = startAutonomousBuildRun({
@@ -3362,6 +3958,8 @@ export function buildApp(config: RuntimeConfig) {
       });
 
       setAutonomousBuildRun(project, run);
+      rememberBuildRun(project.projectId, run.runId);
+      setResponseContext(res, { projectId: project.projectId, buildRunId: run.runId, jobId: run.runId });
       emitEvent(project as any, {
         id: `evt_${Date.now()}`,
         projectId: project.projectId,
@@ -3409,6 +4007,8 @@ export function buildApp(config: RuntimeConfig) {
       // Pass inputText so missing-artifact check covers the current message, not just project.request.
       const readiness = computeProjectReadiness(project, inputText);
       if (!readiness.readyToBuild) {
+        incrementMetric("botomatic_readiness_locked_total");
+        setResponseContext(res, { projectId: project.projectId });
         await persistProject(config, project);
         return res.json({
           ok: true,
@@ -3424,6 +4024,7 @@ export function buildApp(config: RuntimeConfig) {
           actorId: actor.actorId,
         });
       }
+      incrementMetric("botomatic_readiness_unlocked_total");
 
       const runId = `${project.projectId}_autonomous_${Date.now()}`;
       const run = startAutonomousBuildRun({
@@ -3438,6 +4039,8 @@ export function buildApp(config: RuntimeConfig) {
       });
 
       setAutonomousBuildRun(project, run);
+      rememberBuildRun(project.projectId, run.runId);
+      setResponseContext(res, { projectId: project.projectId, buildRunId: run.runId, jobId: run.runId });
       emitEvent(project as any, {
         id: `evt_${Date.now()}`,
         projectId: project.projectId,
@@ -3509,6 +4112,14 @@ export function buildApp(config: RuntimeConfig) {
         : [];
       const resumed = resumeAutonomousBuildRun(current, { approvedBlockerCodes, repairBudget: 3 });
       setAutonomousBuildRun(project, resumed);
+      rememberBuildRun(project.projectId, resumed.runId);
+      setResponseContext(res, { projectId: project.projectId, buildRunId: resumed.runId, jobId: resumed.runId });
+      if (resumed.checkpoint.repairAttempts > current.checkpoint.repairAttempts) {
+        incrementMetric("botomatic_repair_attempts_total", {}, resumed.checkpoint.repairAttempts - current.checkpoint.repairAttempts);
+      }
+      if (resumed.status === "failed" && resumed.checkpoint.repairAttempts >= 3) {
+        incrementMetric("botomatic_repair_exhausted_total");
+      }
       emitEvent(project as any, {
         id: `evt_${Date.now()}`,
         projectId: project.projectId,
@@ -3545,6 +4156,7 @@ export function buildApp(config: RuntimeConfig) {
         updatedAt: now(),
       };
       setAutonomousBuildRun(project, updated);
+      setResponseContext(res, { projectId: project.projectId, buildRunId: updated.runId, jobId: updated.runId });
       emitEvent(project as any, {
         id: `evt_${Date.now()}`,
         projectId: project.projectId,
@@ -3709,8 +4321,7 @@ export function buildApp(config: RuntimeConfig) {
             const rootPackets = allPackets.filter((p: any) => !p.dependencies || p.dependencies.length === 0);
             for (const rp of rootPackets) {
               try {
-                const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-                await enqueueJob({ job_id: jobId, project_id: compiled.projectId, packet_id: rp.packetId, owner_user_id: compiled.ownerUserId, tenant_id: compiled.tenantId ?? compiled.ownerUserId });
+                await enqueueObservedJob(compiled, rp.packetId, actor.actorId, "operator send repair packet");
                 rootPacketsEnqueued++;
                 buildStages.push({ id: rp.packetId, label: rp.goal ?? rp.packetId, status: "queued" });
               } catch (_e) { /* tolerate queue error */ }
@@ -4197,8 +4808,7 @@ export function buildApp(config: RuntimeConfig) {
         }
 
         route = "execute_next";
-        const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-        await enqueueJob({ job_id: jobId, project_id: project.projectId, packet_id: pendingPacket.packetId, owner_user_id: project.ownerUserId, tenant_id: project.tenantId ?? project.ownerUserId });
+        await enqueueObservedJob(project, pendingPacket.packetId, actor.actorId, "dispatch execute next");
         emitEvent(project as any, {
           id: `evt_${Date.now()}`,
           projectId: project.projectId,
@@ -4336,8 +4946,7 @@ export function buildApp(config: RuntimeConfig) {
       }
       const packet = getNextPendingPacket(project);
       if (!packet) return res.status(409).json({ error: "No pending packet", actorId: actor.actorId });
-      const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-      await enqueueJob({ job_id: jobId, project_id: project.projectId, packet_id: packet.packetId, owner_user_id: project.ownerUserId, tenant_id: project.tenantId ?? project.ownerUserId });
+      const jobId = await enqueueObservedJob(project, packet.packetId, actor.actorId, "execution packet queued");
       return res.status(202).json({ accepted: true, queued: true, jobId, packetId: packet.packetId, actorId: actor.actorId, workerId });
     } catch (error) {
       return handleRouteError(res, config, error, "POST /api/projects/:projectId/dispatch/execute-next", actor);
@@ -4365,8 +4974,7 @@ export function buildApp(config: RuntimeConfig) {
       for (const packet of repairablePackets) {
         clearReplayState(project, packet.packetId);
         setPacketStatus(project, packet.packetId, "pending");
-        const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-        await enqueueJob({ job_id: jobId, project_id: project.projectId, packet_id: packet.packetId, owner_user_id: project.ownerUserId, tenant_id: project.tenantId ?? project.ownerUserId });
+        await enqueueObservedJob(project, packet.packetId, actor.actorId, "repair replay queued");
         replayed.push(packet.packetId);
       }
       recomputeProjectStatus(project);
@@ -4387,6 +4995,215 @@ export function buildApp(config: RuntimeConfig) {
       return res.json({ ...project, intakeArtifacts, actorId: actor.actorId, workerId });
     } catch (error) {
       return handleRouteError(res, config, error, "GET /api/projects/:projectId/status", actor);
+    }
+  });
+
+  app.get("/admin/projects/:projectId/state", requireAnyRole(["operator", "admin"], config), async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const readiness = computeProjectReadiness(project);
+      const buildRun = getAutonomousBuildRun(project);
+      setResponseContext(res, { projectId: project.projectId, buildRunId: buildRun?.runId || null });
+      return res.json({
+        projectId: project.projectId,
+        status: project.status,
+        config: {
+          name: project.name,
+          ownerUserId: project.ownerUserId,
+          tenantId: project.tenantId ?? project.ownerUserId,
+          repositoryMode: config.repository.mode,
+          runtimeMode: config.runtimeMode,
+        },
+        readiness,
+        lastBuild: buildRun,
+        project,
+        actorId: actor.actorId,
+        requestId: (res.locals as any).requestId,
+      });
+    } catch (error) {
+      return handleRouteError(res, config, error, "GET /admin/projects/:projectId/state", actor);
+    }
+  });
+
+  app.get("/admin/build-runs/:buildRunId", requireAnyRole(["operator", "admin"], config), async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const projectId = recentBuildRunProjectIds.get(req.params.buildRunId) || null;
+      if (!projectId) return res.status(404).json({ error: "Build run not found" });
+      const project = await repo.getProject(projectId);
+      const buildRun = project ? getAutonomousBuildRun(project) : null;
+      if (!project || !buildRun || buildRun.runId !== req.params.buildRunId) {
+        return res.status(404).json({ error: "Build run not found" });
+      }
+      setResponseContext(res, { projectId: project.projectId, buildRunId: buildRun.runId });
+      return res.json({
+        buildRunId: buildRun.runId,
+        projectId: project.projectId,
+        status: buildRun.status,
+        steps: buildRun.milestoneGraph,
+        timestamps: { startedAt: buildRun.startedAt, updatedAt: buildRun.updatedAt },
+        errors: buildRun.checkpoint.lastFailure ? [buildRun.checkpoint.lastFailure] : [],
+        checkpoint: buildRun.checkpoint,
+        humanBlockers: buildRun.humanBlockers,
+        actorId: actor.actorId,
+        requestId: (res.locals as any).requestId,
+      });
+    } catch (error) {
+      return handleRouteError(res, config, error, "GET /admin/build-runs/:buildRunId", actor);
+    }
+  });
+
+  app.get("/admin/readiness/:projectId", requireAnyRole(["operator", "admin"], config), async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const readiness = computeProjectReadiness(project);
+      incrementMetric(readiness.readyToBuild ? "botomatic_readiness_unlocked_total" : "botomatic_readiness_locked_total");
+      setResponseContext(res, { projectId: project.projectId });
+      return res.json({
+        projectId: project.projectId,
+        locked: !readiness.readyToBuild,
+        unlocked: readiness.readyToBuild,
+        reason: readiness.lockedReason,
+        readiness,
+        actorId: actor.actorId,
+        requestId: (res.locals as any).requestId,
+      });
+    } catch (error) {
+      return handleRouteError(res, config, error, "GET /admin/readiness/:projectId", actor);
+    }
+  });
+
+  app.post("/admin/jobs/:jobId/replay", requireAnyRole(["operator", "admin"], config), async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const { key: idempotencyKey, cached } = readIdempotencyHit(req);
+      if (cached) {
+        incrementMetric("botomatic_idempotency_hits_total");
+        return res.json(cached);
+      }
+      const queued = recentJobQueueSnapshots.find((job) => job.jobId === req.params.jobId);
+      if (!queued) return res.status(404).json({ error: "Job not found" });
+      const project = await repo.getProject(queued.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const replayJobId = await enqueueObservedJob(project, queued.packetId, actor.actorId, `replay:${req.params.jobId}`);
+      upsertJobQueueSnapshot({
+        ...queued,
+        jobId: replayJobId,
+        actorId: actor.actorId,
+        status: "replayed",
+        updatedAt: now(),
+        detail: `replayed from ${req.params.jobId}`,
+      });
+      setResponseContext(res, { projectId: project.projectId, jobId: replayJobId, buildRunId: queued.buildRunId });
+      emitEvent(project as any, {
+        id: `evt_${Date.now()}`,
+        projectId: project.projectId,
+        type: "admin_job_replay",
+        actorId: actor.actorId,
+        timestamp: now(),
+        metadata: { priorJobId: req.params.jobId, replayJobId },
+      });
+      await persistProject(config, project);
+      const responseBody = {
+        ok: true,
+        priorJobId: req.params.jobId,
+        replayJobId,
+        projectId: project.projectId,
+        actorId: actor.actorId,
+        requestId: (res.locals as any).requestId,
+      };
+      storeIdempotencyResponse(idempotencyKey, responseBody);
+      return res.json(responseBody);
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /admin/jobs/:jobId/replay", actor);
+    }
+  });
+
+  app.post("/admin/build-runs/:buildRunId/cancel", requireAnyRole(["operator", "admin"], config), async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const { key: idempotencyKey, cached } = readIdempotencyHit(req);
+      if (cached) {
+        incrementMetric("botomatic_idempotency_hits_total");
+        return res.json(cached);
+      }
+      const projectId = recentBuildRunProjectIds.get(req.params.buildRunId) || null;
+      if (!projectId) return res.status(404).json({ error: "Build run not found" });
+      const project = await repo.getProject(projectId);
+      const current = project ? getAutonomousBuildRun(project) : null;
+      if (!project || !current || current.runId !== req.params.buildRunId) {
+        return res.status(404).json({ error: "Build run not found" });
+      }
+      const cancelled = {
+        ...current,
+        status: "failed" as const,
+        updatedAt: now(),
+        checkpoint: {
+          ...current.checkpoint,
+          failedMilestone: current.checkpoint.failedMilestone || current.checkpoint.currentMilestone,
+          nextAction: "Cancelled by support operator",
+          logs: [...current.checkpoint.logs, "Build cancelled by support operator."],
+        },
+      };
+      setAutonomousBuildRun(project, cancelled);
+      emitEvent(project as any, {
+        id: `evt_${Date.now()}`,
+        projectId: project.projectId,
+        type: "admin_build_cancelled",
+        actorId: actor.actorId,
+        timestamp: now(),
+        metadata: { runId: cancelled.runId },
+      });
+      await persistProject(config, project);
+      setResponseContext(res, { projectId: project.projectId, buildRunId: cancelled.runId });
+      const responseBody = {
+        ok: true,
+        buildRunId: cancelled.runId,
+        status: cancelled.status,
+        actorId: actor.actorId,
+        requestId: (res.locals as any).requestId,
+      };
+      storeIdempotencyResponse(idempotencyKey, responseBody);
+      return res.json(responseBody);
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /admin/build-runs/:buildRunId/cancel", actor);
+    }
+  });
+
+  app.get("/admin/projects/:projectId/evidence-bundle", requireAnyRole(["operator", "admin"], config), async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      const buildRun = getAutonomousBuildRun(project);
+      const logs = getRecentStructuredLogs(300).filter((entry) => entry.projectId === project.projectId || (buildRun && entry.buildRunId === buildRun.runId));
+      const auditEvents = [
+        ...(((project as any).auditEvents || []) as Array<any>),
+        ...recentSupportAuditEvents.filter((event) => event.projectId === project.projectId),
+      ];
+      const readiness = computeProjectReadiness(project);
+      setResponseContext(res, { projectId: project.projectId, buildRunId: buildRun?.runId || null });
+      return res.json({
+        projectId: project.projectId,
+        buildRunId: buildRun?.runId || null,
+        logs,
+        auditEvents,
+        configSnapshot: {
+          runtimeMode: config.runtimeMode,
+          repositoryMode: config.repository.mode,
+          authImplementation: config.auth.implementation,
+          alertSinkConfigured: Boolean(config.alertWebhookUrl),
+        },
+        readiness,
+        actorId: actor.actorId,
+        requestId: (res.locals as any).requestId,
+      });
+    } catch (error) {
+      return handleRouteError(res, config, error, "GET /admin/projects/:projectId/evidence-bundle", actor);
     }
   });
 

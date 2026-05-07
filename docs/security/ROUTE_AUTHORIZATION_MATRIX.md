@@ -28,8 +28,16 @@ This matrix is the human-readable view of `apps/orchestrator-api/src/security/ro
 | GET /registry/capabilities | authenticated | no | no | yes | Capability inventory is beta surface metadata and should not be anonymously enumerable. |
 | GET /api/registry/capabilities | authenticated | no | no | yes | Capability inventory is beta surface metadata and should not be anonymously enumerable. |
 | GET /api/ops/metrics | operator | no | no | yes | Operational metrics can reveal tenant activity and runtime health. |
+| GET /ops/metrics | operator | no | no | yes | Operational metrics can reveal tenant activity and runtime health. |
 | GET /api/ops/errors | operator | no | no | yes | Operational errors can contain route, actor, and failure metadata. |
 | GET /api/ops/queue | operator | no | no | yes | Queue state can reveal project workload and worker details. |
+| GET /admin/projects/:projectId/state | operator | no | no | yes | Support operators can inspect full project state for incident response. |
+| GET /admin/build-runs/:buildRunId | operator | no | no | yes | Support operators can inspect build run execution details. |
+| GET /admin/job-queue | operator | no | no | yes | Support operators can inspect queue health and job backlog. |
+| GET /admin/readiness/:projectId | operator | no | no | yes | Support operators can inspect readiness decisions. |
+| POST /admin/jobs/:jobId/replay | operator | no | yes | yes | Support operators can safely replay idempotent jobs. |
+| POST /admin/build-runs/:buildRunId/cancel | operator | no | yes | yes | Support operators can cancel stuck builds. |
+| GET /admin/projects/:projectId/evidence-bundle | operator | no | no | yes | Support operators can export evidence bundles for incident diagnosis. |
 | POST /api/projects/intake | authenticated | no | yes | yes | Creates a tenant-owned project and therefore requires an authenticated actor. |
 | GET /api/projects/:projectId/intake/sources | project_owner | yes | no | yes | Lists uploaded and linked project source material. |
 | GET /api/projects/:projectId/intake/sources/:sourceId | project_owner | yes | no | yes | Reads project source metadata and extracted context. |

@@ -43,8 +43,16 @@ export const ROUTE_AUTHORIZATION_POLICIES: readonly RoutePolicy[] = [
   global("GET", "/registry/capabilities", "authenticated", false, true, "Capability inventory is beta surface metadata and should not be anonymously enumerable."),
   global("GET", "/api/registry/capabilities", "authenticated", false, true, "Capability inventory is beta surface metadata and should not be anonymously enumerable."),
   global("GET", "/api/ops/metrics", "operator", false, true, "Operational metrics can reveal tenant activity and runtime health."),
+  global("GET", "/ops/metrics", "operator", false, true, "Operational metrics can reveal tenant activity and runtime health."),
   global("GET", "/api/ops/errors", "operator", false, true, "Operational errors can contain route, actor, and failure metadata."),
   global("GET", "/api/ops/queue", "operator", false, true, "Queue state can reveal project workload and worker details."),
+  global("GET", "/admin/projects/:projectId/state", "operator", false, true, "Support operators can inspect full project state for incident response."),
+  global("GET", "/admin/build-runs/:buildRunId", "operator", false, true, "Support operators can inspect build run execution details."),
+  global("GET", "/admin/job-queue", "operator", false, true, "Support operators can inspect queue health and job backlog."),
+  global("GET", "/admin/readiness/:projectId", "operator", false, true, "Support operators can inspect readiness decisions."),
+  global("POST", "/admin/jobs/:jobId/replay", "operator", true, true, "Support operators can safely replay idempotent jobs."),
+  global("POST", "/admin/build-runs/:buildRunId/cancel", "operator", true, true, "Support operators can cancel stuck builds."),
+  global("GET", "/admin/projects/:projectId/evidence-bundle", "operator", false, true, "Support operators can export evidence bundles for incident diagnosis."),
   global("POST", "/api/projects/intake", "authenticated", true, true, "Creates a tenant-owned project and therefore requires an authenticated actor."),
 
   project("GET", "/api/projects/:projectId/intake/sources", "project_owner", false, "Lists uploaded and linked project source material."),
@@ -103,7 +111,7 @@ export const ROUTE_AUTHORIZATION_POLICIES: readonly RoutePolicy[] = [
 
 const rank: Record<AuthContext["role"], number> = { operator: 1, reviewer: 2, admin: 3 };
 const requiredRuntimeRole: Partial<Record<RoutePolicyName, AuthContext["role"]>> = {
-  operator: "reviewer",
+  operator: "operator",
   admin: "admin",
 };
 
@@ -141,7 +149,13 @@ export function createRoutePolicyMiddleware(options: RoutePolicyMiddlewareOption
 
     try {
       const auth = await options.getVerifiedAuth(req, options.config);
+      const projectId = req.params.projectId || req.path.match(/^\/(?:api\/)?projects\/([^/]+)/)?.[1] || req.path.match(/^\/admin\/projects\/([^/]+)/)?.[1] || req.path.match(/^\/admin\/readiness\/([^/]+)/)?.[1];
       if (!auth.userId || auth.userId === "anonymous") {
+        options.recordAuthFailure?.("Route policy authenticated actor required", {
+          route: `${req.method} ${req.path}`,
+          projectId,
+          policy: policy.policy,
+        });
         return res.status(401).json({ error: "Authenticated actor required", policy: policy.policy });
       }
 
@@ -149,6 +163,7 @@ export function createRoutePolicyMiddleware(options: RoutePolicyMiddlewareOption
       if (requiredRole && rank[auth.role] < rank[requiredRole]) {
         options.recordAuthFailure?.("Route policy role check denied", {
           route: `${req.method} ${req.path}`,
+          projectId,
           policy: policy.policy,
           requiredRole,
           actualRole: auth.role,
@@ -158,7 +173,6 @@ export function createRoutePolicyMiddleware(options: RoutePolicyMiddlewareOption
       }
 
       if (policy.projectScoped) {
-        const projectId = req.params.projectId || req.path.match(/^\/api\/projects\/([^/]+)/)?.[1];
         const project = projectId ? await options.config.repository.repo.getProjectForActor(projectId, auth.userId) : null;
         if (!project) {
           options.recordAuthFailure?.("Route policy project access denied", {
@@ -174,7 +188,8 @@ export function createRoutePolicyMiddleware(options: RoutePolicyMiddlewareOption
 
       return next();
     } catch (error: any) {
-      options.recordAuthFailure?.(String(error?.message || error), { route: `${req.method} ${req.path}`, policy: policy.policy });
+      const projectId = req.params.projectId || req.path.match(/^\/(?:api\/)?projects\/([^/]+)/)?.[1] || req.path.match(/^\/admin\/projects\/([^/]+)/)?.[1] || req.path.match(/^\/admin\/readiness\/([^/]+)/)?.[1];
+      options.recordAuthFailure?.(String(error?.message || error), { route: `${req.method} ${req.path}`, projectId, policy: policy.policy });
       return res.status(401).json({ error: String(error?.message || error), policy: policy.policy });
     }
   };
