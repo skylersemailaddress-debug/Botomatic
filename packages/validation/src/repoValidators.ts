@@ -1443,6 +1443,46 @@ export function validateBetaInternalStringGuard(root: string): RepoValidatorResu
   return result("Validate-Botomatic-BetaInternalStringGuard", true, "BetaHQ sanitizes internal strings, handles clarifying status, and is the sole beta project renderer.", checks);
 }
 
+export function validateBetaScriptAsciiGuard(root: string): RepoValidatorResult {
+  const scripts = [
+    "scripts/launchBetaFull.ps1",
+    "scripts/launchBetaLocal.ps1",
+  ];
+
+  for (const rel of scripts) {
+    if (!has(root, rel)) {
+      return result("Validate-Botomatic-BetaScriptAsciiGuard", false, `${rel} does not exist.`, scripts);
+    }
+
+    const buf = require("fs").readFileSync(require("path").join(root, rel)) as Buffer;
+    const badPositions: number[] = [];
+    for (let i = 0; i < buf.length; i++) {
+      if (buf[i] > 127) badPositions.push(i);
+    }
+    if (badPositions.length > 0) {
+      return result(
+        "Validate-Botomatic-BetaScriptAsciiGuard",
+        false,
+        `${rel} contains ${badPositions.length} non-ASCII byte(s) at positions: ${badPositions.slice(0, 5).join(", ")}${badPositions.length > 5 ? " ..." : ""}. Rewrite as pure ASCII.`,
+        scripts,
+      );
+    }
+
+    const lines = buf.toString("ascii").split("\n");
+    const requiresCount = lines.filter((l) => l.trimStart().startsWith("#Requires")).length;
+    if (requiresCount > 1) {
+      return result(
+        "Validate-Botomatic-BetaScriptAsciiGuard",
+        false,
+        `${rel} has ${requiresCount} '#Requires' lines — must have exactly 1 (duplicate header detected).`,
+        scripts,
+      );
+    }
+  }
+
+  return result("Validate-Botomatic-BetaScriptAsciiGuard", true, "Both launcher scripts are pure ASCII with no duplicate #Requires lines.", scripts);
+}
+
 export function runAllRepoValidators(root: string): RepoValidatorResult[] {
   return [
     validateArchitecture(root),
@@ -1531,5 +1571,6 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateBetaInternalStringGuard(root),
     validateBetaLocalLaunchReadiness(root),
     validateBetaFullLaunchReadiness(root),
+    validateBetaScriptAsciiGuard(root),
   ];
 }

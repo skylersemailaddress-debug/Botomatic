@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-  Botomatic Beta Local Launcher — fetches a fresh Auth0 token and starts the
+  Botomatic Beta Local Launcher - fetches a fresh Auth0 token and starts the
   local dev UI pointed at the hosted Railway backend.
 
 .NOTES
@@ -18,7 +18,7 @@ Write-Host "Botomatic Beta Local Launcher" -ForegroundColor Cyan
 Write-Host "================================" -ForegroundColor Cyan
 Write-Host ""
 
-# ── 1. Locate and load secrets file ──────────────────────────────────────────
+# --- 1. Locate and load secrets file --------------------------------------
 
 $secretsFile = Join-Path $HOME "Botomatic-local-secrets\beta-launch.env"
 if (!(Test-Path $secretsFile)) {
@@ -35,18 +35,18 @@ if (!(Test-Path $secretsFile)) {
 }
 
 $secrets = @{}
-foreach ($line in Get-Content $secretsFile) {
-    $line = $line.Trim()
-    if ($line -eq "" -or $line.StartsWith("#")) { continue }
-    $eqIdx = $line.IndexOf("=")
+foreach ($rawLine in Get-Content $secretsFile) {
+    $trimmed = $rawLine.Trim()
+    if ($trimmed -eq "" -or $trimmed.StartsWith("#")) { continue }
+    $eqIdx = $trimmed.IndexOf("=")
     if ($eqIdx -gt 0) {
-        $k = $line.Substring(0, $eqIdx).Trim()
-        $v = $line.Substring($eqIdx + 1).Trim()
+        $k = $trimmed.Substring(0, $eqIdx).Trim()
+        $v = $trimmed.Substring($eqIdx + 1).Trim()
         $secrets[$k] = $v
     }
 }
 
-# ── 2. Reject placeholder / unfilled values ───────────────────────────────────
+# --- 2. Reject placeholder / unfilled values ------------------------------
 
 $PLACEHOLDER_PATTERNS = @("YOUR_", "PASTE_", "REPLACE_", "changeme", "placeholder")
 $REQUIRED_KEYS = @("AUTH0_DOMAIN", "AUTH0_SMOKE_CLIENT_ID", "AUTH0_SMOKE_CLIENT_SECRET", "AUTH0_AUDIENCE")
@@ -66,7 +66,7 @@ foreach ($key in $REQUIRED_KEYS) {
 
 Write-Host "Secrets loaded and validated." -ForegroundColor Green
 
-# ── 3. Request Auth0 client_credentials token ─────────────────────────────────
+# --- 3. Request Auth0 client_credentials token ----------------------------
 
 Write-Host "Requesting Auth0 access token..." -ForegroundColor Yellow
 
@@ -93,17 +93,17 @@ try {
 
 $accessToken = $tokenResponse.access_token
 
-# ── 4. Validate JWT format ────────────────────────────────────────────────────
+# --- 4. Validate JWT format -----------------------------------------------
 
 if (!$accessToken -or !$accessToken.StartsWith("eyJ")) {
-    Write-Host "ERROR: Access token does not start with 'eyJ' — not a valid JWT." -ForegroundColor Red
+    Write-Host "ERROR: Access token does not start with 'eyJ' -- not a valid JWT." -ForegroundColor Red
     Write-Host "  Check AUTH0_DOMAIN, AUTH0_SMOKE_CLIENT_ID, AUTH0_SMOKE_CLIENT_SECRET, AUTH0_AUDIENCE." -ForegroundColor Red
     exit 1
 }
 
 Write-Host "Token acquired (eyJ...)." -ForegroundColor Green
 
-# ── 5. Set environment variables ──────────────────────────────────────────────
+# --- 5. Set environment variables -----------------------------------------
 
 function Get-SecretOrDefault {
     param([string]$Key, [string]$Default)
@@ -125,7 +125,7 @@ Write-Host "  BOTOMATIC_BETA_USER_ID   = $($env:BOTOMATIC_BETA_USER_ID)" -Foregr
 Write-Host "  BOTOMATIC_BETA_TENANT_ID = $($env:BOTOMATIC_BETA_TENANT_ID)" -ForegroundColor DarkGray
 Write-Host "  NEXT_PUBLIC_API_BASE_URL = $($env:NEXT_PUBLIC_API_BASE_URL)" -ForegroundColor DarkGray
 
-# ── 6. Kill old dev-server processes on ports 3000, 3001, 4000 ───────────────
+# --- 6. Kill old dev-server processes on ports 3000, 3001, 4000 ----------
 
 Write-Host "Clearing ports 3000, 3001, 4000..." -ForegroundColor Yellow
 @(3000, 3001, 4000) | ForEach-Object {
@@ -136,7 +136,7 @@ Write-Host "Clearing ports 3000, 3001, 4000..." -ForegroundColor Yellow
 }
 Write-Host "Ports cleared." -ForegroundColor Green
 
-# ── 7. Clear Next.js build cache ──────────────────────────────────────────────
+# --- 7. Clear Next.js build cache -----------------------------------------
 
 $repoRoot  = Split-Path -Parent $PSScriptRoot
 $nextCache = Join-Path $repoRoot "apps\control-plane\.next"
@@ -146,33 +146,31 @@ if (Test-Path $nextCache) {
     Write-Host "Cache cleared." -ForegroundColor Green
 }
 
-# ── 8. Health-check the hosted Railway API ────────────────────────────────────
+# --- 8. Health-check the hosted Railway API --------------------------------
 
 $betaBaseUrl = Get-SecretOrDefault "BOTOMATIC_BETA_BASE_URL" $defaultRailwayUrl
 
 Write-Host "Checking hosted API at $betaBaseUrl ..." -ForegroundColor Yellow
 foreach ($ep in @("health", "ready")) {
     try {
-        $r = Invoke-RestMethod -Uri "$betaBaseUrl/api/$ep" -TimeoutSec 10 -ErrorAction Stop
+        $null = Invoke-RestMethod -Uri "$betaBaseUrl/api/$ep" -TimeoutSec 10 -ErrorAction Stop
         Write-Host "  /api/$ep : OK" -ForegroundColor Green
     } catch {
-        Write-Host "  /api/$ep : WARN — $_ (will proceed)" -ForegroundColor Yellow
+        Write-Host "  /api/$ep : WARN -- $_ (will proceed)" -ForegroundColor Yellow
     }
 }
 
-# ── 9. Start local UI dev server and open browser ────────────────────────────
+# --- 9. Start local UI dev server and open browser -----------------------
 
 Write-Host ""
 Write-Host "Starting local UI dev server..." -ForegroundColor Cyan
 Write-Host "Browser will open at http://localhost:3000 once ready." -ForegroundColor Cyan
 Write-Host ""
 
-# Open the browser after a short delay so the dev server has time to start.
 Start-Job -ScriptBlock {
     Start-Sleep -Seconds 10
     Start-Process "http://localhost:3000"
 } | Out-Null
 
-# Change to repo root and start ui:dev (blocking — keeps terminal alive).
 Set-Location $repoRoot
 npm run ui:dev

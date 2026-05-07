@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-  Botomatic Beta Full Launcher — full preflight checks + hosted build flow.
+  Botomatic Beta Full Launcher - full preflight checks + hosted build flow.
 
 .DESCRIPTION
   Loads secrets from $HOME\Botomatic-local-secrets\beta-launch.env,
@@ -9,14 +9,15 @@
   and accessible, then starts the local control-plane UI.
 
   Local machine does NOT need OpenAI / Anthropic / Gemini / GitHub / Supabase
-  secrets — those live in Railway's environment. Only Auth0 smoke-client
+  secrets -- those live in Railway's environment. Only Auth0 smoke-client
   credentials are required locally.
 
 .PARAMETER CheckOnly
   Run all preflight checks and print GO / NO-GO without starting the UI.
+  Exits 0 if all checks pass, 1 if any fail.
 
 .NOTES
-  Secrets file lives OUTSIDE the repo — never commit it:
+  Secrets file lives OUTSIDE the repo -- never commit it:
     $HOME\Botomatic-local-secrets\beta-launch.env
 #>
 param(
@@ -26,16 +27,18 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
+$checks   = @()
+$failures = @()
+$goNoGo   = @()
+
 Write-Host ""
 if ($CheckOnly) {
-    Write-Host "Botomatic Beta — Preflight Check (--check-only)" -ForegroundColor Cyan
+    Write-Host "Botomatic Beta - Preflight Check (check only mode)" -ForegroundColor Cyan
 } else {
     Write-Host "Botomatic Beta Full Launcher" -ForegroundColor Cyan
 }
 Write-Host "================================================" -ForegroundColor Cyan
 Write-Host ""
-
-$goNoGo = @()     # collect check results for final summary
 
 function Add-Check {
     param([string]$Label, [bool]$Ok, [string]$Detail = "")
@@ -43,36 +46,36 @@ function Add-Check {
     $color = if ($Ok) { "Green" } else { "Red" }
     $mark  = if ($Ok) { "PASS" } else { "FAIL" }
     $line  = "  [$mark] $Label"
-    if ($Detail) { $line += " — $Detail" }
+    if ($Detail) { $line += " - $Detail" }
     Write-Host $line -ForegroundColor $color
 }
 
-# ── 1. Load secrets file ──────────────────────────────────────────────────────
+# --- 1. Load secrets file -------------------------------------------------
 
 $secretsFile = Join-Path $HOME "Botomatic-local-secrets\beta-launch.env"
 if (!(Test-Path $secretsFile)) {
     Write-Host "ERROR: Secrets file not found: $secretsFile" -ForegroundColor Red
     Write-Host ""
-    Write-Host "Create it — see docs/beta/LOCAL_BETA_LAUNCH.md for the full format." -ForegroundColor Yellow
+    Write-Host "Create it -- see docs/beta/LOCAL_BETA_LAUNCH.md for the full format." -ForegroundColor Yellow
     Write-Host "Required keys: AUTH0_DOMAIN, AUTH0_SMOKE_CLIENT_ID, AUTH0_SMOKE_CLIENT_SECRET, AUTH0_AUDIENCE, BOTOMATIC_BETA_BASE_URL" -ForegroundColor Yellow
     exit 1
 }
 
 $secrets = @{}
-foreach ($line in Get-Content $secretsFile) {
-    $line = $line.Trim()
-    if ($line -eq "" -or $line.StartsWith("#")) { continue }
-    $eqIdx = $line.IndexOf("=")
+foreach ($rawLine in Get-Content $secretsFile) {
+    $trimmed = $rawLine.Trim()
+    if ($trimmed -eq "" -or $trimmed.StartsWith("#")) { continue }
+    $eqIdx = $trimmed.IndexOf("=")
     if ($eqIdx -gt 0) {
-        $k = $line.Substring(0, $eqIdx).Trim()
-        $v = $line.Substring($eqIdx + 1).Trim()
+        $k = $trimmed.Substring(0, $eqIdx).Trim()
+        $v = $trimmed.Substring($eqIdx + 1).Trim()
         $secrets[$k] = $v
     }
 }
 
 Write-Host "Secrets file: $secretsFile" -ForegroundColor DarkGray
 
-# ── 2. Reject placeholder / unfilled values ────────────────────────────────────
+# --- 2. Reject placeholder / unfilled values ------------------------------
 
 $PLACEHOLDER_PATTERNS = @("YOUR_", "PASTE_", "REPLACE_", "changeme", "placeholder")
 $REQUIRED_KEYS = @("AUTH0_DOMAIN", "AUTH0_SMOKE_CLIENT_ID", "AUTH0_SMOKE_CLIENT_SECRET", "AUTH0_AUDIENCE", "BOTOMATIC_BETA_BASE_URL")
@@ -86,22 +89,22 @@ foreach ($key in $REQUIRED_KEYS) {
     }
     foreach ($pat in $PLACEHOLDER_PATTERNS) {
         if ($secrets[$key] -like "*$pat*") {
-            Write-Host "ERROR: $key still contains placeholder value ('$pat'). Update $secretsFile." -ForegroundColor Red
+            Write-Host "ERROR: $key still contains a placeholder value ('$pat'). Update $secretsFile." -ForegroundColor Red
             $secretsOk = $false
         }
     }
 }
 
 if (!$secretsOk) { exit 1 }
-Write-Host "Secrets validated — no placeholders found." -ForegroundColor Green
+Write-Host "Secrets validated -- no placeholders found." -ForegroundColor Green
 Write-Host ""
 Write-Host "Running preflight checks..." -ForegroundColor Yellow
 Write-Host ""
 
-# ── 3. Request Auth0 client_credentials token ─────────────────────────────────
+# --- 3. Request Auth0 client_credentials token ----------------------------
 
-$tokenOk      = $false
-$accessToken  = $null
+$tokenOk     = $false
+$accessToken = $null
 
 try {
     $tokenUri  = "https://$($secrets['AUTH0_DOMAIN'])/oauth/token"
@@ -120,8 +123,7 @@ try {
 
     $accessToken = $tokenResponse.access_token
 
-    # ── 4. Validate JWT format ────────────────────────────────────────────────
-
+    # Validate JWT format - token must start with eyJ (base64url-encoded "{")
     if ($accessToken -and $accessToken.StartsWith("eyJ")) {
         $tokenOk = $true
         Add-Check "Auth0 token (eyJ...)" $true "client_credentials OK"
@@ -138,7 +140,7 @@ if (!$tokenOk) {
     exit 1
 }
 
-# ── 5. Set environment variables ──────────────────────────────────────────────
+# --- 4. Set environment variables -----------------------------------------
 
 function Get-SecretOrDefault {
     param([string]$Key, [string]$Default)
@@ -159,18 +161,18 @@ $env:API_BASE_URL               = Get-SecretOrDefault "API_BASE_URL"            
 
 Add-Check "Environment variables set" $true "$($env:BOTOMATIC_BETA_USER_ID) @ $($env:NEXT_PUBLIC_API_BASE_URL)"
 
-# ── 6. Health checks ──────────────────────────────────────────────────────────
+# --- 5. Health checks -----------------------------------------------------
 
 foreach ($ep in @("health", "ready")) {
     try {
-        $r = Invoke-RestMethod -Uri "$betaBaseUrl/api/$ep" -TimeoutSec 10 -ErrorAction Stop
+        $null = Invoke-RestMethod -Uri "$betaBaseUrl/api/$ep" -TimeoutSec 10 -ErrorAction Stop
         Add-Check "/api/$ep" $true "OK"
     } catch {
         Add-Check "/api/$ep" $false "$_"
     }
 }
 
-# ── 7. Protected route check (/api/ops/metrics) ────────────────────────────────
+# --- 6. Protected route check: /api/ops/metrics ---------------------------
 
 try {
     $metricsHeaders = @{
@@ -179,7 +181,7 @@ try {
         "x-user-id"     = $env:BOTOMATIC_BETA_USER_ID
         "x-tenant-id"   = $env:BOTOMATIC_BETA_TENANT_ID
     }
-    $metrics = Invoke-RestMethod `
+    $null = Invoke-RestMethod `
         -Uri     "$betaBaseUrl/api/ops/metrics" `
         -Headers $metricsHeaders `
         -TimeoutSec 10 `
@@ -191,7 +193,7 @@ try {
         $statusCode = [int]$_.Exception.Response.StatusCode
     }
     if ($statusCode -eq 401 -or $statusCode -eq 403) {
-        Add-Check "/api/ops/metrics (auth)" $false "Auth rejected ($statusCode) — token or role mismatch"
+        Add-Check "/api/ops/metrics (auth)" $false "Auth rejected ($statusCode) - token or role mismatch"
     } elseif ($statusCode -eq 404) {
         Add-Check "/api/ops/metrics (auth)" $true "/ops/metrics not found on this deployment (non-fatal)"
     } else {
@@ -199,7 +201,7 @@ try {
     }
 }
 
-# ── 8. Project status check (if BOTOMATIC_BETA_PROJECT_ID provided) ────────────
+# --- 7. Project status check (optional) -----------------------------------
 
 $projectId = Get-SecretOrDefault "BOTOMATIC_BETA_PROJECT_ID" ""
 if ($projectId -ne "") {
@@ -229,24 +231,24 @@ if ($projectId -ne "") {
         }
     }
 } else {
-    Write-Host "  [SKIP] Project status check — BOTOMATIC_BETA_PROJECT_ID not set" -ForegroundColor DarkGray
+    Write-Host "  [SKIP] Project status check - BOTOMATIC_BETA_PROJECT_ID not set" -ForegroundColor DarkGray
 }
 
-# ── 9. Print GO / NO-GO summary ───────────────────────────────────────────────
+# --- 8. GO / NO-GO summary ------------------------------------------------
 
 Write-Host ""
-Write-Host "─────────────────────────────────────────────────" -ForegroundColor DarkGray
+Write-Host "-------------------------------------------------" -ForegroundColor DarkGray
 
 $failures = $goNoGo | Where-Object { !$_.Ok }
 if ($failures.Count -eq 0) {
-    Write-Host "  GO — all preflight checks passed." -ForegroundColor Green
+    Write-Host "  GO -- all preflight checks passed." -ForegroundColor Green
 } else {
-    Write-Host "  NO-GO — $($failures.Count) check(s) failed:" -ForegroundColor Red
+    Write-Host "  NO-GO -- $($failures.Count) check(s) failed:" -ForegroundColor Red
     foreach ($f in $failures) {
-        Write-Host "    • $($f.Label): $($f.Detail)" -ForegroundColor Red
+        Write-Host "    * $($f.Label): $($f.Detail)" -ForegroundColor Red
     }
 }
-Write-Host "─────────────────────────────────────────────────" -ForegroundColor DarkGray
+Write-Host "-------------------------------------------------" -ForegroundColor DarkGray
 Write-Host ""
 
 if ($CheckOnly) {
@@ -258,7 +260,7 @@ if ($failures.Count -gt 0) {
     exit 1
 }
 
-# ── 10. Kill old dev-server processes on ports 3000, 3001, 4000 ───────────────
+# --- 9. Kill old dev-server processes on ports 3000, 3001, 4000 ----------
 
 Write-Host "Clearing ports 3000, 3001, 4000..." -ForegroundColor Yellow
 @(3000, 3001, 4000) | ForEach-Object {
@@ -268,7 +270,7 @@ Write-Host "Clearing ports 3000, 3001, 4000..." -ForegroundColor Yellow
         ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }
 }
 
-# ── 11. Clear Next.js build cache ──────────────────────────────────────────────
+# --- 10. Clear Next.js build cache ----------------------------------------
 
 $repoRoot  = Split-Path -Parent $PSScriptRoot
 $nextCache = Join-Path $repoRoot "apps\control-plane\.next"
@@ -277,14 +279,14 @@ if (Test-Path $nextCache) {
     Remove-Item -Recurse -Force $nextCache
 }
 
-# ── 12. Start local UI dev server + open browser ──────────────────────────────
+# --- 11. Start local UI dev server + open browser -------------------------
 
 Write-Host "Starting local UI dev server..." -ForegroundColor Cyan
 Write-Host "Browser will open at http://localhost:3000 once ready." -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Architecture:" -ForegroundColor DarkGray
-Write-Host "  Browser → localhost:3000 (Next.js, local)" -ForegroundColor DarkGray
-Write-Host "  Next.js proxy → $betaBaseUrl (Railway, hosted)" -ForegroundColor DarkGray
+Write-Host "  Browser -> localhost:3000 (Next.js, local)" -ForegroundColor DarkGray
+Write-Host "  Next.js proxy -> $betaBaseUrl (Railway, hosted)" -ForegroundColor DarkGray
 Write-Host "  Provider secrets (OpenAI/Anthropic/etc.) stay in Railway." -ForegroundColor DarkGray
 Write-Host ""
 
