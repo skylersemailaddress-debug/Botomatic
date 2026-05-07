@@ -97,6 +97,14 @@ function shouldSkip(rel: string, extraSkipDirs: Set<string>): boolean {
   return parts.some((part) => DEFAULT_SKIP_DIRS.has(part) || extraSkipDirs.has(part));
 }
 
+// Matches .gitignore patterns: .env.local, .env.*.local
+// These are developer-local overrides that are gitignored and must not affect release validation.
+function isGitignoredLocalDevEnvFile(base: string): boolean {
+  if (base === ".env.local") return true;
+  if (base.startsWith(".env.") && base.endsWith(".local")) return true;
+  return false;
+}
+
 function collectFiles(root: string, targetRel: string, extraSkipDirs = new Set<string>()): string[] {
   const start = path.join(root, targetRel);
   const out: string[] = [];
@@ -109,7 +117,7 @@ function collectFiles(root: string, targetRel: string, extraSkipDirs = new Set<s
       for (const entry of fs.readdirSync(full)) walk(path.join(full, entry));
       return;
     }
-    if (stat.isFile() && isTextFile(rel)) out.push(rel);
+    if (stat.isFile() && isTextFile(rel) && !isGitignoredLocalDevEnvFile(path.basename(rel).toLowerCase())) out.push(rel);
   };
   walk(start);
   return out.sort();
@@ -222,7 +230,7 @@ export function generateNoSecretsBetaProof(root: string): NoSecretsBetaProof {
   const logFiles = [...collectFiles(root, "receipts"), ...collectFiles(root, "data")];
   const generatedAppFiles = collectFiles(root, "release-evidence/generated-apps");
   const scans = {
-    source: scanRelFiles(root, "source", sourceFiles, ["release-evidence", "receipts", "data"]),
+    source: scanRelFiles(root, "source", sourceFiles, ["release-evidence", "receipts", "data", ".env.local (gitignored)", ".env.*.local (gitignored)"]),
     git_history: scanGitHistory(root),
     release_evidence: scanRelFiles(root, "release_evidence", releaseEvidenceFiles, ["release-evidence/generated-apps", "release-evidence/runtime/no_secrets_beta_proof.json"]),
     logs: scanRelFiles(root, "logs", logFiles),

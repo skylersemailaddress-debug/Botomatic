@@ -124,6 +124,7 @@ const repoCompletionRunKey = "__repoCompletionContract";
 const universalCapabilityRunKey = "__universalCapabilityArtifacts";
 const autonomousBuildRunKey = "__autonomousBuildRun";
 const generatedWorkspaceRunKey = "__generatedWorkspace";
+const decisionLedgerRunKey = "__decisionLedger";
 let workerStarted = false;
 let activeWorkers = 0;
 
@@ -1045,6 +1046,160 @@ function getBuildBlockers(project: StoredProjectRecord): string[] {
     blockers.push("Build contract is not approved and ready.");
   }
   return Array.from(new Set(blockers));
+}
+
+// ── Decision ledger helpers ──────────────────────────────────────────────────
+
+function getDecisionLedger(project: StoredProjectRecord): Record<string, { userAnswer?: string; acceptedDefault?: boolean; createdAt?: string }> {
+  return (((project.runs || {}) as Record<string, unknown>)[decisionLedgerRunKey] as Record<string, any>) || {};
+}
+
+function setDecisionLedger(project: StoredProjectRecord, ledger: Record<string, any>) {
+  project.runs = { ...((project.runs || {}) as Record<string, unknown>), [decisionLedgerRunKey]: ledger };
+}
+
+function toPlainEnglishQuestion(field: string, question: string): string {
+  const map: Record<string, string> = {
+    "compliance": "Do you have legal requirements like GDPR, HIPAA, SOC2, or PCI? This affects how we store and protect user data.",
+    "auth/security": "How do users log in? (email/password, Google, company single sign-on, etc.)",
+    "tenancy": "Is this app for one organization or will many different organizations each have their own separate space?",
+    "payments": "Do you need to charge users? If so, subscription, pay-per-use, or one-time purchase?",
+    "deployment": "Where should the app be hosted? (Railway, AWS, Vercel, etc.) Who manages the secrets?",
+    "permissions": "What are the different user roles and what can each one do in the app?",
+    "workflows": "What are the 3 most important things a user needs to be able to do in the app?",
+    "data model": "What data does your app store and how long should it be kept?",
+  };
+  return map[field] || question;
+}
+
+// computeProjectReadiness returns a structured readiness report without side-effects.
+// It checks: unresolved mustAsk clarifications, missing artifacts referenced in the request or
+// the current incomingMessage (so the gate works even when project.request predates the file reference).
+function computeProjectReadiness(project: StoredProjectRecord, incomingMessage?: string): {
+  projectId: string;
+  readyToBuild: boolean;
+  readinessScore: number;
+  status: string;
+  lockedReason: string | null;
+  blockingQuestions: any[];
+  requiredDecisions: any[];
+  inferredDefaults: any[];
+  recommendedDefaults: any[];
+  acceptedDefaults: any[];
+  missingArtifacts: string[];
+  buildContractId: string | null;
+  canUseRecommendedDefaults: boolean;
+  advancedSections: Record<string, unknown>;
+} {
+  const clarifications = getSpecClarifications(project);
+  const contract = getBuildContract(project);
+  const ledger = getDecisionLedger(project);
+
+  // Check for unresolved high-risk (mustAsk) questions
+  const unresolvedMustAsk = clarifications.filter((q: any) => {
+    if (!q.mustAsk) return false;
+    const e = ledger[q.id] || {};
+    return !e.userAnswer && !e.acceptedDefault;
+  });
+
+  // Check for referenced-but-missing artifacts.
+  // We check both project.request AND the current incomingMessage so the gate fires even when
+  // the user says "build the attached files" in a message that wasn't the original project request.
+  const ARTIFACT_REF_RE = /\b(attached|attachment|the files?|my files?|uploaded files?|attached files?|this file|include the file|the attached)\b/i;
+  const combinedText = [project.request || "", incomingMessage || ""].join(" ");
+  const referencesAttachment = ARTIFACT_REF_RE.test(combinedText);
+  const hasArtifacts = Object.values(getIntakeArtifacts(project) || {}).length > 0;
+  const missingArtifacts: string[] = referencesAttachment && !hasArtifacts
+    ? ["I do not see an uploaded file yet — please upload the file before building, or describe your project in text instead."]
+    : [];
+
+  const readyToBuild = unresolvedMustAsk.length === 0 && missingArtifacts.length === 0;
+
+  let status = "ready_to_build";
+  let lockedReason: string | null = null;
+  if (missingArtifacts.length > 0) {
+    status = "build_locked";
+    lockedReason = "Upload the referenced file, or choose Build from description instead.";
+  } else if (unresolvedMustAsk.length > 0) {
+    status = "clarifying";
+    lockedReason = `${unresolvedMustAsk.length} required decision${unresolvedMustAsk.length !== 1 ? "s" : ""} must be answered before building.`;
+  }
+
+  const blockingQuestions = unresolvedMustAsk.map((q: any) => ({
+    id: q.id,
+    field: q.field,
+    question: q.question,
+    plainEnglish: toPlainEnglishQuestion(q.field, q.question),
+    risk: q.importance >= 10 ? "critical" : "high",
+    suggestedDefault: q.suggestedDefault || null,
+  }));
+
+  // Build full decision list from clarifications + ledger answers
+  const allDecisions = clarifications.map((q: any) => {
+    const e = ledger[q.id] || {};
+    const risk: string = q.mustAsk ? (q.importance >= 10 ? "critical" : "high") : q.requiresApproval ? "medium" : "low";
+    const dStatus: string = e.userAnswer ? "answered" : e.acceptedDefault ? "accepted" : q.suggestedDefault ? "recommended" : q.mustAsk ? "required" : "inferred";
+    return {
+      id: q.id,
+      label: q.field,
+      plainEnglish: toPlainEnglishQuestion(q.field, q.question),
+      technicalDetail: q.question,
+      category: q.field,
+      risk,
+      status: dStatus,
+      recommendedDefault: q.suggestedDefault || null,
+      userAnswer: e.userAnswer || null,
+      acceptedDefault: e.acceptedDefault || false,
+      createdAt: e.createdAt || now(),
+      updatedAt: now(),
+    };
+  });
+
+  const requiredDecisions = allDecisions.filter((d: any) => d.status === "required");
+  const recommendedDefaults = allDecisions.filter((d: any) => d.status === "recommended");
+  const inferredDefaults = allDecisions.filter((d: any) => d.status === "inferred");
+  const acceptedDefaults = allDecisions.filter((d: any) => d.status === "accepted" || d.status === "answered");
+
+  const totalQ = clarifications.length;
+  const answeredQ = acceptedDefaults.length;
+  const readinessScore = totalQ === 0 ? 90 : Math.round((answeredQ / Math.max(totalQ, 1)) * 90 + 10);
+
+  const canUseRecommendedDefaults = unresolvedMustAsk.length > 0 && unresolvedMustAsk.every((q: any) => q.suggestedDefault);
+
+  const spec = getMasterSpec(project);
+  return {
+    projectId: project.projectId,
+    readyToBuild,
+    readinessScore,
+    status,
+    lockedReason,
+    blockingQuestions,
+    requiredDecisions,
+    inferredDefaults,
+    recommendedDefaults,
+    acceptedDefaults,
+    missingArtifacts,
+    buildContractId: contract?.id || null,
+    canUseRecommendedDefaults,
+    advancedSections: {
+      spec: spec ? {
+        authModel: (spec as any).authModel || null,
+        tenancyModel: (spec as any).tenancyModel || null,
+        deploymentTarget: (spec as any).deploymentTarget || null,
+        complianceRequirements: (spec as any).complianceRequirements || [],
+        pageCount: spec.pages?.length || 0,
+        roles: spec.roles || [],
+        workflowCount: spec.workflows?.length || 0,
+      } : null,
+      buildContract: contract ? {
+        id: contract.id,
+        readyToBuild: contract.readyToBuild,
+        approvedAt: (contract as any).approvedAt || null,
+        blockerCount: contract.blockers?.length || 0,
+        blockers: contract.blockers || [],
+      } : null,
+    },
+  };
 }
 
 function hasLaunchIntent(message: string): boolean {
@@ -2904,6 +3059,77 @@ export function buildApp(config: RuntimeConfig) {
     }
   });
 
+  // ── Commercial readiness gate endpoints ───────────────────────────────────
+
+  app.get("/api/projects/:projectId/readiness", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+
+      // If no spec analysis yet, run it now so readiness is accurate.
+      if (!getMasterSpec(project) && project.request) {
+        const bp = matchBlueprintFromText(project.request);
+        const analyzed = analyzeSpec({ appName: project.name, request: project.request, blueprint: bp, actorId: actor.actorId });
+        setMasterSpec(project, mergeSpecWithExisting(null as any, analyzed.spec));
+        setSpecClarifications(project, analyzed.clarifications);
+        await persistProject(config, project);
+      }
+
+      const readiness = computeProjectReadiness(project);
+      return res.json({ ok: true, actorId: actor.actorId, ...readiness });
+    } catch (error) {
+      return handleRouteError(res, config, error, "GET /api/projects/:projectId/readiness", actor);
+    }
+  });
+
+  app.post("/api/projects/:projectId/clarifications", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+
+      const body = req.body as any;
+      const answers: Array<{ decisionId: string; answer?: string; acceptedDefault?: boolean }> =
+        Array.isArray(body?.answers) ? body.answers :
+        (body?.decisionId ? [{ decisionId: body.decisionId, answer: body.answer, acceptedDefault: body.acceptedRecommendedDefault }] : []);
+
+      if (answers.length === 0) {
+        return res.status(400).json({ error: "answers array is required" });
+      }
+
+      const ledger = getDecisionLedger(project);
+      const updatedIds: string[] = [];
+      for (const a of answers) {
+        if (!a.decisionId) continue;
+        ledger[a.decisionId] = {
+          ...(ledger[a.decisionId] || {}),
+          ...(a.answer !== undefined ? { userAnswer: String(a.answer) } : {}),
+          ...(a.acceptedDefault ? { acceptedDefault: true } : {}),
+          createdAt: ledger[a.decisionId]?.createdAt || now(),
+          updatedAt: now(),
+        };
+        updatedIds.push(a.decisionId);
+      }
+      setDecisionLedger(project, ledger);
+
+      emitEvent(project as any, {
+        id: `evt_${Date.now()}`,
+        projectId: project.projectId,
+        type: "clarifications_answered",
+        actorId: actor.actorId,
+        timestamp: now(),
+        metadata: { updatedIds },
+      });
+      await persistProject(config, project);
+
+      const readiness = computeProjectReadiness(project);
+      return res.json({ ok: true, updated: updatedIds, readiness, actorId: actor.actorId });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/projects/:projectId/clarifications", actor);
+    }
+  });
+
   app.post("/api/projects/:projectId/self-upgrade/spec", requireRole("reviewer", config), async (req, res) => {
     const actor = await getRequestActor(req, config);
     try {
@@ -3059,13 +3285,130 @@ export function buildApp(config: RuntimeConfig) {
     }
   });
 
+  // ── build/start: the public BetaHQ → Express entry point for starting a build ──
+  // Railway routes /api/* directly to Express, so this route must live here.
+  // It enforces the readiness gate before delegating to startAutonomousBuildRun.
+  app.post("/api/projects/:projectId/build/start", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+
+      const message = String((req.body as any)?.message || (req.body as any)?.inputText || "");
+      const artifactIds: string[] = Array.isArray((req.body as any)?.artifactIds) ? (req.body as any).artifactIds : [];
+
+      // Attach artifact IDs that were uploaded in this request but not yet in project intake.
+      for (const aid of artifactIds) {
+        const existing = getIntakeArtifacts(project);
+        if (!existing[aid]) {
+          existing[aid] = { artifactId: aid, originalName: aid, uploadedAt: now() };
+          setIntakeArtifacts(project, existing);
+        }
+      }
+
+      // Run spec analysis so readiness sees up-to-date clarifications.
+      const analysisText = [project.request || "", buildIntakeContext(project), message].filter(Boolean).join("\n\n");
+      if (analysisText.trim()) {
+        const bp = matchBlueprintFromText(analysisText);
+        const analyzed = analyzeSpec({ appName: project.name, request: analysisText, blueprint: bp, actorId: actor.actorId });
+        setSpecClarifications(project, analyzed.clarifications);
+        if (!getMasterSpec(project)) setMasterSpec(project, mergeSpecWithExisting(null as any, analyzed.spec));
+      }
+
+      // READINESS GATE: check with the incoming message so artifact references in the
+      // request body trigger the missing-artifact block even when project.request differs.
+      const readiness = computeProjectReadiness(project, message);
+      if (!readiness.readyToBuild) {
+        await persistProject(config, project);
+        return res.json({
+          ok: true,
+          status: readiness.status,
+          readyToBuild: false,
+          lockedReason: readiness.lockedReason,
+          blockingQuestions: readiness.blockingQuestions,
+          canUseRecommendedDefaults: readiness.canUseRecommendedDefaults,
+          missingArtifacts: readiness.missingArtifacts,
+          readinessScore: readiness.readinessScore,
+          actorId: actor.actorId,
+        });
+      }
+
+      const runId = `${project.projectId}_autonomous_${Date.now()}`;
+      const run = startAutonomousBuildRun({
+        runId,
+        specInput: {
+          sourceType: "multi_file_spec",
+          rawText: analysisText || project.request || "",
+          fileNames: Object.values(getIntakeArtifacts(project) || {}).map((a: any) => String(a?.originalName || "")).filter(Boolean),
+        },
+        repairBudget: 3,
+        safeDefaults: Boolean((req.body as any)?.safeDefaults ?? true),
+      });
+
+      setAutonomousBuildRun(project, run);
+      emitEvent(project as any, {
+        id: `evt_${Date.now()}`,
+        projectId: project.projectId,
+        type: "autonomous_build_started",
+        actorId: actor.actorId,
+        timestamp: now(),
+        metadata: { runId: run.runId, triggeredBy: "build/start" },
+      });
+      await persistProject(config, project);
+      return res.json({
+        ok: true,
+        projectId: project.projectId,
+        status: run.status,
+        jobId: run.runId,
+        message: "Build triggered on Railway",
+        raw: { run },
+        actorId: actor.actorId,
+      });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/projects/:projectId/build/start", actor);
+    }
+  });
+
   app.post("/api/projects/:projectId/autonomous-build/start", requireRole("reviewer", config), async (req, res) => {
     const actor = await getRequestActor(req, config);
     try {
       const project = await repo.getProject(req.params.projectId);
       if (!project) return res.status(404).json({ error: "Project not found" });
 
-      const inputText = String((req.body as any)?.inputText || project.request || "");
+      // Accept both `message` (BetaHQ) and `inputText` (internal callers).
+      const inputText = String((req.body as any)?.message || (req.body as any)?.inputText || project.request || "");
+
+      // Analyze spec now so readiness can see up-to-date clarifications.
+      if (inputText || project.request) {
+        const analysisText = [project.request || "", buildIntakeContext(project), inputText].filter(Boolean).join("\n\n");
+        const bp = matchBlueprintFromText(analysisText);
+        const analyzed = analyzeSpec({ appName: project.name, request: analysisText, blueprint: bp, actorId: actor.actorId });
+        setSpecClarifications(project, analyzed.clarifications);
+        if (!getMasterSpec(project)) {
+          setMasterSpec(project, mergeSpecWithExisting(getMasterSpec(project), analyzed.spec));
+        }
+      }
+
+      // READINESS GATE: block build if high-risk decisions are unresolved.
+      // Pass inputText so missing-artifact check covers the current message, not just project.request.
+      const readiness = computeProjectReadiness(project, inputText);
+      if (!readiness.readyToBuild) {
+        await persistProject(config, project);
+        return res.json({
+          ok: true,
+          run: { runId: `${project.projectId}_autonomous_idle`, status: "clarifying", humanBlockers: [], finalReleaseAssembled: false, startedAt: now(), updatedAt: now(), milestoneGraph: [], checkpoint: { nextAction: readiness.lockedReason } },
+          readyToBuild: false,
+          status: readiness.status,
+          lockedReason: readiness.lockedReason,
+          blockingQuestions: readiness.blockingQuestions,
+          recommendedDefaults: readiness.recommendedDefaults,
+          canUseRecommendedDefaults: readiness.canUseRecommendedDefaults,
+          missingArtifacts: readiness.missingArtifacts,
+          readinessScore: readiness.readinessScore,
+          actorId: actor.actorId,
+        });
+      }
+
       const runId = `${project.projectId}_autonomous_${Date.now()}`;
       const run = startAutonomousBuildRun({
         runId,
@@ -3246,6 +3589,46 @@ export function buildApp(config: RuntimeConfig) {
         const shouldContinue = /(continue the build|fix and keep going)/.test(message.toLowerCase());
         const shouldSafeDefault = /(use safe defaults|stop only for secrets or approval)/.test(message.toLowerCase());
 
+        // READINESS GATE: check using freshly analyzed clarifications (set above).
+        // Pass message so attachment references in the current message trigger missing-artifact block.
+        let readiness = computeProjectReadiness(project, message);
+        if (!readiness.readyToBuild) {
+          // If user said "use safe defaults" and all blockers have recommended defaults, auto-accept them.
+          if (shouldSafeDefault && readiness.canUseRecommendedDefaults) {
+            const ledger = getDecisionLedger(project);
+            for (const bq of readiness.blockingQuestions) {
+              if (bq.suggestedDefault) {
+                ledger[bq.id] = { ...(ledger[bq.id] || {}), acceptedDefault: true, createdAt: now() };
+              }
+            }
+            setDecisionLedger(project, ledger);
+            readiness = computeProjectReadiness(project, message);
+          }
+          if (!readiness.readyToBuild) {
+            await persistProject(config, project);
+            return res.json({
+              ok: true,
+              route: "clarifying",
+              status: readiness.status,
+              readyToBuild: false,
+              lockedReason: readiness.lockedReason,
+              blockingQuestions: readiness.blockingQuestions,
+              recommendedDefaults: readiness.recommendedDefaults,
+              canUseRecommendedDefaults: readiness.canUseRecommendedDefaults,
+              missingArtifacts: readiness.missingArtifacts,
+              readinessScore: readiness.readinessScore,
+              nextAction: readiness.lockedReason || "Answer the required questions to unlock build.",
+              actorId: actor.actorId,
+              operatorMessage: formatOperatorVoice({
+                direct: readiness.lockedReason || "Required decisions must be answered before building.",
+                status: readiness.status,
+                blockers: readiness.blockingQuestions.map((q: any) => q.plainEnglish || q.question),
+                nextAction: "Answer the required questions or accept recommended defaults.",
+              }),
+            });
+          }
+        }
+
         const run = shouldContinue && existingRun
           ? resumeAutonomousBuildRun(existingRun, {
             approvedBlockerCodes: existingRun.humanBlockers.filter((b) => b.approved).map((b) => b.code),
@@ -3280,7 +3663,25 @@ export function buildApp(config: RuntimeConfig) {
         const buildStages: Array<{ id: string; label: string; status: string }> = [];
         try {
           if (!["queued", "running", "succeeded"].includes(String(project.status))) {
+            // Secondary readiness guard on the compiled project (defensive — primary gate above should already block).
             const compiled = compileProjectWithIntake(project);
+            const compiledReadiness = computeProjectReadiness(compiled, message);
+            if (!compiledReadiness.readyToBuild) {
+              await repo.upsertProject(compiled);
+              const blockerLines = run.humanBlockers.filter((b) => !b.approved).map((b) => b.detail);
+              return res.json({
+                ok: true,
+                route: "clarifying",
+                status: compiledReadiness.status,
+                readyToBuild: false,
+                lockedReason: compiledReadiness.lockedReason,
+                blockingQuestions: compiledReadiness.blockingQuestions,
+                canUseRecommendedDefaults: compiledReadiness.canUseRecommendedDefaults,
+                blockers: blockerLines,
+                nextAction: compiledReadiness.lockedReason || "Answer required questions to unlock build.",
+                actorId: actor.actorId,
+              });
+            }
             const plan = generatePlan((compiled as any).masterTruth);
             (compiled as any).plan = plan;
             compiled.status = "queued";

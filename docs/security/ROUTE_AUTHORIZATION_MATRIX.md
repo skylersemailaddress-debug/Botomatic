@@ -46,12 +46,15 @@ This matrix is the human-readable view of `apps/orchestrator-api/src/security/ro
 | POST /api/projects/:projectId/spec/build-contract | project_owner | yes | yes | yes | Generates a project build contract. |
 | POST /api/projects/:projectId/spec/approve | operator | yes | yes | yes | Approves a project specification and advances gated build state. |
 | GET /api/projects/:projectId/spec/status | project_owner | yes | no | yes | Reads project specification state. |
+| GET /api/projects/:projectId/readiness | project_owner | yes | no | yes | Reads commercial build readiness state and blocking decisions. |
+| POST /api/projects/:projectId/clarifications | project_owner | yes | yes | yes | Persists user answers to pre-build decision questions. |
 | POST /api/projects/:projectId/self-upgrade/spec | operator | yes | yes | yes | Plans self-upgrade work with repository-level implications. |
 | GET /api/projects/:projectId/self-upgrade/status | operator | yes | no | yes | Reads self-upgrade state and drift signals. |
 | POST /api/projects/:projectId/repo/completion-contract | operator | yes | yes | yes | Generates repository completion and repair planning state. |
 | GET /api/projects/:projectId/repo/status | operator | yes | no | yes | Reads repository audit and completion status. |
 | POST /api/projects/:projectId/universal/capability-pipeline | operator | yes | yes | yes | Runs universal capability pipeline planning. |
 | GET /api/projects/:projectId/universal/capability-pipeline | operator | yes | no | yes | Reads universal capability pipeline artifacts. |
+| POST /api/projects/:projectId/build/start | project_owner | yes | yes | yes | Public build entry point with readiness gate; enforced at Express layer for Railway deployments. |
 | POST /api/projects/:projectId/autonomous-build/start | operator | yes | yes | yes | Starts autonomous build execution. |
 | GET /api/projects/:projectId/autonomous-build/status | operator | yes | no | yes | Reads autonomous build execution state. |
 | POST /api/projects/:projectId/autonomous-build/resume | operator | yes | yes | yes | Resumes autonomous build execution. |

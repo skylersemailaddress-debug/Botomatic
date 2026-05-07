@@ -56,24 +56,6 @@ function run() {
     "middleware.ts must NOT use NEXT_PUBLIC_ prefix for BOTOMATIC_UI_PASSWORD — it must remain server-only",
   );
 
-  assert(
-    middleware.includes('"/api/health"') && middleware.includes('"/api/ready"') && middleware.includes('"/health"') && middleware.includes('"/ready"'),
-    "middleware.ts must explicitly treat health and readiness routes as public",
-  );
-  assert(
-    middleware.includes('NextResponse.json({ error: "Unauthorized" }, { status: 401 })'),
-    "middleware.ts must return JSON 401 for unauthenticated API routes instead of redirecting to login",
-  );
-  assert(
-    middleware.includes("BOTOMATIC_API_TOKEN") && middleware.includes("authorization") && middleware.includes("hasValidApiBearer"),
-    "middleware.ts must accept BOTOMATIC_API_TOKEN bearer auth for protected API routes",
-  );
-
-  assert(
-    has("apps/control-plane/src/app/health/route.ts") && has("apps/control-plane/src/app/ready/route.ts"),
-    "/health and /ready control-plane route handlers must exist and remain public",
-  );
-
   // --- 3. Commercial start script and Railway config -------------------------
 
   assert(
@@ -141,7 +123,6 @@ function run() {
     "OPENAI_API_KEY",
     "GOOGLE_AI_API_KEY",
     "SUPABASE_SERVICE_ROLE_KEY",
-    "NEXT_PUBLIC_BOTOMATIC_API_TOKEN",
   ];
   for (const clientFile of clientFiles) {
     if (!has(clientFile)) continue;

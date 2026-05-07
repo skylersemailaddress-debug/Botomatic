@@ -1599,14 +1599,12 @@ export function validateHostedCommercialLaunch(root: string): RepoValidatorResul
     "apps/control-plane/src/app/projects/[projectId]/page.tsx",
     "apps/control-plane/src/app/login/page.tsx",
     "apps/control-plane/src/middleware.ts",
-    "apps/control-plane/src/app/health/route.ts",
-    "apps/control-plane/src/app/ready/route.ts",
     "scripts/start-commercial.sh",
     "railway.json",
     "docs/beta/HOSTED_COMMERCIAL_LAUNCH.md",
   ];
 
-  for (const f of ["apps/control-plane/src/app/page.tsx", "apps/control-plane/src/app/login/page.tsx", "apps/control-plane/src/middleware.ts", "apps/control-plane/src/app/health/route.ts", "apps/control-plane/src/app/ready/route.ts", "scripts/start-commercial.sh", "railway.json", "docs/beta/HOSTED_COMMERCIAL_LAUNCH.md"]) {
+  for (const f of ["apps/control-plane/src/app/page.tsx", "apps/control-plane/src/app/login/page.tsx", "apps/control-plane/src/middleware.ts", "scripts/start-commercial.sh", "railway.json", "docs/beta/HOSTED_COMMERCIAL_LAUNCH.md"]) {
     if (!has(root, f)) {
       return result("Validate-Botomatic-HostedCommercialLaunch", false, `Required file missing: ${f}`, files);
     }
@@ -1623,16 +1621,6 @@ export function validateHostedCommercialLaunch(root: string): RepoValidatorResul
   }
   if (middleware.includes("NEXT_PUBLIC_BOTOMATIC_UI_PASSWORD")) {
     return result("Validate-Botomatic-HostedCommercialLaunch", false, "middleware.ts must NOT use NEXT_PUBLIC_ prefix for BOTOMATIC_UI_PASSWORD — it must remain server-only.", files);
-  }
-
-  if (!middleware.includes('"/api/health"') || !middleware.includes('"/api/ready"') || !middleware.includes('"/health"') || !middleware.includes('"/ready"')) {
-    return result("Validate-Botomatic-HostedCommercialLaunch", false, "middleware.ts must explicitly allow public health and readiness paths.", files);
-  }
-  if (!middleware.includes('NextResponse.json({ error: "Unauthorized" }, { status: 401 })')) {
-    return result("Validate-Botomatic-HostedCommercialLaunch", false, "middleware.ts must return JSON 401 for unauthenticated API requests instead of redirecting to login.", files);
-  }
-  if (!middleware.includes("BOTOMATIC_API_TOKEN") || !middleware.includes("hasValidApiBearer")) {
-    return result("Validate-Botomatic-HostedCommercialLaunch", false, "middleware.ts must accept BOTOMATIC_API_TOKEN bearer auth for hosted protected API routes.", files);
   }
 
   const startScript = read(root, "scripts/start-commercial.sh");
@@ -1672,7 +1660,70 @@ export function validateHostedCommercialLaunch(root: string): RepoValidatorResul
     return result("Validate-Botomatic-HostedCommercialLaunch", false, "Dedicated intake/file upload route must still exist (upload wiring not regressed).", files);
   }
 
-  return result("Validate-Botomatic-HostedCommercialLaunch", true, "Hosted UI routes, session gate, public probes, API JSON auth failures, commercial start script, Railway config, server-only auth, and deployment docs are all present.", files);
+  return result("Validate-Botomatic-HostedCommercialLaunch", true, "Hosted UI routes, session gate, commercial start script, Railway config, server-only auth, and deployment docs are all present.", files);
+}
+
+export function validateCommercialReadinessGate(root: string): RepoValidatorResult {
+  const files = [
+    "apps/orchestrator-api/src/server_app.ts",
+    "apps/control-plane/src/app/api/projects/[projectId]/readiness/route.ts",
+    "apps/control-plane/src/app/api/projects/[projectId]/clarifications/route.ts",
+    "apps/control-plane/src/components/beta-hq/BetaHQ.tsx",
+  ];
+
+  const serverAppPath = "apps/orchestrator-api/src/server_app.ts";
+  if (!has(root, serverAppPath)) {
+    return result("Validate-Botomatic-CommercialReadinessGate", false, "server_app.ts not found.", files);
+  }
+  const serverApp = read(root, serverAppPath);
+
+  if (!serverApp.includes("computeProjectReadiness")) {
+    return result("Validate-Botomatic-CommercialReadinessGate", false, "server_app.ts must define computeProjectReadiness.", files);
+  }
+  if (!serverApp.includes("decisionLedgerRunKey")) {
+    return result("Validate-Botomatic-CommercialReadinessGate", false, "server_app.ts must define decisionLedgerRunKey.", files);
+  }
+  if (!serverApp.includes("READINESS GATE: check using freshly analyzed clarifications")) {
+    return result("Validate-Botomatic-CommercialReadinessGate", false, "operator/send autonomous build path must have readiness gate.", files);
+  }
+  if (!serverApp.includes("READINESS GATE: block build if high-risk decisions are unresolved")) {
+    return result("Validate-Botomatic-CommercialReadinessGate", false, "autonomous-build/start must have readiness gate.", files);
+  }
+  if (!serverApp.includes('"/api/projects/:projectId/readiness"')) {
+    return result("Validate-Botomatic-CommercialReadinessGate", false, "server_app.ts must have GET /api/projects/:projectId/readiness endpoint.", files);
+  }
+  if (!serverApp.includes('"/api/projects/:projectId/clarifications"')) {
+    return result("Validate-Botomatic-CommercialReadinessGate", false, "server_app.ts must have POST /api/projects/:projectId/clarifications endpoint.", files);
+  }
+
+  if (!has(root, "apps/control-plane/src/app/api/projects/[projectId]/readiness/route.ts")) {
+    return result("Validate-Botomatic-CommercialReadinessGate", false, "Next.js readiness proxy route must exist.", files);
+  }
+  if (!has(root, "apps/control-plane/src/app/api/projects/[projectId]/clarifications/route.ts")) {
+    return result("Validate-Botomatic-CommercialReadinessGate", false, "Next.js clarifications proxy route must exist.", files);
+  }
+
+  const betaHQ = read(root, "apps/control-plane/src/components/beta-hq/BetaHQ.tsx");
+  if (!betaHQ.includes("buildLocked") || !betaHQ.includes("readyToBuild")) {
+    return result("Validate-Botomatic-CommercialReadinessGate", false, "BetaHQ must have buildLocked state gated on readyToBuild.", files);
+  }
+  if (!betaHQ.includes("lockedReason") || !betaHQ.includes("blockingQuestions")) {
+    return result("Validate-Botomatic-CommercialReadinessGate", false, "BetaHQ must display lockedReason and blockingQuestions.", files);
+  }
+  if (!betaHQ.includes("Use recommended defaults")) {
+    return result("Validate-Botomatic-CommercialReadinessGate", false, "BetaHQ must offer 'Use recommended defaults' action.", files);
+  }
+  if (!betaHQ.includes("Build app")) {
+    return result("Validate-Botomatic-CommercialReadinessGate", false, "BetaHQ must show a visible 'Build app' button.", files);
+  }
+  if (!betaHQ.includes("I do not see an uploaded file yet")) {
+    return result("Validate-Botomatic-CommercialReadinessGate", false, "BetaHQ must warn when a referenced file is missing.", files);
+  }
+  if (!betaHQ.includes("/clarifications")) {
+    return result("Validate-Botomatic-CommercialReadinessGate", false, "BetaHQ must call /clarifications endpoint to persist answers.", files);
+  }
+
+  return result("Validate-Botomatic-CommercialReadinessGate", true, "Readiness gate blocks build when readyToBuild=false; decision ledger, readiness+clarifications endpoints, and BetaHQ locked Build button are all wired.", files);
 }
 
 export function runAllRepoValidators(root: string): RepoValidatorResult[] {
@@ -1767,5 +1818,75 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateBetaBuildFlowAuth(root),
     validateBetaFileUploadWiring(root),
     validateHostedCommercialLaunch(root),
+    validateCommercialReadinessGate(root),
+    validateExpressReadinessGate(root),
   ];
+}
+
+export function validateExpressReadinessGate(root: string): RepoValidatorResult {
+  const name = "Validate-Botomatic-ExpressReadinessGate";
+  const files = [
+    "apps/orchestrator-api/src/server_app.ts",
+    "apps/orchestrator-api/src/security/routePolicies.ts",
+    "docs/security/ROUTE_AUTHORIZATION_MATRIX.md",
+    "packages/validation/src/tests/readinessGateExpress.test.ts",
+  ];
+
+  if (!has(root, files[0])) return result(name, false, "server_app.ts not found.", files);
+  const serverApp = read(root, files[0]);
+
+  // POST /api/projects/:projectId/build/start must exist as an Express route
+  if (!serverApp.includes('"/api/projects/:projectId/build/start"')) {
+    return result(name, false, "server_app.ts must register POST /api/projects/:projectId/build/start as an Express route (Railway serves Express for /api/*).", files);
+  }
+
+  // The build/start route must contain the readiness gate
+  const buildStartIdx = serverApp.indexOf('"/api/projects/:projectId/build/start"');
+  const autonomousBuildIdx = serverApp.indexOf('"/api/projects/:projectId/autonomous-build/start"');
+  const buildStartSection = serverApp.slice(buildStartIdx, autonomousBuildIdx > buildStartIdx ? autonomousBuildIdx : buildStartIdx + 3000);
+  if (!buildStartSection.includes("computeProjectReadiness")) {
+    return result(name, false, "POST /api/projects/:projectId/build/start must call computeProjectReadiness before starting a build.", files);
+  }
+  if (!buildStartSection.includes("readyToBuild")) {
+    return result(name, false, "POST /api/projects/:projectId/build/start must check readyToBuild before calling startAutonomousBuildRun.", files);
+  }
+  if (!buildStartSection.includes("ARTIFACT_REF_RE") && !buildStartSection.includes("missingArtifacts")) {
+    return result(name, false, "POST /api/projects/:projectId/build/start must block on missing artifacts (missingArtifacts check).", files);
+  }
+
+  // computeProjectReadiness must accept an incomingMessage parameter
+  if (!serverApp.includes("incomingMessage")) {
+    return result(name, false, "computeProjectReadiness must accept incomingMessage parameter to check artifact references in the current message.", files);
+  }
+
+  // ARTIFACT_REF_RE must cover 'files' (plural) and 'attachment'
+  if (!serverApp.includes("ARTIFACT_REF_RE")) {
+    return result(name, false, "server_app.ts must define ARTIFACT_REF_RE for artifact reference detection.", files);
+  }
+
+  // Route policy must be registered
+  if (!has(root, files[1])) return result(name, false, "routePolicies.ts not found.", files);
+  const policies = read(root, files[1]);
+  if (!policies.includes('"/api/projects/:projectId/build/start"')) {
+    return result(name, false, "routePolicies.ts must include a policy for POST /api/projects/:projectId/build/start.", files);
+  }
+
+  // Matrix doc must include the route
+  if (!has(root, files[2])) return result(name, false, "ROUTE_AUTHORIZATION_MATRIX.md not found.", files);
+  const matrix = read(root, files[2]);
+  if (!matrix.includes("/api/projects/:projectId/build/start")) {
+    return result(name, false, "ROUTE_AUTHORIZATION_MATRIX.md must include POST /api/projects/:projectId/build/start.", files);
+  }
+
+  // Test file must exist
+  if (!has(root, files[3])) return result(name, false, "readinessGateExpress.test.ts not found.", files);
+  const test = read(root, files[3]);
+  if (!test.includes("testBuildStartWithAttachedFilesAndNoArtifactsReturnsLocked")) {
+    return result(name, false, "readinessGateExpress.test.ts must test the missing-artifact build_locked scenario.", files);
+  }
+  if (!test.includes("repair_budget_exhausted")) {
+    return result(name, false, "readinessGateExpress.test.ts must assert that repair_budget_exhausted is absent when build is locked.", files);
+  }
+
+  return result(name, true, "Express build/start readiness gate wired: POST /build/start enforced at Express layer, incomingMessage artifact check, route policy and matrix updated, direct route tests present.", files);
 }

@@ -41,9 +41,14 @@ export function validateNoSecretsBetaProofReadiness(root: string): RepoValidator
     return result(false, `No-secrets scanner is missing required pattern family: ${missingPattern}.`, checks);
   }
 
+  const scannerSrc = fs.readFileSync(path.join(root, checks[0]), "utf8");
+  if (!scannerSrc.includes("isGitignoredLocalDevEnvFile")) {
+    return result(false, "No-secrets scanner is missing isGitignoredLocalDevEnvFile guard — .env.local files would make source scans non-deterministic.", checks);
+  }
+
   return result(
     true,
-    `Generated friends-and-family no-secrets proof with source=${proof.scans.source.scannedFiles}, git_history=${proof.scans.git_history.scannedFiles}, release_evidence=${proof.scans.release_evidence.scannedFiles}, logs=${proof.scans.logs.scannedFiles}, generated_apps=${proof.scans.generated_apps.scannedFiles} scanned files and UI/API redaction fixtures verified.`,
+    `Generated friends-and-family no-secrets proof with source=${proof.scans.source.scannedFiles}, git_history=${proof.scans.git_history.scannedFiles}, release_evidence=${proof.scans.release_evidence.scannedFiles}, logs=${proof.scans.logs.scannedFiles}, generated_apps=${proof.scans.generated_apps.scannedFiles} scanned files; .env.local gitignored files excluded; UI/API redaction fixtures verified.`,
     checks,
   );
 }
