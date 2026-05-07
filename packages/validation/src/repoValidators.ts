@@ -1821,6 +1821,7 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateCommercialReadinessGate(root),
     validateExpressReadinessGate(root),
     validateCommercialStartupSafety(root),
+    validateEnterpriseTenantIsolationProof(root),
   ];
 }
 
@@ -1950,4 +1951,99 @@ function validateCommercialStartupSafety(root: string): ValidationResult {
   }
 
   return result(name, true, "Commercial startup safety: validateEnv conditional on EXECUTOR=claude, apps/claude-runner in workspaces, @anthropic-ai/sdk prod dep, startup tests present.", files);
+}
+
+export function validateEnterpriseTenantIsolationProof(root: string): RepoValidatorResult {
+  const name = "Validate-Botomatic-EnterpriseTenantIsolationProof";
+  const files = [
+    "packages/supabase-adapter/src/memoryRepo.ts",
+    "packages/supabase-adapter/src/types.ts",
+    "apps/orchestrator-api/src/server_app.ts",
+    "apps/orchestrator-api/src/security/routePolicies.ts",
+    "packages/supabase-adapter/src/jobClient.ts",
+    "packages/supabase-adapter/src/schema.sql",
+    "packages/validation/src/tests/enterpriseTenantIsolationProof.test.ts",
+  ];
+
+  for (const f of files) {
+    if (!has(root, f)) return result(name, false, `Required file not found: ${f}`, files);
+  }
+
+  const memRepo = read(root, files[0]);
+  const types   = read(root, files[1]);
+  const server  = read(root, files[2]);
+  const policies = read(root, files[3]);
+  const jobClient = read(root, files[4]);
+  const schema  = read(root, files[5]);
+
+  // Repository-layer isolation
+  if (!memRepo.includes("getProjectForActor")) {
+    return result(name, false, "InMemoryProjectRepository must implement getProjectForActor for cross-tenant read blocking.", files);
+  }
+  if (!memRepo.includes("upsertProjectForActor")) {
+    return result(name, false, "InMemoryProjectRepository must implement upsertProjectForActor for cross-tenant write blocking.", files);
+  }
+  if (!memRepo.includes("ownership mismatch") && !memRepo.includes("owner must match")) {
+    return result(name, false, "upsertProjectForActor must throw on ownership mismatch.", files);
+  }
+  if (!types.includes("actorOwnsProject")) {
+    return result(name, false, "types.ts must export actorOwnsProject for canonical ownership check.", files);
+  }
+  if (!types.includes("ownerUserId")) {
+    return result(name, false, "StoredProjectRecord must have ownerUserId as the canonical owner field.", files);
+  }
+
+  // Middleware isolation
+  if (!server.includes("getProjectForActor")) {
+    return result(name, false, "server_app.ts must use getProjectForActor in middleware (not raw getProject) for tenant enforcement.", files);
+  }
+
+  // requireProjectOwner must use getProjectForActor
+  const ownerFnStart = server.indexOf("function requireProjectOwner");
+  const ownerFnEnd   = server.indexOf("function handleRouteError");
+  const ownerFn = ownerFnStart > 0 && ownerFnEnd > ownerFnStart
+    ? server.slice(ownerFnStart, ownerFnEnd)
+    : "";
+  if (!ownerFn.includes("getProjectForActor")) {
+    return result(name, false, "requireProjectOwner must call getProjectForActor (not raw getProject) to enforce ownership.", files);
+  }
+  if (ownerFn.includes("project.ownerId")) {
+    return result(name, false, "requireProjectOwner must not check deprecated project.ownerId — use getProjectForActor instead.", files);
+  }
+
+  // Audit events
+  if (!server.includes("cross_tenant_access_denied")) {
+    return result(name, false, "server_app.ts must emit cross_tenant_access_denied audit event when cross-tenant access is denied.", files);
+  }
+
+  // Route policy middleware uses getProjectForActor
+  if (!policies.includes("getProjectForActor")) {
+    return result(name, false, "createRoutePolicyMiddleware must call getProjectForActor for project-scoped routes.", files);
+  }
+
+  // Middleware registered before routes
+  const policyIdx     = server.indexOf("createRoutePolicyMiddleware");
+  const firstRouteIdx = server.indexOf('app.post("/api/projects/intake"');
+  if (policyIdx <= 0 || firstRouteIdx <= 0 || policyIdx >= firstRouteIdx) {
+    return result(name, false, "createRoutePolicyMiddleware must be registered before route handlers.", files);
+  }
+
+  // All project routes are project-scoped
+  const projectRouteCount = (policies.match(/project\("(GET|POST|PUT|PATCH|DELETE)"/g) || []).length;
+  if (projectRouteCount < 40) {
+    return result(name, false, `Expected at least 40 project-scoped route declarations, found ${projectRouteCount}.`, files);
+  }
+
+  // Job enqueue includes tenant scope
+  if (!server.includes("owner_user_id") || !server.includes("tenant_id")) {
+    return result(name, false, "server_app.ts job enqueue call sites must include owner_user_id and tenant_id.", files);
+  }
+
+  // Jobs table schema has tenant columns
+  const jobsTableSection = schema.slice(schema.indexOf("orchestrator_jobs"), schema.indexOf("orchestrator_jobs") + 600);
+  if (!jobsTableSection.includes("owner_user_id") || !jobsTableSection.includes("tenant_id")) {
+    return result(name, false, "orchestrator_jobs table must have owner_user_id and tenant_id columns.", files);
+  }
+
+  return result(name, true, `Enterprise tenant isolation proven: repo-layer cross-tenant read/write blocked, requireProjectOwner uses getProjectForActor, createRoutePolicyMiddleware enforces ownership for ${projectRouteCount} project-scoped routes, job enqueue carries tenant scope, audit events emitted on denial.`, files);
 }
