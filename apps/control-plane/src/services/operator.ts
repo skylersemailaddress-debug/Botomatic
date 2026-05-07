@@ -1,18 +1,8 @@
 import { postJson } from "./api";
+import type { SpecQuestion } from "@/types/readiness";
 
-export type OperatorBlockingQuestion = {
-  id: string;
-  field: string;
-  plainEnglish: string;
-  technicalDetail?: string;
-  suggestedDefault: string;
-  label?: string;
-  question: string;
-  category?: string;
-  risk?: string;
-  status?: string;
-  recommendedDefault?: string;
-};
+// Re-export for consumers that need the question type directly
+export type { SpecQuestion };
 
 export type OperatorSendResponse = {
   ok: boolean;
@@ -24,14 +14,10 @@ export type OperatorSendResponse = {
   operatorMessage: string;
   actionResult?: Record<string, unknown>;
   readyToBuild?: boolean;
-  lockedReason?: string;
-  blockingQuestions?: OperatorBlockingQuestion[];
+  lockedReason?: string | null;
+  blockingQuestions?: SpecQuestion[];
   canUseRecommendedDefaults?: boolean;
-  missingArtifacts?: Array<{
-    id?: string;
-    label?: string;
-    reason?: string;
-  }>;
+  missingArtifacts?: string[];
   readinessScore?: number;
 };
 

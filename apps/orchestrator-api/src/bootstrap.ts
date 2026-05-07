@@ -157,6 +157,14 @@ async function start() {
   const app    = buildApp(config);
   registerStandaloneCapabilityRoutes(app);
 
+  console.log(JSON.stringify({
+    event: "spec_completeness_engine_registered",
+    specCompletenessEngine: true,
+    canonicalReadinessContract: true,
+    expressReadinessGate: true,
+    buildStartReadinessGate: true,
+  }));
+
   console.log(
     JSON.stringify({
       event: "api_boot",

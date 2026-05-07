@@ -16,6 +16,8 @@ import {
   BuildContract,
   SpecAssumption,
   SpecRecommendation,
+  SpecCompletenessResult,
+  SpecQuestion,
 } from "../../../packages/spec-engine/src";
 import { matchBlueprintFromText } from "../../../packages/blueprints/src/registry";
 import { planSelfUpgrade, detectArchitectureDrift, runRegressionGuard, SelfUpgradeSpec } from "../../../packages/self-upgrade-engine/src";
@@ -1075,20 +1077,12 @@ function toPlainEnglishQuestion(field: string, question: string): string {
 // computeProjectReadiness returns a structured readiness report without side-effects.
 // It checks: unresolved mustAsk clarifications, missing artifacts referenced in the request or
 // the current incomingMessage (so the gate works even when project.request predates the file reference).
-function computeProjectReadiness(project: StoredProjectRecord, incomingMessage?: string): {
-  projectId: string;
-  readyToBuild: boolean;
-  readinessScore: number;
-  status: string;
-  lockedReason: string | null;
-  blockingQuestions: any[];
-  requiredDecisions: any[];
-  inferredDefaults: any[];
-  recommendedDefaults: any[];
-  acceptedDefaults: any[];
-  missingArtifacts: string[];
+function computeProjectReadiness(project: StoredProjectRecord, incomingMessage?: string): SpecCompletenessResult & {
+  requiredDecisions: unknown[];
+  inferredDefaults: unknown[];
+  recommendedDefaults: unknown[];
+  acceptedDefaults: unknown[];
   buildContractId: string | null;
-  canUseRecommendedDefaults: boolean;
   advancedSections: Record<string, unknown>;
 } {
   const clarifications = getSpecClarifications(project);
@@ -1115,7 +1109,7 @@ function computeProjectReadiness(project: StoredProjectRecord, incomingMessage?:
 
   const readyToBuild = unresolvedMustAsk.length === 0 && missingArtifacts.length === 0;
 
-  let status = "ready_to_build";
+  let status: SpecCompletenessResult["status"] = "ready_to_build";
   let lockedReason: string | null = null;
   if (missingArtifacts.length > 0) {
     status = "build_locked";
@@ -1125,7 +1119,7 @@ function computeProjectReadiness(project: StoredProjectRecord, incomingMessage?:
     lockedReason = `${unresolvedMustAsk.length} required decision${unresolvedMustAsk.length !== 1 ? "s" : ""} must be answered before building.`;
   }
 
-  const blockingQuestions = unresolvedMustAsk.map((q: any) => ({
+  const blockingQuestions: SpecQuestion[] = unresolvedMustAsk.map((q: any) => ({
     id: q.id,
     field: q.field,
     question: q.question,
@@ -2005,6 +1999,10 @@ export function buildApp(config: RuntimeConfig) {
     workerId,
     leaseMs,
     queueMode: "dedicated_jobs_table_parallel",
+    specCompletenessEngine: true,
+    expressReadinessGate: true,
+    buildStartReadinessGate: true,
+    canonicalReadinessContract: true,
     role: auth.role,
     userId: auth.userId,
     issuer: auth.issuer,

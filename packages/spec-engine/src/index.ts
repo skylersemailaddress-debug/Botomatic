@@ -7,3 +7,5 @@ export * from "./specCompleteness";
 export * from "./clarificationPlanner";
 export * from "./buildContract";
 export * from "./specAnalyzer";
+export * from "./specCompletenessContract";
+export * from "./specCompletenessEngine";

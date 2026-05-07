@@ -7,6 +7,7 @@ import { uploadIntakeFile, type FileIntakeResponse, type IntakeResponse } from "
 import { getProjectState, type ProjectStateResponse } from "@/services/projectState";
 import { getProjectRuntimeState, type ProjectRuntimeState } from "@/services/runtimeStatus";
 import { sendOperatorMessage } from "@/services/operator";
+import type { SpecQuestion } from "@/types/readiness";
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -38,14 +39,9 @@ type BuildStartResponse = {
   missingArtifacts?: string[];
 };
 
-type BlockingQuestion = {
-  id: string;
-  field: string;
-  question: string;
-  plainEnglish: string;
-  risk: string;
-  suggestedDefault: string | null;
-};
+// BlockingQuestion is an alias for the canonical SpecQuestion type.
+// Do not redefine locally — import SpecQuestion from @/types/readiness instead.
+type BlockingQuestion = SpecQuestion;
 
 type DecisionEntry = {
   id: string;

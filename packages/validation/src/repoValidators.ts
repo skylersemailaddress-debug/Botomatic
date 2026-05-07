@@ -1820,6 +1820,8 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateHostedCommercialLaunch(root),
     validateCommercialReadinessGate(root),
     validateExpressReadinessGate(root),
+    validateSpecCompletenessEngine(root),
+    validateCanonicalReadinessContract(root),
   ];
 }
 
@@ -1889,4 +1891,97 @@ export function validateExpressReadinessGate(root: string): RepoValidatorResult 
   }
 
   return result(name, true, "Express build/start readiness gate wired: POST /build/start enforced at Express layer, incomingMessage artifact check, route policy and matrix updated, direct route tests present.", files);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Validator #93 — Spec Completeness Engine
+// ─────────────────────────────────────────────────────────────────────────────
+function validateSpecCompletenessEngine(root: string): ValidationResult {
+  const name = "Validate-Botomatic-SpecCompletenessEngine";
+  const files = [
+    "packages/spec-engine/src/specCompletenessContract.ts",
+    "packages/spec-engine/src/specCompletenessEngine.ts",
+    "packages/spec-engine/src/index.ts",
+    "packages/validation/src/tests/specCompletenessEngine.test.ts",
+    "apps/orchestrator-api/src/server_app.ts",
+    "apps/orchestrator-api/src/bootstrap.ts",
+  ];
+
+  if (!has(root, files[0])) return result(name, false, "specCompletenessContract.ts not found.", files);
+  const contract = read(root, files[0]);
+  if (!contract.includes("export type SpecQuestion")) return result(name, false, "specCompletenessContract.ts must export SpecQuestion.", files);
+  if (!contract.includes("export type SpecCompletenessResult")) return result(name, false, "specCompletenessContract.ts must export SpecCompletenessResult.", files);
+  if (!contract.includes("export type UserMode")) return result(name, false, "specCompletenessContract.ts must export UserMode.", files);
+
+  if (!has(root, files[1])) return result(name, false, "specCompletenessEngine.ts not found.", files);
+  const engine = read(root, files[1]);
+  if (!engine.includes("analyzeSpecCompleteness")) return result(name, false, "specCompletenessEngine.ts must export analyzeSpecCompleteness.", files);
+  if (!engine.includes("ARTIFACT_REF_RE")) return result(name, false, "specCompletenessEngine.ts must include artifact reference detection.", files);
+  if (!engine.includes("detectUserMode")) return result(name, false, "specCompletenessEngine.ts must include user mode detection.", files);
+
+  if (!has(root, files[2])) return result(name, false, "spec-engine index.ts not found.", files);
+  const idx = read(root, files[2]);
+  if (!idx.includes("specCompletenessContract")) return result(name, false, "spec-engine index.ts must export specCompletenessContract.", files);
+  if (!idx.includes("specCompletenessEngine")) return result(name, false, "spec-engine index.ts must export specCompletenessEngine.", files);
+
+  if (!has(root, files[3])) return result(name, false, "specCompletenessEngine.test.ts not found.", files);
+  const test = read(root, files[3]);
+  if (!test.includes("testMissingAttachmentFlow")) return result(name, false, "specCompletenessEngine.test.ts must test missing attachment flow.", files);
+  if (!test.includes("testSimpleUserFlow")) return result(name, false, "specCompletenessEngine.test.ts must test simple user flow.", files);
+  if (!test.includes("testNoDuplicateIncompatibleTypes")) return result(name, false, "specCompletenessEngine.test.ts must test for duplicate type detection.", files);
+
+  if (!has(root, files[4])) return result(name, false, "server_app.ts not found.", files);
+  const serverApp = read(root, files[4]);
+  if (!serverApp.includes("specCompletenessEngine: true")) return result(name, false, "server_app.ts /api/health must expose specCompletenessEngine:true.", files);
+  if (!serverApp.includes("canonicalReadinessContract: true")) return result(name, false, "server_app.ts /api/health must expose canonicalReadinessContract:true.", files);
+  if (!serverApp.includes("SpecCompletenessResult")) return result(name, false, "server_app.ts must import SpecCompletenessResult from spec-engine.", files);
+
+  if (!has(root, files[5])) return result(name, false, "bootstrap.ts not found.", files);
+  const bootstrap = read(root, files[5]);
+  if (!bootstrap.includes("spec_completeness_engine_registered")) return result(name, false, "bootstrap.ts must log spec_completeness_engine_registered on startup.", files);
+
+  return result(name, true, "Spec Completeness Engine: analyzeSpecCompleteness registered, canonical contract exported, artifact gate, user mode detection, health flags, startup log, and tests all present.", files);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Validator #94 — Canonical Readiness Contract
+// ─────────────────────────────────────────────────────────────────────────────
+function validateCanonicalReadinessContract(root: string): ValidationResult {
+  const name = "Validate-Botomatic-CanonicalReadinessContract";
+  const files = [
+    "apps/control-plane/src/types/readiness.ts",
+    "apps/control-plane/src/services/operator.ts",
+    "apps/control-plane/src/components/beta-hq/BetaHQ.tsx",
+  ];
+
+  // Control-plane canonical types must exist
+  if (!has(root, files[0])) return result(name, false, "apps/control-plane/src/types/readiness.ts not found — canonical readiness types file missing.", files);
+  const readinessTypes = read(root, files[0]);
+  if (!readinessTypes.includes("export type SpecQuestion")) return result(name, false, "readiness.ts must export SpecQuestion.", files);
+  if (!readinessTypes.includes("suggestedDefault: string | null")) return result(name, false, "SpecQuestion.suggestedDefault must be 'string | null'.", files);
+  if (!readinessTypes.includes("risk: string")) return result(name, false, "SpecQuestion.risk must be 'string'.", files);
+
+  // operator.ts must use SpecQuestion, not define its own incompatible type
+  if (!has(root, files[1])) return result(name, false, "operator.ts not found.", files);
+  const operatorTs = read(root, files[1]);
+  if (operatorTs.includes("export type OperatorBlockingQuestion")) {
+    return result(name, false, "operator.ts must not define OperatorBlockingQuestion — use SpecQuestion from @/types/readiness.", files);
+  }
+  if (!operatorTs.includes("@/types/readiness")) {
+    return result(name, false, "operator.ts must import SpecQuestion from @/types/readiness.", files);
+  }
+
+  // BetaHQ must not define a standalone BlockingQuestion with inline fields
+  if (!has(root, files[2])) return result(name, false, "BetaHQ.tsx not found.", files);
+  const betaHQ = read(root, files[2]);
+  if (!betaHQ.includes("@/types/readiness")) {
+    return result(name, false, "BetaHQ.tsx must import from @/types/readiness.", files);
+  }
+  // Must not have a self-contained BlockingQuestion type definition with id/field fields
+  const localDefMatch = /type BlockingQuestion\s*=\s*\{[^}]*id:\s*string[^}]*field:\s*string/s.exec(betaHQ);
+  if (localDefMatch) {
+    return result(name, false, "BetaHQ.tsx must not define a local BlockingQuestion type with inline fields. Use SpecQuestion alias from @/types/readiness.", files);
+  }
+
+  return result(name, true, "Canonical readiness contract: SpecQuestion in @/types/readiness, operator.ts and BetaHQ.tsx both import canonical type, no incompatible duplicate types.", files);
 }
