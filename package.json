@@ -196,7 +196,10 @@
     "lint": "tsx scripts/repoLint.ts",
     "typecheck": "npm exec --workspace @botomatic/control-plane tsc -- --noEmit -p tsconfig.json --incremental false",
     "beta:rc": "tsx scripts/friendsFamilyBetaRc.ts",
-    "test:orchestration-core-beta-proof": "tsx packages/validation/src/tests/orchestrationCoreBetaProof.test.ts"
+    "test:orchestration-core-beta-proof": "tsx packages/validation/src/tests/orchestrationCoreBetaProof.test.ts",
+    "launch:beta:full": "node scripts/launchBetaFull.mjs",
+    "launch:beta:full:check": "node scripts/launchBetaFull.mjs --check-only",
+    "launch:beta:full:ps": "powershell -ExecutionPolicy Bypass -File scripts/launchBetaFull.ps1"
   },
   "dependencies": {
     "@trigger.dev/sdk": "^4.4.4"
