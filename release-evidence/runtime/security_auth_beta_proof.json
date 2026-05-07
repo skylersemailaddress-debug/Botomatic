@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-07T04:33:42.583Z",
+  "generatedAt": "2026-05-07T13:20:24.591Z",
   "artifact": "release-evidence/runtime/security_auth_beta_proof.json",
   "scope": "Beta/production auth fail-closed startup, mutation, role, and owner checks.",
   "signals": {
