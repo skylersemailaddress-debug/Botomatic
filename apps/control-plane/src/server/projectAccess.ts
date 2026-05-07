@@ -33,20 +33,24 @@ export function getProjectOwner(projectId: string): string | null {
 
 export function getControlPlaneActor(request: NextRequest): { actorId: string; role: ControlPlaneRole } | null {
   // Server-side beta admin bypass for local UI → hosted Railway development sessions.
-  // BOTOMATIC_BETA_AUTH_TOKEN is never sent to the client, so only the Next.js
-  // server process (and its local API routes) can use this bypass. The UI is
-  // already protected by session middleware, so only the authenticated local user
-  // can trigger these requests.
+  // When BOTOMATIC_BETA_AUTH_TOKEN is set in the Next.js server process (by
+  // launchBeta*.ps1) and is a valid JWT (starts with eyJ), ALL requests arriving
+  // at local Next.js route handlers are treated as the beta admin actor.
+  //
+  // The bypass is unconditional — it does NOT inspect the incoming request's
+  // Authorization header. Reason: browsers make requests with no auth header;
+  // gating on the request header causes every browser-originated request to fail
+  // when the header is absent or set to something else.
+  //
+  // Security: BOTOMATIC_BETA_AUTH_TOKEN has no NEXT_PUBLIC_ prefix, so it is
+  // never exposed to client-side bundle code. Only the server process that starts
+  // Next.js (i.e., the launcher) can configure this bypass.
   const betaToken = (process.env.BOTOMATIC_BETA_AUTH_TOKEN || "").trim();
-  if (betaToken) {
-    const authHeader = (request.headers.get("authorization") || "").trim();
-    // Accept: browser session (no auth header) OR proxy-forwarded beta token.
-    if (!authHeader || authHeader === `Bearer ${betaToken}`) {
-      return {
-        actorId: (process.env.BOTOMATIC_BETA_USER_ID || "beta-smoke-admin").trim(),
-        role: "admin",
-      };
-    }
+  if (betaToken && betaToken.startsWith("eyJ")) {
+    return {
+      actorId: (process.env.BOTOMATIC_BETA_USER_ID || "beta-smoke-admin").trim(),
+      role: "admin",
+    };
   }
 
   const actorId = request.headers.get("x-user-id") || request.headers.get("x-botomatic-user-id") || "";
@@ -61,13 +65,48 @@ export function requireControlPlaneProjectAccess(
   projectId: string,
   requiredRole: ControlPlaneRole = "operator"
 ): NextResponse | null {
+  const betaToken = (process.env.BOTOMATIC_BETA_AUTH_TOKEN || "").trim();
+  const tokenConfigured = !!betaToken;
+  const tokenLooksLikeJwt = tokenConfigured && betaToken.startsWith("eyJ");
+
   const actor = getControlPlaneActor(request);
   if (!actor) {
-    return NextResponse.json({ error: "Authenticated actor required" }, { status: 401 });
+    return NextResponse.json(
+      {
+        error: "Authenticated actor required",
+        route: request.nextUrl.pathname,
+        tokenConfigured,
+        tokenLooksLikeJwt,
+        actorResolved: false,
+        actorRole: null,
+        actorIdSource: null,
+        hint: tokenConfigured && !tokenLooksLikeJwt
+          ? "BOTOMATIC_BETA_AUTH_TOKEN is set but does not start with eyJ. Re-run the launcher to refresh the token."
+          : !tokenConfigured
+          ? "BOTOMATIC_BETA_AUTH_TOKEN is not set. Start the UI with npm run launch:beta:full."
+          : "Unexpected: token is valid but actor did not resolve. Check route handler.",
+      },
+      { status: 401 },
+    );
   }
+
   if (roleRank[actor.role] < roleRank[requiredRole]) {
-    return NextResponse.json({ error: "Forbidden", requiredRole, actualRole: actor.role }, { status: 403 });
+    return NextResponse.json(
+      {
+        error: "Forbidden",
+        requiredRole,
+        actualRole: actor.role,
+        route: request.nextUrl.pathname,
+        tokenConfigured,
+        tokenLooksLikeJwt,
+        actorResolved: true,
+        actorRole: actor.role,
+        actorIdSource: tokenConfigured ? "BOTOMATIC_BETA_AUTH_TOKEN bypass" : "x-user-id header",
+      },
+      { status: 403 },
+    );
   }
+
   // Admin actors have global access and bypass per-project owner checks.
   // This is necessary for Railway-created projects that are not registered
   // in the local owner registry.

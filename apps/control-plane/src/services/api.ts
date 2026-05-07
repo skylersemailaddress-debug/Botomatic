@@ -67,7 +67,7 @@ export function buildApiUrl(path: string): string {
 
   if (path.startsWith("/api/")) {
     // In the browser, always keep /api/ paths relative so the Next.js server-side proxy
-    // handles routing and injects auth credentials (BOTOMATIC_BETA_AUTH_TOKEN etc.).
+    // handles routing and injects server-side auth credentials.
     // Never send /api/ calls directly to a remote base URL from client code.
     if (typeof window !== "undefined") {
       return path;

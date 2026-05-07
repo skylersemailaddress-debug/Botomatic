@@ -1483,6 +1483,70 @@ export function validateBetaScriptAsciiGuard(root: string): RepoValidatorResult 
   return result("Validate-Botomatic-BetaScriptAsciiGuard", true, "Both launcher scripts are pure ASCII with no duplicate #Requires lines.", scripts);
 }
 
+export function validateBetaBuildFlowAuth(root: string): RepoValidatorResult {
+  const files = [
+    "apps/control-plane/src/server/projectAccess.ts",
+    "apps/control-plane/src/app/api/projects/[projectId]/runtime/route.ts",
+    "apps/control-plane/src/app/api/projects/[projectId]/build/start/route.ts",
+    "scripts/launchBetaFull.ps1",
+  ];
+
+  for (const rel of files) {
+    if (!has(root, rel)) {
+      return result("Validate-Botomatic-BetaBuildFlowAuth", false, `${rel} does not exist.`, files);
+    }
+  }
+
+  const projectAccess = read(root, "apps/control-plane/src/server/projectAccess.ts");
+  const runtimeRoute = read(root, "apps/control-plane/src/app/api/projects/[projectId]/runtime/route.ts");
+  const buildStart = read(root, "apps/control-plane/src/app/api/projects/[projectId]/build/start/route.ts");
+  const launchFull = read(root, "scripts/launchBetaFull.ps1");
+
+  // Beta bypass must NOT gate on incoming request Authorization header.
+  if (projectAccess.includes("authHeader === `Bearer ${betaToken}`")) {
+    return result("Validate-Botomatic-BetaBuildFlowAuth", false, "projectAccess.ts beta bypass checks incoming auth header against betaToken — this blocks browser requests that arrive with no Authorization header.", files);
+  }
+
+  // Beta bypass must validate JWT format unconditionally.
+  if (!projectAccess.includes('betaToken.startsWith("eyJ")')) {
+    return result("Validate-Botomatic-BetaBuildFlowAuth", false, 'projectAccess.ts beta bypass must check betaToken.startsWith("eyJ") before granting admin.', files);
+  }
+
+  // Diagnostic fields in 401 responses.
+  if (!projectAccess.includes("tokenConfigured") || !projectAccess.includes("tokenLooksLikeJwt") || !projectAccess.includes("actorResolved")) {
+    return result("Validate-Botomatic-BetaBuildFlowAuth", false, "requireControlPlaneProjectAccess 401 response must include tokenConfigured, tokenLooksLikeJwt, and actorResolved diagnostic fields.", files);
+  }
+
+  // Runtime route proxies to Railway in beta mode.
+  if (!runtimeRoute.includes("BOTOMATIC_BETA_AUTH_TOKEN") || !runtimeRoute.includes("x-user-id") || !runtimeRoute.includes("x-tenant-id")) {
+    return result("Validate-Botomatic-BetaBuildFlowAuth", false, "runtime route must proxy to Railway using BOTOMATIC_BETA_AUTH_TOKEN and inject x-user-id / x-tenant-id actor headers.", files);
+  }
+
+  // build/start route injects beta auth headers.
+  if (!buildStart.includes("BOTOMATIC_BETA_AUTH_TOKEN") || !buildStart.includes("x-user-id") || !buildStart.includes("x-tenant-id")) {
+    return result("Validate-Botomatic-BetaBuildFlowAuth", false, "build/start route must inject BOTOMATIC_BETA_AUTH_TOKEN, x-user-id, and x-tenant-id in outbound Railway call.", files);
+  }
+
+  // Launcher sets all env vars consumed by route handlers.
+  const routeHandlerEnvVars = ["BOTOMATIC_BETA_AUTH_TOKEN", "BOTOMATIC_BETA_USER_ID", "BOTOMATIC_BETA_TENANT_ID", "BOTOMATIC_API_BASE_URL"];
+  for (const envVar of routeHandlerEnvVars) {
+    if (!launchFull.includes(envVar)) {
+      return result("Validate-Botomatic-BetaBuildFlowAuth", false, `launchBetaFull.ps1 must set ${envVar} (consumed by local route handlers).`, files);
+    }
+  }
+
+  // BOTOMATIC_BETA_AUTH_TOKEN must not appear in client-accessible files.
+  const clientFiles = ["apps/control-plane/src/services/api.ts", "apps/control-plane/src/components/beta-hq/BetaHQ.tsx"];
+  for (const rel of clientFiles) {
+    if (!has(root, rel)) continue;
+    if (read(root, rel).includes("BOTOMATIC_BETA_AUTH_TOKEN")) {
+      return result("Validate-Botomatic-BetaBuildFlowAuth", false, `${rel} must not reference BOTOMATIC_BETA_AUTH_TOKEN (server-side only env var — no NEXT_PUBLIC_ prefix).`, files);
+    }
+  }
+
+  return result("Validate-Botomatic-BetaBuildFlowAuth", true, "Beta auth bypass is unconditional, runtime proxies to Railway, build/start injects actor headers, no token exposure to client code.", files);
+}
+
 export function runAllRepoValidators(root: string): RepoValidatorResult[] {
   return [
     validateArchitecture(root),
@@ -1572,5 +1636,6 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateBetaLocalLaunchReadiness(root),
     validateBetaFullLaunchReadiness(root),
     validateBetaScriptAsciiGuard(root),
+    validateBetaBuildFlowAuth(root),
   ];
 }
