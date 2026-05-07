@@ -239,11 +239,11 @@ if ($projectId -ne "") {
 Write-Host ""
 Write-Host "-------------------------------------------------" -ForegroundColor DarkGray
 
-$failures = $goNoGo | Where-Object { !$_.Ok }
-if ($failures.Count -eq 0) {
+$failures = @($goNoGo | Where-Object { -not $_.Ok })
+if ($failures.Length -eq 0) {
     Write-Host "  GO -- all preflight checks passed." -ForegroundColor Green
 } else {
-    Write-Host "  NO-GO -- $($failures.Count) check(s) failed:" -ForegroundColor Red
+    Write-Host "  NO-GO -- $($failures.Length) check(s) failed:" -ForegroundColor Red
     foreach ($f in $failures) {
         Write-Host "    * $($f.Label): $($f.Detail)" -ForegroundColor Red
     }
@@ -252,10 +252,10 @@ Write-Host "-------------------------------------------------" -ForegroundColor 
 Write-Host ""
 
 if ($CheckOnly) {
-    exit $(if ($failures.Count -eq 0) { 0 } else { 1 })
+    if ($failures.Length -eq 0) { exit 0 } else { exit 1 }
 }
 
-if ($failures.Count -gt 0) {
+if ($failures.Length -gt 0) {
     Write-Host "Aborting launch due to preflight failures above." -ForegroundColor Red
     exit 1
 }
@@ -297,3 +297,4 @@ Start-Job -ScriptBlock {
 
 Set-Location $repoRoot
 npm run ui:dev
+
