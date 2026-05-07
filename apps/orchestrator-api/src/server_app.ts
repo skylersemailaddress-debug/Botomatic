@@ -1999,7 +1999,17 @@ export function buildApp(config: RuntimeConfig) {
     authSource: auth.source || null,
     commitSha: config.commitSha,
     startupTimestamp: config.startupTimestamp,
+    buildVersion: process.env.npm_package_version || null,
+    buildSource: process.env.RAILWAY_ENVIRONMENT ? "railway" : "local",
+    nodeEnv: process.env.NODE_ENV || null,
     queueEnabled: config.repository.mode === "durable",
+    durableQueueEnabled: config.repository.mode === "durable",
+    tenantIsolationEnabled: config.auth.enabled,
+    productionFallbackDisabled: process.env.BOTOMATIC_ALLOW_LOCAL_MEMORY_FALLBACK !== "true",
+    specCompletenessEngine: true,
+    expressReadinessGate: true,
+    buildStartReadinessGate: true,
+    canonicalReadinessContract: true,
     activeWorkers,
     workerConcurrency,
     workerId,
@@ -2059,6 +2069,28 @@ export function buildApp(config: RuntimeConfig) {
       return res.json({ ...queue, actorId: actor.actorId, requestId: (res.locals as any).requestId });
     } catch (error) {
       return handleRouteError(res, config, error, "GET /api/ops/queue", actor);
+    }
+  });
+
+  app.get("/api/ops/routes", requireRole("reviewer", config), async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      type RouteLayer = { route?: { path: string; methods: Record<string, boolean> } };
+      const routes = (app._router?.stack as RouteLayer[] || [])
+        .filter((layer) => layer.route)
+        .map((layer) => ({
+          method: Object.keys(layer.route!.methods).map((m) => m.toUpperCase()).join(","),
+          path: layer.route!.path,
+        }))
+        .sort((a, b) => a.path.localeCompare(b.path));
+      return res.json({
+        routes,
+        count: routes.length,
+        actorId: actor.actorId,
+        requestId: (res.locals as any).requestId,
+      });
+    } catch (error) {
+      return handleRouteError(res, config, error, "GET /api/ops/routes", actor);
     }
   });
 

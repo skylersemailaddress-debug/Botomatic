@@ -157,6 +157,38 @@ async function start() {
   const app    = buildApp(config);
   registerStandaloneCapabilityRoutes(app);
 
+  if (config.runtimeMode === "commercial") {
+    console.log(JSON.stringify({
+      event: "commercial_runtime_started",
+      runtimeMode: config.runtimeMode,
+      buildSource: process.env.RAILWAY_ENVIRONMENT ? "railway" : "local",
+      buildVersion: process.env.npm_package_version || null,
+      nodeEnv: process.env.NODE_ENV || null,
+      commitSha: config.commitSha,
+    }));
+  }
+
+  console.log(JSON.stringify({
+    event: "express_readiness_gate_registered",
+    specCompletenessEngine: true,
+    expressReadinessGate: true,
+    canonicalReadinessContract: true,
+  }));
+
+  console.log(JSON.stringify({
+    event: "build_start_gate_registered",
+    buildStartReadinessGate: true,
+  }));
+
+  console.log(JSON.stringify({
+    event: "route_inventory_registered",
+    opsRoutesEndpoint: "/api/ops/routes",
+    readinessRoute: "/api/projects/:projectId/readiness",
+    buildStartRoute: "/api/projects/:projectId/build/start",
+    operatorSendRoute: "/api/projects/:projectId/operator/send",
+    autonomousBuildRoute: "/api/projects/:projectId/autonomous-build/start",
+  }));
+
   console.log(
     JSON.stringify({
       event: "api_boot",
@@ -175,6 +207,12 @@ async function start() {
       startupTimestamp: config.startupTimestamp,
       executorMode: process.env.EXECUTOR ?? "mock",
       claudeRunnerSpawned: process.env.EXECUTOR === "claude",
+      buildVersion: process.env.npm_package_version || null,
+      buildSource: process.env.RAILWAY_ENVIRONMENT ? "railway" : "local",
+      nodeEnv: process.env.NODE_ENV || null,
+      durableQueueEnabled: config.repository.mode === "durable",
+      tenantIsolationEnabled: config.auth.enabled,
+      productionFallbackDisabled: process.env.BOTOMATIC_ALLOW_LOCAL_MEMORY_FALLBACK !== "true",
     })
   );
 

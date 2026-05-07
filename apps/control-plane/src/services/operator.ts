@@ -5,11 +5,11 @@ export type OperatorBlockingQuestion = {
   field: string;
   plainEnglish: string;
   technicalDetail?: string;
-  suggestedDefault: string;
+  suggestedDefault: string | null;
   label?: string;
   question: string;
   category?: string;
-  risk?: string;
+  risk: string;
   status?: string;
   recommendedDefault?: string;
 };

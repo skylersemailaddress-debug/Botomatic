@@ -45,6 +45,7 @@ export const ROUTE_AUTHORIZATION_POLICIES: readonly RoutePolicy[] = [
   global("GET", "/api/ops/metrics", "operator", false, true, "Operational metrics can reveal tenant activity and runtime health."),
   global("GET", "/api/ops/errors", "operator", false, true, "Operational errors can contain route, actor, and failure metadata."),
   global("GET", "/api/ops/queue", "operator", false, true, "Queue state can reveal project workload and worker details."),
+  global("GET", "/api/ops/routes", "operator", false, true, "Route inventory reveals all registered endpoints and must be operator-only."),
   global("POST", "/api/projects/intake", "authenticated", true, true, "Creates a tenant-owned project and therefore requires an authenticated actor."),
 
   project("GET", "/api/projects/:projectId/intake/sources", "project_owner", false, "Lists uploaded and linked project source material."),

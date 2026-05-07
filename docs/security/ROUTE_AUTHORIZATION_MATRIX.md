@@ -30,6 +30,7 @@ This matrix is the human-readable view of `apps/orchestrator-api/src/security/ro
 | GET /api/ops/metrics | operator | no | no | yes | Operational metrics can reveal tenant activity and runtime health. |
 | GET /api/ops/errors | operator | no | no | yes | Operational errors can contain route, actor, and failure metadata. |
 | GET /api/ops/queue | operator | no | no | yes | Queue state can reveal project workload and worker details. |
+| GET /api/ops/routes | operator | no | no | yes | Route inventory reveals all registered endpoints and must be operator-only. |
 | POST /api/projects/intake | authenticated | no | yes | yes | Creates a tenant-owned project and therefore requires an authenticated actor. |
 | GET /api/projects/:projectId/intake/sources | project_owner | yes | no | yes | Lists uploaded and linked project source material. |
 | GET /api/projects/:projectId/intake/sources/:sourceId | project_owner | yes | no | yes | Reads project source metadata and extracted context. |

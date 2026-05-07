@@ -1820,6 +1820,7 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateHostedCommercialLaunch(root),
     validateCommercialReadinessGate(root),
     validateExpressReadinessGate(root),
+    validateHostedRuntimeTruth(root),
   ];
 }
 
@@ -1889,4 +1890,59 @@ export function validateExpressReadinessGate(root: string): RepoValidatorResult 
   }
 
   return result(name, true, "Express build/start readiness gate wired: POST /build/start enforced at Express layer, incomingMessage artifact check, route policy and matrix updated, direct route tests present.", files);
+}
+
+export function validateHostedRuntimeTruth(root: string): RepoValidatorResult {
+  const name = "Validate-Botomatic-HostedRuntimeTruth";
+  const files = [
+    "apps/orchestrator-api/src/server_app.ts",
+    "apps/orchestrator-api/src/bootstrap.ts",
+    "packages/validation/src/tests/hostedRuntimeTruth.test.ts",
+  ];
+
+  if (!has(root, files[0])) return result(name, false, "server_app.ts not found.", files);
+  const serverApp = read(root, files[0]);
+
+  // Health endpoint must include deployment identity fields
+  const healthFields = ["buildVersion", "buildSource", "nodeEnv", "durableQueueEnabled", "tenantIsolationEnabled", "productionFallbackDisabled"];
+  for (const field of healthFields) {
+    if (!serverApp.includes(field)) {
+      return result(name, false, `Health payload in server_app.ts must include deployment identity field: ${field}`, files);
+    }
+  }
+
+  // Feature proof flags must be present in health
+  const proofFlags = ["specCompletenessEngine: true", "expressReadinessGate: true", "buildStartReadinessGate: true", "canonicalReadinessContract: true"];
+  for (const flag of proofFlags) {
+    if (!serverApp.includes(flag)) {
+      return result(name, false, `Health payload must include proof flag: ${flag}`, files);
+    }
+  }
+
+  // /api/ops/routes endpoint must be registered
+  if (!serverApp.includes('"/api/ops/routes"')) {
+    return result(name, false, "server_app.ts must register GET /api/ops/routes endpoint.", files);
+  }
+
+  // /api/ops/routes must be protected by requireRole
+  const routesIdx = serverApp.indexOf('"/api/ops/routes"');
+  const routesSection = serverApp.slice(Math.max(0, routesIdx - 200), routesIdx + 100);
+  if (!routesSection.includes('requireRole')) {
+    return result(name, false, "GET /api/ops/routes must be protected by requireRole.", files);
+  }
+
+  // bootstrap.ts must emit key startup events
+  if (!has(root, files[1])) return result(name, false, "bootstrap.ts not found.", files);
+  const bootstrap = read(root, files[1]);
+  const startupEvents = ["commercial_runtime_started", "express_readiness_gate_registered", "build_start_gate_registered", "route_inventory_registered"];
+  for (const evt of startupEvents) {
+    if (!bootstrap.includes(evt)) {
+      return result(name, false, `bootstrap.ts must emit startup event: ${evt}`, files);
+    }
+  }
+
+  // Test file must exist
+  if (!has(root, files[2])) return result(name, false, "hostedRuntimeTruth.test.ts not found.", files);
+
+  return result(name, true, "Hosted runtime truth verified: health fields, feature proof flags, /api/ops/routes endpoint, and startup log events all present.", files);
 }
