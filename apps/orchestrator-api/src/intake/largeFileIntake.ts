@@ -176,6 +176,58 @@ export function formatMaxUploadLabel(maxUploadMb: number): string {
   return `${maxUploadMb} MB`;
 }
 
+function bytesStartWith(buf: Buffer, bytes: number[]): boolean {
+  return bytes.every((byte, index) => buf[index] === byte);
+}
+
+export function sniffUploadContentPolicy(filePath: string, originalName: string, mimeType: string): { ok: true; detected: string } | { ok: false; detected: string; reason: string } {
+  const ext = path.extname(originalName).toLowerCase();
+  const head = fs.existsSync(filePath) ? fs.readFileSync(filePath).subarray(0, 512) : Buffer.alloc(0);
+  const ascii = head.toString("utf8");
+  const detected =
+    bytesStartWith(head, [0x50, 0x4b, 0x03, 0x04]) ? "zip" :
+    bytesStartWith(head, [0x25, 0x50, 0x44, 0x46]) ? "pdf" :
+    bytesStartWith(head, [0x89, 0x50, 0x4e, 0x47]) ? "png" :
+    bytesStartWith(head, [0xff, 0xd8, 0xff]) ? "jpeg" :
+    ascii.startsWith("GIF87a") || ascii.startsWith("GIF89a") ? "gif" :
+    ascii.startsWith("RIFF") && ascii.slice(8, 12) === "WEBP" ? "webp" :
+    ascii.trimStart().startsWith("<svg") ? "svg" :
+    head.includes(0) ? "binary" : "text";
+
+  const expectedByExt: Record<string, string[]> = {
+    ".zip": ["zip"],
+    ".pdf": ["pdf"],
+    ".png": ["png"],
+    ".jpg": ["jpeg"],
+    ".jpeg": ["jpeg"],
+    ".gif": ["gif"],
+    ".webp": ["webp"],
+    ".svg": ["svg", "text"],
+  };
+  const allowed = expectedByExt[ext];
+  if (allowed && !allowed.includes(detected)) {
+    return { ok: false, detected, reason: `Content sniffing rejected ${originalName}: extension ${ext} does not match detected ${detected}.` };
+  }
+  if (detected === "binary" && !["image/png", "image/jpeg", "image/gif", "image/webp", "application/pdf", "application/zip", "application/x-zip-compressed"].includes(mimeType.toLowerCase())) {
+    return { ok: false, detected, reason: "Binary uploads require an explicitly supported binary MIME type." };
+  }
+  return { ok: true, detected };
+}
+
+export type MalwareScanResult = { status: "clean" } | { status: "blocked"; reason: string } | { status: "not_configured"; provider: string };
+
+export function malwareScanningHook(filePath: string, originalName: string): MalwareScanResult {
+  const provider = (process.env.BOTOMATIC_MALWARE_SCANNER || "provider_placeholder").trim();
+  // Commercial deployment hook: wire this to ClamAV, VirusTotal, or the host provider's malware scanner.
+  // Tests and local development use the documented placeholder unless a scanner is configured.
+  if (!provider || provider === "provider_placeholder") return { status: "not_configured", provider: "provider_placeholder" };
+  const marker = fs.existsSync(filePath) ? fs.readFileSync(filePath).subarray(0, 4096).toString("utf8") : "";
+  if (/EICAR-STANDARD-ANTIVIRUS-TEST-FILE|malware-test-signature/i.test(marker) || /EICAR/i.test(originalName)) {
+    return { status: "blocked", reason: "Malware scanner blocked upload signature." };
+  }
+  return { status: "clean" };
+}
+
 export function sanitizeArchivePath(rawPath: string): string {
   const normalizedSlashes = rawPath.replace(/\\/g, "/");
   if (!normalizedSlashes || normalizedSlashes.includes("\0")) {
@@ -316,6 +368,15 @@ export async function processUploadedFile(params: {
 
   await onProgressEvent?.({ type: "validation_started", metadata: { fileName: originalName, mimeType, sizeBytes } });
 
+  const sniffed = sniffUploadContentPolicy(uploadPath, originalName, mimeType);
+  if (!sniffed.ok) {
+    throw new IntakeValidationError(sniffed.reason, "CONTENT_SNIFF_MISMATCH", 400);
+  }
+  const malwareScan = malwareScanningHook(uploadPath, originalName);
+  if (malwareScan.status === "blocked") {
+    throw new IntakeValidationError(malwareScan.reason, "MALWARE_DETECTED", 400);
+  }
+
   const ext = path.extname(originalName).toLowerCase();
   if (ext === ".zip") {
     return processZipUpload({ uploadPath, originalName, mimeType, sizeBytes, workDir, limits, fullRepoAudit, onProgressEvent });
@@ -446,7 +507,13 @@ async function processZipUpload(params: {
       return;
     }
 
-    extractedBytes += entry.uncompressedSize || 0;
+    const compressedSize = Math.max(1, entry.compressedSize || 1);
+    const uncompressedSize = entry.uncompressedSize || 0;
+    if (uncompressedSize > 10 * 1024 * 1024 && uncompressedSize / compressedSize > 100) {
+      throw new IntakeValidationError("Archive compression ratio is suspiciously high.", "ARCHIVE_BOMB_DETECTED", 400);
+    }
+
+    extractedBytes += uncompressedSize;
     if (extractedBytes > limits.maxExtractedBytes) {
       throw new IntakeValidationError(
         `Extracted size too large (max ${limits.maxExtractedMb} MB).`,
