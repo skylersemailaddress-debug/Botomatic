@@ -70,6 +70,7 @@ export const ROUTE_AUTHORIZATION_POLICIES: readonly RoutePolicy[] = [
   project("GET", "/api/projects/:projectId/repo/status", "operator", false, "Reads repository audit and completion status."),
   project("POST", "/api/projects/:projectId/universal/capability-pipeline", "operator", true, "Runs universal capability pipeline planning."),
   project("GET", "/api/projects/:projectId/universal/capability-pipeline", "operator", false, "Reads universal capability pipeline artifacts."),
+  project("POST", "/api/projects/:projectId/build/start", "project_owner", true, "Public build entry point with readiness gate; enforced at Express layer for Railway deployments."),
   project("POST", "/api/projects/:projectId/autonomous-build/start", "operator", true, "Starts autonomous build execution."),
   project("GET", "/api/projects/:projectId/autonomous-build/status", "operator", false, "Reads autonomous build execution state."),
   project("POST", "/api/projects/:projectId/autonomous-build/resume", "operator", true, "Resumes autonomous build execution."),

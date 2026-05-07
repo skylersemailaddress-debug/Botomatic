@@ -54,6 +54,7 @@ This matrix is the human-readable view of `apps/orchestrator-api/src/security/ro
 | GET /api/projects/:projectId/repo/status | operator | yes | no | yes | Reads repository audit and completion status. |
 | POST /api/projects/:projectId/universal/capability-pipeline | operator | yes | yes | yes | Runs universal capability pipeline planning. |
 | GET /api/projects/:projectId/universal/capability-pipeline | operator | yes | no | yes | Reads universal capability pipeline artifacts. |
+| POST /api/projects/:projectId/build/start | project_owner | yes | yes | yes | Public build entry point with readiness gate; enforced at Express layer for Railway deployments. |
 | POST /api/projects/:projectId/autonomous-build/start | operator | yes | yes | yes | Starts autonomous build execution. |
 | GET /api/projects/:projectId/autonomous-build/status | operator | yes | no | yes | Reads autonomous build execution state. |
 | POST /api/projects/:projectId/autonomous-build/resume | operator | yes | yes | yes | Resumes autonomous build execution. |

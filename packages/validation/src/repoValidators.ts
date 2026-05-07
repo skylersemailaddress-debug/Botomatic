@@ -1819,5 +1819,74 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateBetaFileUploadWiring(root),
     validateHostedCommercialLaunch(root),
     validateCommercialReadinessGate(root),
+    validateExpressReadinessGate(root),
   ];
+}
+
+export function validateExpressReadinessGate(root: string): RepoValidatorResult {
+  const name = "Validate-Botomatic-ExpressReadinessGate";
+  const files = [
+    "apps/orchestrator-api/src/server_app.ts",
+    "apps/orchestrator-api/src/security/routePolicies.ts",
+    "docs/security/ROUTE_AUTHORIZATION_MATRIX.md",
+    "packages/validation/src/tests/readinessGateExpress.test.ts",
+  ];
+
+  if (!has(root, files[0])) return result(name, false, "server_app.ts not found.", files);
+  const serverApp = read(root, files[0]);
+
+  // POST /api/projects/:projectId/build/start must exist as an Express route
+  if (!serverApp.includes('"/api/projects/:projectId/build/start"')) {
+    return result(name, false, "server_app.ts must register POST /api/projects/:projectId/build/start as an Express route (Railway serves Express for /api/*).", files);
+  }
+
+  // The build/start route must contain the readiness gate
+  const buildStartIdx = serverApp.indexOf('"/api/projects/:projectId/build/start"');
+  const autonomousBuildIdx = serverApp.indexOf('"/api/projects/:projectId/autonomous-build/start"');
+  const buildStartSection = serverApp.slice(buildStartIdx, autonomousBuildIdx > buildStartIdx ? autonomousBuildIdx : buildStartIdx + 3000);
+  if (!buildStartSection.includes("computeProjectReadiness")) {
+    return result(name, false, "POST /api/projects/:projectId/build/start must call computeProjectReadiness before starting a build.", files);
+  }
+  if (!buildStartSection.includes("readyToBuild")) {
+    return result(name, false, "POST /api/projects/:projectId/build/start must check readyToBuild before calling startAutonomousBuildRun.", files);
+  }
+  if (!buildStartSection.includes("ARTIFACT_REF_RE") && !buildStartSection.includes("missingArtifacts")) {
+    return result(name, false, "POST /api/projects/:projectId/build/start must block on missing artifacts (missingArtifacts check).", files);
+  }
+
+  // computeProjectReadiness must accept an incomingMessage parameter
+  if (!serverApp.includes("incomingMessage")) {
+    return result(name, false, "computeProjectReadiness must accept incomingMessage parameter to check artifact references in the current message.", files);
+  }
+
+  // ARTIFACT_REF_RE must cover 'files' (plural) and 'attachment'
+  if (!serverApp.includes("ARTIFACT_REF_RE")) {
+    return result(name, false, "server_app.ts must define ARTIFACT_REF_RE for artifact reference detection.", files);
+  }
+
+  // Route policy must be registered
+  if (!has(root, files[1])) return result(name, false, "routePolicies.ts not found.", files);
+  const policies = read(root, files[1]);
+  if (!policies.includes('"/api/projects/:projectId/build/start"')) {
+    return result(name, false, "routePolicies.ts must include a policy for POST /api/projects/:projectId/build/start.", files);
+  }
+
+  // Matrix doc must include the route
+  if (!has(root, files[2])) return result(name, false, "ROUTE_AUTHORIZATION_MATRIX.md not found.", files);
+  const matrix = read(root, files[2]);
+  if (!matrix.includes("/api/projects/:projectId/build/start")) {
+    return result(name, false, "ROUTE_AUTHORIZATION_MATRIX.md must include POST /api/projects/:projectId/build/start.", files);
+  }
+
+  // Test file must exist
+  if (!has(root, files[3])) return result(name, false, "readinessGateExpress.test.ts not found.", files);
+  const test = read(root, files[3]);
+  if (!test.includes("testBuildStartWithAttachedFilesAndNoArtifactsReturnsLocked")) {
+    return result(name, false, "readinessGateExpress.test.ts must test the missing-artifact build_locked scenario.", files);
+  }
+  if (!test.includes("repair_budget_exhausted")) {
+    return result(name, false, "readinessGateExpress.test.ts must assert that repair_budget_exhausted is absent when build is locked.", files);
+  }
+
+  return result(name, true, "Express build/start readiness gate wired: POST /build/start enforced at Express layer, incomingMessage artifact check, route policy and matrix updated, direct route tests present.", files);
 }

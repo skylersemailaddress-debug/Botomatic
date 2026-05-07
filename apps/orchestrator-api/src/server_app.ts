@@ -1046,8 +1046,9 @@ function toPlainEnglishQuestion(field: string, question: string): string {
 }
 
 // computeProjectReadiness returns a structured readiness report without side-effects.
-// It checks: unresolved mustAsk clarifications, missing artifacts referenced in the request.
-function computeProjectReadiness(project: StoredProjectRecord): {
+// It checks: unresolved mustAsk clarifications, missing artifacts referenced in the request or
+// the current incomingMessage (so the gate works even when project.request predates the file reference).
+function computeProjectReadiness(project: StoredProjectRecord, incomingMessage?: string): {
   projectId: string;
   readyToBuild: boolean;
   readinessScore: number;
@@ -1074,12 +1075,15 @@ function computeProjectReadiness(project: StoredProjectRecord): {
     return !e.userAnswer && !e.acceptedDefault;
   });
 
-  // Check for referenced-but-missing artifacts
-  const request = (project.request || "").toLowerCase();
-  const referencesAttachment = /\b(attached|the file|my file|uploaded file|attached file|this file|include the file)\b/.test(request);
+  // Check for referenced-but-missing artifacts.
+  // We check both project.request AND the current incomingMessage so the gate fires even when
+  // the user says "build the attached files" in a message that wasn't the original project request.
+  const ARTIFACT_REF_RE = /\b(attached|attachment|the files?|my files?|uploaded files?|attached files?|this file|include the file|the attached)\b/i;
+  const combinedText = [project.request || "", incomingMessage || ""].join(" ");
+  const referencesAttachment = ARTIFACT_REF_RE.test(combinedText);
   const hasArtifacts = Object.values(getIntakeArtifacts(project) || {}).length > 0;
   const missingArtifacts: string[] = referencesAttachment && !hasArtifacts
-    ? ["User referenced an attached file but no file has been uploaded yet"]
+    ? ["I do not see an uploaded file yet — please upload the file before building, or describe your project in text instead."]
     : [];
 
   const readyToBuild = unresolvedMustAsk.length === 0 && missingArtifacts.length === 0;
@@ -3253,13 +3257,98 @@ export function buildApp(config: RuntimeConfig) {
     }
   });
 
+  // ── build/start: the public BetaHQ → Express entry point for starting a build ──
+  // Railway routes /api/* directly to Express, so this route must live here.
+  // It enforces the readiness gate before delegating to startAutonomousBuildRun.
+  app.post("/api/projects/:projectId/build/start", async (req, res) => {
+    const actor = await getRequestActor(req, config);
+    try {
+      const project = await repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+
+      const message = String((req.body as any)?.message || (req.body as any)?.inputText || "");
+      const artifactIds: string[] = Array.isArray((req.body as any)?.artifactIds) ? (req.body as any).artifactIds : [];
+
+      // Attach artifact IDs that were uploaded in this request but not yet in project intake.
+      for (const aid of artifactIds) {
+        const existing = getIntakeArtifacts(project);
+        if (!existing[aid]) {
+          existing[aid] = { artifactId: aid, originalName: aid, uploadedAt: now() };
+          setIntakeArtifacts(project, existing);
+        }
+      }
+
+      // Run spec analysis so readiness sees up-to-date clarifications.
+      const analysisText = [project.request || "", buildIntakeContext(project), message].filter(Boolean).join("\n\n");
+      if (analysisText.trim()) {
+        const bp = matchBlueprintFromText(analysisText);
+        const analyzed = analyzeSpec({ appName: project.name, request: analysisText, blueprint: bp, actorId: actor.actorId });
+        setSpecClarifications(project, analyzed.clarifications);
+        if (!getMasterSpec(project)) setMasterSpec(project, mergeSpecWithExisting(null as any, analyzed.spec));
+      }
+
+      // READINESS GATE: check with the incoming message so artifact references in the
+      // request body trigger the missing-artifact block even when project.request differs.
+      const readiness = computeProjectReadiness(project, message);
+      if (!readiness.readyToBuild) {
+        await persistProject(config, project);
+        return res.json({
+          ok: true,
+          status: readiness.status,
+          readyToBuild: false,
+          lockedReason: readiness.lockedReason,
+          blockingQuestions: readiness.blockingQuestions,
+          canUseRecommendedDefaults: readiness.canUseRecommendedDefaults,
+          missingArtifacts: readiness.missingArtifacts,
+          readinessScore: readiness.readinessScore,
+          actorId: actor.actorId,
+        });
+      }
+
+      const runId = `${project.projectId}_autonomous_${Date.now()}`;
+      const run = startAutonomousBuildRun({
+        runId,
+        specInput: {
+          sourceType: "multi_file_spec",
+          rawText: analysisText || project.request || "",
+          fileNames: Object.values(getIntakeArtifacts(project) || {}).map((a: any) => String(a?.originalName || "")).filter(Boolean),
+        },
+        repairBudget: 3,
+        safeDefaults: Boolean((req.body as any)?.safeDefaults ?? true),
+      });
+
+      setAutonomousBuildRun(project, run);
+      emitEvent(project as any, {
+        id: `evt_${Date.now()}`,
+        projectId: project.projectId,
+        type: "autonomous_build_started",
+        actorId: actor.actorId,
+        timestamp: now(),
+        metadata: { runId: run.runId, triggeredBy: "build/start" },
+      });
+      await persistProject(config, project);
+      return res.json({
+        ok: true,
+        projectId: project.projectId,
+        status: run.status,
+        jobId: run.runId,
+        message: "Build triggered on Railway",
+        raw: { run },
+        actorId: actor.actorId,
+      });
+    } catch (error) {
+      return handleRouteError(res, config, error, "POST /api/projects/:projectId/build/start", actor);
+    }
+  });
+
   app.post("/api/projects/:projectId/autonomous-build/start", requireRole("reviewer", config), async (req, res) => {
     const actor = await getRequestActor(req, config);
     try {
       const project = await repo.getProject(req.params.projectId);
       if (!project) return res.status(404).json({ error: "Project not found" });
 
-      const inputText = String((req.body as any)?.inputText || project.request || "");
+      // Accept both `message` (BetaHQ) and `inputText` (internal callers).
+      const inputText = String((req.body as any)?.message || (req.body as any)?.inputText || project.request || "");
 
       // Analyze spec now so readiness can see up-to-date clarifications.
       if (inputText || project.request) {
@@ -3273,7 +3362,8 @@ export function buildApp(config: RuntimeConfig) {
       }
 
       // READINESS GATE: block build if high-risk decisions are unresolved.
-      const readiness = computeProjectReadiness(project);
+      // Pass inputText so missing-artifact check covers the current message, not just project.request.
+      const readiness = computeProjectReadiness(project, inputText);
       if (!readiness.readyToBuild) {
         await persistProject(config, project);
         return res.json({
@@ -3472,7 +3562,8 @@ export function buildApp(config: RuntimeConfig) {
         const shouldSafeDefault = /(use safe defaults|stop only for secrets or approval)/.test(message.toLowerCase());
 
         // READINESS GATE: check using freshly analyzed clarifications (set above).
-        let readiness = computeProjectReadiness(project);
+        // Pass message so attachment references in the current message trigger missing-artifact block.
+        let readiness = computeProjectReadiness(project, message);
         if (!readiness.readyToBuild) {
           // If user said "use safe defaults" and all blockers have recommended defaults, auto-accept them.
           if (shouldSafeDefault && readiness.canUseRecommendedDefaults) {
@@ -3483,7 +3574,7 @@ export function buildApp(config: RuntimeConfig) {
               }
             }
             setDecisionLedger(project, ledger);
-            readiness = computeProjectReadiness(project);
+            readiness = computeProjectReadiness(project, message);
           }
           if (!readiness.readyToBuild) {
             await persistProject(config, project);
@@ -3546,7 +3637,7 @@ export function buildApp(config: RuntimeConfig) {
           if (!["queued", "running", "succeeded"].includes(String(project.status))) {
             // Secondary readiness guard on the compiled project (defensive — primary gate above should already block).
             const compiled = compileProjectWithIntake(project);
-            const compiledReadiness = computeProjectReadiness(compiled);
+            const compiledReadiness = computeProjectReadiness(compiled, message);
             if (!compiledReadiness.readyToBuild) {
               await repo.upsertProject(compiled);
               const blockerLines = run.humanBlockers.filter((b) => !b.approved).map((b) => b.detail);
