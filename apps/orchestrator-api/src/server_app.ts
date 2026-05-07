@@ -2597,10 +2597,10 @@ export function buildApp(config: RuntimeConfig) {
     }
   };
 
-  app.get("/api/ops/metrics", requireRole("operator", config), respondOpsMetrics);
+  app.get("/api/ops/metrics", requireRole("reviewer", config), respondOpsMetrics);
   app.get("/ops/metrics", requireRole("operator", config), respondOpsMetrics);
 
-  app.get("/api/ops/errors", requireRole("operator", config), async (req, res) => {
+  app.get("/api/ops/errors", requireRole("reviewer", config), async (req, res) => {
     const actor = await getRequestActor(req, config);
     try {
       return res.json({
@@ -2614,7 +2614,7 @@ export function buildApp(config: RuntimeConfig) {
     }
   });
 
-  app.get("/api/ops/queue", requireRole("operator", config), async (req, res) => {
+  app.get("/api/ops/queue", requireRole("reviewer", config), async (req, res) => {
     const actor = await getRequestActor(req, config);
     try {
       const queue = await buildOpsQueue(config);
