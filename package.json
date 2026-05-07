@@ -15,7 +15,7 @@
     "ui:build": "npm --prefix apps/control-plane run build",
     "ui:start": "npm --prefix apps/control-plane run start",
     "control-plane:dev": "concurrently \"npm run api:dev\" \"npm run ui:dev\"",
-    "validate:all": "tsx packages/validation/src/cli.ts",
+    "validate:all": "tsx packages/validation/src/cli.ts && npm run -s validate:commercial-observability",
     "validate:fast": "tsx packages/validation/src/cli.ts --fast",
     "validate:changed": "tsx packages/validation/src/cli.ts --changed",
     "validate:behavioral": "tsx packages/validation/src/runtime/cli.ts",
@@ -154,9 +154,10 @@
     "test:ui-generated-app-runtime-smoke-model": "tsx packages/ui-preview-engine/src/tests/uiGeneratedAppRuntimeSmokeModel.test.ts",
     "test:ui-generated-app-runtime-smoke-planner": "tsx packages/ui-preview-engine/src/tests/uiGeneratedAppRuntimeSmokePlanner.test.ts",
     "test:generated-app-runtime-smoke-runner": "tsx packages/validation/src/tests/generatedAppRuntimeSmokeRunner.test.ts",
-    "test": "npm run -s test:wave-025 && npm run -s test:wave-026 && npm run -s test:security-auth-beta && npm run -s test:durable-fail-closed-beta && npm run -s test:orchestration-core-beta-proof && npm run -s test:beta-internal-guard && npm run -s test:beta-local-launch && npm run -s test:beta-full-launch && npm run -s test:beta-script-ascii && npm run -s test:beta-build-flow-auth && npm run -s test:beta-file-upload-wiring && npm run -s test:hosted-commercial-launch && npm run -s test:commercial-readiness-gate && npm run -s test:no-secrets-beta-proof && npm run -s test:readiness-gate-express && npm run -s test:commercial-security-hardening",
+    "test": "npm run -s test:wave-025 && npm run -s test:wave-026 && npm run -s test:security-auth-beta && npm run -s test:durable-fail-closed-beta && npm run -s test:orchestration-core-beta-proof && npm run -s test:beta-internal-guard && npm run -s test:beta-local-launch && npm run -s test:beta-full-launch && npm run -s test:beta-script-ascii && npm run -s test:beta-build-flow-auth && npm run -s test:beta-file-upload-wiring && npm run -s test:hosted-commercial-launch && npm run -s test:commercial-readiness-gate && npm run -s test:no-secrets-beta-proof && npm run -s test:readiness-gate-express && npm run -s test:commercial-security-hardening && npm run -s test:commercial-observability-support",
     "test:readiness-gate-express": "tsx packages/validation/src/tests/readinessGateExpress.test.ts",
     "test:commercial-security-hardening": "tsx packages/validation/src/tests/commercialSecurityHardening.test.ts",
+    "test:commercial-observability-support": "tsx packages/validation/src/tests/commercialObservabilitySupport.test.ts",
     "test:beta-internal-guard": "tsx packages/validation/src/tests/betaInternalStringGuard.test.ts",
     "test:beta-local-launch": "tsx packages/validation/src/tests/betaLocalLaunchReadiness.test.ts",
     "test:beta-full-launch": "tsx packages/validation/src/tests/betaFullLaunchReadiness.test.ts",
@@ -189,6 +190,7 @@
     "test:tenant-isolation": "tsx packages/validation/src/tests/tenantIsolation.test.ts",
     "beta:readiness": "npm run -s test:tenant-isolation && npm run -s test:security-auth-beta && npm run -s test:durable-fail-closed-beta && npm run -s proof:no-secrets-beta && tsx scripts/validateBetaReadiness.ts",
     "validate:route-auth": "tsx packages/validation/src/repoValidators/routeAuthorizationReadiness.ts",
+    "validate:commercial-observability": "ts-node scripts/validate-commercial-observability.ts",
     "proof:no-secrets-beta": "tsx packages/validation/src/runtime/noSecretsBetaProof.ts",
     "test:no-secrets-beta-proof": "tsx packages/validation/src/tests/noSecretsBetaProof.test.ts",
     "beta:gate": "npm run -s build && npm run -s test && npm run -s validate:all && npm run -s beta:readiness",
@@ -210,6 +212,7 @@
   "devDependencies": {
     "@trigger.dev/build": "^4.4.4",
     "concurrently": "^9.0.1",
+    "ts-node": "^10.9.2",
     "tsx": "^4.19.2"
   }
 }
