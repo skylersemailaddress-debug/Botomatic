@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-06T23:42:18.856Z",
+  "generatedAt": "2026-05-07T00:28:01.168Z",
   "artifact": "release-evidence/runtime/durable_fail_closed_beta_proof.json",
   "scope": "Durable storage fail-closed behavior for beta/production and explicit local memory fallback.",
   "signals": {
