@@ -141,6 +141,7 @@ function run() {
     "OPENAI_API_KEY",
     "GOOGLE_AI_API_KEY",
     "SUPABASE_SERVICE_ROLE_KEY",
+    "NEXT_PUBLIC_BOTOMATIC_API_TOKEN",
   ];
   for (const clientFile of clientFiles) {
     if (!has(clientFile)) continue;
