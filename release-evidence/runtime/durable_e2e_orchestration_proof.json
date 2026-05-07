@@ -1,0 +1,189 @@
+{
+  "status": "passed",
+  "generatedAt": "2026-05-07T20:46:30.979Z",
+  "storageMode": "durable-file",
+  "artifactPath": "release-evidence/runtime/durable_e2e_orchestration_proof.json",
+  "signals": {
+    "p1_intake_persisted_durable": {
+      "passed": true,
+      "evidence": {
+        "projectId": "durable-e2e-proof-project",
+        "storageMode": "durable-file",
+        "persistedStatus": "intake_created"
+      }
+    },
+    "p2_spec_completeness_blocks_build": {
+      "passed": true,
+      "evidence": {
+        "unresolvedCount": 1,
+        "sampleFields": [
+          "auth/security"
+        ],
+        "readyToBuild": false
+      }
+    },
+    "p3_readiness_gate_blocks_premature_build": {
+      "passed": true,
+      "evidence": {
+        "contractId": "contract_durable-e2e-proof-project_1778186790942",
+        "readyToBuild": false,
+        "blockerCount": 2
+      }
+    },
+    "p4_approve_defaults_yields_complete_build_spec": {
+      "passed": true,
+      "evidence": {
+        "contractId": "contract_durable-e2e-proof-project_1778186790942",
+        "approvedAt": "2026-05-07T20:46:30.942Z",
+        "readyToBuild": true
+      }
+    },
+    "p5_spec_completeness_ready_after_approval": {
+      "passed": true,
+      "evidence": {
+        "unresolvedCount": 0,
+        "readyToBuild": true
+      }
+    },
+    "p6_autonomous_build_run_started": {
+      "passed": true,
+      "evidence": {
+        "runId": "run_e2e_durable-e2e-proof-project",
+        "status": "failed",
+        "milestoneCount": 11,
+        "completedMilestones": 0
+      }
+    },
+    "p7_duplicate_build_start_idempotent": {
+      "passed": true,
+      "evidence": {
+        "existingRunId": "run_e2e_durable-e2e-proof-project",
+        "duplicateBlocked": true
+      }
+    },
+    "p8_plan_created_and_queue_idempotent": {
+      "passed": true,
+      "evidence": {
+        "packetCount": 35,
+        "queuedJobCount": 2,
+        "firstJobId": "job_durable-e2e-proof-project_durable-e2e-proof-project-m1-p1",
+        "idempotentEnqueue": true
+      }
+    },
+    "p9_transient_failure_retried": {
+      "passed": true,
+      "evidence": {
+        "failedAttempt": 1,
+        "succeededAttempt": 2,
+        "jobId": "job_durable-e2e-proof-project_durable-e2e-proof-project-m1-p1",
+        "retryStatus": "queued"
+      }
+    },
+    "p10_lease_expiry_reclaimed": {
+      "passed": true,
+      "evidence": {
+        "originalWorkerId": "worker_lease_test",
+        "reclaimingWorkerId": "worker_reclaim_after_lease_expiry",
+        "jobId": "job_durable-e2e-proof-project_durable-e2e-proof-project-m1-p1",
+        "requeued": "queued"
+      }
+    },
+    "p11_checkpoint_survives_restart": {
+      "passed": true,
+      "evidence": {
+        "jobsBeforeRestart": 2,
+        "jobsAfterRestart": 2,
+        "contractSurvived": true,
+        "runStateSurvived": true
+      }
+    },
+    "p12_autonomous_build_resumed": {
+      "passed": true,
+      "evidence": {
+        "resumedStatus": "failed",
+        "completedMilestones": 0,
+        "finalReleaseAssembled": false
+      }
+    },
+    "p13_execute_materialize_validate": {
+      "passed": true,
+      "evidence": {
+        "executor": "deterministic_e2e_executor",
+        "workspacePath": "/home/user/Botomatic/release-evidence/runtime/durable-e2e/generated-apps/durable-e2e-proof-project/job_durable-e2e-proof-project_durable-e2e-proof-project-m2-p2",
+        "serverMjsExists": true,
+        "validationStatus": "passed",
+        "jobId": "job_durable-e2e-proof-project_durable-e2e-proof-project-m2-p2"
+      }
+    },
+    "p14_final_state_consistency": {
+      "passed": true,
+      "evidence": {
+        "noDuplicateJobs": true,
+        "noLostJobs": true,
+        "noInMemoryFallback": true,
+        "contractPersisted": true,
+        "runStatePersisted": true,
+        "evidenceMachineReadable": true,
+        "packetFailureCountAccurate": true,
+        "completedPackets": 1,
+        "totalPackets": 35,
+        "totalJobs": 2
+      }
+    }
+  },
+  "project": {
+    "projectId": "durable-e2e-proof-project",
+    "status": "completed",
+    "packetCount": 35,
+    "completedPackets": 1
+  },
+  "queue": {
+    "beforeRestart": 2,
+    "afterRestart": 2,
+    "afterCompletion": 2,
+    "jobs": [
+      {
+        "jobId": "job_durable-e2e-proof-project_durable-e2e-proof-project-m1-p1",
+        "projectId": "durable-e2e-proof-project",
+        "packetId": "durable-e2e-proof-project-m1-p1",
+        "status": "running",
+        "workerId": "worker_reclaim_after_lease_expiry",
+        "claimedAt": "2026-05-07T20:46:30.967Z",
+        "completedAt": "2026-05-07T20:46:30.964Z",
+        "lastError": null,
+        "createdAt": "2026-05-07T20:46:30.951Z",
+        "updatedAt": "2026-05-07T20:46:30.967Z"
+      },
+      {
+        "jobId": "job_durable-e2e-proof-project_durable-e2e-proof-project-m2-p2",
+        "projectId": "durable-e2e-proof-project",
+        "packetId": "durable-e2e-proof-project-m2-p2",
+        "status": "succeeded",
+        "workerId": "worker_main_execution",
+        "claimedAt": "2026-05-07T20:46:30.972Z",
+        "completedAt": "2026-05-07T20:46:30.974Z",
+        "lastError": null,
+        "createdAt": "2026-05-07T20:46:30.951Z",
+        "updatedAt": "2026-05-07T20:46:30.974Z"
+      }
+    ]
+  },
+  "preview": {
+    "projectId": "durable-e2e-proof-project",
+    "status": "completed",
+    "projectPath": "/home/user/Botomatic/release-evidence/runtime/durable-e2e/generated-apps/durable-e2e-proof-project/job_durable-e2e-proof-project_durable-e2e-proof-project-m2-p2",
+    "buildStatus": "passed"
+  },
+  "evidence": {
+    "storePath": "/home/user/Botomatic/release-evidence/runtime/durable-e2e/durable-state.json",
+    "workspacePath": "/home/user/Botomatic/release-evidence/runtime/durable-e2e/generated-apps/durable-e2e-proof-project/job_durable-e2e-proof-project_durable-e2e-proof-project-m2-p2",
+    "validationStatus": "passed",
+    "contractId": "contract_durable-e2e-proof-project_1778186790942",
+    "runId": "run_e2e_durable-e2e-proof-project"
+  },
+  "failureInjection": {
+    "transientPacketFailure": true,
+    "leaseExpiryReclaim": true,
+    "duplicateBuildStartBlocked": true
+  }
+}

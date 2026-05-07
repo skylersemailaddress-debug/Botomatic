@@ -8,9 +8,9 @@ import { runValidation } from "../../validation/src/runner";
 import type { ExecutorAdapter, ExecutorContext, ExecutorResult } from "../../executor-adapters/src/types";
 import type { StoredProjectRecord } from "../../supabase-adapter/src/types";
 
-type DurableJobStatus = "queued" | "running" | "succeeded" | "failed";
+export type DurableJobStatus = "queued" | "running" | "succeeded" | "failed";
 
-type DurableJob = {
+export type DurableJob = {
   jobId: string;
   projectId: string;
   packetId: string;
@@ -70,7 +70,7 @@ function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
 }
 
-class JsonDurableStore {
+export class JsonDurableStore {
   constructor(private readonly filePath: string) {
     fs.mkdirSync(path.dirname(filePath), { recursive: true });
     if (!fs.existsSync(filePath)) {
@@ -167,6 +167,24 @@ class JsonDurableStore {
       .sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.jobId.localeCompare(b.jobId))
       .map(clone);
   }
+
+  releaseForRetry(jobId: string): DurableJob {
+    const state = this.read();
+    const entry = Object.entries(state.jobs).find(([, job]) => job.jobId === jobId);
+    if (!entry) throw new Error(`Durable job not found for retry release: ${jobId}`);
+    const [key, job] = entry;
+    const released: DurableJob = {
+      ...job,
+      status: "queued",
+      workerId: null,
+      claimedAt: null,
+      lastError: null,
+      updatedAt: now(),
+    };
+    state.jobs[key] = released;
+    this.write(state);
+    return clone(released);
+  }
 }
 
 class LocalFilesystemExecutor implements ExecutorAdapter {
@@ -221,7 +239,7 @@ function materializeOutput(outputRoot: string, projectId: string, jobId: string,
   return manifest;
 }
 
-function makeProject(projectId: string, request: string): StoredProjectRecord {
+export function makeProject(projectId: string, request: string): StoredProjectRecord {
   const timestamp = now();
   return {
     projectId,

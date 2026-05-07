@@ -1821,6 +1821,7 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateCommercialReadinessGate(root),
     validateExpressReadinessGate(root),
     validateHostedRuntimeTruth(root),
+    validateDurableE2EOrchestrationProof(root),
   ];
 }
 
@@ -1945,4 +1946,81 @@ export function validateHostedRuntimeTruth(root: string): RepoValidatorResult {
   if (!has(root, files[2])) return result(name, false, "hostedRuntimeTruth.test.ts not found.", files);
 
   return result(name, true, "Hosted runtime truth verified: health fields, feature proof flags, /api/ops/routes endpoint, and startup log events all present.", files);
+}
+
+export function validateDurableE2EOrchestrationProof(root: string): RepoValidatorResult {
+  const name = "Validate-Botomatic-DurableE2EOrchestrationProof";
+  const files = [
+    "release-evidence/runtime/durable_e2e_orchestration_proof.json",
+    "scripts/proof-durable-e2e.ts",
+    "packages/orchestration-core/src/durableOrchestrationCore.ts",
+  ];
+
+  if (!has(root, files[0])) return result(name, false, "durable_e2e_orchestration_proof.json not found — run npm run proof:durable-e2e.", files);
+  const proofText = read(root, files[0]);
+  let proof: Record<string, unknown>;
+  try {
+    proof = JSON.parse(proofText);
+  } catch {
+    return result(name, false, "durable_e2e_orchestration_proof.json is not valid JSON.", files);
+  }
+
+  if (proof.status !== "passed") {
+    return result(name, false, `Durable E2E proof status is "${proof.status}", expected "passed".`, files);
+  }
+
+  if (proof.storageMode !== "durable-file") {
+    return result(name, false, `Durable E2E proof storageMode is "${proof.storageMode}", must be "durable-file" (not in-memory).`, files);
+  }
+
+  const signals = (proof.signals as Record<string, { passed: boolean }>) || {};
+  const requiredSignals = [
+    "p1_intake_persisted_durable",
+    "p2_spec_completeness_blocks_build",
+    "p3_readiness_gate_blocks_premature_build",
+    "p4_approve_defaults_yields_complete_build_spec",
+    "p5_spec_completeness_ready_after_approval",
+    "p6_autonomous_build_run_started",
+    "p7_duplicate_build_start_idempotent",
+    "p8_plan_created_and_queue_idempotent",
+    "p9_transient_failure_retried",
+    "p10_lease_expiry_reclaimed",
+    "p11_checkpoint_survives_restart",
+    "p12_autonomous_build_resumed",
+    "p13_execute_materialize_validate",
+    "p14_final_state_consistency",
+  ];
+  for (const sigName of requiredSignals) {
+    if (!signals[sigName]) return result(name, false, `Durable E2E proof missing required signal: ${sigName}`, files);
+    if (!signals[sigName].passed) return result(name, false, `Durable E2E proof signal failed: ${sigName}`, files);
+  }
+
+  const failureInjection = (proof.failureInjection as Record<string, boolean>) || {};
+  if (!failureInjection.transientPacketFailure) {
+    return result(name, false, "Durable E2E proof must show transientPacketFailure=true in failureInjection.", files);
+  }
+  if (!failureInjection.duplicateBuildStartBlocked) {
+    return result(name, false, "Durable E2E proof must show duplicateBuildStartBlocked=true in failureInjection.", files);
+  }
+
+  if (!has(root, files[1])) return result(name, false, "scripts/proof-durable-e2e.ts not found.", files);
+
+  const proofRunner = read(root, files[1]);
+  if (!proofRunner.includes("releaseForRetry")) {
+    return result(name, false, "proof-durable-e2e.ts must use releaseForRetry for lease expiry simulation.", files);
+  }
+  if (!proofRunner.includes("JsonDurableStore")) {
+    return result(name, false, "proof-durable-e2e.ts must use JsonDurableStore (not in-memory).", files);
+  }
+
+  if (!has(root, files[2])) return result(name, false, "durableOrchestrationCore.ts not found.", files);
+  const core = read(root, files[2]);
+  if (!core.includes("releaseForRetry")) {
+    return result(name, false, "durableOrchestrationCore.ts must export releaseForRetry for lease/retry simulation.", files);
+  }
+  if (!core.includes("export class JsonDurableStore")) {
+    return result(name, false, "durableOrchestrationCore.ts must export JsonDurableStore so proof runner can import it.", files);
+  }
+
+  return result(name, true, `Durable E2E orchestration proof passed: ${requiredSignals.length} signals green, durable-file storage, failure injection covered (transient failure, lease expiry, duplicate build/start).`, files);
 }

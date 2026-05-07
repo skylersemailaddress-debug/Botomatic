@@ -185,6 +185,7 @@
     "test:visual-commercial": "node tests/visual/scripts/compare-commercial-cockpit.cjs",
     "test:orchestration-core": "tsx packages/validation/src/tests/orchestrationCoreWorkerWave.test.ts",
     "proof:orchestration-core": "node scripts/proof-orchestration-core.cjs",
+    "proof:durable-e2e": "tsx scripts/proof-durable-e2e.ts",
     "test:tenant-isolation": "tsx packages/validation/src/tests/tenantIsolation.test.ts",
     "beta:readiness": "npm run -s test:tenant-isolation && npm run -s test:security-auth-beta && npm run -s test:durable-fail-closed-beta && npm run -s proof:no-secrets-beta && tsx scripts/validateBetaReadiness.ts",
     "validate:route-auth": "tsx packages/validation/src/repoValidators/routeAuthorizationReadiness.ts",
