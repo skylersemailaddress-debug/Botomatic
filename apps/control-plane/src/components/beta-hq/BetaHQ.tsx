@@ -127,6 +127,7 @@ export function BetaHQ({ projectId: initialProjectId }: { projectId?: string }) 
 
   // Upload
   const [uploads, setUploads] = useState<UploadEntry[]>([]);
+  const [attachedArtifacts, setAttachedArtifacts] = useState<FileIntakeResponse[]>([]);
   const [dragging, setDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -199,7 +200,11 @@ export function BetaHQ({ projectId: initialProjectId }: { projectId?: string }) 
         try {
           const buildResult = await postJson<BuildStartResponse>(
             `/api/projects/${newId}/build/start`,
-            { inputText: text, safeDefaults: true },
+            {
+              inputText: text,
+              safeDefaults: true,
+              artifactIds: attachedArtifacts.map((a) => a.artifactId),
+            },
           );
           const buildStatus = buildResult.status || "queued";
           setProjectStatus(buildStatus);
@@ -229,17 +234,39 @@ export function BetaHQ({ projectId: initialProjectId }: { projectId?: string }) 
           }
         }
       } else {
-        try {
-          const result = await sendOperatorMessage(projectId, text);
-          const reply = result.operatorMessage || result.nextAction || result.status || "Command accepted.";
-          addMsg("system", reply);
-          setLastAction(result.nextAction || "Command sent");
-        } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err);
-          if (msg.includes("404")) {
-            addMsg("system", "Follow-up command endpoint is not wired yet — command noted locally.");
-          } else {
-            addMsg("error", msg);
+        // If there are unsubmitted artifacts, trigger a build with them first.
+        if (attachedArtifacts.length > 0) {
+          addMsg("system", "Triggering build with attached artifacts…");
+          try {
+            const buildResult = await postJson<BuildStartResponse>(
+              `/api/projects/${projectId}/build/start`,
+              {
+                inputText: text,
+                safeDefaults: true,
+                artifactIds: attachedArtifacts.map((a) => a.artifactId),
+              },
+            );
+            const buildStatus = buildResult.status || "queued";
+            setProjectStatus(buildStatus);
+            const jobInfo = buildResult.jobId ? ` (job: ${buildResult.jobId})` : "";
+            addMsg("system", buildResult.message || `Build ${buildStatus}${jobInfo}`);
+            if (buildResult.nextStep) setLastAction(buildResult.nextStep);
+          } catch (buildErr) {
+            addMsg("error", buildErr instanceof Error ? buildErr.message : "Build trigger failed");
+          }
+        } else {
+          try {
+            const result = await sendOperatorMessage(projectId, text);
+            const reply = result.operatorMessage || result.nextAction || result.status || "Command accepted.";
+            addMsg("system", reply);
+            setLastAction(result.nextAction || "Command sent");
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err);
+            if (msg.includes("404")) {
+              addMsg("system", "Follow-up command endpoint is not wired yet — command noted locally.");
+            } else {
+              addMsg("error", msg);
+            }
           }
         }
       }
@@ -248,7 +275,7 @@ export function BetaHQ({ projectId: initialProjectId }: { projectId?: string }) 
     } finally {
       setChatBusy(false);
     }
-  }, [chatInput, chatBusy, projectId, addMsg]);
+  }, [chatInput, chatBusy, projectId, attachedArtifacts, addMsg]);
 
   // ── File upload ────────────────────────────────────────────────────────
   const addFiles = useCallback((files: FileList | File[]) => {
@@ -287,7 +314,8 @@ export function BetaHQ({ projectId: initialProjectId }: { projectId?: string }) 
           },
         });
         setUploads((prev) => prev.map((u, j) => j === i ? { ...u, status: "done", progress: 100, result } : u));
-        setLastAction(`Uploaded ${uploads[i].file.name}`);
+        setAttachedArtifacts((prev) => [...prev, result]);
+        setLastAction(`Attached ${uploads[i].file.name} (${result.artifactId})`);
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Upload failed";
         setUploads((prev) => prev.map((u, j) => j === i ? { ...u, status: "error", error: msg } : u));
@@ -473,6 +501,19 @@ export function BetaHQ({ projectId: initialProjectId }: { projectId?: string }) 
                   </button>
                   <button type="button" className="bhq-btn" onClick={clearUploads}>Clear</button>
                 </div>
+              </div>
+            )}
+            {attachedArtifacts.length > 0 && (
+              <div className="bhq-artifacts" aria-label="Attached artifacts">
+                <div className="bhq-card-subhead">Attached to next build</div>
+                {attachedArtifacts.map((a) => (
+                  <div key={a.artifactId} className="bhq-artifact-row">
+                    <span className="bhq-artifact-name" title={a.artifactId}>{a.fileName}</span>
+                    <span className="bhq-artifact-id" title={a.artifactId}>
+                      {a.artifactId.length > 16 ? `${a.artifactId.slice(0, 16)}…` : a.artifactId}
+                    </span>
+                  </div>
+                ))}
               </div>
             )}
           </section>

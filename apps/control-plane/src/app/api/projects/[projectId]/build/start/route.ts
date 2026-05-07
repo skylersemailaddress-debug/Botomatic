@@ -36,6 +36,10 @@ export async function POST(
   let inputBody: Record<string, unknown> = {};
   try { inputBody = await request.json(); } catch { /* empty body ok */ }
 
+  const artifactIds: string[] = Array.isArray(inputBody.artifactIds)
+    ? (inputBody.artifactIds as unknown[]).filter((id): id is string => typeof id === "string")
+    : [];
+
   // If beta token not configured, forward the request's own auth headers instead.
   const outHeaders = buildAuthHeaders();
   if (!(process.env.BOTOMATIC_BETA_AUTH_TOKEN || "").trim()) {
@@ -57,7 +61,7 @@ export async function POST(
     upstream = await fetch(upstreamUrl, {
       method: "POST",
       headers: outHeaders,
-      body: JSON.stringify(inputBody),
+      body: JSON.stringify({ ...inputBody, artifactIds }),
     });
   } catch (err) {
     return NextResponse.json(

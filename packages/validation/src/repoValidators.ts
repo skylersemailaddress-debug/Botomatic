@@ -1547,6 +1547,52 @@ export function validateBetaBuildFlowAuth(root: string): RepoValidatorResult {
   return result("Validate-Botomatic-BetaBuildFlowAuth", true, "Beta auth bypass is unconditional, runtime proxies to Railway, build/start injects actor headers, no token exposure to client code.", files);
 }
 
+export function validateBetaFileUploadWiring(root: string): RepoValidatorResult {
+  const intakeFileRouteRel = "apps/control-plane/src/app/api/projects/[projectId]/intake/file/route.ts";
+  const files = [
+    intakeFileRouteRel,
+    "apps/control-plane/src/components/beta-hq/BetaHQ.tsx",
+    "apps/control-plane/src/app/api/projects/[projectId]/build/start/route.ts",
+  ];
+
+  if (!has(root, intakeFileRouteRel)) {
+    return result("Validate-Botomatic-BetaFileUploadWiring", false, `Dedicated local intake/file route must exist at ${intakeFileRouteRel}.`, files);
+  }
+
+  const intakeFileRoute = read(root, intakeFileRouteRel);
+  const betaHQ = read(root, "apps/control-plane/src/components/beta-hq/BetaHQ.tsx");
+  const buildStart = read(root, "apps/control-plane/src/app/api/projects/[projectId]/build/start/route.ts");
+
+  if (!intakeFileRoute.includes("requireControlPlaneProjectAccess")) {
+    return result("Validate-Botomatic-BetaFileUploadWiring", false, "intake/file route must call requireControlPlaneProjectAccess for local auth.", files);
+  }
+  if (!intakeFileRoute.includes("BOTOMATIC_BETA_AUTH_TOKEN") || !intakeFileRoute.includes("x-user-id") || !intakeFileRoute.includes("x-tenant-id")) {
+    return result("Validate-Botomatic-BetaFileUploadWiring", false, "intake/file route must inject BOTOMATIC_BETA_AUTH_TOKEN, x-user-id, and x-tenant-id when proxying to Railway.", files);
+  }
+  if (!intakeFileRoute.includes("arrayBuffer")) {
+    return result("Validate-Botomatic-BetaFileUploadWiring", false, "intake/file route must forward body as arrayBuffer to preserve multipart/form-data.", files);
+  }
+
+  if (!betaHQ.includes("attachedArtifacts")) {
+    return result("Validate-Botomatic-BetaFileUploadWiring", false, "BetaHQ.tsx must declare attachedArtifacts state for tracking uploaded artifact IDs.", files);
+  }
+  if (!betaHQ.includes("artifactIds: attachedArtifacts.map")) {
+    return result("Validate-Botomatic-BetaFileUploadWiring", false, "BetaHQ.tsx must include artifactIds mapped from attachedArtifacts in the build/start payload.", files);
+  }
+  if (!betaHQ.includes("Attached to next build")) {
+    return result("Validate-Botomatic-BetaFileUploadWiring", false, "BetaHQ.tsx must render an 'Attached to next build' section listing confirmed artifacts.", files);
+  }
+
+  if (!buildStart.includes("Array.isArray(inputBody.artifactIds)")) {
+    return result("Validate-Botomatic-BetaFileUploadWiring", false, "build/start route must validate artifactIds with Array.isArray before forwarding.", files);
+  }
+  if (!buildStart.includes("{ ...inputBody, artifactIds }")) {
+    return result("Validate-Botomatic-BetaFileUploadWiring", false, "build/start route must spread artifactIds into the outbound Railway body.", files);
+  }
+
+  return result("Validate-Botomatic-BetaFileUploadWiring", true, "Intake/file route proxies to Railway with auth, BetaHQ tracks and surfaces artifact IDs, build/start validates and forwards artifactIds.", files);
+}
+
 export function runAllRepoValidators(root: string): RepoValidatorResult[] {
   return [
     validateArchitecture(root),
@@ -1637,5 +1683,6 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateBetaFullLaunchReadiness(root),
     validateBetaScriptAsciiGuard(root),
     validateBetaBuildFlowAuth(root),
+    validateBetaFileUploadWiring(root),
   ];
 }
