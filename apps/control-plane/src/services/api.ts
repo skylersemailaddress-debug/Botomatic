@@ -66,18 +66,19 @@ export function buildApiUrl(path: string): string {
   }
 
   if (path.startsWith("/api/")) {
+    // In the browser, always keep /api/ paths relative so the Next.js server-side proxy
+    // handles routing and injects server-side auth credentials.
+    // Never send /api/ calls directly to a remote base URL from client code.
+    if (typeof window !== "undefined") {
+      return path;
+    }
+
+    // SSR: resolve to an absolute URL so Node fetch can make the request.
     const configuredBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-    if (configuredBaseUrl && shouldUseConfiguredBaseUrl(configuredBaseUrl)) {
+    if (configuredBaseUrl) {
       return `${normalizeApiBaseUrl(configuredBaseUrl)}${path}`;
     }
-
-    // On server-side render, use absolute same-origin URL so Node fetch can resolve it.
-    if (typeof window === "undefined") {
-      return `${getServerAppBaseUrl()}${path}`;
-    }
-
-    // In browser, keep API paths relative by default so same-origin routes/rewrites are used.
-    return path;
+    return `${getServerAppBaseUrl()}${path}`;
   }
 
   return path;

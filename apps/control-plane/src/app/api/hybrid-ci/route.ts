@@ -39,7 +39,12 @@ async function githubFetch(pathname: string) {
     headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
   }
   try {
-    const response = await fetch(`https://api.github.com/repos/skylersemailaddress-debug/Botomatic${pathname}`, {
+    const owner = process.env.GITHUB_OWNER || process.env.NEXT_PUBLIC_GITHUB_OWNER || "";
+    const repo = process.env.GITHUB_REPO || process.env.NEXT_PUBLIC_GITHUB_REPO || "";
+    if (!owner || !repo) {
+      return { ok: false, status: 0, reason: "github_not_configured", data: null };
+    }
+    const response = await fetch(`https://api.github.com/repos/${owner}/${repo}${pathname}`, {
       headers,
       cache: "no-store",
     });

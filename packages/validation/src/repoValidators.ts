@@ -188,7 +188,7 @@ export function validateUIReadiness(root: string): RepoValidatorResult {
   const uiText = uiFiles.map((filePath) => read(root, path.relative(root, filePath))).join("\n").toLowerCase();
 
   const routeShellAlignment =
-    projectPage.includes("VibeDashboard") &&
+    (projectPage.includes("VibeDashboard") || projectPage.includes("BetaHQ")) &&
     vibeDashboard.includes("<AppShell") &&
     appShell.includes("app-sidebar") &&
     appShell.includes("Product navigation");
@@ -900,7 +900,7 @@ export function validateUIControlPlaneIntegration(root: string): RepoValidatorRe
     deploySvc.includes("/deploy/promote");
   const ok =
     fileOk &&
-    page.includes("VibeDashboard") &&
+    (page.includes("VibeDashboard") || page.includes("BetaHQ")) &&
     vibeDashboard.includes("<AppShell") &&
     vibeDashboard.includes("useVibeOrchestration") &&
     vibeDashboard.includes("useLiveUIBuilderVibe") &&
@@ -1295,6 +1295,374 @@ export function validateChatFirstOperatorRouting(root: string): RepoValidatorRes
 }
 
 
+export function validateBetaFullLaunchReadiness(root: string): RepoValidatorResult {
+  const scriptPath  = "scripts/launchBetaFull.ps1";
+  const buildRoute  = "apps/control-plane/src/app/api/projects/[projectId]/build/start/route.ts";
+  const checks = [scriptPath, buildRoute, "package.json", "apps/control-plane/src/components/beta-hq/BetaHQ.tsx"];
+
+  if (!has(root, scriptPath)) {
+    return result("Validate-Botomatic-BetaFullLaunchReadiness", false, `Full launch script missing: ${scriptPath}`, checks);
+  }
+
+  const script = read(root, scriptPath);
+  const pkg    = read(root, "package.json");
+
+  const placeholders = ["YOUR_", "PASTE_", "REPLACE_", "changeme", "placeholder"];
+  const hasPlaceholderRejection = placeholders.every((p) => script.includes(`"${p}"`));
+  const hasJwtValidation = script.includes("eyJ");
+  const noHardcodedSecret = !script.includes('client_secret = "');
+  const hasMetricsCheck = script.includes("ops/metrics");
+  const hasCheckOnly = script.includes("CheckOnly") || script.includes("check-only");
+  const hasGoNoGo = script.includes("GO");
+  const hasAllLaunchScripts =
+    pkg.includes('"launch:beta:full"') &&
+    pkg.includes('"launch:beta:full:check"') &&
+    pkg.includes("launchBetaFull.ps1");
+
+  const buildRouteExists = has(root, buildRoute);
+  const buildRouteOk = buildRouteExists &&
+    read(root, buildRoute).includes("requireControlPlaneProjectAccess") &&
+    read(root, buildRoute).includes("autonomous-build/start");
+
+  const betaHQ = has(root, "apps/control-plane/src/components/beta-hq/BetaHQ.tsx")
+    ? read(root, "apps/control-plane/src/components/beta-hq/BetaHQ.tsx")
+    : "";
+  const betaHQCallsBuildStart = betaHQ.includes("/build/start");
+
+  const providerSecrets = ["OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GEMINI_API_KEY", "SUPABASE_SERVICE_ROLE_KEY"];
+  const noProviderSecretsInClient = providerSecrets.every((s) => !betaHQ.includes(s));
+
+  const ok =
+    hasPlaceholderRejection &&
+    hasJwtValidation &&
+    noHardcodedSecret &&
+    hasMetricsCheck &&
+    hasCheckOnly &&
+    hasGoNoGo &&
+    hasAllLaunchScripts &&
+    buildRouteOk &&
+    betaHQCallsBuildStart &&
+    noProviderSecretsInClient;
+
+  return result(
+    "Validate-Botomatic-BetaFullLaunchReadiness",
+    ok,
+    ok
+      ? "Full beta launcher, build/start route, BetaHQ build trigger, and provider-secret isolation are wired."
+      : "Full beta launch flow is incomplete — check build/start route, BetaHQ wiring, or launcher script.",
+    checks,
+  );
+}
+
+export function validateBetaLocalLaunchReadiness(root: string): RepoValidatorResult {
+  const scriptPath = "scripts/launchBetaLocal.ps1";
+  const docPath = "docs/beta/LOCAL_BETA_LAUNCH.md";
+  const checks = [scriptPath, docPath, "package.json"];
+
+  if (!has(root, scriptPath)) {
+    return result("Validate-Botomatic-BetaLocalLaunchReadiness", false, `Beta local launch script missing: ${scriptPath}`, checks);
+  }
+
+  const script = read(root, scriptPath);
+  const pkg = read(root, "package.json");
+
+  const placeholders = ["YOUR_", "PASTE_", "REPLACE_", "changeme", "placeholder"];
+  const hasPlaceholderRejection = placeholders.every((p) => script.includes(`"${p}"`));
+  const hasJwtValidation = script.includes("eyJ");
+  const hasSecretsFile = script.includes("beta-launch.env");
+  const noHardcodedSecret = !script.includes('client_secret = "');
+  const hasBetaAuthToken = script.includes("BOTOMATIC_BETA_AUTH_TOKEN");
+  const hasPortKill = script.includes("3000") && script.includes("3001");
+  const hasCacheClean = script.includes(".next");
+  const hasUiDev = script.includes("ui:dev");
+  const hasLaunchScript = pkg.includes('"launch:beta:local"') && pkg.includes("launchBetaLocal.ps1");
+  const hasDoc = has(root, docPath) && read(root, docPath).includes("beta-launch.env");
+
+  const ok =
+    hasPlaceholderRejection &&
+    hasJwtValidation &&
+    hasSecretsFile &&
+    noHardcodedSecret &&
+    hasBetaAuthToken &&
+    hasPortKill &&
+    hasCacheClean &&
+    hasUiDev &&
+    hasLaunchScript &&
+    hasDoc;
+
+  return result(
+    "Validate-Botomatic-BetaLocalLaunchReadiness",
+    ok,
+    ok
+      ? "Beta local launcher wires Auth0 token fetch, placeholder guard, JWT validation, port cleanup, cache clear, and ui:dev start."
+      : "Beta local launcher is incomplete or missing required safety checks.",
+    checks,
+  );
+}
+
+export function validateBetaInternalStringGuard(root: string): RepoValidatorResult {
+  const betaHQPath = "apps/control-plane/src/components/beta-hq/BetaHQ.tsx";
+  const projectPagePath = "apps/control-plane/src/app/projects/[projectId]/page.tsx";
+  const checks = [betaHQPath, projectPagePath];
+
+  const blocked = [
+    "pageRoot",
+    "component ·",
+    "componentRender",
+    "Awaiting edit command",
+    "dry-run only",
+    "adapter unavailable",
+    "blocked-until-real-project",
+  ];
+
+  if (!has(root, betaHQPath) || !has(root, projectPagePath)) {
+    return result("Validate-Botomatic-BetaInternalStringGuard", false, "BetaHQ or project page source not found.", checks);
+  }
+
+  const betaHQ = read(root, betaHQPath);
+  const projectPage = read(root, projectPagePath);
+
+  if (!betaHQ.includes("BLOCKED_INTERNAL_STRINGS") || !betaHQ.includes("sanitize")) {
+    return result("Validate-Botomatic-BetaInternalStringGuard", false, "BetaHQ must define BLOCKED_INTERNAL_STRINGS and sanitize() to guard raw internal output.", checks);
+  }
+
+  if (!projectPage.includes("BetaHQ") || projectPage.includes("VibeDashboard") || projectPage.includes("AppShell")) {
+    return result("Validate-Botomatic-BetaInternalStringGuard", false, "Project route must render BetaHQ, not AppShell or VibeDashboard.", checks);
+  }
+
+  if (!betaHQ.includes("clarifying") || !betaHQ.includes("Botomatic needs more detail")) {
+    return result("Validate-Botomatic-BetaInternalStringGuard", false, 'BetaHQ must handle "clarifying" project status with a clear message.', checks);
+  }
+
+  for (const s of blocked) {
+    if (!betaHQ.includes(`"${s}"`)) {
+      return result("Validate-Botomatic-BetaInternalStringGuard", false, `BetaHQ.BLOCKED_INTERNAL_STRINGS is missing entry: "${s}".`, checks);
+    }
+  }
+
+  return result("Validate-Botomatic-BetaInternalStringGuard", true, "BetaHQ sanitizes internal strings, handles clarifying status, and is the sole beta project renderer.", checks);
+}
+
+export function validateBetaScriptAsciiGuard(root: string): RepoValidatorResult {
+  const scripts = [
+    "scripts/launchBetaFull.ps1",
+    "scripts/launchBetaLocal.ps1",
+  ];
+
+  for (const rel of scripts) {
+    if (!has(root, rel)) {
+      return result("Validate-Botomatic-BetaScriptAsciiGuard", false, `${rel} does not exist.`, scripts);
+    }
+
+    const buf = require("fs").readFileSync(require("path").join(root, rel)) as Buffer;
+    const badPositions: number[] = [];
+    for (let i = 0; i < buf.length; i++) {
+      if (buf[i] > 127) badPositions.push(i);
+    }
+    if (badPositions.length > 0) {
+      return result(
+        "Validate-Botomatic-BetaScriptAsciiGuard",
+        false,
+        `${rel} contains ${badPositions.length} non-ASCII byte(s) at positions: ${badPositions.slice(0, 5).join(", ")}${badPositions.length > 5 ? " ..." : ""}. Rewrite as pure ASCII.`,
+        scripts,
+      );
+    }
+
+    const lines = buf.toString("ascii").split("\n");
+    const requiresCount = lines.filter((l) => l.trimStart().startsWith("#Requires")).length;
+    if (requiresCount > 1) {
+      return result(
+        "Validate-Botomatic-BetaScriptAsciiGuard",
+        false,
+        `${rel} has ${requiresCount} '#Requires' lines — must have exactly 1 (duplicate header detected).`,
+        scripts,
+      );
+    }
+  }
+
+  return result("Validate-Botomatic-BetaScriptAsciiGuard", true, "Both launcher scripts are pure ASCII with no duplicate #Requires lines.", scripts);
+}
+
+export function validateBetaBuildFlowAuth(root: string): RepoValidatorResult {
+  const files = [
+    "apps/control-plane/src/server/projectAccess.ts",
+    "apps/control-plane/src/app/api/projects/[projectId]/runtime/route.ts",
+    "apps/control-plane/src/app/api/projects/[projectId]/build/start/route.ts",
+    "scripts/launchBetaFull.ps1",
+  ];
+
+  for (const rel of files) {
+    if (!has(root, rel)) {
+      return result("Validate-Botomatic-BetaBuildFlowAuth", false, `${rel} does not exist.`, files);
+    }
+  }
+
+  const projectAccess = read(root, "apps/control-plane/src/server/projectAccess.ts");
+  const runtimeRoute = read(root, "apps/control-plane/src/app/api/projects/[projectId]/runtime/route.ts");
+  const buildStart = read(root, "apps/control-plane/src/app/api/projects/[projectId]/build/start/route.ts");
+  const launchFull = read(root, "scripts/launchBetaFull.ps1");
+
+  // Beta bypass must NOT gate on incoming request Authorization header.
+  if (projectAccess.includes("authHeader === `Bearer ${betaToken}`")) {
+    return result("Validate-Botomatic-BetaBuildFlowAuth", false, "projectAccess.ts beta bypass checks incoming auth header against betaToken — this blocks browser requests that arrive with no Authorization header.", files);
+  }
+
+  // Beta bypass must validate JWT format unconditionally.
+  if (!projectAccess.includes('betaToken.startsWith("eyJ")')) {
+    return result("Validate-Botomatic-BetaBuildFlowAuth", false, 'projectAccess.ts beta bypass must check betaToken.startsWith("eyJ") before granting admin.', files);
+  }
+
+  // Diagnostic fields in 401 responses.
+  if (!projectAccess.includes("tokenConfigured") || !projectAccess.includes("tokenLooksLikeJwt") || !projectAccess.includes("actorResolved")) {
+    return result("Validate-Botomatic-BetaBuildFlowAuth", false, "requireControlPlaneProjectAccess 401 response must include tokenConfigured, tokenLooksLikeJwt, and actorResolved diagnostic fields.", files);
+  }
+
+  // Runtime route proxies to Railway in beta mode.
+  if (!runtimeRoute.includes("BOTOMATIC_BETA_AUTH_TOKEN") || !runtimeRoute.includes("x-user-id") || !runtimeRoute.includes("x-tenant-id")) {
+    return result("Validate-Botomatic-BetaBuildFlowAuth", false, "runtime route must proxy to Railway using BOTOMATIC_BETA_AUTH_TOKEN and inject x-user-id / x-tenant-id actor headers.", files);
+  }
+
+  // build/start route injects beta auth headers.
+  if (!buildStart.includes("BOTOMATIC_BETA_AUTH_TOKEN") || !buildStart.includes("x-user-id") || !buildStart.includes("x-tenant-id")) {
+    return result("Validate-Botomatic-BetaBuildFlowAuth", false, "build/start route must inject BOTOMATIC_BETA_AUTH_TOKEN, x-user-id, and x-tenant-id in outbound Railway call.", files);
+  }
+
+  // Launcher sets all env vars consumed by route handlers.
+  const routeHandlerEnvVars = ["BOTOMATIC_BETA_AUTH_TOKEN", "BOTOMATIC_BETA_USER_ID", "BOTOMATIC_BETA_TENANT_ID", "BOTOMATIC_API_BASE_URL"];
+  for (const envVar of routeHandlerEnvVars) {
+    if (!launchFull.includes(envVar)) {
+      return result("Validate-Botomatic-BetaBuildFlowAuth", false, `launchBetaFull.ps1 must set ${envVar} (consumed by local route handlers).`, files);
+    }
+  }
+
+  // BOTOMATIC_BETA_AUTH_TOKEN must not appear in client-accessible files.
+  const clientFiles = ["apps/control-plane/src/services/api.ts", "apps/control-plane/src/components/beta-hq/BetaHQ.tsx"];
+  for (const rel of clientFiles) {
+    if (!has(root, rel)) continue;
+    if (read(root, rel).includes("BOTOMATIC_BETA_AUTH_TOKEN")) {
+      return result("Validate-Botomatic-BetaBuildFlowAuth", false, `${rel} must not reference BOTOMATIC_BETA_AUTH_TOKEN (server-side only env var — no NEXT_PUBLIC_ prefix).`, files);
+    }
+  }
+
+  return result("Validate-Botomatic-BetaBuildFlowAuth", true, "Beta auth bypass is unconditional, runtime proxies to Railway, build/start injects actor headers, no token exposure to client code.", files);
+}
+
+export function validateBetaFileUploadWiring(root: string): RepoValidatorResult {
+  const intakeFileRouteRel = "apps/control-plane/src/app/api/projects/[projectId]/intake/file/route.ts";
+  const files = [
+    intakeFileRouteRel,
+    "apps/control-plane/src/components/beta-hq/BetaHQ.tsx",
+    "apps/control-plane/src/app/api/projects/[projectId]/build/start/route.ts",
+  ];
+
+  if (!has(root, intakeFileRouteRel)) {
+    return result("Validate-Botomatic-BetaFileUploadWiring", false, `Dedicated local intake/file route must exist at ${intakeFileRouteRel}.`, files);
+  }
+
+  const intakeFileRoute = read(root, intakeFileRouteRel);
+  const betaHQ = read(root, "apps/control-plane/src/components/beta-hq/BetaHQ.tsx");
+  const buildStart = read(root, "apps/control-plane/src/app/api/projects/[projectId]/build/start/route.ts");
+
+  if (!intakeFileRoute.includes("requireControlPlaneProjectAccess")) {
+    return result("Validate-Botomatic-BetaFileUploadWiring", false, "intake/file route must call requireControlPlaneProjectAccess for local auth.", files);
+  }
+  if (!intakeFileRoute.includes("BOTOMATIC_BETA_AUTH_TOKEN") || !intakeFileRoute.includes("x-user-id") || !intakeFileRoute.includes("x-tenant-id")) {
+    return result("Validate-Botomatic-BetaFileUploadWiring", false, "intake/file route must inject BOTOMATIC_BETA_AUTH_TOKEN, x-user-id, and x-tenant-id when proxying to Railway.", files);
+  }
+  if (!intakeFileRoute.includes("arrayBuffer")) {
+    return result("Validate-Botomatic-BetaFileUploadWiring", false, "intake/file route must forward body as arrayBuffer to preserve multipart/form-data.", files);
+  }
+
+  if (!betaHQ.includes("attachedArtifacts")) {
+    return result("Validate-Botomatic-BetaFileUploadWiring", false, "BetaHQ.tsx must declare attachedArtifacts state for tracking uploaded artifact IDs.", files);
+  }
+  if (!betaHQ.includes("artifactIds: attachedArtifacts.map")) {
+    return result("Validate-Botomatic-BetaFileUploadWiring", false, "BetaHQ.tsx must include artifactIds mapped from attachedArtifacts in the build/start payload.", files);
+  }
+  if (!betaHQ.includes("Attached to next build")) {
+    return result("Validate-Botomatic-BetaFileUploadWiring", false, "BetaHQ.tsx must render an 'Attached to next build' section listing confirmed artifacts.", files);
+  }
+
+  if (!buildStart.includes("Array.isArray(inputBody.artifactIds)")) {
+    return result("Validate-Botomatic-BetaFileUploadWiring", false, "build/start route must validate artifactIds with Array.isArray before forwarding.", files);
+  }
+  if (!buildStart.includes("{ ...inputBody, artifactIds }")) {
+    return result("Validate-Botomatic-BetaFileUploadWiring", false, "build/start route must spread artifactIds into the outbound Railway body.", files);
+  }
+
+  return result("Validate-Botomatic-BetaFileUploadWiring", true, "Intake/file route proxies to Railway with auth, BetaHQ tracks and surfaces artifact IDs, build/start validates and forwards artifactIds.", files);
+}
+
+export function validateHostedCommercialLaunch(root: string): RepoValidatorResult {
+  const files = [
+    "apps/control-plane/src/app/page.tsx",
+    "apps/control-plane/src/app/projects/[projectId]/page.tsx",
+    "apps/control-plane/src/app/login/page.tsx",
+    "apps/control-plane/src/middleware.ts",
+    "scripts/start-commercial.sh",
+    "railway.json",
+    "docs/beta/HOSTED_COMMERCIAL_LAUNCH.md",
+  ];
+
+  for (const f of ["apps/control-plane/src/app/page.tsx", "apps/control-plane/src/app/login/page.tsx", "apps/control-plane/src/middleware.ts", "scripts/start-commercial.sh", "railway.json", "docs/beta/HOSTED_COMMERCIAL_LAUNCH.md"]) {
+    if (!has(root, f)) {
+      return result("Validate-Botomatic-HostedCommercialLaunch", false, `Required file missing: ${f}`, files);
+    }
+  }
+
+  const rootPage = read(root, "apps/control-plane/src/app/page.tsx");
+  if (!rootPage.includes("BetaHQ")) {
+    return result("Validate-Botomatic-HostedCommercialLaunch", false, "Root page.tsx must render BetaHQ component.", files);
+  }
+
+  const middleware = read(root, "apps/control-plane/src/middleware.ts");
+  if (!middleware.includes("BOTOMATIC_UI_PASSWORD")) {
+    return result("Validate-Botomatic-HostedCommercialLaunch", false, "middleware.ts must gate routes using BOTOMATIC_UI_PASSWORD.", files);
+  }
+  if (middleware.includes("NEXT_PUBLIC_BOTOMATIC_UI_PASSWORD")) {
+    return result("Validate-Botomatic-HostedCommercialLaunch", false, "middleware.ts must NOT use NEXT_PUBLIC_ prefix for BOTOMATIC_UI_PASSWORD — it must remain server-only.", files);
+  }
+
+  const startScript = read(root, "scripts/start-commercial.sh");
+  if (!startScript.includes("PORT=3001") || !startScript.includes("bootstrap.ts")) {
+    return result("Validate-Botomatic-HostedCommercialLaunch", false, "start-commercial.sh must launch orchestrator API on port 3001 via bootstrap.ts.", files);
+  }
+
+  let railwayJson: Record<string, unknown>;
+  try {
+    railwayJson = JSON.parse(read(root, "railway.json"));
+  } catch {
+    return result("Validate-Botomatic-HostedCommercialLaunch", false, "railway.json must be valid JSON.", files);
+  }
+  const startCmd = String((railwayJson?.deploy as Record<string, unknown>)?.startCommand ?? "");
+  if (!startCmd.includes("commercial")) {
+    return result("Validate-Botomatic-HostedCommercialLaunch", false, `railway.json deploy.startCommand must reference commercial start, got: "${startCmd}".`, files);
+  }
+  const healthPath = String((railwayJson?.deploy as Record<string, unknown>)?.healthcheckPath ?? "");
+  if (!healthPath.startsWith("/api/")) {
+    return result("Validate-Botomatic-HostedCommercialLaunch", false, `railway.json healthcheckPath must route through Next.js proxy (/api/*), got: "${healthPath}".`, files);
+  }
+
+  const projectAccess = read(root, "apps/control-plane/src/server/projectAccess.ts");
+  if (!projectAccess.includes("BOTOMATIC_API_TOKEN")) {
+    return result("Validate-Botomatic-HostedCommercialLaunch", false, "projectAccess.ts must have BOTOMATIC_API_TOKEN commercial bypass.", files);
+  }
+  if (projectAccess.includes("NEXT_PUBLIC_BOTOMATIC_API_TOKEN")) {
+    return result("Validate-Botomatic-HostedCommercialLaunch", false, "projectAccess.ts must NOT use NEXT_PUBLIC_ prefix for BOTOMATIC_API_TOKEN.", files);
+  }
+
+  const launchDocs = read(root, "docs/beta/HOSTED_COMMERCIAL_LAUNCH.md");
+  if (!launchDocs.includes("BOTOMATIC_UI_PASSWORD") || !launchDocs.includes("BOTOMATIC_API_TOKEN")) {
+    return result("Validate-Botomatic-HostedCommercialLaunch", false, "HOSTED_COMMERCIAL_LAUNCH.md must document both BOTOMATIC_UI_PASSWORD and BOTOMATIC_API_TOKEN.", files);
+  }
+
+  if (!has(root, "apps/control-plane/src/app/api/projects/[projectId]/intake/file/route.ts")) {
+    return result("Validate-Botomatic-HostedCommercialLaunch", false, "Dedicated intake/file upload route must still exist (upload wiring not regressed).", files);
+  }
+
+  return result("Validate-Botomatic-HostedCommercialLaunch", true, "Hosted UI routes, session gate, commercial start script, Railway config, server-only auth, and deployment docs are all present.", files);
+}
+
 export function runAllRepoValidators(root: string): RepoValidatorResult[] {
   return [
     validateArchitecture(root),
@@ -1380,5 +1748,12 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateRouteAuthorizationReadiness(root),
     validateDeploymentSmokeBetaReadiness(root),
     validateBetaDocsReadiness(root),
+    validateBetaInternalStringGuard(root),
+    validateBetaLocalLaunchReadiness(root),
+    validateBetaFullLaunchReadiness(root),
+    validateBetaScriptAsciiGuard(root),
+    validateBetaBuildFlowAuth(root),
+    validateBetaFileUploadWiring(root),
+    validateHostedCommercialLaunch(root),
   ];
 }

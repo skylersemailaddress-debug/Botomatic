@@ -11,7 +11,7 @@ assert(apiSource.includes("postJsonSafe<TResponse, TBody>"), "api client must in
 assert(orchestrationSource.includes("submitVibeIntake"), "orchestration service must define submitVibeIntake");
 assert(orchestrationSource.includes("getOrchestrationStatus"), "orchestration service must define getOrchestrationStatus");
 assert(orchestrationSource.includes("postJsonSafe"), "submitVibeIntake must use postJsonSafe");
-assert(projectPageSource.includes("VibeDashboard"), "canonical project route must render VibeDashboard");
+assert(projectPageSource.includes("BetaHQ"), "canonical project route must render BetaHQ");
 assert(vibeDashboardSource.includes("useVibeOrchestration"), "main Vibe input must use orchestration controller");
 assert(vibeDashboardSource.includes("orchestration.submitPrompt"), "main Vibe input must submit orchestration prompt");
 assert(vibeDashboardSource.includes("Build Map"), "Vibe dashboard must render Build Map status surface");
