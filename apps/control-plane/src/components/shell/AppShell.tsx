@@ -5,13 +5,8 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
 const NAV = [
-  { label: "Home",          href: "/",                    icon: "⌂" },
-  { label: "Projects",      href: "/projects/new",         icon: "▤" },
-  { label: "Templates",     href: "/projects/new?t=1",     icon: "⊞" },
-  { label: "Design Studio", href: "/projects/new?s=design",icon: "✦" },
-  { label: "Brand Kit",     href: "/projects/new?s=brand", icon: "◈" },
-  { label: "Launch",        href: "/projects/new?s=launch",icon: "▲" },
-  { label: "Learn",         href: "/projects/new?s=learn", icon: "◎" },
+  { label: "Home",      href: "/",           icon: "⌂" },
+  { label: "Projects",  href: "/projects",   icon: "▤" },
 ];
 
 const RECENT_PLACEHOLDER = [
@@ -39,8 +34,8 @@ export function AppShell({ children, projectId }: AppShellProps) {
           </span>
         </Link>
 
-        <Link href="/projects/new" className="sidebar-new-project">
-          + New Project
+        <Link href="/" className="sidebar-new-project">
+          + New build
         </Link>
 
         <nav className="sidebar-nav" aria-label="Product navigation">
@@ -67,7 +62,7 @@ export function AppShell({ children, projectId }: AppShellProps) {
               <span className="sidebar-recent-time">{p.time}</span>
             </div>
           ))}
-          <Link href="/projects/new" className="sidebar-view-all">View all projects →</Link>
+          <Link href="/" className="sidebar-view-all">Go to Beta HQ →</Link>
         </div>
 
         <div className="sidebar-upgrade">

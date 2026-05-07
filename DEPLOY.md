@@ -65,8 +65,8 @@ OIDC_CLIENT_ID=wE9HPgWiTssRbnEdXxgPupjlQesA7Vhp
 AUTH0_CLIENT_SECRET=<your secret>
 
 # Supabase
-SUPABASE_URL=https://qrwcinihqqssrajznhqr.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=<your key>
+SUPABASE_URL=<your supabase project url>
+SUPABASE_SERVICE_ROLE_KEY=<required_secret_ref>
 
 # GitHub (for repo intake / push)
 GITHUB_TOKEN=<your PAT>

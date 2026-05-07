@@ -1,4 +1,4 @@
-import { createRuntimeConfig } from "./config";
+import { EXPLICIT_LOCAL_MEMORY_FALLBACK_ENV, createRuntimeConfig } from "./config";
 import { buildApp } from "./server_app";
 import { registerStandaloneCapabilityRoutes } from "./capabilitiesStandalone";
 import { spawn, ChildProcess } from "child_process";
@@ -11,24 +11,14 @@ function validateEnv() {
     console.error(JSON.stringify({ event: "startup_env_error", missing }));
     process.exit(1);
   }
-
-  // If GitHub integration is configured, the token must also be present.
-  if ((process.env.GITHUB_OWNER || process.env.GITHUB_REPO) && !process.env.GITHUB_TOKEN) {
-    console.error(JSON.stringify({
-      event: "startup_env_error",
-      missing: ["GITHUB_TOKEN"],
-      message: "GITHUB_OWNER/GITHUB_REPO are set but GITHUB_TOKEN is missing — GitHub operations will fail at runtime.",
-    }));
-    process.exit(1);
-  }
 }
 
 // ── Supabase connectivity probe ───────────────────────────────────────────────
-// Tests reachability before starting so we can fall back to memory mode instead
-// of crashing on the first project read/write. Logs a clear actionable message
-// when blocked (Supabase Network Restrictions turned on for the project IP).
+// Tests reachability before starting. Hosted beta/production fail closed instead
+// of falling back to memory; only explicit local development can downgrade.
+// Logs a clear actionable message when Supabase Network Restrictions block the IP.
 
-async function probeSupabase(): Promise<boolean> {
+export async function probeSupabase(): Promise<boolean> {
   const url   = process.env.SUPABASE_URL;
   const key   = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) return false;
@@ -111,42 +101,55 @@ function shutdownRunner() {
 process.on("SIGTERM", () => { shutdownRunner(); process.exit(0); });
 process.on("SIGINT",  () => { shutdownRunner(); process.exit(0); });
 
-async function start() {
-  validateEnv();
+function isHostedOrCommercialRuntime(): boolean {
+  return (
+    process.env.RUNTIME_MODE === "commercial" ||
+    ["production", "prod", "beta", "preview", "staging"].includes(
+      String(process.env.BOTOMATIC_DEPLOYMENT_ENV || process.env.BOTOMATIC_ENV || process.env.VERCEL_ENV || process.env.NODE_ENV || "").toLowerCase(),
+    )
+  );
+}
 
-  // Probe Supabase before creating config — fall back to memory if blocked
+function canUseLocalMemoryFallback(): boolean {
+  return !isHostedOrCommercialRuntime() && process.env[EXPLICIT_LOCAL_MEMORY_FALLBACK_ENV] === "true";
+}
+
+export async function enforceDurableStorageBeforeStartup(): Promise<void> {
   const wantsDurable = process.env.PROJECT_REPOSITORY_MODE === "durable";
   const wantsSupabaseQueue = process.env.QUEUE_BACKEND === "supabase";
 
-  if (wantsDurable || wantsSupabaseQueue) {
-    const supabaseReachable = await probeSupabase();
-    if (!supabaseReachable) {
-      const isCommercial = process.env.RUNTIME_MODE === "commercial";
-      if (isCommercial) {
-        console.error(JSON.stringify({
-          event: "startup_fatal",
-          message: "Supabase is unreachable and RUNTIME_MODE=commercial. Cannot start with in-memory storage in commercial mode — data loss risk. Fix Supabase connectivity (check Network Restrictions) or set RUNTIME_MODE=development.",
-        }));
-        process.exit(1);
-      }
-      if (wantsDurable) {
-        process.env.PROJECT_REPOSITORY_MODE = "memory";
-        console.warn(JSON.stringify({
-          event: "supabase_fallback",
-          message: "Supabase unreachable — running with in-memory project store. Data will NOT persist across restarts.",
-        }));
-      }
-      if (wantsSupabaseQueue) {
-        process.env.QUEUE_BACKEND = "memory";
-        console.warn(JSON.stringify({
-          event: "queue_fallback",
-          message: "Supabase unreachable — job queue running in-memory. Multi-worker job distribution unavailable.",
-        }));
-      }
-    } else {
-      console.log(JSON.stringify({ event: "supabase_connected", url: process.env.SUPABASE_URL }));
-    }
+  if (!(wantsDurable || wantsSupabaseQueue)) return;
+
+  const supabaseReachable = await probeSupabase();
+  if (supabaseReachable) {
+    console.log(JSON.stringify({ event: "supabase_connected", url: process.env.SUPABASE_URL }));
+    return;
   }
+
+  if (!canUseLocalMemoryFallback()) {
+    throw new Error("Supabase unreachable; durable storage is required outside explicit local development memory fallback");
+  }
+
+  if (wantsDurable) {
+    process.env.PROJECT_REPOSITORY_MODE = "memory";
+    console.warn(JSON.stringify({
+      event: "supabase_fallback",
+      message: "Supabase unreachable — explicit local development only in-memory project store. Data will NOT persist across restarts.",
+    }));
+  }
+  if (wantsSupabaseQueue) {
+    process.env.QUEUE_BACKEND = "memory";
+    console.warn(JSON.stringify({
+      event: "queue_fallback",
+      message: "Supabase unreachable — explicit local development only in-memory job queue. Multi-worker job distribution unavailable.",
+    }));
+  }
+}
+
+async function start() {
+  validateEnv();
+
+  await enforceDurableStorageBeforeStartup();
 
   spawnClaudeRunner();
 
@@ -176,12 +179,14 @@ async function start() {
   );
 
   app.listen(config.port, () => {
-    console.log(JSON.stringify({ event: "api_ready", port: config.port }));
+    console.log(`API running on ${config.port}`);
   });
 }
 
-start().catch(err => {
-  console.error(JSON.stringify({ event: "startup_fatal", message: String(err?.message || err) }));
-  process.exit(1);
-});
+if (import.meta.url === `file://${process.argv[1]}`) {
+  start().catch(err => {
+    console.error(JSON.stringify({ event: "startup_fatal", message: String(err?.message || err) }));
+    process.exit(1);
+  });
+}
 

@@ -81,9 +81,9 @@ function testRouteSmokeAndWiring() {
   const vibeRoute = read("apps/control-plane/src/app/projects/[projectId]/vibe/page.tsx");
   const advancedRoute = read("apps/control-plane/src/app/projects/[projectId]/advanced/page.tsx");
 
-  assert(rootRoute.includes("export default function Page()"), "Root route must export default Page");
-  assert(rootRoute.includes("Initializing Launch Project"), "Root route should show launch bootstrap signal");
-  assert(projectRoute.includes("<VibeBuilderSkeleton"), "Primary project route must stay chat-first via VibeBuilderSkeleton");
+  assert(rootRoute.includes("export default function"), "Root route must export a default function");
+  assert(rootRoute.includes("BetaHQ"), "Root route must render the BetaHQ control plane");
+  assert(projectRoute.includes("BetaHQ"), "Primary project route must render BetaHQ");
   assert(
     vibeRoute.includes("<VibeDashboard") ||
       (vibeRoute.includes("<CommercialWorkspaceShell") && vibeRoute.includes("<CommercialVibeCockpit")),
@@ -164,7 +164,7 @@ function testPrimaryProjectRouteRemainsChatFirst() {
   const builderShell = read("apps/control-plane/src/components/builder/NorthStarBuilderShell.tsx");
   const projectRoute = read("apps/control-plane/src/app/projects/[projectId]/page.tsx");
 
-  assert(projectRoute.includes("VibeBuilderSkeleton"), "Primary project route should use VibeBuilderSkeleton");
+  assert(projectRoute.includes("BetaHQ"), "Primary project route should render BetaHQ");
 
   assertIncludesAll(
     builderShell,

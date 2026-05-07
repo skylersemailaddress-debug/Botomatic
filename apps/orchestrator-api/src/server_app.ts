@@ -62,12 +62,11 @@ import { ClaudeCodeExecutor } from "../../../packages/executor-adapters/src/clau
 import { runValidation } from "../../../packages/validation/src/runner";
 import { createGitOperation, GitOperationRequest, GitOperationResult } from "../../../packages/github-adapter/src/operations";
 import { GitHubRuntime } from "../../../packages/github-adapter/src/githubRuntime";
-import { enqueueJob, claimJob, finalizeJob, getQueueStats, sendToDLQ, getDLQEntries, retryDLQEntry } from "../../../packages/supabase-adapter/src/jobClient";
-import { storageCircuit } from "./storageCircuitBreaker";
+import { enqueueJob, claimJob, finalizeJob, getQueueStats } from "../../../packages/supabase-adapter/src/jobClient";
 import { GovernanceApprovalState, StoredProjectRecord } from "../../../packages/supabase-adapter/src/types";
 import { startAutonomousBuildRun, resumeAutonomousBuildRun, type AutonomousBuildRunState } from "../../../packages/autonomous-build/src";
 import { RuntimeConfig } from "./config";
-import { type AuthContext } from "./auth/roles";
+import { resolveRole, type AuthContext } from "./auth/roles";
 import { verifyOidcBearerToken } from "./auth/oidc";
 import {
   formatMaxUploadLabel,
@@ -85,12 +84,13 @@ import { intakeCloudLink } from "./intake/cloudIntake";
 import { validateLocalFolderManifest } from "./intake/localManifest";
 import { isBlockedFileExtension, suspiciousBinaryHook } from "./intake/intakeSafety";
 import { assertProviderPromoteGate, assertProviderRollbackGate, loadProviderDeploymentContracts } from "./deployProviderGates";
+import { createRoutePolicyMiddleware } from "./security/routePolicies";
 
 type VerifiedRequestAuth = AuthContext & { issuer?: string };
 
 type RequestActor = {
   actorId: string;
-  actorSource: "oidc" | "bearer_token" | "anonymous";
+  actorSource: "oidc" | "bearer_token" | "local_test_headers" | "anonymous";
 };
 
 type QueueJobRecord = {
@@ -127,12 +127,6 @@ const generatedWorkspaceRunKey = "__generatedWorkspace";
 let workerStarted = false;
 let activeWorkers = 0;
 
-/** DLQ retry backoff schedule: attempt 0→1 waits 5s, 1→2 waits 30s, 2→3 waits 120s. */
-const DLQ_BACKOFF_MS = [5_000, 30_000, 120_000];
-const MAX_JOB_ATTEMPTS = 3;
-/** Tracks per (project_id:packet_id) how many times a job has been attempted. */
-const jobAttemptMap = new Map<string, number>();
-
 type OpsErrorType = "route_error" | "packet_failed" | "promotion_failed" | "auth_failed" | "alert_delivery_failed";
 type OpsErrorEvent = {
   id: string;
@@ -143,35 +137,6 @@ type OpsErrorEvent = {
 };
 
 const recentOpsErrors: OpsErrorEvent[] = [];
-
-// Token-bucket rate limiter for /operator/send — prevents runaway AI cost from a single actor.
-// Defaults: 20 requests per 60-second window per actor.
-const RATE_LIMIT_MAX = Number(process.env.OPERATOR_RATE_LIMIT_MAX || 20);
-const RATE_LIMIT_WINDOW_MS = Number(process.env.OPERATOR_RATE_LIMIT_WINDOW_MS || 60_000);
-const operatorRateBuckets = new Map<string, { count: number; windowStart: number }>();
-
-function checkOperatorRateLimit(actorId: string): { allowed: boolean; remaining: number; resetAt: number } {
-  const now = Date.now();
-  const bucket = operatorRateBuckets.get(actorId);
-  if (!bucket || now - bucket.windowStart >= RATE_LIMIT_WINDOW_MS) {
-    operatorRateBuckets.set(actorId, { count: 1, windowStart: now });
-    return { allowed: true, remaining: RATE_LIMIT_MAX - 1, resetAt: now + RATE_LIMIT_WINDOW_MS };
-  }
-  if (bucket.count >= RATE_LIMIT_MAX) {
-    return { allowed: false, remaining: 0, resetAt: bucket.windowStart + RATE_LIMIT_WINDOW_MS };
-  }
-  bucket.count += 1;
-  return { allowed: true, remaining: RATE_LIMIT_MAX - bucket.count, resetAt: bucket.windowStart + RATE_LIMIT_WINDOW_MS };
-}
-
-// Periodically purge stale rate-limit buckets to prevent unbounded memory growth.
-setInterval(() => {
-  const cutoff = Date.now() - RATE_LIMIT_WINDOW_MS * 2;
-  for (const [key, bucket] of operatorRateBuckets) {
-    if (bucket.windowStart < cutoff) operatorRateBuckets.delete(key);
-  }
-}, 120_000);
-
 let packetSuccessCount = 0;
 let packetFailureCount = 0;
 let validationPassCount = 0;
@@ -217,6 +182,7 @@ function toStored(record: {
   name: string;
   request: string;
   status: string;
+  ownerId?: string | null;
   governanceApproval?: GovernanceApprovalState;
   masterTruth?: any;
   plan?: any;
@@ -226,13 +192,18 @@ function toStored(record: {
   gitResults?: Record<string, any>;
   deployments?: Record<string, any>;
   auditEvents?: any[];
+  ownerUserId: string;
+  tenantId?: string | null;
 }): StoredProjectRecord {
   const timestamp = now();
   return {
     projectId: record.projectId,
+    ownerUserId: record.ownerUserId,
+    tenantId: record.tenantId ?? record.ownerUserId,
     name: record.name,
     request: record.request,
     status: record.status,
+    ownerId: record.ownerId ?? null,
     governanceApproval: record.governanceApproval ?? null,
     masterTruth: record.masterTruth ?? null,
     plan: record.plan ?? null,
@@ -317,22 +288,16 @@ function getExecutor() {
     return new ClaudeCodeExecutor({
       baseUrl: process.env.CLAUDE_EXECUTOR_URL!,
       apiKey: process.env.CLAUDE_EXECUTOR_KEY,
-      timeoutMs: Number(process.env.EXECUTOR_TIMEOUT_MS || 300_000),
     });
   }
   return MockExecutor;
 }
 
 function getGitHub() {
-  const owner = process.env.GITHUB_OWNER;
-  const repo = process.env.GITHUB_REPO;
-  if (!owner || !repo) {
-    throw new Error("GITHUB_OWNER and GITHUB_REPO must be set to use GitHub integration");
-  }
   return new GitHubRuntime({
     token: process.env.GITHUB_TOKEN!,
-    owner,
-    repo,
+    owner: "skylersemailaddress-debug",
+    repo: "Botomatic",
   });
 }
 
@@ -348,7 +313,22 @@ async function getVerifiedAuth(req: express.Request, config: RuntimeConfig): Pro
 
   if (config.auth.implementation === "bearer_token" && config.auth.token) {
     if (token !== config.auth.token) throw new Error("Unauthorized");
-    return { userId: `api_token:${String(config.auth.token).slice(0, 6)}`, role: "admin" };
+    const devActor = resolveRole(req.headers as Record<string, any>);
+    const explicitRole = req.header("x-role") as AuthContext["role"] | undefined;
+    const role = explicitRole === "operator" || explicitRole === "reviewer" || explicitRole === "admin" ? explicitRole : "admin";
+    return { userId: devActor.userId === "anonymous" ? `api_token:${String(config.auth.token).slice(0, 6)}` : devActor.userId, role };
+  }
+
+  if (config.auth.implementation === "local_test_headers" && config.runtimeMode === "development" && !config.hosted) {
+    const userId = req.header("x-user-id");
+    const roleHeader = req.header("x-role");
+    if (!userId) throw new Error("Missing local test user");
+    const role = roleHeader === "admin" || roleHeader === "reviewer" || roleHeader === "operator" ? roleHeader : "operator";
+    return { userId, role };
+  }
+
+  if (config.hosted || config.runtimeMode === "commercial") {
+    throw new Error("API auth is not configured");
   }
 
   return { userId: "anonymous", role: "operator" };
@@ -359,11 +339,16 @@ async function getRequestActor(req: express.Request, config: RuntimeConfig): Pro
     const auth = await getVerifiedAuth(req, config);
     return {
       actorId: auth.userId,
-      actorSource: config.auth.implementation === "oidc" ? "oidc" : config.auth.implementation === "bearer_token" ? "bearer_token" : "anonymous",
+      actorSource: config.auth.implementation === "oidc" ? "oidc" : config.auth.implementation === "bearer_token" ? "bearer_token" : config.auth.implementation === "local_test_headers" ? "local_test_headers" : "anonymous",
     };
   } catch {
-    return { actorId: "anonymous", actorSource: "anonymous" };
+    return { actorId: "anonymous", role: "operator", actorSource: "anonymous" };
   }
+}
+
+
+function recordAuthFailure(message: string, metadata: Record<string, unknown>) {
+  recordOpsError("auth_failed", message, metadata as Record<string, any>);
 }
 
 function requireRole(required: AuthContext["role"], config: RuntimeConfig): express.RequestHandler {
@@ -391,10 +376,48 @@ function requireRole(required: AuthContext["role"], config: RuntimeConfig): expr
   };
 }
 
+function roleRank(role: AuthContext["role"]): number {
+  const rank: Record<AuthContext["role"], number> = { operator: 1, reviewer: 2, admin: 3 };
+  return rank[role] ?? 0;
+}
+
+function requireProjectAccess(required: AuthContext["role"], config: RuntimeConfig): express.RequestHandler {
+  return async (req, res, next) => {
+    try {
+      const auth = await getVerifiedAuth(req, config);
+      if (!auth.userId || auth.userId === "anonymous") {
+        return res.status(401).json({ error: "Authenticated actor required" });
+      }
+      if (roleRank(auth.role) < roleRank(required)) {
+        return res.status(403).json({ error: "Forbidden", requiredRole: required, actualRole: auth.role });
+      }
+      const project = await config.repository.repo.getProjectForActor(req.params.projectId, auth.userId);
+      if (!project) {
+        recordOpsError("auth_failed", "Project ownership check denied", {
+          route: `${req.method} ${req.path}`,
+          projectId: req.params.projectId,
+          actorId: auth.userId,
+        });
+        return res.status(404).json({ error: "Project not found" });
+      }
+      (res.locals as any).tenantProject = project;
+      return next();
+    } catch (error: any) {
+      recordOpsError("auth_failed", String(error?.message || error), {
+        route: `${req.method} ${req.path}`,
+        requiredRole: required,
+        projectId: req.params.projectId,
+      });
+      return res.status(401).json({ error: String(error?.message || error) });
+    }
+  };
+}
+
 function requireApiAuth(config: RuntimeConfig): express.RequestHandler {
   return async (req, res, next) => {
     if (!config.auth.enabled) {
-      return next();
+      if (!config.hosted && config.runtimeMode === "development") return next();
+      return res.status(503).json({ error: "API auth is not configured", authImplementation: config.auth.implementation });
     }
     try {
       await getVerifiedAuth(req, config);
@@ -404,6 +427,38 @@ function requireApiAuth(config: RuntimeConfig): express.RequestHandler {
         route: `${req.method} ${req.path}`,
       });
       return res.status(401).json({ error: String(error?.message || error), authImplementation: config.auth.implementation });
+    }
+  };
+}
+
+function requireProjectOwner(config: RuntimeConfig): express.RequestHandler {
+  return async (req, res, next) => {
+    if (!req.params.projectId) return next();
+
+    if (!config.auth.enabled && !config.hosted && config.runtimeMode === "development") {
+      return next();
+    }
+
+    try {
+      const auth = await getVerifiedAuth(req, config);
+      const project = await config.repository.repo.getProject(req.params.projectId);
+      if (!project) return res.status(404).json({ error: "Project not found" });
+      if (!project.ownerId || project.ownerId !== auth.userId) {
+        recordOpsError("auth_failed", "Project owner check denied", {
+          route: `${req.method} ${req.path}`,
+          projectId: req.params.projectId,
+          userId: auth.userId,
+          ownerId: project.ownerId || null,
+        });
+        return res.status(403).json({ error: "Forbidden", code: "PROJECT_OWNER_REQUIRED" });
+      }
+      return next();
+    } catch (error: any) {
+      recordOpsError("auth_failed", String(error?.message || error), {
+        route: `${req.method} ${req.path}`,
+        projectId: req.params.projectId,
+      });
+      return res.status(401).json({ error: String(error?.message || error) });
     }
   };
 }
@@ -424,11 +479,7 @@ function handleRouteError(res: express.Response, _config: RuntimeConfig, error: 
     timestamp: occurredAt,
   });
   console.error(JSON.stringify({ event: "route_error", route, actorId: actor?.actorId || "unknown", message, workerId, requestId, timestamp: occurredAt }));
-  // In commercial mode, never return raw internal error text — reference ID lets ops correlate logs.
-  const clientError = _config.runtimeMode === "commercial"
-    ? `Internal error — reference: ${requestId}`
-    : message;
-  return res.status(500).json({ error: clientError, workerId, requestId });
+  return res.status(500).json({ error: message, workerId, requestId });
 }
 
 type RouteErrorAlertPayload = {
@@ -821,13 +872,7 @@ function validateChangedFiles(changedFiles: ChangedFile[]) {
 async function persistProject(config: RuntimeConfig, project: StoredProjectRecord) {
   ensureGovernanceApprovalState(project);
   (project as any).updatedAt = now();
-  try {
-    await config.repository.repo.upsertProject(project);
-    storageCircuit.recordSuccess(project.projectId, project);
-  } catch (err) {
-    storageCircuit.recordFailure();
-    throw err;
-  }
+  await config.repository.repo.upsertProject(project);
 }
 
 function buildOverview(project: StoredProjectRecord) {
@@ -1336,11 +1381,6 @@ function buildUniversalCapabilityArtifacts(project: StoredProjectRecord, inputTe
   };
 }
 
-function roleRank(role: AuthContext["role"]): number {
-  if (role === "admin") return 3;
-  if (role === "reviewer") return 2;
-  return 1;
-}
 
 function buildPacketList(project: StoredProjectRecord) {
   return getPackets(project).map((p: any) => ({ packetId: p.packetId, status: p.status, goal: p.goal, branchName: p.branchName }));
@@ -1555,78 +1595,29 @@ async function processJob(config: RuntimeConfig, job: QueueJobRecord) {
     for (const unblocked of nowUnblocked) {
       try {
         const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-        await enqueueJob({ job_id: jobId, project_id: project.projectId, packet_id: unblocked.packetId });
+        await enqueueJob({ job_id: jobId, project_id: project.projectId, packet_id: unblocked.packetId, owner_user_id: project.ownerUserId, tenant_id: project.tenantId ?? project.ownerUserId });
       } catch (_e) { /* already queued or unavailable — tolerate */ }
     }
   } catch (error: any) {
     packetFailureCount += 1;
-    const errMsg = String(error?.message || error);
-    recordOpsError("packet_failed", errMsg, {
+    recordOpsError("packet_failed", String(error?.message || error), {
       projectId: project.projectId,
       packetId: packet.packetId,
     });
-
-    const attemptKey = `${project.projectId}:${packet.packetId}`;
-    const attemptsDone = (jobAttemptMap.get(attemptKey) ?? 0) + 1;
-    jobAttemptMap.set(attemptKey, attemptsDone);
-
-    if (attemptsDone < MAX_JOB_ATTEMPTS) {
-      const delayMs = DLQ_BACKOFF_MS[attemptsDone - 1] ?? 120_000;
-      console.warn(JSON.stringify({ event: "job_retry_scheduled", projectId: project.projectId, packetId: packet.packetId, attempt: attemptsDone, delayMs, error: errMsg }));
-      await finalizeJob(job.job_id, "failed", errMsg);
-      setTimeout(async () => {
-        try {
-          const retryJobId = `job_retry_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-          await enqueueJob({ job_id: retryJobId, project_id: project.projectId, packet_id: packet.packetId });
-        } catch (reEnqueueErr) {
-          console.error(JSON.stringify({ event: "job_retry_enqueue_failed", projectId: project.projectId, packetId: packet.packetId, error: String((reEnqueueErr as any)?.message || reEnqueueErr) }));
-        }
-      }, delayMs);
-    } else {
-      // Max attempts exhausted — move to DLQ.
-      jobAttemptMap.delete(attemptKey);
-      const safeStack = String(error?.stack || "").slice(0, 2000);
-      await sendToDLQ({
-        id: `dlq_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-        job_id: job.job_id,
-        project_id: project.projectId,
-        packet_id: packet.packetId,
-        attempt_count: attemptsDone,
-        error_message: errMsg,
-        safe_stack: safeStack,
-        retryable: true,
-        original_payload: { packetId: packet.packetId, goal: packet.goal },
-        first_failed_at: now(),
-        last_failed_at: now(),
-        created_at: now(),
-      });
-      console.error(JSON.stringify({ event: "job_sent_to_dlq", projectId: project.projectId, packetId: packet.packetId, attempts: attemptsDone, error: errMsg }));
-      await finalizeJob(job.job_id, "failed", `DLQ after ${attemptsDone} attempts: ${errMsg}`);
-    }
-
     const failedState = markPacketFailed({ projectId: project.projectId, status: project.status as any, packets: getPackets(project), runs: project.runs as any }, packet.packetId);
     project.plan = { ...((project.plan as any) || {}), packets: (failedState as any).packets };
     project.runs = (failedState as any).runs || project.runs;
     recomputeProjectStatus(project);
-    emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "packet_failed", actorId: workerId, role: "system", timestamp: now(), metadata: { packetId: packet.packetId, error: errMsg } });
+    emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "packet_failed", actorId: workerId, role: "system", timestamp: now(), metadata: { packetId: packet.packetId, error: String(error?.message || error) } });
     await persistProject(config, project);
+    await finalizeJob(job.job_id, "failed", String(error?.message || error));
   }
 }
 
 async function workerTick(config: RuntimeConfig) {
-  if (storageCircuit.isDegraded()) {
-    console.warn(JSON.stringify({ event: "worker_paused_storage_degraded", workerId, timestamp: now() }));
-    return;
-  }
   if (activeWorkers >= workerConcurrency) return;
   const availableSlots = workerConcurrency - activeWorkers;
-  let claims: (QueueJobRecord | null)[];
-  try {
-    claims = await Promise.all(Array.from({ length: availableSlots }, () => claimJob(workerId, leaseMs)));
-  } catch (err: any) {
-    console.error(JSON.stringify({ event: "queue_claim_error", workerId, message: String(err?.message || err), timestamp: now() }));
-    return;
-  }
+  const claims = await Promise.all(Array.from({ length: availableSlots }, () => claimJob(workerId, leaseMs)));
   const jobs = claims.filter(Boolean) as QueueJobRecord[];
   for (const job of jobs) {
     activeWorkers += 1;
@@ -1644,27 +1635,43 @@ function startQueueWorker(config: RuntimeConfig) {
   setInterval(() => { void workerTick(config); }, Number(process.env.QUEUE_POLL_INTERVAL_MS || 2000));
 }
 
+const LOCAL_TRAFFIC_HOSTS = new Set(["127.0.0.1", "localhost", "::1"]);
+
+function parseHostname(value: string | undefined): string | null {
+  if (!value) return null;
+  try {
+    return new URL(value.includes("://") ? value : `http://${value}`).hostname.toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
+function isLocalTraffic(req: express.Request): boolean {
+  const originHost = parseHostname(req.header("origin") || undefined);
+  const host = parseHostname(req.header("host") || undefined);
+  const remote = req.socket.remoteAddress?.replace(/^::ffff:/, "").toLowerCase();
+
+  if (originHost && !LOCAL_TRAFFIC_HOSTS.has(originHost)) return false;
+  if (host && !LOCAL_TRAFFIC_HOSTS.has(host)) return false;
+  return !remote || LOCAL_TRAFFIC_HOSTS.has(remote);
+}
+
 function isAllowedCorsOrigin(origin: string): boolean {
   const allowedOrigins = new Set([
     "http://127.0.0.1:3000",
     "http://localhost:3000",
   ]);
 
-  // Support comma-separated list of allowed origins via env var (e.g. your Vercel UI URL).
-  const extraOrigins = process.env.ALLOWED_ORIGINS || process.env.ALLOWED_ORIGIN || "";
-  for (const o of extraOrigins.split(",").map((s) => s.trim()).filter(Boolean)) {
-    allowedOrigins.add(o);
-  }
-
   if (allowedOrigins.has(origin)) {
     return true;
   }
 
-  // GitHub Codespaces wildcard only in development — never in commercial mode.
-  if (process.env.RUNTIME_MODE !== "commercial") {
-    return /^https:\/\/[a-z0-9-]+\.app\.github\.dev$/i.test(origin);
+  const isProduction = process.env.NODE_ENV === "production";
+  if (isProduction) {
+    return false;
   }
-  return false;
+
+  return /^https:\/\/[a-z0-9-]+\.app\.github\.dev$/i.test(origin);
 }
 
 export function classifyLocalExecutionOutcome(outcome: {
@@ -1746,30 +1753,13 @@ function materializeGeneratedWorkspace(
   };
 }
 
-function makeRouteTimeout(ms: number): express.RequestHandler {
-  return (_req, res, next) => {
-    const timer = setTimeout(() => {
-      if (!res.headersSent) {
-        res.status(408).json({ error: "Request timeout", timeoutMs: ms });
-      }
-    }, ms);
-    res.on("finish", () => clearTimeout(timer));
-    res.on("close", () => clearTimeout(timer));
-    next();
-  };
-}
-
 export function buildApp(config: RuntimeConfig) {
   const app = express();
   const repo = config.repository.repo;
-  startQueueWorker(config);
-
-  const SHORT_TIMEOUT  = makeRouteTimeout(Number(process.env.ROUTE_TIMEOUT_SHORT_MS  || 10_000));
-  const MEDIUM_TIMEOUT = makeRouteTimeout(Number(process.env.ROUTE_TIMEOUT_MEDIUM_MS || 60_000));
-  const LONG_TIMEOUT   = makeRouteTimeout(Number(process.env.ROUTE_TIMEOUT_LONG_MS   || 300_000));
-
-  const bodySizeLimitMb = Number(process.env.BODY_SIZE_LIMIT_MB || 10);
-  app.use(express.json({ limit: `${bodySizeLimitMb}mb` }));
+  if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    startQueueWorker(config);
+  }
+  app.use(express.json());
 
   app.use((req, res, next) => {
     const origin = req.header("origin");
@@ -1796,6 +1786,22 @@ export function buildApp(config: RuntimeConfig) {
     next();
   });
 
+  app.use((req, res, next) => {
+    if (config.repository.mode === "durable" || isLocalTraffic(req)) return next();
+    return res.status(503).json({
+      error: "Durable repository required for public traffic",
+      status: "maintenance",
+      repositoryMode: config.repository.mode,
+      requestId: (res.locals as any).requestId,
+    });
+  });
+
+  app.use(createRoutePolicyMiddleware({
+    config,
+    getVerifiedAuth,
+    recordAuthFailure: (message, metadata) => recordOpsError("auth_failed", message, metadata),
+  }));
+
   const buildHealthPayload = (
     auth: { role: string | null; userId: string | null; issuer: string | null },
     requestId: string | null
@@ -1811,7 +1817,6 @@ export function buildApp(config: RuntimeConfig) {
     commitSha: config.commitSha,
     startupTimestamp: config.startupTimestamp,
     queueEnabled: config.repository.mode === "durable",
-    storageHealth: storageCircuit.getHealthPayload(),
     activeWorkers,
     workerConcurrency,
     workerId,
@@ -1833,11 +1838,12 @@ export function buildApp(config: RuntimeConfig) {
     }
   };
 
-  app.get("/health", SHORT_TIMEOUT, respondHealth);
-  app.get("/api/health", SHORT_TIMEOUT, respondHealth);
+  app.get("/health", respondHealth);
+  app.get("/api/health", respondHealth);
+  app.get("/ready", respondHealth);
+  app.get("/api/ready", respondHealth);
 
   app.use("/api/ops", requireApiAuth(config));
-  app.use("/api/ops", SHORT_TIMEOUT);
 
   app.get("/api/ops/metrics", requireRole("reviewer", config), async (req, res) => {
     const actor = await getRequestActor(req, config);
@@ -1873,33 +1879,14 @@ export function buildApp(config: RuntimeConfig) {
     }
   });
 
-  app.get("/api/ops/dlq", requireRole("reviewer", config), async (req, res) => {
-    const actor = await getRequestActor(req, config);
-    try {
-      const limit = Math.min(Number(req.query.limit) || 100, 500);
-      const entries = await getDLQEntries(limit);
-      return res.json({ entries, count: entries.length, actorId: actor.actorId });
-    } catch (error) {
-      return handleRouteError(res, config, error, "GET /api/ops/dlq", actor);
-    }
-  });
-
-  app.post("/api/ops/dlq/:id/retry", requireRole("admin", config), async (req, res) => {
-    const actor = await getRequestActor(req, config);
-    try {
-      const entry = await retryDLQEntry(req.params.id);
-      if (!entry) return res.status(404).json({ error: "DLQ entry not found" });
-      return res.json({ ok: true, retriedEntry: entry, actorId: actor.actorId });
-    } catch (error) {
-      return handleRouteError(res, config, error, "POST /api/ops/dlq/:id/retry", actor);
-    }
-  });
-
   app.use("/api/projects", requireApiAuth(config));
 
-  app.post("/api/projects/intake", MEDIUM_TIMEOUT, async (req, res) => {
+  app.post("/api/projects/intake", async (req, res) => {
     const actor = await getRequestActor(req, config);
     try {
+      if (!actor.actorId || actor.actorId === "anonymous") {
+        return res.status(401).json({ error: "Authenticated actor required" });
+      }
       const { name, request, prompt, projectName } = req.body as Record<string, unknown>;
       const safeRequest = typeof request === "string" && request.trim() ? request : typeof prompt === "string" ? prompt : "";
       if (!safeRequest.trim()) {
@@ -1912,9 +1899,12 @@ export function buildApp(config: RuntimeConfig) {
       const projectId = makeProjectId();
       const project = toStored({
         projectId,
+        ownerUserId: actor.actorId,
+        tenantId: actor.actorId,
         name: deriveProjectName({ name, request: safeRequest, prompt, projectName }),
         request: safeRequest,
         status: "clarifying",
+        ownerId: actor.actorId,
         governanceApproval: buildDefaultGovernanceApproval(actor.actorId),
       });
       ensureGovernanceApprovalState(project, actor.actorId);
@@ -1924,12 +1914,14 @@ export function buildApp(config: RuntimeConfig) {
       setSpecClarifications(project, analyzed.clarifications);
       project.runs = { ...((project.runs || {}) as Record<string, unknown>), [specStyleRunKey]: analyzed.style };
       emitEvent(project as any, { id: `evt_${Date.now()}`, projectId, type: "intake", actorId: actor.actorId, timestamp: now(), metadata: { name: project.name } });
-      await repo.upsertProject(project);
+      await repo.upsertProjectForActor(project, actor.actorId);
       return res.json({ projectId, status: project.status, actorId: actor.actorId });
     } catch (error) {
       return handleRouteError(res, config, error, "POST /api/projects/intake", actor);
     }
   });
+
+  app.use("/api/projects/:projectId", requireProjectOwner(config));
 
   app.get("/api/projects/:projectId/intake/sources", async (req, res) => {
     const actor = await getRequestActor(req, config);
@@ -2423,27 +2415,7 @@ export function buildApp(config: RuntimeConfig) {
       if (!uploadedFile) return res.status(400).json({ error: "No file uploaded" });
 
       const sizeBytes = uploadedFile.size;
-      const rawFileName = uploadedFile.originalname;
-      // Reject names with control characters or suspiciously long names (DoS prevention).
-      if (rawFileName.length > 255 || /[\x00-\x1f\x7f]/.test(rawFileName)) {
-        return res.status(400).json({ error: "Invalid filename: contains control characters or exceeds 255 characters." });
-      }
-      const fileName = rawFileName;
-
-      // Binary safety gate — block known-dangerous extensions, flag suspicious ones.
-      // Multer has already written the file to disk, so clean it up before rejecting.
-      const rejectUpload = (status: number, body: object) => {
-        try { fs.rmSync(uploadedFile.path, { force: true }); } catch {}
-        return res.status(status).json(body);
-      };
-      if (isBlockedFileExtension(fileName)) {
-        return rejectUpload(400, { error: `File type not permitted: ${path.extname(fileName).toLowerCase()}`, code: "BLOCKED_FILE_TYPE" });
-      }
-      const binaryScan = suspiciousBinaryHook(fileName);
-      if (binaryScan.status === "blocked") {
-        return rejectUpload(400, { error: binaryScan.reason, code: "BLOCKED_FILE_TYPE" });
-      }
-
+      const fileName = uploadedFile.originalname;
       const mimeType = uploadedFile.mimetype;
       const sourceType = classifyUploadedSourceType(fileName, mimeType || "");
       const uploadedAt = now();
@@ -2633,16 +2605,16 @@ export function buildApp(config: RuntimeConfig) {
       if (uploadedFile?.path) {
         try {
           fs.rmSync(uploadedFile.path, { force: true });
-        } catch (cleanupErr: any) {
-          console.warn(JSON.stringify({ event: "intake_cleanup_failed", path: uploadedFile.path, error: String(cleanupErr?.message || cleanupErr) }));
+        } catch {
+          // keep error handling non-fatal when cleanup fails
         }
       }
       const intakeWorkDir = (req as any).__intakeWorkDir as string | undefined;
       if (intakeWorkDir) {
         try {
           fs.rmSync(intakeWorkDir, { recursive: true, force: true });
-        } catch (cleanupErr: any) {
-          console.warn(JSON.stringify({ event: "intake_cleanup_failed", path: intakeWorkDir, error: String(cleanupErr?.message || cleanupErr) }));
+        } catch {
+          // keep error handling non-fatal when cleanup fails
         }
       }
 
@@ -2698,7 +2670,7 @@ export function buildApp(config: RuntimeConfig) {
     }
   });
 
-  app.post("/api/projects/:projectId/spec/analyze", MEDIUM_TIMEOUT, async (req, res) => {
+  app.post("/api/projects/:projectId/spec/analyze", async (req, res) => {
     const actor = await getRequestActor(req, config);
     try {
       const project = await repo.getProject(req.params.projectId);
@@ -3059,7 +3031,7 @@ export function buildApp(config: RuntimeConfig) {
     }
   });
 
-  app.post("/api/projects/:projectId/autonomous-build/start", requireRole("reviewer", config), LONG_TIMEOUT, async (req, res) => {
+  app.post("/api/projects/:projectId/autonomous-build/start", requireRole("reviewer", config), async (req, res) => {
     const actor = await getRequestActor(req, config);
     try {
       const project = await repo.getProject(req.params.projectId);
@@ -3203,20 +3175,6 @@ export function buildApp(config: RuntimeConfig) {
 
   app.post("/api/projects/:projectId/operator/send", async (req, res) => {
     const actor = await getRequestActor(req, config);
-    const rateKey = actor.actorId !== "anonymous" ? actor.actorId : (req.ip || "anonymous");
-    if (actor.actorId === "anonymous" && config.runtimeMode === "commercial") {
-      console.warn(JSON.stringify({ event: "rate_limit_ip_fallback", ip: req.ip || "unknown", path: req.path }));
-    }
-    const rateCheck = checkOperatorRateLimit(rateKey);
-    if (!rateCheck.allowed) {
-      res.setHeader("X-RateLimit-Limit", String(RATE_LIMIT_MAX));
-      res.setHeader("X-RateLimit-Remaining", "0");
-      res.setHeader("X-RateLimit-Reset", String(Math.ceil(rateCheck.resetAt / 1000)));
-      return res.status(429).json({ error: "Rate limit exceeded. Too many requests.", resetAt: new Date(rateCheck.resetAt).toISOString() });
-    }
-    res.setHeader("X-RateLimit-Limit", String(RATE_LIMIT_MAX));
-    res.setHeader("X-RateLimit-Remaining", String(rateCheck.remaining));
-    res.setHeader("X-RateLimit-Reset", String(Math.ceil(rateCheck.resetAt / 1000)));
     try {
       const auth = await getVerifiedAuth(req, config);
       const role = auth.role;
@@ -3227,6 +3185,8 @@ export function buildApp(config: RuntimeConfig) {
         // Auto-recreate when memory mode drops the project (e.g. server restart).
         project = toStored({
           projectId: req.params.projectId,
+          ownerUserId: actor.actorId,
+          tenantId: actor.actorId,
           name: message.slice(0, 60) || "Untitled Project",
           request: message,
           status: "clarifying",
@@ -3305,7 +3265,7 @@ export function buildApp(config: RuntimeConfig) {
             for (const rp of rootPackets) {
               try {
                 const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-                await enqueueJob({ job_id: jobId, project_id: compiled.projectId, packet_id: rp.packetId });
+                await enqueueJob({ job_id: jobId, project_id: compiled.projectId, packet_id: rp.packetId, owner_user_id: compiled.ownerUserId, tenant_id: compiled.tenantId ?? compiled.ownerUserId });
                 rootPacketsEnqueued++;
                 buildStages.push({ id: rp.packetId, label: rp.goal ?? rp.packetId, status: "queued" });
               } catch (_e) { /* tolerate queue error */ }
@@ -3793,7 +3753,7 @@ export function buildApp(config: RuntimeConfig) {
 
         route = "execute_next";
         const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-        await enqueueJob({ job_id: jobId, project_id: project.projectId, packet_id: pendingPacket.packetId });
+        await enqueueJob({ job_id: jobId, project_id: project.projectId, packet_id: pendingPacket.packetId, owner_user_id: project.ownerUserId, tenant_id: project.tenantId ?? project.ownerUserId });
         emitEvent(project as any, {
           id: `evt_${Date.now()}`,
           projectId: project.projectId,
@@ -3887,7 +3847,7 @@ export function buildApp(config: RuntimeConfig) {
     }
   });
 
-  app.post("/api/projects/:projectId/compile", MEDIUM_TIMEOUT, async (req, res) => {
+  app.post("/api/projects/:projectId/compile", async (req, res) => {
     const actor = await getRequestActor(req, config);
     try {
       const project = await repo.getProject(req.params.projectId);
@@ -3920,7 +3880,7 @@ export function buildApp(config: RuntimeConfig) {
     }
   });
 
-  app.post("/api/projects/:projectId/dispatch/execute-next", requireRole("reviewer", config), LONG_TIMEOUT, async (req, res) => {
+  app.post("/api/projects/:projectId/dispatch/execute-next", requireRole("reviewer", config), async (req, res) => {
     const actor = await getRequestActor(req, config);
     try {
       const project = await repo.getProject(req.params.projectId);
@@ -3932,7 +3892,7 @@ export function buildApp(config: RuntimeConfig) {
       const packet = getNextPendingPacket(project);
       if (!packet) return res.status(409).json({ error: "No pending packet", actorId: actor.actorId });
       const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-      await enqueueJob({ job_id: jobId, project_id: project.projectId, packet_id: packet.packetId });
+      await enqueueJob({ job_id: jobId, project_id: project.projectId, packet_id: packet.packetId, owner_user_id: project.ownerUserId, tenant_id: project.tenantId ?? project.ownerUserId });
       return res.status(202).json({ accepted: true, queued: true, jobId, packetId: packet.packetId, actorId: actor.actorId, workerId });
     } catch (error) {
       return handleRouteError(res, config, error, "POST /api/projects/:projectId/dispatch/execute-next", actor);
@@ -3961,7 +3921,7 @@ export function buildApp(config: RuntimeConfig) {
         clearReplayState(project, packet.packetId);
         setPacketStatus(project, packet.packetId, "pending");
         const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-        await enqueueJob({ job_id: jobId, project_id: project.projectId, packet_id: packet.packetId });
+        await enqueueJob({ job_id: jobId, project_id: project.projectId, packet_id: packet.packetId, owner_user_id: project.ownerUserId, tenant_id: project.tenantId ?? project.ownerUserId });
         replayed.push(packet.packetId);
       }
       recomputeProjectStatus(project);
@@ -4439,23 +4399,6 @@ export function buildApp(config: RuntimeConfig) {
       return res.json({ events: (project as any).auditEvents.slice(0, 100), actorId: actor.actorId });
     } catch (error) {
       return handleRouteError(res, config, error, "GET audit", actor);
-    }
-  });
-
-  // Global error handler — catches any middleware or route that calls next(err) or throws
-  // synchronously. Express requires exactly 4 arguments to recognise it as an error handler.
-  app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-    const requestId = String((res.locals as any)?.requestId || makeRequestId());
-    const message = String(err?.message || err || "Unknown error");
-    routeErrorCount += 1;
-    updateTelemetryTimestamp();
-    recordOpsError("route_error", message, { route: "global_error_handler", requestId, workerId });
-    console.error(JSON.stringify({ event: "unhandled_route_error", message, requestId, workerId, timestamp: now() }));
-    if (!res.headersSent) {
-      const clientError = config.runtimeMode === "commercial"
-        ? `Internal error — reference: ${requestId}`
-        : message;
-      res.status(err?.status || 500).json({ error: clientError, requestId });
     }
   });
 

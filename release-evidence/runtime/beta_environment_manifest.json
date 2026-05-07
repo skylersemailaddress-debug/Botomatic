@@ -1,0 +1,19 @@
+{
+  "manifestVersion": "beta-deployment-smoke-v1",
+  "generatedAt": "2026-05-06T18:08:00.000Z",
+  "environment": "friends_and_family_beta",
+  "secretPolicy": "Runtime secrets are supplied through environment variables only and must not be committed to source, docs, release evidence, logs, or generated app artifacts.",
+  "requiredEnvVars": [
+    "BOTOMATIC_BETA_BASE_URL",
+    "BOTOMATIC_BETA_AUTH_TOKEN",
+    "BOTOMATIC_BETA_PROJECT_ID"
+  ],
+  "defaultRoutes": {
+    "health": "/api/health",
+    "sensitiveNegativeAuth": "/api/ops/metrics",
+    "projectSmoke": "/api/projects/:projectId/status"
+  },
+  "proofArtifact": "release-evidence/runtime/deployment_smoke_beta_proof.json",
+  "documentation": "docs/beta/DEPLOYMENT_SMOKE_AND_ROLLBACK.md",
+  "rollbackRequirement": "Rollback procedure must be documented, and BOTOMATIC_BETA_ROLLBACK_TESTED=true may only be set after a real beta rollback drill."
+}

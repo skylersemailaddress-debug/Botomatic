@@ -1,10 +1,5 @@
-import { VibeDashboard } from "@/components/vibe/VibeDashboard";
-
-
-function VibeBuilderSkeleton(props: any) {
-  return <VibeDashboard {...props} />;
-}
+import { BetaHQ } from "@/components/beta-hq/BetaHQ";
 
 export default async function ProjectPage({ params }: { params: { projectId: string } }) {
-  return <VibeBuilderSkeleton projectId={params.projectId} />;
+  return <BetaHQ projectId={params.projectId} />;
 }

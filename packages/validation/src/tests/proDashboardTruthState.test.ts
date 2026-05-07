@@ -9,7 +9,7 @@ const orchestrationSource = fs.readFileSync("apps/control-plane/src/services/orc
 const orchestrationHookSource = fs.readFileSync("apps/control-plane/src/components/builder/useVibeOrchestration.ts", "utf8");
 const northStarShellSource = fs.readFileSync("apps/control-plane/src/components/builder/NorthStarBuilderShell.tsx", "utf8");
 
-assert(projectPageSource.includes("VibeDashboard"), "canonical project route must render VibeDashboard");
+assert(projectPageSource.includes("BetaHQ"), "canonical project route must render BetaHQ");
 assert(!fs.existsSync("apps/control-plane/src/components/pro/ProDashboard.tsx"), "deleted legacy ProDashboard must not be recreated to satisfy stale tests");
 
 const forbiddenStaticClaims = [

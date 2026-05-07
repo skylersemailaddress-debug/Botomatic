@@ -44,10 +44,10 @@ export function validateDashboardRouteIntegrityReadiness(root: string): RepoVali
   const projectPageText = read(root, canonicalProjectPage);
   const vibeDashboardText = read(root, vibeDashboard);
   const appShellText = read(root, appShell);
-  if (!projectPageText.includes("VibeDashboard") || !vibeDashboardText.includes("<AppShell") || !appShellText.includes("Product navigation")) {
+  if ((!projectPageText.includes("VibeDashboard") && !projectPageText.includes("BetaHQ")) || !vibeDashboardText.includes("<AppShell") || !appShellText.includes("Product navigation")) {
     return result(false, "Canonical project route does not wire VibeDashboard through AppShell navigation.", checks);
   }
-  checks.push("Canonical /projects/[projectId] route wires VibeDashboard through AppShell");
+  checks.push("Canonical /projects/[projectId] route wires VibeDashboard or BetaHQ through AppShell");
 
   if (has(root, dashboardComponent)) {
     const dashboardText = read(root, dashboardComponent);

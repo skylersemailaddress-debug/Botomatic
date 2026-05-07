@@ -1,9 +1,4 @@
-import { ProjectRepository, StoredProjectRecord } from "./types";
-
-/** Result from mergeProjectRuns — either success or a stale-write conflict. */
-export type MergeRunsResult =
-  | { ok: true }
-  | { ok: false; conflict: true; message: string };
+import { actorOwnsProject, ProjectRepository, StoredProjectRecord } from "./types";
 
 type DurableProjectRepositoryOptions = {
   baseUrl: string;
@@ -13,9 +8,12 @@ type DurableProjectRepositoryOptions = {
 
 type ProjectRow = {
   project_id: string;
+  owner_user_id: string;
+  tenant_id: string | null;
   name: string;
   request: string;
   status: string;
+  owner_id: string | null;
   master_truth: Record<string, unknown> | null;
   plan: Record<string, unknown> | null;
   runs: Record<string, unknown> | null;
@@ -34,9 +32,12 @@ function normalizeBaseUrl(url: string): string {
 function toRow(record: StoredProjectRecord): ProjectRow {
   return {
     project_id: record.projectId,
+    owner_user_id: record.ownerUserId,
+    tenant_id: record.tenantId ?? record.ownerUserId,
     name: record.name,
     request: record.request,
     status: record.status,
+    owner_id: record.ownerId ?? null,
     master_truth: record.masterTruth ?? null,
     plan: record.plan ?? null,
     runs: record.runs ?? null,
@@ -52,9 +53,12 @@ function toRow(record: StoredProjectRecord): ProjectRow {
 function fromRow(row: ProjectRow): StoredProjectRecord {
   return {
     projectId: row.project_id,
+    ownerUserId: row.owner_user_id,
+    tenantId: row.tenant_id,
     name: row.name,
     request: row.request,
     status: row.status,
+    ownerId: row.owner_id ?? null,
     masterTruth: row.master_truth,
     plan: row.plan,
     runs: row.runs,
@@ -134,6 +138,35 @@ export class DurableProjectRepository implements ProjectRepository {
     return fromRow(rows[0]);
   }
 
+  async getProjectForActor(projectId: string, actorId: string): Promise<StoredProjectRecord | null> {
+    const url = joinUrl(
+      this.baseUrl,
+      `${this.tableName}?project_id=eq.${encodeURIComponent(projectId)}&owner_user_id=eq.${encodeURIComponent(actorId)}&select=*`
+    );
+
+    const res = await fetch(url, {
+      method: "GET",
+      headers: {
+        ...this.authHeaders,
+        Accept: "application/json",
+      },
+    });
+
+    if (!res.ok) {
+      const body = await parseJsonSafe(res);
+      throw new Error(
+        `Durable repository getProjectForActor failed ${res.status}: ${JSON.stringify(body)}`
+      );
+    }
+
+    const rows = (await parseJsonSafe(res)) as ProjectRow[] | null;
+    if (!rows || rows.length === 0) {
+      return null;
+    }
+
+    return fromRow(rows[0]);
+  }
+
   private async assertReadable(projectId: string): Promise<void> {
     const readback = await this.getProject(projectId);
     if (!readback) {
@@ -157,13 +190,9 @@ export class DurableProjectRepository implements ProjectRepository {
     const encodedProjectId = encodeURIComponent(normalized.projectId);
 
     if (existing) {
-      // Use the previous updated_at as an ETag — if another worker already wrote a newer
-      // version, the PATCH matches 0 rows and we throw a conflict rather than silently
-      // overwriting concurrent changes (last-write-wins race condition).
-      const encodedPrevUpdatedAt = encodeURIComponent(existing.updatedAt);
       const updateUrl = joinUrl(
         this.baseUrl,
-        `${this.tableName}?project_id=eq.${encodedProjectId}&updated_at=eq.${encodedPrevUpdatedAt}`
+        `${this.tableName}?project_id=eq.${encodedProjectId}`
       );
 
       const updateRes = await fetch(updateUrl, {
@@ -182,13 +211,7 @@ export class DurableProjectRepository implements ProjectRepository {
         );
       }
 
-      const updated = await parseJsonSafe(updateRes);
-      if (!Array.isArray(updated) || updated.length === 0) {
-        throw new Error(
-          `Durable repository conflict: project ${normalized.projectId} was modified by another worker. Re-read and retry.`
-        );
-      }
-
+      await this.assertReadable(normalized.projectId);
       return;
     }
 
@@ -212,45 +235,14 @@ export class DurableProjectRepository implements ProjectRepository {
     await this.assertReadable(normalized.projectId);
   }
 
-  /**
-   * Atomically merge partial `runs` updates using the JSONB `||` operator at the
-   * DB layer. Prevents last-write-wins when two workers update different packets
-   * inside the same project's `runs` field concurrently.
-   *
-   * Returns `{ ok: false, conflict: true }` when `expectedUpdatedAt` no longer
-   * matches (another writer committed first). Caller should re-read and retry.
-   */
-  async mergeProjectRuns(
-    projectId: string,
-    expectedUpdatedAt: string,
-    partialRuns: Record<string, unknown>
-  ): Promise<MergeRunsResult> {
-    const url = joinUrl(this.baseUrl, `rpc/merge_project_runs`);
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { ...this.jsonHeaders, Prefer: "return=representation" },
-      body: JSON.stringify({
-        p_project_id: projectId,
-        p_expected_updated_at: expectedUpdatedAt,
-        p_runs: partialRuns,
-      }),
-    });
-
-    if (!res.ok) {
-      const body = await parseJsonSafe(res);
-      throw new Error(
-        `mergeProjectRuns RPC failed ${res.status}: ${JSON.stringify(body)}`
-      );
+  async upsertProjectForActor(record: StoredProjectRecord, actorId: string): Promise<void> {
+    const existing = await this.getProject(record.projectId);
+    if (existing && !actorOwnsProject(existing, actorId)) {
+      throw new Error("Project ownership mismatch");
     }
-
-    const rows = (await parseJsonSafe(res)) as ProjectRow[] | null;
-    if (!rows || rows.length === 0) {
-      return {
-        ok: false,
-        conflict: true,
-        message: `Concurrent write detected for project ${projectId} — re-read and retry.`,
-      };
+    if (record.ownerUserId !== actorId) {
+      throw new Error("Project owner must match actor");
     }
-    return { ok: true };
+    await this.upsertProject(record);
   }
 }

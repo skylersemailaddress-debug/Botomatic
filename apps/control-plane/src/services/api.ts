@@ -66,36 +66,36 @@ export function buildApiUrl(path: string): string {
   }
 
   if (path.startsWith("/api/")) {
+    // In the browser, always keep /api/ paths relative so the Next.js server-side proxy
+    // handles routing and injects server-side auth credentials.
+    // Never send /api/ calls directly to a remote base URL from client code.
+    if (typeof window !== "undefined") {
+      return path;
+    }
+
+    // SSR: resolve to an absolute URL so Node fetch can make the request.
     const configuredBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-    if (configuredBaseUrl && shouldUseConfiguredBaseUrl(configuredBaseUrl)) {
+    if (configuredBaseUrl) {
       return `${normalizeApiBaseUrl(configuredBaseUrl)}${path}`;
     }
-
-    // On server-side render, use absolute same-origin URL so Node fetch can resolve it.
-    if (typeof window === "undefined") {
-      return `${getServerAppBaseUrl()}${path}`;
-    }
-
-    // In browser, keep API paths relative by default so same-origin routes/rewrites are used.
-    return path;
+    return `${getServerAppBaseUrl()}${path}`;
   }
 
   return path;
 }
 
+function isLocalDevelopment(): boolean {
+  const environment = (process.env.BOTOMATIC_DEPLOYMENT_ENV || process.env.BOTOMATIC_ENV || process.env.VERCEL_ENV || process.env.NODE_ENV || "").toLowerCase();
+  return process.env.NODE_ENV === "development" && !["production", "prod", "beta", "preview", "staging"].includes(environment);
+}
+
 function buildHeaders(overrides: Record<string, string> = {}): Record<string, string> {
   const headers: Record<string, string> = {};
 
-  // Only add Authorization on the server side (React Server Components, API routes).
-  // Client-side fetches are routed through /api/[...path] which adds auth server-side.
-  // NEXT_PUBLIC_ vars are compiled into the browser bundle and must NOT carry credentials.
-  if (typeof window === "undefined") {
-    const token = (
-      process.env.BOTOMATIC_API_TOKEN ||
-      process.env.API_AUTH_TOKEN ||
-      ""
-    ).trim();
-    if (token) headers["Authorization"] = `Bearer ${token}`;
+  if (process.env.NEXT_PUBLIC_BOTOMATIC_API_TOKEN) {
+    headers["Authorization"] = `Bearer ${process.env.NEXT_PUBLIC_BOTOMATIC_API_TOKEN}`;
+  } else if (isLocalDevelopment() && process.env.NEXT_PUBLIC_DEV_BEARER_TOKEN) {
+    headers["Authorization"] = `Bearer ${process.env.NEXT_PUBLIC_DEV_BEARER_TOKEN}`;
   }
 
   return { ...headers, ...overrides };

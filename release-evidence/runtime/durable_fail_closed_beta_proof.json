@@ -1,0 +1,11 @@
+{
+  "generatedAt": "2026-05-07T01:34:07.403Z",
+  "artifact": "release-evidence/runtime/durable_fail_closed_beta_proof.json",
+  "scope": "Durable storage fail-closed behavior for beta/production and explicit local memory fallback.",
+  "signals": {
+    "production_supabase_outage_blocks_startup_or_readiness": true,
+    "beta_does_not_fallback_to_memory": true,
+    "development_memory_fallback_explicit_only": true,
+    "public_traffic_not_accepted_without_durable_repo": true
+  }
+}
