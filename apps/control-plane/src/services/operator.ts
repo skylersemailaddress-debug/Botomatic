@@ -7,7 +7,7 @@ export type OperatorBlockingQuestion = {
   technicalDetail?: string;
   suggestedDefault: string;
   label?: string;
-  question?: string;
+  question: string;
   category?: string;
   risk?: string;
   status?: string;
