@@ -1,5 +1,19 @@
 import { postJson } from "./api";
 
+export type OperatorBlockingQuestion = {
+  id: string;
+  field: string;
+  plainEnglish: string;
+  technicalDetail?: string;
+  suggestedDefault: string;
+  label?: string;
+  question?: string;
+  category?: string;
+  risk?: string;
+  status?: string;
+  recommendedDefault?: string;
+};
+
 export type OperatorSendResponse = {
   ok: boolean;
   route: string;
@@ -11,17 +25,7 @@ export type OperatorSendResponse = {
   actionResult?: Record<string, unknown>;
   readyToBuild?: boolean;
   lockedReason?: string;
-  blockingQuestions?: Array<{
-    id: string;
-    label?: string;
-    question?: string;
-    plainEnglish?: string;
-    technicalDetail?: string;
-    category?: string;
-    risk?: string;
-    status?: string;
-    recommendedDefault?: string;
-  }>;
+  blockingQuestions?: OperatorBlockingQuestion[];
   canUseRecommendedDefaults?: boolean;
   missingArtifacts?: Array<{
     id?: string;
