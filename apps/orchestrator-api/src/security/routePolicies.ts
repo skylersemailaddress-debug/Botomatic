@@ -62,6 +62,8 @@ export const ROUTE_AUTHORIZATION_POLICIES: readonly RoutePolicy[] = [
   project("POST", "/api/projects/:projectId/spec/build-contract", "project_owner", true, "Generates a project build contract."),
   project("POST", "/api/projects/:projectId/spec/approve", "operator", true, "Approves a project specification and advances gated build state."),
   project("GET", "/api/projects/:projectId/spec/status", "project_owner", false, "Reads project specification state."),
+  project("GET", "/api/projects/:projectId/readiness", "project_owner", false, "Reads commercial build readiness state and blocking decisions."),
+  project("POST", "/api/projects/:projectId/clarifications", "project_owner", true, "Persists user answers to pre-build decision questions."),
   project("POST", "/api/projects/:projectId/self-upgrade/spec", "operator", true, "Plans self-upgrade work with repository-level implications."),
   project("GET", "/api/projects/:projectId/self-upgrade/status", "operator", false, "Reads self-upgrade state and drift signals."),
   project("POST", "/api/projects/:projectId/repo/completion-contract", "operator", true, "Generates repository completion and repair planning state."),

@@ -46,6 +46,8 @@ This matrix is the human-readable view of `apps/orchestrator-api/src/security/ro
 | POST /api/projects/:projectId/spec/build-contract | project_owner | yes | yes | yes | Generates a project build contract. |
 | POST /api/projects/:projectId/spec/approve | operator | yes | yes | yes | Approves a project specification and advances gated build state. |
 | GET /api/projects/:projectId/spec/status | project_owner | yes | no | yes | Reads project specification state. |
+| GET /api/projects/:projectId/readiness | project_owner | yes | no | yes | Reads commercial build readiness state and blocking decisions. |
+| POST /api/projects/:projectId/clarifications | project_owner | yes | yes | yes | Persists user answers to pre-build decision questions. |
 | POST /api/projects/:projectId/self-upgrade/spec | operator | yes | yes | yes | Plans self-upgrade work with repository-level implications. |
 | GET /api/projects/:projectId/self-upgrade/status | operator | yes | no | yes | Reads self-upgrade state and drift signals. |
 | POST /api/projects/:projectId/repo/completion-contract | operator | yes | yes | yes | Generates repository completion and repair planning state. |

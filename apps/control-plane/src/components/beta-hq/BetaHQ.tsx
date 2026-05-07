@@ -30,6 +30,38 @@ type BuildStartResponse = {
   message?: string;
   error?: string;
   raw?: unknown;
+  readyToBuild?: boolean;
+  lockedReason?: string;
+  blockingQuestions?: BlockingQuestion[];
+  canUseRecommendedDefaults?: boolean;
+  recommendedDefaults?: DecisionEntry[];
+  missingArtifacts?: string[];
+};
+
+type BlockingQuestion = {
+  id: string;
+  field: string;
+  question: string;
+  plainEnglish: string;
+  risk: string;
+  suggestedDefault: string | null;
+};
+
+type DecisionEntry = {
+  id: string;
+  label: string;
+  plainEnglish: string;
+  recommendedDefault: string | null;
+};
+
+type ReadinessState = {
+  readyToBuild: boolean;
+  readinessScore: number;
+  status: string;
+  lockedReason: string | null;
+  blockingQuestions: BlockingQuestion[];
+  canUseRecommendedDefaults: boolean;
+  missingArtifacts: string[];
 };
 
 // ── Pipeline ──────────────────────────────────────────────────────────────
@@ -37,8 +69,6 @@ type BuildStartResponse = {
 const PIPELINE_LABELS = ["Intake", "Plan", "Build", "Validate", "Preview", "Launch"];
 
 // ── Internal string sanitization ──────────────────────────────────────────
-// These strings come from internal planner/adapter state and must never
-// be shown directly to beta users.
 
 const BLOCKED_INTERNAL_STRINGS = [
   "pageRoot",
@@ -106,6 +136,95 @@ function StatusDot({ status }: { status: StatusValue }) {
   return <span className="bhq-dot" style={{ background: color }} aria-hidden />;
 }
 
+// ── Build readiness panel ──────────────────────────────────────────────────
+
+function BuildReadinessPanel({
+  projectId,
+  readiness,
+  onUseDefaults,
+  onAnswerQuestion,
+  defaultsBusy,
+}: {
+  projectId: string;
+  readiness: ReadinessState;
+  onUseDefaults: () => void;
+  onAnswerQuestion: (q: BlockingQuestion) => void;
+  defaultsBusy: boolean;
+}) {
+  if (readiness.readyToBuild) {
+    return (
+      <div className="bhq-readiness bhq-readiness--ready" aria-label="Build readiness">
+        <div className="bhq-readiness-score">
+          <span className="bhq-readiness-label">Ready to build</span>
+          <span className="bhq-readiness-pct">{readiness.readinessScore}%</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bhq-readiness bhq-readiness--locked" aria-label="Build readiness">
+      <div className="bhq-readiness-score">
+        <span className="bhq-readiness-label">Build locked</span>
+        <span className="bhq-readiness-pct">{readiness.readinessScore}%</span>
+      </div>
+      {readiness.lockedReason && (
+        <p className="bhq-readiness-reason">{readiness.lockedReason}</p>
+      )}
+
+      {readiness.missingArtifacts.length > 0 && (
+        <div className="bhq-readiness-missing">
+          <p className="bhq-readiness-missing-msg">
+            I do not see an uploaded file yet. Upload it now or build from your description.
+          </p>
+        </div>
+      )}
+
+      {readiness.blockingQuestions.length > 0 && (
+        <div className="bhq-readiness-questions">
+          {readiness.blockingQuestions.map((q) => (
+            <div key={q.id} className="bhq-readiness-question">
+              <span className={`bhq-risk-tag bhq-risk-tag--${q.risk}`}>{q.risk}</span>
+              <p className="bhq-question-text">{q.plainEnglish}</p>
+              {q.suggestedDefault && (
+                <p className="bhq-question-default" title={`Recommended: ${q.suggestedDefault}`}>
+                  Recommended: {q.suggestedDefault}
+                </p>
+              )}
+              <button
+                type="button"
+                className="bhq-btn bhq-btn--xs"
+                onClick={() => onAnswerQuestion(q)}
+                aria-label={`Answer: ${q.plainEnglish}`}
+              >
+                Answer this question
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {readiness.canUseRecommendedDefaults && (
+        <button
+          type="button"
+          className="bhq-btn bhq-btn--primary bhq-btn--sm"
+          disabled={defaultsBusy}
+          onClick={onUseDefaults}
+          aria-label="Use recommended defaults for all required decisions"
+        >
+          {defaultsBusy ? "Applying…" : "Use recommended defaults"}
+        </button>
+      )}
+
+      {!readiness.canUseRecommendedDefaults && readiness.blockingQuestions.length > 0 && (
+        <p className="bhq-readiness-tip">
+          Answer the questions above in the chat, or type your answers directly.
+        </p>
+      )}
+    </div>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────
 
 export function BetaHQ({ projectId: initialProjectId }: { projectId?: string }) {
@@ -117,6 +236,10 @@ export function BetaHQ({ projectId: initialProjectId }: { projectId?: string }) 
   const [runtime, setRuntime] = useState<ProjectRuntimeState | null>(null);
   const [lastAction, setLastAction] = useState("--");
   const [projectStatus, setProjectStatus] = useState<string | null>(null);
+
+  // Readiness
+  const [readiness, setReadiness] = useState<ReadinessState | null>(null);
+  const [defaultsBusy, setDefaultsBusy] = useState(false);
 
   // Chat
   const [messages, setMessages] = useState<ChatMsg[]>([]);
@@ -139,7 +262,7 @@ export function BetaHQ({ projectId: initialProjectId }: { projectId?: string }) 
     return () => { active = false; };
   }, []);
 
-  // ── Project state polling ──────────────────────────────────────────────
+  // ── Project state + readiness polling ─────────────────────────────────
   useEffect(() => {
     if (!projectId) return;
     let active = true;
@@ -155,6 +278,22 @@ export function BetaHQ({ projectId: initialProjectId }: { projectId?: string }) 
         if (status) setProjectStatus(status);
       }
       setRuntime(runtimeRes ?? null);
+
+      // Poll readiness separately
+      try {
+        const rd = await getJsonSafe<any>(`/api/projects/${projectId}/readiness`);
+        if (active && rd.ok) {
+          setReadiness({
+            readyToBuild: Boolean(rd.data?.readyToBuild),
+            readinessScore: Number(rd.data?.readinessScore ?? 0),
+            status: String(rd.data?.status ?? "draft"),
+            lockedReason: rd.data?.lockedReason ?? null,
+            blockingQuestions: Array.isArray(rd.data?.blockingQuestions) ? rd.data.blockingQuestions : [],
+            canUseRecommendedDefaults: Boolean(rd.data?.canUseRecommendedDefaults),
+            missingArtifacts: Array.isArray(rd.data?.missingArtifacts) ? rd.data.missingArtifacts : [],
+          });
+        }
+      } catch { /* readiness poll failure is non-fatal */ }
     };
     poll();
     const interval = setInterval(poll, 5000);
@@ -169,6 +308,95 @@ export function BetaHQ({ projectId: initialProjectId }: { projectId?: string }) 
   const addMsg = useCallback((role: ChatRole, text: string) => {
     setMessages((prev) => [...prev, { id: ++msgIdRef.current, role, text }]);
   }, []);
+
+  // ── Apply readiness info from a build response ─────────────────────────
+  const applyBuildReadiness = useCallback((result: BuildStartResponse) => {
+    const raw = result.raw as any;
+    const rdy = result.readyToBuild ?? raw?.readyToBuild;
+    if (rdy === false) {
+      const bq: BlockingQuestion[] = result.blockingQuestions ?? raw?.blockingQuestions ?? [];
+      setReadiness({
+        readyToBuild: false,
+        readinessScore: raw?.readinessScore ?? 0,
+        status: result.status ?? raw?.status ?? "clarifying",
+        lockedReason: result.lockedReason ?? raw?.lockedReason ?? null,
+        blockingQuestions: bq,
+        canUseRecommendedDefaults: result.canUseRecommendedDefaults ?? raw?.canUseRecommendedDefaults ?? false,
+        missingArtifacts: result.missingArtifacts ?? raw?.missingArtifacts ?? [],
+      });
+    }
+  }, []);
+
+  // ── Use recommended defaults ───────────────────────────────────────────
+  const handleUseDefaults = useCallback(async () => {
+    if (!projectId || !readiness) return;
+    setDefaultsBusy(true);
+    try {
+      const answers = readiness.blockingQuestions
+        .filter((q) => q.suggestedDefault)
+        .map((q) => ({ decisionId: q.id, acceptedDefault: true }));
+      const result = await postJson<any>(`/api/projects/${projectId}/clarifications`, { answers });
+      if (result.readiness) {
+        setReadiness({
+          readyToBuild: Boolean(result.readiness.readyToBuild),
+          readinessScore: Number(result.readiness.readinessScore ?? 0),
+          status: String(result.readiness.status ?? "ready_to_build"),
+          lockedReason: result.readiness.lockedReason ?? null,
+          blockingQuestions: Array.isArray(result.readiness.blockingQuestions) ? result.readiness.blockingQuestions : [],
+          canUseRecommendedDefaults: Boolean(result.readiness.canUseRecommendedDefaults),
+          missingArtifacts: Array.isArray(result.readiness.missingArtifacts) ? result.readiness.missingArtifacts : [],
+        });
+      }
+      addMsg("system", "Recommended defaults applied. You can now start the build.");
+      setLastAction("Defaults applied");
+    } catch (err) {
+      addMsg("error", err instanceof Error ? err.message : "Failed to apply defaults");
+    } finally {
+      setDefaultsBusy(false);
+    }
+  }, [projectId, readiness, addMsg]);
+
+  // ── Answer a question (pre-fill chat input) ────────────────────────────
+  const handleAnswerQuestion = useCallback((q: BlockingQuestion) => {
+    setChatInput(q.plainEnglish + "\n\nMy answer: ");
+    addMsg("system", `Question: ${q.plainEnglish}`);
+  }, [addMsg]);
+
+  // ── Trigger build explicitly ───────────────────────────────────────────
+  const handleBuild = useCallback(async () => {
+    if (!projectId) return;
+    setChatBusy(true);
+    addMsg("system", "Starting build…");
+    try {
+      const buildResult = await postJson<BuildStartResponse>(
+        `/api/projects/${projectId}/build/start`,
+        {
+          inputText: "",
+          safeDefaults: true,
+          artifactIds: attachedArtifacts.map((a) => a.artifactId),
+        },
+      );
+      const buildStatus = buildResult.status || "queued";
+      setProjectStatus(buildStatus);
+      applyBuildReadiness(buildResult);
+      if (buildStatus === "clarifying" || (buildResult.raw as any)?.readyToBuild === false) {
+        const lrFromRaw = (buildResult.raw as any)?.lockedReason;
+        addMsg("system", lrFromRaw || buildResult.lockedReason || buildResult.message || "Build is locked — answer the required questions first.");
+        const bqs: BlockingQuestion[] = buildResult.blockingQuestions ?? (buildResult.raw as any)?.blockingQuestions ?? [];
+        for (const bq of bqs) {
+          addMsg("system", `Required: ${bq.plainEnglish}`);
+        }
+      } else {
+        const jobInfo = buildResult.jobId ? ` (job: ${buildResult.jobId})` : "";
+        addMsg("system", buildResult.message || `Build ${buildStatus}${jobInfo}`);
+        if (buildResult.nextStep) setLastAction(buildResult.nextStep);
+      }
+    } catch (err) {
+      addMsg("error", err instanceof Error ? err.message : "Build failed");
+    } finally {
+      setChatBusy(false);
+    }
+  }, [projectId, attachedArtifacts, addMsg, applyBuildReadiness]);
 
   // ── Chat / intake submit ───────────────────────────────────────────────
   const handleChatSubmit = useCallback(async (e: React.FormEvent) => {
@@ -191,28 +419,54 @@ export function BetaHQ({ projectId: initialProjectId }: { projectId?: string }) 
         setProjectStatus("created");
         setLastAction(`Created ${newId}`);
         addMsg("system", `Project created: ${newId}`);
-        // Update URL without re-mounting so state (messages, uploads) is preserved.
         if (typeof window !== "undefined") {
           window.history.replaceState(null, "", `/projects/${newId}`);
         }
-        // Attempt to trigger a real hosted build on Railway.
+        // Check readiness before auto-triggering build
+        addMsg("system", "Analyzing build requirements…");
+        try {
+          const rd = await getJsonSafe<any>(`/api/projects/${newId}/readiness`);
+          if (rd.ok && rd.data) {
+            const rdState: ReadinessState = {
+              readyToBuild: Boolean(rd.data.readyToBuild),
+              readinessScore: Number(rd.data.readinessScore ?? 0),
+              status: String(rd.data.status ?? "draft"),
+              lockedReason: rd.data.lockedReason ?? null,
+              blockingQuestions: Array.isArray(rd.data.blockingQuestions) ? rd.data.blockingQuestions : [],
+              canUseRecommendedDefaults: Boolean(rd.data.canUseRecommendedDefaults),
+              missingArtifacts: Array.isArray(rd.data.missingArtifacts) ? rd.data.missingArtifacts : [],
+            };
+            setReadiness(rdState);
+            if (!rdState.readyToBuild) {
+              const bqs = rdState.blockingQuestions;
+              if (rdState.missingArtifacts.length > 0) {
+                addMsg("system", "I do not see an uploaded file yet. Upload it now or build from your description.");
+              } else if (bqs.length > 0) {
+                addMsg("system", rdState.lockedReason || `${bqs.length} required decision${bqs.length !== 1 ? "s" : ""} before building.`);
+                for (const bq of bqs.slice(0, 3)) {
+                  addMsg("system", `• ${bq.plainEnglish}${bq.suggestedDefault ? ` (recommended: ${bq.suggestedDefault})` : ""}`);
+                }
+              }
+              // Don't trigger build yet — wait for user to resolve
+              setChatBusy(false);
+              return;
+            }
+          }
+        } catch { /* readiness check failure is non-fatal — fall through to build */ }
+
+        // Ready to build: trigger automatically
         addMsg("system", "Triggering build on Railway…");
         try {
           const buildResult = await postJson<BuildStartResponse>(
             `/api/projects/${newId}/build/start`,
-            {
-              inputText: text,
-              safeDefaults: true,
-              artifactIds: attachedArtifacts.map((a) => a.artifactId),
-            },
+            { inputText: text, safeDefaults: true, artifactIds: attachedArtifacts.map((a) => a.artifactId) },
           );
           const buildStatus = buildResult.status || "queued";
           setProjectStatus(buildStatus);
-          if (buildStatus === "clarifying" || buildStatus === "needs-more-detail") {
-            addMsg("system",
-              buildResult.nextStep || buildResult.message ||
-              "Botomatic needs more detail. Describe what to build further in the chat.",
-            );
+          applyBuildReadiness(buildResult);
+          if (buildStatus === "clarifying" || (buildResult.raw as any)?.readyToBuild === false) {
+            const lrFromRaw = (buildResult.raw as any)?.lockedReason;
+            addMsg("system", lrFromRaw || buildResult.message || "Botomatic needs more detail. Answer the required questions.");
           } else {
             const jobInfo = buildResult.jobId ? ` (job: ${buildResult.jobId})` : "";
             addMsg("system", buildResult.message || `Build ${buildStatus}${jobInfo}`);
@@ -234,20 +488,17 @@ export function BetaHQ({ projectId: initialProjectId }: { projectId?: string }) 
           }
         }
       } else {
-        // If there are unsubmitted artifacts, trigger a build with them first.
+        // Existing project: attach artifacts if any, otherwise use operator send
         if (attachedArtifacts.length > 0) {
           addMsg("system", "Triggering build with attached artifacts…");
           try {
             const buildResult = await postJson<BuildStartResponse>(
               `/api/projects/${projectId}/build/start`,
-              {
-                inputText: text,
-                safeDefaults: true,
-                artifactIds: attachedArtifacts.map((a) => a.artifactId),
-              },
+              { inputText: text, safeDefaults: true, artifactIds: attachedArtifacts.map((a) => a.artifactId) },
             );
             const buildStatus = buildResult.status || "queued";
             setProjectStatus(buildStatus);
+            applyBuildReadiness(buildResult);
             const jobInfo = buildResult.jobId ? ` (job: ${buildResult.jobId})` : "";
             addMsg("system", buildResult.message || `Build ${buildStatus}${jobInfo}`);
             if (buildResult.nextStep) setLastAction(buildResult.nextStep);
@@ -259,6 +510,15 @@ export function BetaHQ({ projectId: initialProjectId }: { projectId?: string }) 
             const result = await sendOperatorMessage(projectId, text);
             const reply = result.operatorMessage || result.nextAction || result.status || "Command accepted.";
             addMsg("system", reply);
+            // If the operator response indicates clarifying state, surface blocking questions
+            if (result.status === "clarifying" || result.readyToBuild === false) {
+              const bqs: BlockingQuestion[] = result.blockingQuestions ?? [];
+              if (bqs.length > 0) {
+                for (const bq of bqs.slice(0, 3)) {
+                  addMsg("system", `• ${bq.plainEnglish}${bq.suggestedDefault ? ` (recommended: ${bq.suggestedDefault})` : ""}`);
+                }
+              }
+            }
             setLastAction(result.nextAction || "Command sent");
           } catch (err) {
             const msg = err instanceof Error ? err.message : String(err);
@@ -275,7 +535,7 @@ export function BetaHQ({ projectId: initialProjectId }: { projectId?: string }) 
     } finally {
       setChatBusy(false);
     }
-  }, [chatInput, chatBusy, projectId, attachedArtifacts, addMsg]);
+  }, [chatInput, chatBusy, projectId, attachedArtifacts, addMsg, applyBuildReadiness]);
 
   // ── File upload ────────────────────────────────────────────────────────
   const addFiles = useCallback((files: FileList | File[]) => {
@@ -319,9 +579,10 @@ export function BetaHQ({ projectId: initialProjectId }: { projectId?: string }) 
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Upload failed";
         setUploads((prev) => prev.map((u, j) => j === i ? { ...u, status: "error", error: msg } : u));
+        addMsg("error", `Upload failed for ${uploads[i].file.name}: ${msg}`);
       }
     }
-  }, [projectId, uploads]);
+  }, [projectId, uploads, addMsg]);
 
   // ── Derived state ──────────────────────────────────────────────────────
   const pipeline = PIPELINE_LABELS.map((label) => ({
@@ -340,6 +601,15 @@ export function BetaHQ({ projectId: initialProjectId }: { projectId?: string }) 
   const safeLatestStep = sanitize(latestStep);
   const activity = (projectState as any)?.activity as Array<{ label?: string; type?: string; timestamp?: string }> | undefined;
   const recentActivity = activity?.slice(-4) ?? [];
+
+  // Build button state
+  const buildReady = !!projectId && (readiness?.readyToBuild ?? false);
+  const buildLocked = !!projectId && readiness !== null && !readiness.readyToBuild;
+  const buildButtonTitle = !projectId
+    ? "Create a project first"
+    : buildReady
+    ? "Start build"
+    : readiness?.lockedReason ?? "Checking readiness…";
 
   // ── Render ─────────────────────────────────────────────────────────────
   return (
@@ -409,7 +679,9 @@ export function BetaHQ({ projectId: initialProjectId }: { projectId?: string }) 
               <textarea
                 className="bhq-chat-input"
                 placeholder={
-                  projectStatus === "clarifying"
+                  buildLocked
+                    ? "Answer the required questions above to unlock build…"
+                    : projectStatus === "clarifying"
                     ? "Botomatic needs more detail — describe what to build further…"
                     : projectId
                     ? "Tell Botomatic what to build or change…"
@@ -519,7 +791,7 @@ export function BetaHQ({ projectId: initialProjectId }: { projectId?: string }) 
           </section>
         </div>
 
-        {/* Right column: progress + preview + launch + logs */}
+        {/* Right column: progress + readiness + preview + launch + logs */}
         <div className="bhq-col bhq-col--right">
 
           {/* Build progress */}
@@ -531,6 +803,22 @@ export function BetaHQ({ projectId: initialProjectId }: { projectId?: string }) 
               ))}
             </div>
           </section>
+
+          {/* Build readiness (shown once project exists) */}
+          {projectId && readiness !== null && (
+            <section className="bhq-card bhq-readiness-panel" aria-label="Build readiness">
+              <div className="bhq-card-head">
+                {readiness.readyToBuild ? "Build ready" : "Build locked"}
+              </div>
+              <BuildReadinessPanel
+                projectId={projectId}
+                readiness={readiness}
+                onUseDefaults={() => void handleUseDefaults()}
+                onAnswerQuestion={handleAnswerQuestion}
+                defaultsBusy={defaultsBusy}
+              />
+            </section>
+          )}
 
           {/* Preview / status */}
           <section className="bhq-card bhq-preview-panel" aria-label="Preview and status">
@@ -576,6 +864,17 @@ export function BetaHQ({ projectId: initialProjectId }: { projectId?: string }) 
           <section className="bhq-card bhq-launch-panel" aria-label="Launch controls">
             <div className="bhq-card-head">Launch</div>
             <div className="bhq-launch-row">
+              {/* Build button — always visible, locked until readiness passes */}
+              <button
+                type="button"
+                className={`bhq-btn ${buildReady ? "bhq-btn--primary" : ""}`}
+                disabled={!projectId || chatBusy || buildLocked}
+                title={buildButtonTitle}
+                aria-label={buildButtonTitle}
+                onClick={() => void handleBuild()}
+              >
+                {chatBusy ? "Building…" : buildLocked ? `Locked: ${readiness?.lockedReason?.slice(0, 30) ?? "needs decisions"}…` : "Build app"}
+              </button>
               <button
                 type="button"
                 className="bhq-btn"
@@ -625,7 +924,12 @@ export function BetaHQ({ projectId: initialProjectId }: { projectId?: string }) 
                 Launch
               </button>
             </div>
-            {!canLaunch && projectId && (
+            {buildLocked && projectId && (
+              <p className="bhq-launch-note" style={{ color: "var(--danger, #b73737)" }}>
+                {readiness?.lockedReason ?? "Answer required questions to unlock build."}
+              </p>
+            )}
+            {!canLaunch && !buildLocked && projectId && (
               <p className="bhq-launch-note">
                 Complete Intake → Plan → Build → Validate to enable launch.
               </p>

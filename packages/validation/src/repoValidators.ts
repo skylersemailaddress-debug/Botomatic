@@ -1663,6 +1663,69 @@ export function validateHostedCommercialLaunch(root: string): RepoValidatorResul
   return result("Validate-Botomatic-HostedCommercialLaunch", true, "Hosted UI routes, session gate, commercial start script, Railway config, server-only auth, and deployment docs are all present.", files);
 }
 
+export function validateCommercialReadinessGate(root: string): RepoValidatorResult {
+  const files = [
+    "apps/orchestrator-api/src/server_app.ts",
+    "apps/control-plane/src/app/api/projects/[projectId]/readiness/route.ts",
+    "apps/control-plane/src/app/api/projects/[projectId]/clarifications/route.ts",
+    "apps/control-plane/src/components/beta-hq/BetaHQ.tsx",
+  ];
+
+  const serverAppPath = "apps/orchestrator-api/src/server_app.ts";
+  if (!has(root, serverAppPath)) {
+    return result("Validate-Botomatic-CommercialReadinessGate", false, "server_app.ts not found.", files);
+  }
+  const serverApp = read(root, serverAppPath);
+
+  if (!serverApp.includes("computeProjectReadiness")) {
+    return result("Validate-Botomatic-CommercialReadinessGate", false, "server_app.ts must define computeProjectReadiness.", files);
+  }
+  if (!serverApp.includes("decisionLedgerRunKey")) {
+    return result("Validate-Botomatic-CommercialReadinessGate", false, "server_app.ts must define decisionLedgerRunKey.", files);
+  }
+  if (!serverApp.includes("READINESS GATE: check using freshly analyzed clarifications")) {
+    return result("Validate-Botomatic-CommercialReadinessGate", false, "operator/send autonomous build path must have readiness gate.", files);
+  }
+  if (!serverApp.includes("READINESS GATE: block build if high-risk decisions are unresolved")) {
+    return result("Validate-Botomatic-CommercialReadinessGate", false, "autonomous-build/start must have readiness gate.", files);
+  }
+  if (!serverApp.includes('"/api/projects/:projectId/readiness"')) {
+    return result("Validate-Botomatic-CommercialReadinessGate", false, "server_app.ts must have GET /api/projects/:projectId/readiness endpoint.", files);
+  }
+  if (!serverApp.includes('"/api/projects/:projectId/clarifications"')) {
+    return result("Validate-Botomatic-CommercialReadinessGate", false, "server_app.ts must have POST /api/projects/:projectId/clarifications endpoint.", files);
+  }
+
+  if (!has(root, "apps/control-plane/src/app/api/projects/[projectId]/readiness/route.ts")) {
+    return result("Validate-Botomatic-CommercialReadinessGate", false, "Next.js readiness proxy route must exist.", files);
+  }
+  if (!has(root, "apps/control-plane/src/app/api/projects/[projectId]/clarifications/route.ts")) {
+    return result("Validate-Botomatic-CommercialReadinessGate", false, "Next.js clarifications proxy route must exist.", files);
+  }
+
+  const betaHQ = read(root, "apps/control-plane/src/components/beta-hq/BetaHQ.tsx");
+  if (!betaHQ.includes("buildLocked") || !betaHQ.includes("readyToBuild")) {
+    return result("Validate-Botomatic-CommercialReadinessGate", false, "BetaHQ must have buildLocked state gated on readyToBuild.", files);
+  }
+  if (!betaHQ.includes("lockedReason") || !betaHQ.includes("blockingQuestions")) {
+    return result("Validate-Botomatic-CommercialReadinessGate", false, "BetaHQ must display lockedReason and blockingQuestions.", files);
+  }
+  if (!betaHQ.includes("Use recommended defaults")) {
+    return result("Validate-Botomatic-CommercialReadinessGate", false, "BetaHQ must offer 'Use recommended defaults' action.", files);
+  }
+  if (!betaHQ.includes("Build app")) {
+    return result("Validate-Botomatic-CommercialReadinessGate", false, "BetaHQ must show a visible 'Build app' button.", files);
+  }
+  if (!betaHQ.includes("I do not see an uploaded file yet")) {
+    return result("Validate-Botomatic-CommercialReadinessGate", false, "BetaHQ must warn when a referenced file is missing.", files);
+  }
+  if (!betaHQ.includes("/clarifications")) {
+    return result("Validate-Botomatic-CommercialReadinessGate", false, "BetaHQ must call /clarifications endpoint to persist answers.", files);
+  }
+
+  return result("Validate-Botomatic-CommercialReadinessGate", true, "Readiness gate blocks build when readyToBuild=false; decision ledger, readiness+clarifications endpoints, and BetaHQ locked Build button are all wired.", files);
+}
+
 export function runAllRepoValidators(root: string): RepoValidatorResult[] {
   return [
     validateArchitecture(root),
@@ -1755,5 +1818,6 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateBetaBuildFlowAuth(root),
     validateBetaFileUploadWiring(root),
     validateHostedCommercialLaunch(root),
+    validateCommercialReadinessGate(root),
   ];
 }
