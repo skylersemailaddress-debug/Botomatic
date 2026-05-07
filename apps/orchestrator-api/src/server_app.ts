@@ -62,7 +62,7 @@ import { ClaudeCodeExecutor } from "../../../packages/executor-adapters/src/clau
 import { runValidation } from "../../../packages/validation/src/runner";
 import { createGitOperation, GitOperationRequest, GitOperationResult } from "../../../packages/github-adapter/src/operations";
 import { GitHubRuntime } from "../../../packages/github-adapter/src/githubRuntime";
-import { enqueueJob, claimJob, finalizeJob, getQueueStats } from "../../../packages/supabase-adapter/src/jobClient";
+import { enqueueJob, claimJob, finalizeJob, getQueueStats, stablePacketJobId, idempotentEnqueueJob, getQueueObservability, recordLeaseReclaim, recordDeadLetter } from "../../../packages/supabase-adapter/src/jobClient";
 import { GovernanceApprovalState, StoredProjectRecord } from "../../../packages/supabase-adapter/src/types";
 import { startAutonomousBuildRun, resumeAutonomousBuildRun, type AutonomousBuildRunState } from "../../../packages/autonomous-build/src";
 import { RuntimeConfig } from "./config";
@@ -146,6 +146,7 @@ let promotionCount = 0;
 let routeErrorCount = 0;
 let alertDeliverySuccessCount = 0;
 let alertDeliveryFailureCount = 0;
+let idempotencyHitCount = 0;
 let telemetryUpdatedAt = now();
 
 function now(): string {
@@ -1704,6 +1705,10 @@ async function runGitHubLifecycle(config: RuntimeConfig, project: StoredProjectR
 }
 
 async function processJob(config: RuntimeConfig, job: QueueJobRecord) {
+  // If the job was previously running (lease expired and reclaimed), record it.
+  if (String((job as any).status) === "running" && (job as any).worker_id && (job as any).worker_id !== workerId) {
+    recordLeaseReclaim();
+  }
   const project = await config.repository.repo.getProject(job.project_id);
   if (!project) {
     await finalizeJob(job.job_id, "failed", `Project not found: ${job.project_id}`);
@@ -1716,6 +1721,7 @@ async function processJob(config: RuntimeConfig, job: QueueJobRecord) {
   }
 
   if (["executing", "blocked", "failed", "complete"].includes(String(packet.status))) {
+    recordDeadLetter();
     await finalizeJob(job.job_id, "failed", `Duplicate or stale job ignored for packet ${packet.packetId} with status ${packet.status}`);
     return;
   }
@@ -1776,8 +1782,7 @@ async function processJob(config: RuntimeConfig, job: QueueJobRecord) {
     );
     for (const unblocked of nowUnblocked) {
       try {
-        const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-        await enqueueJob({ job_id: jobId, project_id: project.projectId, packet_id: unblocked.packetId, owner_user_id: project.ownerUserId, tenant_id: project.tenantId ?? project.ownerUserId });
+        await idempotentEnqueueJob({ project_id: project.projectId, packet_id: unblocked.packetId, owner_user_id: project.ownerUserId, tenant_id: project.tenantId ?? project.ownerUserId });
       } catch (_e) { /* already queued or unavailable — tolerate */ }
     }
   } catch (error: any) {
@@ -2015,6 +2020,8 @@ export function buildApp(config: RuntimeConfig) {
     workerId,
     leaseMs,
     queueMode: "dedicated_jobs_table_parallel",
+    queueObservability: getQueueObservability(),
+    idempotencyHitCount,
     role: auth.role,
     userId: auth.userId,
     issuer: auth.issuer,
@@ -3365,6 +3372,22 @@ export function buildApp(config: RuntimeConfig) {
         });
       }
 
+      // Idempotency: return existing active run rather than starting a duplicate.
+      const existingBuildRun = getAutonomousBuildRun(project);
+      if (existingBuildRun && (existingBuildRun.status === "running" || existingBuildRun.status === "paused_human_blocker")) {
+        idempotencyHitCount++;
+        return res.json({
+          ok: true,
+          projectId: project.projectId,
+          status: existingBuildRun.status,
+          jobId: existingBuildRun.runId,
+          message: "Existing build run returned (idempotent duplicate ignored)",
+          idempotencyHit: true,
+          raw: { run: existingBuildRun },
+          actorId: actor.actorId,
+        });
+      }
+
       const runId = `${project.projectId}_autonomous_${Date.now()}`;
       const run = startAutonomousBuildRun({
         runId,
@@ -3439,6 +3462,13 @@ export function buildApp(config: RuntimeConfig) {
           readinessScore: readiness.readinessScore,
           actorId: actor.actorId,
         });
+      }
+
+      // Idempotency: return existing active run rather than starting a duplicate.
+      const existingAutonomousRun = getAutonomousBuildRun(project);
+      if (existingAutonomousRun && (existingAutonomousRun.status === "running" || existingAutonomousRun.status === "paused_human_blocker")) {
+        idempotencyHitCount++;
+        return res.json({ ok: true, run: existingAutonomousRun, idempotencyHit: true, actorId: actor.actorId });
       }
 
       const runId = `${project.projectId}_autonomous_${Date.now()}`;
@@ -3725,9 +3755,8 @@ export function buildApp(config: RuntimeConfig) {
             const rootPackets = allPackets.filter((p: any) => !p.dependencies || p.dependencies.length === 0);
             for (const rp of rootPackets) {
               try {
-                const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-                await enqueueJob({ job_id: jobId, project_id: compiled.projectId, packet_id: rp.packetId, owner_user_id: compiled.ownerUserId, tenant_id: compiled.tenantId ?? compiled.ownerUserId });
-                rootPacketsEnqueued++;
+                const enqResult = await idempotentEnqueueJob({ project_id: compiled.projectId, packet_id: rp.packetId, owner_user_id: compiled.ownerUserId, tenant_id: compiled.tenantId ?? compiled.ownerUserId });
+                if (!enqResult.prevented) rootPacketsEnqueued++;
                 buildStages.push({ id: rp.packetId, label: rp.goal ?? rp.packetId, status: "queued" });
               } catch (_e) { /* tolerate queue error */ }
             }
@@ -4213,8 +4242,8 @@ export function buildApp(config: RuntimeConfig) {
         }
 
         route = "execute_next";
-        const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-        await enqueueJob({ job_id: jobId, project_id: project.projectId, packet_id: pendingPacket.packetId, owner_user_id: project.ownerUserId, tenant_id: project.tenantId ?? project.ownerUserId });
+        const enqResult = await idempotentEnqueueJob({ project_id: project.projectId, packet_id: pendingPacket.packetId, owner_user_id: project.ownerUserId, tenant_id: project.tenantId ?? project.ownerUserId });
+        const jobId = enqResult.jobId;
         emitEvent(project as any, {
           id: `evt_${Date.now()}`,
           projectId: project.projectId,
@@ -4352,9 +4381,9 @@ export function buildApp(config: RuntimeConfig) {
       }
       const packet = getNextPendingPacket(project);
       if (!packet) return res.status(409).json({ error: "No pending packet", actorId: actor.actorId });
-      const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-      await enqueueJob({ job_id: jobId, project_id: project.projectId, packet_id: packet.packetId, owner_user_id: project.ownerUserId, tenant_id: project.tenantId ?? project.ownerUserId });
-      return res.status(202).json({ accepted: true, queued: true, jobId, packetId: packet.packetId, actorId: actor.actorId, workerId });
+      const dispatchEnq = await idempotentEnqueueJob({ project_id: project.projectId, packet_id: packet.packetId, owner_user_id: project.ownerUserId, tenant_id: project.tenantId ?? project.ownerUserId });
+      const jobId = dispatchEnq.jobId;
+      return res.status(202).json({ accepted: true, queued: !dispatchEnq.prevented, jobId, packetId: packet.packetId, idempotencyHit: dispatchEnq.prevented, actorId: actor.actorId, workerId });
     } catch (error) {
       return handleRouteError(res, config, error, "POST /api/projects/:projectId/dispatch/execute-next", actor);
     }

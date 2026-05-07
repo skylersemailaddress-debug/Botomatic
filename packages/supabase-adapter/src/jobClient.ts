@@ -7,6 +7,47 @@ const headers = {
   "Content-Type": "application/json",
 };
 
+// ── Observability counters (module-level, per process lifetime) ───────────────
+
+const _obs = {
+  duplicateEnqueuePrevented: 0,
+  idempotencyHit: 0,
+  leaseReclaim: 0,
+  deadLetter: 0,
+};
+
+export function getQueueObservability() {
+  return { ..._obs };
+}
+
+export function recordLeaseReclaim() {
+  _obs.leaseReclaim++;
+}
+
+export function recordDeadLetter() {
+  _obs.deadLetter++;
+}
+
+// ── In-process enqueue deduplication set ─────────────────────────────────────
+// Tracks (project_id:packet_id) pairs enqueued in this process lifetime.
+// Prevents same process from issuing duplicate Supabase INSERTs for the same
+// packet even if called from concurrent code paths.
+
+const _enqueuedPacketKeys = new Set<string>();
+
+function packetKey(projectId: string, packetId: string): string {
+  return `${projectId}:${packetId}`;
+}
+
+// ── Deterministic job ID ──────────────────────────────────────────────────────
+// Must match the formula used by JsonDurableStore.stableJobId so that the
+// same packet always maps to the same job_id regardless of which code path
+// calls enqueueJob.
+
+export function stablePacketJobId(projectId: string, packetId: string): string {
+  return `job_${projectId}_${packetId}`.replace(/[^a-zA-Z0-9_-]/g, "_");
+}
+
 async function parseJsonSafe(res: Response) {
   const text = await res.text();
   if (!text) return null;
@@ -43,6 +84,57 @@ export async function enqueueJob(job: {
     const body = await parseJsonSafe(res);
     throw new Error(`enqueueJob failed ${res.status}: ${JSON.stringify(body)}`);
   }
+}
+
+// ── Idempotent enqueue ────────────────────────────────────────────────────────
+// Prevents duplicate jobs for the same (project_id, packet_id) pair.
+// Two-layer protection:
+//   1. In-process Set: prevents redundant network calls within the same process
+//   2. Supabase "ignore-duplicates": handles cross-process races via PK conflict
+
+export async function idempotentEnqueueJob(job: {
+  project_id: string;
+  packet_id: string;
+  owner_user_id: string;
+  tenant_id?: string;
+}): Promise<{ enqueued: boolean; jobId: string; prevented: boolean }> {
+  const jobId = stablePacketJobId(job.project_id, job.packet_id);
+  const key = packetKey(job.project_id, job.packet_id);
+
+  if (_enqueuedPacketKeys.has(key)) {
+    _obs.duplicateEnqueuePrevented++;
+    return { enqueued: false, jobId, prevented: true };
+  }
+
+  if (!URL) {
+    _enqueuedPacketKeys.add(key);
+    return { enqueued: true, jobId, prevented: false };
+  }
+
+  const res = await fetch(`${URL}/rest/v1/orchestrator_jobs`, {
+    method: "POST",
+    headers: {
+      ...headers,
+      Prefer: "resolution=ignore-duplicates",
+    },
+    body: JSON.stringify({
+      job_id: jobId,
+      project_id: job.project_id,
+      packet_id: job.packet_id,
+      owner_user_id: job.owner_user_id,
+      tenant_id: job.tenant_id ?? job.owner_user_id,
+      type: "execute_packet",
+      status: "queued",
+    }),
+  });
+
+  if (!res.ok) {
+    const body = await parseJsonSafe(res);
+    throw new Error(`idempotentEnqueueJob failed ${res.status}: ${JSON.stringify(body)}`);
+  }
+
+  _enqueuedPacketKeys.add(key);
+  return { enqueued: true, jobId, prevented: false };
 }
 
 export async function claimJob(workerId: string, leaseMs: number) {

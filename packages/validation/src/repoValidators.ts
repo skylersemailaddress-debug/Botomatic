@@ -1822,6 +1822,7 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateExpressReadinessGate(root),
     validateHostedRuntimeTruth(root),
     validateDurableE2EOrchestrationProof(root),
+    validateJobIdempotencyAndQueueSafety(root),
   ];
 }
 
@@ -2023,4 +2024,92 @@ export function validateDurableE2EOrchestrationProof(root: string): RepoValidato
   }
 
   return result(name, true, `Durable E2E orchestration proof passed: ${requiredSignals.length} signals green, durable-file storage, failure injection covered (transient failure, lease expiry, duplicate build/start).`, files);
+}
+
+export function validateJobIdempotencyAndQueueSafety(root: string): RepoValidatorResult {
+  const name = "Validate-Botomatic-JobIdempotencyAndQueueSafety";
+  const files = [
+    "packages/supabase-adapter/src/jobClient.ts",
+    "apps/orchestrator-api/src/server_app.ts",
+    "packages/orchestration-core/src/durableOrchestrationCore.ts",
+    "packages/validation/src/tests/jobIdempotencyAndQueueSafety.test.ts",
+  ];
+
+  if (!has(root, files[0])) return result(name, false, "jobClient.ts not found.", files);
+  const jobClient = read(root, files[0]);
+
+  // Deterministic job ID export
+  if (!jobClient.includes("stablePacketJobId")) {
+    return result(name, false, "jobClient.ts must export stablePacketJobId for deterministic job IDs.", files);
+  }
+
+  // Idempotent enqueue export
+  if (!jobClient.includes("idempotentEnqueueJob")) {
+    return result(name, false, "jobClient.ts must export idempotentEnqueueJob with duplicate-prevention logic.", files);
+  }
+
+  // In-process deduplication set
+  if (!jobClient.includes("_enqueuedPacketKeys")) {
+    return result(name, false, "jobClient.ts must maintain in-process deduplication Set (_enqueuedPacketKeys).", files);
+  }
+
+  // Observability counters
+  const requiredCounters = ["duplicateEnqueuePrevented", "idempotencyHit", "leaseReclaim", "deadLetter", "getQueueObservability"];
+  for (const counter of requiredCounters) {
+    if (!jobClient.includes(counter)) {
+      return result(name, false, `jobClient.ts must include observability counter/export: ${counter}`, files);
+    }
+  }
+
+  if (!has(root, files[1])) return result(name, false, "server_app.ts not found.", files);
+  const serverApp = read(root, files[1]);
+
+  // server_app.ts must use idempotentEnqueueJob for normal enqueue paths
+  if (!serverApp.includes("idempotentEnqueueJob")) {
+    return result(name, false, "server_app.ts must use idempotentEnqueueJob (not raw enqueueJob) for normal packet enqueue paths.", files);
+  }
+
+  // idempotency guards on both build/start routes
+  if (!serverApp.includes("existingBuildRun")) {
+    return result(name, false, "POST /build/start must check existingBuildRun before starting a new autonomous run.", files);
+  }
+  if (!serverApp.includes("existingAutonomousRun")) {
+    return result(name, false, "POST /autonomous-build/start must check existingAutonomousRun before starting a new run.", files);
+  }
+  if (!serverApp.includes("idempotencyHit: true")) {
+    return result(name, false, "Both build/start routes must return idempotencyHit:true for duplicate requests.", files);
+  }
+
+  // idempotency hit counter tracked
+  if (!serverApp.includes("idempotencyHitCount")) {
+    return result(name, false, "server_app.ts must track idempotencyHitCount and expose it in health payload.", files);
+  }
+
+  // dead letter tracking
+  if (!serverApp.includes("recordDeadLetter")) {
+    return result(name, false, "server_app.ts must call recordDeadLetter() for stale/duplicate jobs.", files);
+  }
+
+  // lease reclaim tracking
+  if (!serverApp.includes("recordLeaseReclaim")) {
+    return result(name, false, "server_app.ts must call recordLeaseReclaim() for reclaimed jobs.", files);
+  }
+
+  if (!has(root, files[2])) return result(name, false, "durableOrchestrationCore.ts not found.", files);
+  const core = read(root, files[2]);
+
+  // JsonDurableStore.enqueue must deduplicate
+  if (!core.includes("const existing = state.jobs[key]")) {
+    return result(name, false, "JsonDurableStore.enqueue must check for existing job before inserting.", files);
+  }
+
+  // releaseForRetry must exist for lease expiry simulation
+  if (!core.includes("releaseForRetry")) {
+    return result(name, false, "JsonDurableStore must implement releaseForRetry for lease expiry/reclaim.", files);
+  }
+
+  // Test file must exist
+  if (!has(root, files[3])) return result(name, false, "jobIdempotencyAndQueueSafety.test.ts not found.", files);
+
+  return result(name, true, "Job idempotency and queue safety verified: deterministic job IDs, idempotent enqueue, build/start duplicate guard, observability counters, lease reclaim, dead letter tracking.", files);
 }
