@@ -1,9 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const SESSION_COOKIE = "botomatic_session";
+const PUBLIC_PATHS = new Set(["/health", "/ready", "/api/health", "/api/ready"]);
 
 function getUiSecret(): string {
   return (process.env.BOTOMATIC_UI_PASSWORD || process.env.API_AUTH_TOKEN || "").trim();
+}
+
+function getApiBearerToken(): string {
+  return (process.env.BOTOMATIC_API_TOKEN || process.env.API_AUTH_TOKEN || "").trim();
+}
+
+function isApiPath(pathname: string): boolean {
+  return pathname === "/api" || pathname.startsWith("/api/");
+}
+
+function isPublicPath(pathname: string): boolean {
+  return PUBLIC_PATHS.has(pathname);
+}
+
+function hasValidApiBearer(req: NextRequest): boolean {
+  const apiToken = getApiBearerToken();
+  if (!apiToken) return false;
+  const authorization = req.headers.get("authorization") || "";
+  return authorization === `Bearer ${apiToken}`;
+}
+
+function unauthorizedApiResponse() {
+  return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 }
 
 async function hmacSign(data: string, secret: string): Promise<string> {
@@ -45,8 +69,9 @@ async function isValidSession(token: string, secret: string): Promise<boolean> {
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Always allow: login page, auth API, static assets
+  // Always allow: public health/readiness probes, login page, auth API, static assets.
   if (
+    isPublicPath(pathname) ||
     pathname.startsWith("/login") ||
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/_next") ||
@@ -59,8 +84,12 @@ export async function middleware(req: NextRequest) {
   // If no password is configured (e.g. local dev without env), allow all access.
   if (!secret) return NextResponse.next();
 
+  if (isApiPath(pathname) && hasValidApiBearer(req)) return NextResponse.next();
+
   const sessionToken = req.cookies.get(SESSION_COOKIE)?.value ?? "";
   if (await isValidSession(sessionToken, secret)) return NextResponse.next();
+
+  if (isApiPath(pathname)) return unauthorizedApiResponse();
 
   const loginUrl = new URL("/login", req.url);
   if (pathname !== "/") loginUrl.searchParams.set("next", pathname);
