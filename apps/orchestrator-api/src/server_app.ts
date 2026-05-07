@@ -301,14 +301,16 @@ function getGitHub() {
   });
 }
 
-function getHostedOperatorToken(): string {
-  return (process.env.BOTOMATIC_API_TOKEN || "").trim();
+function getHostedOperatorTokens(): string[] {
+  return [process.env.BOTOMATIC_API_TOKEN, process.env.API_AUTH_TOKEN]
+    .map((value) => (value || "").trim())
+    .filter(Boolean);
 }
 
 function resolveStaticOperatorAuth(req: express.Request, token: string, config: RuntimeConfig): VerifiedRequestAuth | null {
   if (!config.hosted && config.runtimeMode !== "commercial") return null;
-  const expectedToken = getHostedOperatorToken();
-  if (!expectedToken || token !== expectedToken) return null;
+  const expectedTokens = getHostedOperatorTokens();
+  if (!expectedTokens.includes(token)) return null;
 
   const roleHeader = req.header("x-role");
   const role = roleHeader === "operator" || roleHeader === "admin" ? roleHeader : "admin";

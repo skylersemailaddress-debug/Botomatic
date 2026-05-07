@@ -1,11 +1,11 @@
 import assert from "assert";
 import { AddressInfo } from "net";
-import type express from "express";
+import express from "express";
 import { InMemoryProjectRepository } from "../../../supabase-adapter/src/memoryRepo";
 import type { RuntimeConfig } from "../../../../apps/orchestrator-api/src/config";
 import { buildApp } from "../../../../apps/orchestrator-api/src/server_app";
 
-function buildHostedOidcApp(): express.Express {
+function buildHostedOidcApp(issuerUrl = "https://issuer.example.test"): express.Express {
   const config: RuntimeConfig = {
     appName: "botomatic-orchestrator-api",
     runtimeMode: "commercial",
@@ -22,7 +22,7 @@ function buildHostedOidcApp(): express.Express {
       enabled: true,
       implementation: "oidc",
       oidc: {
-        issuerUrl: "https://issuer.example.test",
+        issuerUrl,
         clientId: "botomatic-test-client",
       },
     },
@@ -60,7 +60,7 @@ async function main() {
   const previousApiAuthToken = process.env.API_AUTH_TOKEN;
 
   const staticToken = ["operator", "static", "token", "for", "orchestrator", "test"].join("-");
-  const legacyToken = ["legacy", "token", "must", "not", "authorize", "oidc", "operator", "routes"].join("-");
+  const legacyToken = ["legacy", "api", "auth", "token", "for", "orchestrator", "test"].join("-");
 
   process.env.BOTOMATIC_API_TOKEN = staticToken;
   process.env.API_AUTH_TOKEN = legacyToken;
@@ -97,10 +97,32 @@ async function main() {
       assert.equal(rejectedBody.error, "Invalid OIDC token format");
       assert.equal(rejectedBody.policy, "operator");
 
-      const legacyAliasRejected = await fetch(`${baseUrl}/api/ops/metrics`, {
-        headers: { authorization: ["Bearer", legacyToken].join(" ") },
+      const legacyAliasAccepted = await fetch(`${baseUrl}/api/ops/metrics`, {
+        headers: {
+          authorization: ["Bearer", legacyToken].join(" "),
+          "x-user-id": "legacy-smoke-admin",
+          "x-tenant-id": "legacy-smoke-tenant",
+        },
       });
-      assert.equal(legacyAliasRejected.status, 401, "API_AUTH_TOKEN must not authorize OIDC operator routes as an implicit alias");
+      assert.equal(legacyAliasAccepted.status, 200, "API_AUTH_TOKEN must authorize hosted operator smoke routes as a backward-compatible alias");
+      const legacyAliasBody = await legacyAliasAccepted.json() as { actorId?: string; actorSource?: string };
+      assert.equal(legacyAliasBody.actorId, "legacy-smoke-admin");
+      assert.equal(legacyAliasBody.actorSource, "botomatic_api_token");
+    });
+
+    await withServer(express().get("/.well-known/jwks.json", (_req, res) => res.json({ keys: [] })), async (issuerUrl) => {
+      await withServer(buildHostedOidcApp(issuerUrl), async (baseUrl) => {
+        const encodedHeader = Buffer.from(JSON.stringify({ alg: "RS256", kid: "missing-test-key" })).toString("base64url");
+        const encodedPayload = Buffer.from(JSON.stringify({ sub: "oidc-user", iss: issuerUrl, exp: Math.floor(Date.now() / 1000) + 300 })).toString("base64url");
+        const jwtLikeToken = [encodedHeader, encodedPayload, "invalid-signature"].join(".");
+        const rejectedJwt = await fetch(`${baseUrl}/api/ops/metrics`, {
+          headers: { authorization: ["Bearer", jwtLikeToken].join(" ") },
+        });
+        assert.equal(rejectedJwt.status, 401, "OIDC bearer tokens that do not match the static operator token must still require JWKS verification");
+        const rejectedJwtBody = await rejectedJwt.json() as { error?: string; policy?: string };
+        assert.equal(rejectedJwtBody.error, "OIDC signing key not found");
+        assert.equal(rejectedJwtBody.policy, "operator");
+      });
     });
 
     const clientApi = await import("fs").then((fs) => fs.readFileSync("apps/control-plane/src/services/api.ts", "utf8"));
