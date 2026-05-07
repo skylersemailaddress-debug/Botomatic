@@ -1,40 +1,89 @@
 {
-  "generatedAt": "2026-05-06T18:08:00.000Z",
+  "generatedAt": "2026-05-06T22:05:51.685Z",
   "artifact": "release-evidence/runtime/deployment_smoke_beta_proof.json",
   "pathId": "deployment_smoke_beta",
-  "status": "local_validation_scoped_out",
-  "proofMode": "hosted_beta_http_smoke_required",
-  "documentation": "docs/beta/DEPLOYMENT_SMOKE_AND_ROLLBACK.md",
+  "status": "passed",
+  "proofMode": "hosted_beta_http_smoke",
+  "baseUrl": "https://botomatic-etmt-production.up.railway.app",
+  "projectId": "proj_1778104927509_c3181b",
   "manifestPath": "release-evidence/runtime/beta_environment_manifest.json",
-  "localValidationScope": {
-    "deploymentProofOutsideLocalValidation": true,
-    "documentedReason": "No live hosted friends-and-family beta URL or beta auth token is available in local CI. The proof generator remains fail-closed and must be rerun with BOTOMATIC_BETA_BASE_URL, BOTOMATIC_BETA_AUTH_TOKEN, and BOTOMATIC_BETA_PROJECT_ID to create a passing hosted-beta HTTP proof."
-  },
+  "documentation": "docs/beta/DEPLOYMENT_SMOKE_AND_ROLLBACK.md",
   "signals": {
     "beta_environment_manifest_present": {
-      "passed": false,
-      "status": "not_run",
-      "detail": "Shape-only local validation: real manifest verification is performed by npm run proof:deployment-smoke when beta env vars are present."
+      "passed": true,
+      "status": "passed",
+      "detail": "Beta environment manifest exists and declares required smoke env vars at release-evidence/runtime/beta_environment_manifest.json."
     },
     "health_endpoint_passed": {
-      "passed": false,
-      "status": "not_run",
-      "detail": "No live hosted beta URL is available in local CI."
+      "passed": true,
+      "status": "passed",
+      "detail": "Health endpoint returned a 2xx response.",
+      "method": "GET",
+      "url": "https://botomatic-etmt-production.up.railway.app/health",
+      "httpStatus": 200,
+      "latencyMs": 388
     },
     "auth_negative_path_passed": {
-      "passed": false,
-      "status": "not_run",
-      "detail": "No live hosted beta URL and invalid-auth route check is available in local CI."
+      "passed": true,
+      "status": "passed",
+      "detail": "Invalid-auth request to sensitive route was denied.",
+      "method": "GET",
+      "url": "https://botomatic-etmt-production.up.railway.app/api/ops/metrics",
+      "httpStatus": 401,
+      "latencyMs": 290
     },
     "project_route_smoke_passed": {
-      "passed": false,
-      "status": "not_run",
-      "detail": "No live hosted beta project ID and auth token are available in local CI."
+      "passed": true,
+      "status": "passed",
+      "detail": "Authenticated project route smoke returned a 2xx response.",
+      "method": "GET",
+      "url": "https://botomatic-etmt-production.up.railway.app/api/projects/proj_1778104927509_c3181b/status",
+      "httpStatus": 200,
+      "latencyMs": 686
     },
     "rollback_documented_or_tested": {
-      "passed": false,
-      "status": "not_run",
-      "detail": "Rollback procedure is documented; live rollback drill must be asserted only after it is actually performed."
+      "passed": true,
+      "status": "passed",
+      "detail": "Rollback procedure is documented in docs/beta/DEPLOYMENT_SMOKE_AND_ROLLBACK.md."
     }
-  }
+  },
+  "checks": [
+    {
+      "passed": true,
+      "status": "passed",
+      "detail": "Beta environment manifest exists and declares required smoke env vars at release-evidence/runtime/beta_environment_manifest.json."
+    },
+    {
+      "passed": true,
+      "status": "passed",
+      "detail": "Health endpoint returned a 2xx response.",
+      "method": "GET",
+      "url": "https://botomatic-etmt-production.up.railway.app/health",
+      "httpStatus": 200,
+      "latencyMs": 388
+    },
+    {
+      "passed": true,
+      "status": "passed",
+      "detail": "Invalid-auth request to sensitive route was denied.",
+      "method": "GET",
+      "url": "https://botomatic-etmt-production.up.railway.app/api/ops/metrics",
+      "httpStatus": 401,
+      "latencyMs": 290
+    },
+    {
+      "passed": true,
+      "status": "passed",
+      "detail": "Authenticated project route smoke returned a 2xx response.",
+      "method": "GET",
+      "url": "https://botomatic-etmt-production.up.railway.app/api/projects/proj_1778104927509_c3181b/status",
+      "httpStatus": 200,
+      "latencyMs": 686
+    },
+    {
+      "passed": true,
+      "status": "passed",
+      "detail": "Rollback procedure is documented in docs/beta/DEPLOYMENT_SMOKE_AND_ROLLBACK.md."
+    }
+  ]
 }
