@@ -20,6 +20,10 @@ const requiredRepresentativeIds = [
   "botAgentConsole",
   "mobileAppShell",
   "gameLandingPage",
+  "consumerApp",
+  "aiAssistant",
+  "fileHeavyApp",
+  "adminDashboard",
 ];
 
 const manifest = loadGeneratedAppCorpusManifest(manifestPath);

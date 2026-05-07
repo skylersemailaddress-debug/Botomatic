@@ -23,6 +23,10 @@ Representative positive fixture IDs:
 - `botAgentConsole`
 - `mobileAppShell`
 - `gameLandingPage`
+- `consumerApp`
+- `aiAssistant`
+- `fileHeavyApp`
+- `adminDashboard`
 
 Controlled negative fixture ID:
 
@@ -30,7 +34,7 @@ Controlled negative fixture ID:
 
 ## Why these fixtures are representative but not exhaustive
 
-- They cover multiple generated app domains (dashboard SaaS, booking, ecommerce, marketplace, customer portal, API service, agent console, mobile shell, landing page).
+- They cover multiple generated app domains (dashboard SaaS, booking, ecommerce, marketplace, customer portal, API service, agent console, mobile shell, landing page, consumer app, ai assistant, file-heavy app, admin dashboard).
 - They include static artifact boundaries used by GEN-004 gates: entrypoints, installability manifests, legal claim language, and readiness notes.
 - They do not cover all runtime architectures, data-plane combinations, or deployment providers.
 
@@ -77,4 +81,3 @@ Expected statuses in this corpus:
 - static corpus fixture only
 - no live deployment proof
 - candidate_ready is not launch-ready
-
