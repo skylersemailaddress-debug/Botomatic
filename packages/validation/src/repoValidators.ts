@@ -1823,6 +1823,7 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateHostedRuntimeTruth(root),
     validateDurableE2EOrchestrationProof(root),
     validateJobIdempotencyAndQueueSafety(root),
+    validateProductionFallbackFailClosed(root),
   ];
 }
 
@@ -2112,4 +2113,113 @@ export function validateJobIdempotencyAndQueueSafety(root: string): RepoValidato
   if (!has(root, files[3])) return result(name, false, "jobIdempotencyAndQueueSafety.test.ts not found.", files);
 
   return result(name, true, "Job idempotency and queue safety verified: deterministic job IDs, idempotent enqueue, build/start duplicate guard, observability counters, lease reclaim, dead letter tracking.", files);
+}
+
+export function validateProductionFallbackFailClosed(root: string): RepoValidatorResult {
+  const name = "Validate-Botomatic-ProductionFallbackFailClosed";
+  const files = [
+    "apps/orchestrator-api/src/bootstrap.ts",
+    "apps/orchestrator-api/src/server_app.ts",
+    "packages/validation/src/tests/productionFallbackFailClosed.test.ts",
+  ];
+
+  if (!has(root, files[0])) return result(name, false, "bootstrap.ts not found.", files);
+  const bootstrap = read(root, files[0]);
+
+  // fatal_production_fallback_blocked must be logged before the throw
+  if (!bootstrap.includes("fatal_production_fallback_blocked")) {
+    return result(name, false, "bootstrap.ts must emit fatal_production_fallback_blocked log event before throwing.", files);
+  }
+  const eventIdx = bootstrap.indexOf("fatal_production_fallback_blocked");
+  const throwIdx = bootstrap.indexOf("throw new Error");
+  if (eventIdx >= throwIdx) {
+    return result(name, false, "fatal_production_fallback_blocked must be logged BEFORE the throw statement in enforceDurableStorageBeforeStartup.", files);
+  }
+
+  // Event must include actionable context fields
+  if (!bootstrap.includes("runtimeMode") || !bootstrap.includes("deploymentEnv")) {
+    return result(name, false, "fatal_production_fallback_blocked must include runtimeMode and deploymentEnv context fields.", files);
+  }
+
+  // isHostedOrCommercialRuntime must check RUNTIME_MODE=commercial
+  if (!bootstrap.includes('RUNTIME_MODE === "commercial"')) {
+    return result(name, false, 'bootstrap.ts isHostedOrCommercialRuntime must check RUNTIME_MODE === "commercial".', files);
+  }
+
+  // canUseLocalMemoryFallback must negate isHostedOrCommercialRuntime
+  if (!bootstrap.includes("!isHostedOrCommercialRuntime")) {
+    return result(name, false, "canUseLocalMemoryFallback must return false when isHostedOrCommercialRuntime is true.", files);
+  }
+
+  if (!has(root, files[1])) return result(name, false, "server_app.ts not found.", files);
+  const serverApp = read(root, files[1]);
+
+  // respondReady handler must exist
+  if (!serverApp.includes("respondReady")) {
+    return result(name, false, "server_app.ts must define a respondReady handler distinct from respondHealth.", files);
+  }
+
+  // /ready and /api/ready must use respondReady
+  if (!serverApp.match(/app\.get\("\/ready",\s*respondReady\)/)) {
+    return result(name, false, 'GET /ready must use respondReady handler.', files);
+  }
+  if (!serverApp.match(/app\.get\("\/api\/ready",\s*respondReady\)/)) {
+    return result(name, false, 'GET /api/ready must use respondReady handler.', files);
+  }
+
+  // /health and /api/health must use respondHealth (always 200)
+  if (!serverApp.match(/app\.get\("\/health",\s*respondHealth\)/)) {
+    return result(name, false, 'GET /health must use respondHealth handler (always 200).', files);
+  }
+
+  // respondReady must return 503 with durable_store_required_in_production
+  if (!serverApp.includes("503")) {
+    return result(name, false, "respondReady must return HTTP 503 when durable store unavailable in production.", files);
+  }
+  if (!serverApp.includes("durable_store_required_in_production")) {
+    return result(name, false, 'respondReady must include reason: durable_store_required_in_production.', files);
+  }
+  if (!serverApp.includes('status: "unhealthy"')) {
+    return result(name, false, 'respondReady must return status: "unhealthy" for fail-closed response.', files);
+  }
+
+  // respondHealth must never return 503
+  const respondHealthSection = serverApp.slice(
+    serverApp.indexOf("const respondHealth"),
+    serverApp.indexOf("const respondReady")
+  );
+  if (respondHealthSection.includes("503")) {
+    return result(name, false, "respondHealth must never return 503 — it is always informational.", files);
+  }
+
+  // productionFallbackDisabled must be in health payload
+  if (!serverApp.includes("productionFallbackDisabled")) {
+    return result(name, false, "/api/health payload must include productionFallbackDisabled field.", files);
+  }
+  if (!serverApp.includes("BOTOMATIC_ALLOW_LOCAL_MEMORY_FALLBACK")) {
+    return result(name, false, "productionFallbackDisabled must reference BOTOMATIC_ALLOW_LOCAL_MEMORY_FALLBACK env var.", files);
+  }
+
+  // Public traffic 503 maintenance middleware
+  if (!serverApp.includes("Durable repository required for public traffic")) {
+    return result(name, false, "server_app.ts must include public traffic 503 maintenance middleware.", files);
+  }
+  if (!serverApp.includes("isLocalTraffic")) {
+    return result(name, false, "Public traffic maintenance middleware must use isLocalTraffic to allow localhost through.", files);
+  }
+  if (!serverApp.includes('status: "maintenance"')) {
+    return result(name, false, 'Public traffic 503 response must include status: "maintenance".', files);
+  }
+
+  // Maintenance middleware must be registered before build/start route
+  const maintenanceIdx = serverApp.indexOf("Durable repository required for public traffic");
+  const buildStartIdx = serverApp.indexOf('"/api/projects/:projectId/build/start"');
+  if (maintenanceIdx >= buildStartIdx) {
+    return result(name, false, "503 maintenance middleware must be registered before build/start route.", files);
+  }
+
+  // Test file must exist
+  if (!has(root, files[2])) return result(name, false, "productionFallbackFailClosed.test.ts not found.", files);
+
+  return result(name, true, "Production fallback fail-closed verified: fatal_production_fallback_blocked logged before throw, /ready uses respondReady with 503 for non-durable production, /health always informational, public traffic 503 middleware present.", files);
 }

@@ -2038,10 +2038,36 @@ export function buildApp(config: RuntimeConfig) {
     }
   };
 
+  const isProductionRuntime =
+    config.runtimeMode === "commercial" ||
+    ["production", "prod", "beta", "preview", "staging"].includes(
+      String(process.env.BOTOMATIC_DEPLOYMENT_ENV || process.env.BOTOMATIC_ENV || process.env.VERCEL_ENV || process.env.NODE_ENV || "").toLowerCase()
+    );
+
+  const respondReady = async (req: express.Request, res: express.Response) => {
+    const requestId = String((res.locals as any).requestId || "");
+    if (isProductionRuntime && config.repository.mode !== "durable") {
+      return res.status(503).json({
+        status: "unhealthy",
+        reason: "durable_store_required_in_production",
+        repositoryMode: config.repository.mode,
+        runtimeMode: config.runtimeMode,
+        productionFallbackDisabled: true,
+        requestId,
+      });
+    }
+    try {
+      const auth = await getVerifiedAuth(req, config);
+      return res.json(buildHealthPayload({ role: auth.role, userId: auth.userId, issuer: auth.issuer || null, authImplementation: auth.authImplementation || null, source: auth.source || null }, requestId));
+    } catch {
+      return res.json(buildHealthPayload({ role: null, userId: null, issuer: null, authImplementation: null, source: null }, requestId));
+    }
+  };
+
   app.get("/health", respondHealth);
   app.get("/api/health", respondHealth);
-  app.get("/ready", respondHealth);
-  app.get("/api/ready", respondHealth);
+  app.get("/ready", respondReady);
+  app.get("/api/ready", respondReady);
 
   app.use("/api/ops", requireApiAuth(config));
 

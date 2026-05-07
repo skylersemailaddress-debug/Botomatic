@@ -127,6 +127,15 @@ export async function enforceDurableStorageBeforeStartup(): Promise<void> {
   }
 
   if (!canUseLocalMemoryFallback()) {
+    console.error(JSON.stringify({
+      event: "fatal_production_fallback_blocked",
+      message: "Supabase unreachable — durable storage is required in production/commercial runtime. Memory fallback is forbidden.",
+      runtimeMode: process.env.RUNTIME_MODE || "unknown",
+      deploymentEnv: process.env.BOTOMATIC_DEPLOYMENT_ENV || process.env.BOTOMATIC_ENV || process.env.VERCEL_ENV || process.env.NODE_ENV || "unknown",
+      supabaseUrl: process.env.SUPABASE_URL ? "(set)" : "(not set)",
+      wantsDurable,
+      wantsSupabaseQueue,
+    }));
     throw new Error("Supabase unreachable; durable storage is required outside explicit local development memory fallback");
   }
 
