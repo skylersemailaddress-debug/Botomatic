@@ -31,7 +31,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { projectId: string } },
 ) {
-  const deny = requireControlPlaneProjectAccess(request, params.projectId, "viewer");
+  const deny = requireControlPlaneProjectAccess(request, params.projectId, "operator");
   if (deny) return deny;
 
   const upstreamUrl = `${getBackendBase()}/api/projects/${params.projectId}/readiness`;
