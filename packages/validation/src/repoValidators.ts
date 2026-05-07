@@ -1599,12 +1599,14 @@ export function validateHostedCommercialLaunch(root: string): RepoValidatorResul
     "apps/control-plane/src/app/projects/[projectId]/page.tsx",
     "apps/control-plane/src/app/login/page.tsx",
     "apps/control-plane/src/middleware.ts",
+    "apps/control-plane/src/app/health/route.ts",
+    "apps/control-plane/src/app/ready/route.ts",
     "scripts/start-commercial.sh",
     "railway.json",
     "docs/beta/HOSTED_COMMERCIAL_LAUNCH.md",
   ];
 
-  for (const f of ["apps/control-plane/src/app/page.tsx", "apps/control-plane/src/app/login/page.tsx", "apps/control-plane/src/middleware.ts", "scripts/start-commercial.sh", "railway.json", "docs/beta/HOSTED_COMMERCIAL_LAUNCH.md"]) {
+  for (const f of ["apps/control-plane/src/app/page.tsx", "apps/control-plane/src/app/login/page.tsx", "apps/control-plane/src/middleware.ts", "apps/control-plane/src/app/health/route.ts", "apps/control-plane/src/app/ready/route.ts", "scripts/start-commercial.sh", "railway.json", "docs/beta/HOSTED_COMMERCIAL_LAUNCH.md"]) {
     if (!has(root, f)) {
       return result("Validate-Botomatic-HostedCommercialLaunch", false, `Required file missing: ${f}`, files);
     }
@@ -1621,6 +1623,16 @@ export function validateHostedCommercialLaunch(root: string): RepoValidatorResul
   }
   if (middleware.includes("NEXT_PUBLIC_BOTOMATIC_UI_PASSWORD")) {
     return result("Validate-Botomatic-HostedCommercialLaunch", false, "middleware.ts must NOT use NEXT_PUBLIC_ prefix for BOTOMATIC_UI_PASSWORD — it must remain server-only.", files);
+  }
+
+  if (!middleware.includes('"/api/health"') || !middleware.includes('"/api/ready"') || !middleware.includes('"/health"') || !middleware.includes('"/ready"')) {
+    return result("Validate-Botomatic-HostedCommercialLaunch", false, "middleware.ts must explicitly allow public health and readiness paths.", files);
+  }
+  if (!middleware.includes('NextResponse.json({ error: "Unauthorized" }, { status: 401 })')) {
+    return result("Validate-Botomatic-HostedCommercialLaunch", false, "middleware.ts must return JSON 401 for unauthenticated API requests instead of redirecting to login.", files);
+  }
+  if (!middleware.includes("BOTOMATIC_API_TOKEN") || !middleware.includes("hasValidApiBearer")) {
+    return result("Validate-Botomatic-HostedCommercialLaunch", false, "middleware.ts must accept BOTOMATIC_API_TOKEN bearer auth for hosted protected API routes.", files);
   }
 
   const startScript = read(root, "scripts/start-commercial.sh");
@@ -1660,7 +1672,7 @@ export function validateHostedCommercialLaunch(root: string): RepoValidatorResul
     return result("Validate-Botomatic-HostedCommercialLaunch", false, "Dedicated intake/file upload route must still exist (upload wiring not regressed).", files);
   }
 
-  return result("Validate-Botomatic-HostedCommercialLaunch", true, "Hosted UI routes, session gate, commercial start script, Railway config, server-only auth, and deployment docs are all present.", files);
+  return result("Validate-Botomatic-HostedCommercialLaunch", true, "Hosted UI routes, session gate, public probes, API JSON auth failures, commercial start script, Railway config, server-only auth, and deployment docs are all present.", files);
 }
 
 export function runAllRepoValidators(root: string): RepoValidatorResult[] {
