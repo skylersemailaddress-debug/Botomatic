@@ -1295,6 +1295,65 @@ export function validateChatFirstOperatorRouting(root: string): RepoValidatorRes
 }
 
 
+export function validateBetaFullLaunchReadiness(root: string): RepoValidatorResult {
+  const scriptPath  = "scripts/launchBetaFull.ps1";
+  const buildRoute  = "apps/control-plane/src/app/api/projects/[projectId]/build/start/route.ts";
+  const checks = [scriptPath, buildRoute, "package.json", "apps/control-plane/src/components/beta-hq/BetaHQ.tsx"];
+
+  if (!has(root, scriptPath)) {
+    return result("Validate-Botomatic-BetaFullLaunchReadiness", false, `Full launch script missing: ${scriptPath}`, checks);
+  }
+
+  const script = read(root, scriptPath);
+  const pkg    = read(root, "package.json");
+
+  const placeholders = ["YOUR_", "PASTE_", "REPLACE_", "changeme", "placeholder"];
+  const hasPlaceholderRejection = placeholders.every((p) => script.includes(`"${p}"`));
+  const hasJwtValidation = script.includes("eyJ");
+  const noHardcodedSecret = !script.includes('client_secret = "');
+  const hasMetricsCheck = script.includes("ops/metrics");
+  const hasCheckOnly = script.includes("CheckOnly") || script.includes("check-only");
+  const hasGoNoGo = script.includes("GO");
+  const hasAllLaunchScripts =
+    pkg.includes('"launch:beta:full"') &&
+    pkg.includes('"launch:beta:full:check"') &&
+    pkg.includes("launchBetaFull.ps1");
+
+  const buildRouteExists = has(root, buildRoute);
+  const buildRouteOk = buildRouteExists &&
+    read(root, buildRoute).includes("requireControlPlaneProjectAccess") &&
+    read(root, buildRoute).includes("autonomous-build/start");
+
+  const betaHQ = has(root, "apps/control-plane/src/components/beta-hq/BetaHQ.tsx")
+    ? read(root, "apps/control-plane/src/components/beta-hq/BetaHQ.tsx")
+    : "";
+  const betaHQCallsBuildStart = betaHQ.includes("/build/start");
+
+  const providerSecrets = ["OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GEMINI_API_KEY", "SUPABASE_SERVICE_ROLE_KEY"];
+  const noProviderSecretsInClient = providerSecrets.every((s) => !betaHQ.includes(s));
+
+  const ok =
+    hasPlaceholderRejection &&
+    hasJwtValidation &&
+    noHardcodedSecret &&
+    hasMetricsCheck &&
+    hasCheckOnly &&
+    hasGoNoGo &&
+    hasAllLaunchScripts &&
+    buildRouteOk &&
+    betaHQCallsBuildStart &&
+    noProviderSecretsInClient;
+
+  return result(
+    "Validate-Botomatic-BetaFullLaunchReadiness",
+    ok,
+    ok
+      ? "Full beta launcher, build/start route, BetaHQ build trigger, and provider-secret isolation are wired."
+      : "Full beta launch flow is incomplete — check build/start route, BetaHQ wiring, or launcher script.",
+    checks,
+  );
+}
+
 export function validateBetaLocalLaunchReadiness(root: string): RepoValidatorResult {
   const scriptPath = "scripts/launchBetaLocal.ps1";
   const docPath = "docs/beta/LOCAL_BETA_LAUNCH.md";
@@ -1471,5 +1530,6 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateBetaDocsReadiness(root),
     validateBetaInternalStringGuard(root),
     validateBetaLocalLaunchReadiness(root),
+    validateBetaFullLaunchReadiness(root),
   ];
 }

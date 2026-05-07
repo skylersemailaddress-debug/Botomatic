@@ -40,6 +40,7 @@ function run() {
     "apps/control-plane/src/app/api/projects/[projectId]/deploy/route.ts",
     "apps/control-plane/src/app/api/projects/[projectId]/deployments/route.ts",
     "apps/control-plane/src/app/api/projects/[projectId]/launch-proof/route.ts",
+    "apps/control-plane/src/app/api/projects/[projectId]/build/start/route.ts",
   ];
   for (const rel of localRoutes) {
     const content = read(rel);

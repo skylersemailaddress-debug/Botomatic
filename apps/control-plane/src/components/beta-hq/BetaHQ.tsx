@@ -22,6 +22,15 @@ type UploadEntry = {
   result?: FileIntakeResponse;
   error?: string;
 };
+type BuildStartResponse = {
+  projectId?: string;
+  status?: string;
+  jobId?: string | null;
+  nextStep?: string | null;
+  message?: string;
+  error?: string;
+  raw?: unknown;
+};
 
 // ── Pipeline ──────────────────────────────────────────────────────────────
 
@@ -176,13 +185,48 @@ export function BetaHQ({ projectId: initialProjectId }: { projectId?: string }) 
           name: text.slice(0, 60),
           request: text,
         });
-        setProjectId(result.projectId);
+        const newId = result.projectId;
+        setProjectId(newId);
         setProjectStatus("created");
-        setLastAction(`Created ${result.projectId}`);
-        addMsg("system", `Project created: ${result.projectId}`);
+        setLastAction(`Created ${newId}`);
+        addMsg("system", `Project created: ${newId}`);
         // Update URL without re-mounting so state (messages, uploads) is preserved.
         if (typeof window !== "undefined") {
-          window.history.replaceState(null, "", `/projects/${result.projectId}`);
+          window.history.replaceState(null, "", `/projects/${newId}`);
+        }
+        // Attempt to trigger a real hosted build on Railway.
+        addMsg("system", "Triggering build on Railway…");
+        try {
+          const buildResult = await postJson<BuildStartResponse>(
+            `/api/projects/${newId}/build/start`,
+            { inputText: text, safeDefaults: true },
+          );
+          const buildStatus = buildResult.status || "queued";
+          setProjectStatus(buildStatus);
+          if (buildStatus === "clarifying" || buildStatus === "needs-more-detail") {
+            addMsg("system",
+              buildResult.nextStep || buildResult.message ||
+              "Botomatic needs more detail. Describe what to build further in the chat.",
+            );
+          } else {
+            const jobInfo = buildResult.jobId ? ` (job: ${buildResult.jobId})` : "";
+            addMsg("system", buildResult.message || `Build ${buildStatus}${jobInfo}`);
+            if (buildResult.nextStep) setLastAction(buildResult.nextStep);
+          }
+        } catch (buildErr) {
+          const msg = buildErr instanceof Error ? buildErr.message : String(buildErr);
+          const lower = msg.toLowerCase();
+          if (lower.includes("executor unavailable") || lower.includes("worker unavailable")) {
+            addMsg("system", `Build queue unavailable on Railway: ${msg}`);
+          } else if (lower.includes("provider unavailable") || lower.includes("no build trigger")) {
+            addMsg("system", `Build cannot start: ${msg}`);
+          } else if (lower.includes("404") || lower.includes("not found")) {
+            addMsg("system", "Build trigger endpoint is not available on this Railway deployment — project created, build pending.");
+          } else if (lower.includes("502") || lower.includes("503") || lower.includes("unreachable")) {
+            addMsg("system", "Railway backend unreachable — project created but build not started.");
+          } else {
+            addMsg("system", `Build trigger: ${msg}`);
+          }
         }
       } else {
         try {
