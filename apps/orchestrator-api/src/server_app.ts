@@ -422,7 +422,8 @@ function requireProjectAccess(required: AuthContext["role"], config: RuntimeConf
       }
       const project = await config.repository.repo.getProjectForActor(req.params.projectId, auth.userId);
       if (!project) {
-        recordOpsError("auth_failed", "Project ownership check denied", {
+        recordOpsError("cross_tenant_access_denied", "Project ownership check denied", {
+          event: "cross_tenant_access_denied",
           route: `${req.method} ${req.path}`,
           projectId: req.params.projectId,
           actorId: auth.userId,
@@ -470,17 +471,17 @@ function requireProjectOwner(config: RuntimeConfig): express.RequestHandler {
 
     try {
       const auth = await getVerifiedAuth(req, config);
-      const project = await config.repository.repo.getProject(req.params.projectId);
-      if (!project) return res.status(404).json({ error: "Project not found" });
-      if (!project.ownerId || project.ownerId !== auth.userId) {
-        recordOpsError("auth_failed", "Project owner check denied", {
+      const project = await config.repository.repo.getProjectForActor(req.params.projectId, auth.userId);
+      if (!project) {
+        recordOpsError("cross_tenant_access_denied", "Project owner check denied", {
+          event: "cross_tenant_access_denied",
           route: `${req.method} ${req.path}`,
           projectId: req.params.projectId,
           userId: auth.userId,
-          ownerId: project.ownerId || null,
         });
         return res.status(403).json({ error: "Forbidden", code: "PROJECT_OWNER_REQUIRED" });
       }
+      (res.locals as any).tenantProject = project;
       return next();
     } catch (error: any) {
       recordOpsError("auth_failed", String(error?.message || error), {
