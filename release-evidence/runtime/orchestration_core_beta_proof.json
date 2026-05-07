@@ -1,6 +1,6 @@
 {
   "status": "passed",
-  "generatedAt": "2026-05-07T14:03:16.749Z",
+  "generatedAt": "2026-05-07T14:20:45.496Z",
   "storageMode": "durable-file",
   "artifactPath": "release-evidence/runtime/orchestration_core_beta_proof.json",
   "signals": {
@@ -14,7 +14,7 @@
     "compile_created_build_contract": {
       "passed": true,
       "evidence": {
-        "contractId": "contract_durable-orchestration-beta-proof_1778162596740",
+        "contractId": "contract_durable-orchestration-beta-proof_1778163645484",
         "readyToBuild": true
       }
     },
@@ -30,7 +30,7 @@
       "evidence": {
         "jobId": "job_durable-orchestration-beta-proof_durable-orchestration-beta-proof-m1-p1",
         "workerId": "worker_after_restart",
-        "claimedAt": "2026-05-07T14:03:16.744Z"
+        "claimedAt": "2026-05-07T14:20:45.489Z"
       }
     },
     "worker_executed_job": {
@@ -93,8 +93,8 @@
         "claimedAt": null,
         "completedAt": null,
         "lastError": null,
-        "createdAt": "2026-05-07T14:03:16.743Z",
-        "updatedAt": "2026-05-07T14:03:16.743Z"
+        "createdAt": "2026-05-07T14:20:45.487Z",
+        "updatedAt": "2026-05-07T14:20:45.487Z"
       }
     ],
     "afterRestart": [
@@ -107,8 +107,8 @@
         "claimedAt": null,
         "completedAt": null,
         "lastError": null,
-        "createdAt": "2026-05-07T14:03:16.743Z",
-        "updatedAt": "2026-05-07T14:03:16.743Z"
+        "createdAt": "2026-05-07T14:20:45.487Z",
+        "updatedAt": "2026-05-07T14:20:45.487Z"
       }
     ],
     "afterCompletion": [
@@ -118,11 +118,11 @@
         "packetId": "durable-orchestration-beta-proof-m1-p1",
         "status": "succeeded",
         "workerId": "worker_after_restart",
-        "claimedAt": "2026-05-07T14:03:16.744Z",
-        "completedAt": "2026-05-07T14:03:16.748Z",
+        "claimedAt": "2026-05-07T14:20:45.489Z",
+        "completedAt": "2026-05-07T14:20:45.494Z",
         "lastError": null,
-        "createdAt": "2026-05-07T14:03:16.743Z",
-        "updatedAt": "2026-05-07T14:03:16.748Z"
+        "createdAt": "2026-05-07T14:20:45.487Z",
+        "updatedAt": "2026-05-07T14:20:45.494Z"
       }
     ]
   },
@@ -148,8 +148,8 @@
         "typecheck"
       ],
       "summary": "All checks passed (mock)",
-      "createdAt": "2026-05-07T14:03:16.747Z",
-      "updatedAt": "2026-05-07T14:03:16.747Z"
+      "createdAt": "2026-05-07T14:20:45.492Z",
+      "updatedAt": "2026-05-07T14:20:45.492Z"
     },
     "firstJob": {
       "jobId": "job_durable-orchestration-beta-proof_durable-orchestration-beta-proof-m1-p1",
@@ -160,8 +160,8 @@
       "claimedAt": null,
       "completedAt": null,
       "lastError": null,
-      "createdAt": "2026-05-07T14:03:16.743Z",
-      "updatedAt": "2026-05-07T14:03:16.743Z"
+      "createdAt": "2026-05-07T14:20:45.487Z",
+      "updatedAt": "2026-05-07T14:20:45.487Z"
     }
   }
 }

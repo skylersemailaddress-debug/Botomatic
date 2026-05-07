@@ -1820,6 +1820,7 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateHostedCommercialLaunch(root),
     validateCommercialReadinessGate(root),
     validateExpressReadinessGate(root),
+    validateCommercialStartupSafety(root),
   ];
 }
 
@@ -1889,4 +1890,64 @@ export function validateExpressReadinessGate(root: string): RepoValidatorResult 
   }
 
   return result(name, true, "Express build/start readiness gate wired: POST /build/start enforced at Express layer, incomingMessage artifact check, route policy and matrix updated, direct route tests present.", files);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Validator #93 — Commercial startup safety
+// ─────────────────────────────────────────────────────────────────────────────
+function validateCommercialStartupSafety(root: string): ValidationResult {
+  const name = "Validate-Botomatic-CommercialStartupSafety";
+  const files = [
+    "apps/orchestrator-api/src/bootstrap.ts",
+    "package.json",
+    "apps/claude-runner/package.json",
+    "packages/validation/src/tests/commercialStartupSafety.test.ts",
+  ];
+
+  // bootstrap.ts must gate validateEnv on EXECUTOR=claude
+  if (!has(root, files[0])) return result(name, false, "bootstrap.ts not found.", files);
+  const bootstrap = read(root, files[0]);
+  if (!bootstrap.includes('process.env.EXECUTOR === "claude"')) {
+    return result(name, false, "bootstrap.ts: validateEnv() must be gated on EXECUTOR === 'claude' so Railway starts without ANTHROPIC_API_KEY when EXECUTOR is unset.", files);
+  }
+  // The EXECUTOR check must appear before the ANTHROPIC_API_KEY reference
+  const executorIdx = bootstrap.indexOf('process.env.EXECUTOR === "claude"');
+  const keyIdx = bootstrap.indexOf('"ANTHROPIC_API_KEY"');
+  if (keyIdx !== -1 && executorIdx > keyIdx) {
+    return result(name, false, "bootstrap.ts: EXECUTOR check must appear before ANTHROPIC_API_KEY requirement so startup is safe without the key.", files);
+  }
+
+  // root package.json must list apps/claude-runner as a workspace
+  if (!has(root, files[1])) return result(name, false, "root package.json not found.", files);
+  let rootPkg: any;
+  try { rootPkg = JSON.parse(read(root, files[1])); } catch { return result(name, false, "root package.json is not valid JSON.", files); }
+  if (!Array.isArray(rootPkg.workspaces) || !rootPkg.workspaces.includes("apps/claude-runner")) {
+    return result(name, false, "root package.json workspaces must include 'apps/claude-runner' so npm install picks up @anthropic-ai/sdk on Railway.", files);
+  }
+
+  // apps/claude-runner/package.json must have @anthropic-ai/sdk as a prod dep
+  if (!has(root, files[2])) return result(name, false, "apps/claude-runner/package.json not found.", files);
+  let runnerPkg: any;
+  try { runnerPkg = JSON.parse(read(root, files[2])); } catch { return result(name, false, "apps/claude-runner/package.json is not valid JSON.", files); }
+  if (!runnerPkg.dependencies?.["@anthropic-ai/sdk"]) {
+    return result(name, false, "@anthropic-ai/sdk must be in apps/claude-runner dependencies (not devDependencies) so it is installed in production.", files);
+  }
+  if (runnerPkg.devDependencies?.["@anthropic-ai/sdk"]) {
+    return result(name, false, "@anthropic-ai/sdk must NOT be in apps/claude-runner devDependencies.", files);
+  }
+
+  // Test file must exist
+  if (!has(root, files[3])) return result(name, false, "commercialStartupSafety.test.ts not found.", files);
+  const test = read(root, files[3]);
+  if (!test.includes("testBootstrapValidateEnvIsConditional")) {
+    return result(name, false, "commercialStartupSafety.test.ts must test that validateEnv is conditional on EXECUTOR=claude.", files);
+  }
+  if (!test.includes("testClaudeRunnerWorkspaceRegistered")) {
+    return result(name, false, "commercialStartupSafety.test.ts must test that apps/claude-runner is in root workspaces.", files);
+  }
+  if (!test.includes("testClaudeRunnerDepsAreProdDeps")) {
+    return result(name, false, "commercialStartupSafety.test.ts must test that @anthropic-ai/sdk is a prod dependency.", files);
+  }
+
+  return result(name, true, "Commercial startup safety: validateEnv conditional on EXECUTOR=claude, apps/claude-runner in workspaces, @anthropic-ai/sdk prod dep, startup tests present.", files);
 }

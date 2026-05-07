@@ -5,11 +5,16 @@ import { spawn, ChildProcess } from "child_process";
 import { resolve } from "path";
 
 function validateEnv() {
-  const required = ["ANTHROPIC_API_KEY"];
-  const missing = required.filter(k => !process.env[k]);
-  if (missing.length > 0) {
-    console.error(JSON.stringify({ event: "startup_env_error", missing }));
-    process.exit(1);
+  // ANTHROPIC_API_KEY is only required when the Claude runner executor is explicitly enabled.
+  // Do NOT require it unconditionally — commercial Railway deployments run without it when
+  // EXECUTOR is unset or set to "mock", and crashing at startup would prevent health checks.
+  if (process.env.EXECUTOR === "claude") {
+    const required = ["ANTHROPIC_API_KEY"];
+    const missing = required.filter(k => !process.env[k]);
+    if (missing.length > 0) {
+      console.error(JSON.stringify({ event: "startup_env_error", missing }));
+      process.exit(1);
+    }
   }
 }
 
