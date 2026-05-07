@@ -66,6 +66,7 @@
     "test:generated-app-commercial-readiness": "tsx packages/validation/src/generatedApp/tests/generatedAppCommercialReadiness.test.ts",
     "test:generated-app-corpus": "tsx packages/validation/src/generatedApp/tests/generatedAppCorpusHarness.test.ts",
     "test:generated-app-representative-corpus": "tsx packages/validation/src/generatedApp/tests/generatedAppRepresentativeCorpus.test.ts",
+    "generated-apps:test": "npm run -s test:generated-app-no-placeholders && npm run -s test:generated-app-commercial-readiness && npm run -s test:generated-app-corpus && npm run -s test:generated-app-representative-corpus",
     "test:secret-leak-prevention": "tsx packages/validation/src/tests/secretLeakPrevention.test.ts",
     "test:dirty-repo-evidence": "tsx packages/validation/src/tests/dirtyRepoEvidence.test.ts",
     "test:dirty-repo-completion-v2": "tsx packages/validation/src/tests/dirtyRepoCompletionContractV2.test.ts",

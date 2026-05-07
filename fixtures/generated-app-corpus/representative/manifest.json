@@ -129,6 +129,62 @@
       "notes": "Representative static corpus fixture; not exhaustive and not launch proof."
     },
     {
+      "id": "consumerApp",
+      "displayName": "consumerApp",
+      "domain": "consumer",
+      "appPath": "consumer-app",
+      "expectedBlueprintId": "uiBlueprint.consumerApp",
+      "expectedReadinessStatus": "candidate_ready",
+      "requiredChecks": [
+        "no_placeholder_scan",
+        "commercial_readiness",
+        "claim_boundary"
+      ],
+      "notes": "Representative static corpus fixture; not exhaustive and not launch proof."
+    },
+    {
+      "id": "aiAssistant",
+      "displayName": "aiAssistant",
+      "domain": "ai-assistant",
+      "appPath": "ai-assistant",
+      "expectedBlueprintId": "uiBlueprint.aiAssistant",
+      "expectedReadinessStatus": "candidate_ready",
+      "requiredChecks": [
+        "no_placeholder_scan",
+        "commercial_readiness",
+        "claim_boundary"
+      ],
+      "notes": "Representative static corpus fixture; not exhaustive and not launch proof."
+    },
+    {
+      "id": "fileHeavyApp",
+      "displayName": "fileHeavyApp",
+      "domain": "file-heavy",
+      "appPath": "file-heavy-app",
+      "expectedBlueprintId": "uiBlueprint.fileHeavyApp",
+      "expectedReadinessStatus": "candidate_ready",
+      "requiredChecks": [
+        "no_placeholder_scan",
+        "commercial_readiness",
+        "claim_boundary"
+      ],
+      "notes": "Representative static corpus fixture; not exhaustive and not launch proof."
+    },
+    {
+      "id": "adminDashboard",
+      "displayName": "adminDashboard",
+      "domain": "admin-dashboard",
+      "appPath": "admin-dashboard",
+      "expectedBlueprintId": "uiBlueprint.adminDashboard",
+      "expectedReadinessStatus": "candidate_ready",
+      "requiredChecks": [
+        "no_placeholder_scan",
+        "commercial_readiness",
+        "claim_boundary"
+      ],
+      "notes": "Representative static corpus fixture; not exhaustive and not launch proof."
+    },
+    {
       "id": "negativePlaceholderBlocked",
       "displayName": "negativePlaceholderBlocked",
       "domain": "negative-control",

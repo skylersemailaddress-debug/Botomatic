@@ -1,0 +1,9 @@
+{
+  "name": "representative-file-heavy-app",
+  "private": true,
+  "version": "0.0.1",
+  "scripts": {
+    "build": "tsup src/main.ts --format esm,cjs --dts",
+    "test": "vitest run"
+  }
+}

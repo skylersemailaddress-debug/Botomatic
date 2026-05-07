@@ -43,6 +43,10 @@ export function validateGeneratedAppRepresentativeCorpusReadiness(root: string):
     "botAgentConsole",
     "mobileAppShell",
     "gameLandingPage",
+    "consumerApp",
+    "aiAssistant",
+    "fileHeavyApp",
+    "adminDashboard",
     "negativePlaceholderBlocked",
   ];
 

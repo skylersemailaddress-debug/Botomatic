@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "1",
+  "appId": "aiAssistant",
+  "generatedAt": "2026-01-01T00:00:00.000Z",
+  "nodeVersion": "v20.0.0",
+  "npmVersion": "10.0.0",
+  "commandOutputs": {},
+  "checksums": [],
+  "passFail": {
+    "install": false,
+    "build": false,
+    "test": false,
+    "runtimeSmoke": false,
+    "noSecrets": false,
+    "noPlaceholders": false,
+    "dependencyAudit": false,
+    "accessibility": false
+  },
+  "overallPass": false,
+  "caveats": [
+    "Evidence bundle records command outputs and timestamps only.",
+    "Evidence bundle is not launch-readiness proof.",
+    "Runtime smoke validation is required before any launch-readiness claim.",
+    "Dependency audit exceptions must be documented if audit is skipped."
+  ]
+}
