@@ -7,6 +7,22 @@ const MATRIX_PATH = "release-evidence/commercial_launch_stage_matrix.json";
 const OUTPUT_PATH = "release-evidence/runtime/commercial_launch_stage_gate.json";
 const STAGE_ORDER = ["local_dev", "friends_family_beta", "paid_beta", "enterprise_pilot", "public_launch"] as const;
 
+type ProofRequirement = {
+  applicable: boolean;
+  proofs: string[];
+};
+
+type StageMatrixRow = {
+  id: string;
+  requiredProofs: Record<string, ProofRequirement>;
+};
+
+type CommercialLaunchStageMatrix = {
+  currentClaimStage?: string;
+  notClaimableStages?: string[];
+  stages?: StageMatrixRow[];
+};
+
 type StageEvaluation = {
   stage: string;
   passed: boolean;
@@ -21,10 +37,10 @@ function read(rel: string): string {
   return fs.readFileSync(path.join(ROOT, rel), "utf8");
 }
 
-function evaluateStages(matrix: any): StageEvaluation[] {
-  const stages = Array.isArray(matrix?.stages) ? matrix.stages : [];
-  return stages.map((stage: any) => {
-    const requiredProofs = stage?.requiredProofs && typeof stage.requiredProofs === "object" ? stage.requiredProofs : {};
+function evaluateStages(matrix: CommercialLaunchStageMatrix): StageEvaluation[] {
+  const stages = Array.isArray(matrix.stages) ? matrix.stages : [];
+  return stages.map((stage) => {
+    const requiredProofs = stage.requiredProofs && typeof stage.requiredProofs === "object" ? stage.requiredProofs : {};
     const missingProofs: string[] = [];
     for (const category of Object.keys(requiredProofs)) {
       const requirement = requiredProofs[category];
@@ -44,9 +60,9 @@ function evaluateStages(matrix: any): StageEvaluation[] {
 
 function main() {
   const result = validateCommercialLaunchStageGate(ROOT);
-  let matrix: any = {};
+  let matrix: CommercialLaunchStageMatrix = {};
   try {
-    matrix = JSON.parse(read(MATRIX_PATH));
+    matrix = JSON.parse(read(MATRIX_PATH)) as CommercialLaunchStageMatrix;
   } catch {
     // ignore; validator already reports parsing errors
   }
@@ -59,8 +75,8 @@ function main() {
     validator: result.name,
     status: result.status,
     summary: result.summary,
-    currentClaimStage: matrix?.currentClaimStage ?? null,
-    notClaimableStages: Array.isArray(matrix?.notClaimableStages) ? matrix.notClaimableStages : [],
+    currentClaimStage: matrix.currentClaimStage ?? null,
+    notClaimableStages: Array.isArray(matrix.notClaimableStages) ? matrix.notClaimableStages : [],
     highestProvenStage,
     stageOrder: STAGE_ORDER,
     stageEvaluations,

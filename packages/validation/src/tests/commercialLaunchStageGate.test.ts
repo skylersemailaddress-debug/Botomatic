@@ -43,7 +43,7 @@ function writeMatrix(root: string, claimStage = "enterprise_pilot", blocked = ["
           stage("friends_family_beta", ["a", "b"]),
           stage("paid_beta", ["a", "b", "c"]),
           stage("enterprise_pilot", ["a", "b", "c", "d"]),
-          stage("public_launch", ["a", "b", "c", "d", "missing-public-proof"]),
+          stage("public_launch", ["a", "b", "c", "d", "public-launch-billing-proof-not-yet-created"]),
         ],
       },
       null,
@@ -65,7 +65,7 @@ function stage(id: string, proofs: string[]) {
       observability: mk(proofs.slice(0, 1)),
       support_runbooks: mk(proofs.slice(0, 1)),
       legal_compliance: mk(proofs.slice(0, 1)),
-      billing: id === "public_launch" ? mk(["missing-public-proof"]) : { applicable: false, proofs: [] },
+      billing: id === "public_launch" ? mk(["public-launch-billing-proof-not-yet-created"]) : { applicable: false, proofs: [] },
     },
   };
 }
