@@ -6,7 +6,7 @@ This document defines the final commercial launch gate used to prevent overclaim
 - Not currently claimable stages: `public_launch`
 
 Source of truth:
-- `release-evidence/runtime/commercial_launch_stage_matrix.json`
+- `release-evidence/commercial_launch_stage_matrix.json`
 - `npm run validate:commercial-launch`
 - `Validate-Botomatic-CommercialLaunchStageGate`
 

@@ -2,7 +2,7 @@
 
 This document defines the allowed claim boundaries for Botomatic communications across internal, beta/commercial-preview, and public-launch contexts.
 
-Commercial launch stage source of truth: `docs/beta/COMMERCIAL_LAUNCH_STAGE_GATE.md` and `release-evidence/runtime/commercial_launch_stage_matrix.json`.
+Commercial launch stage source of truth: `docs/beta/COMMERCIAL_LAUNCH_STAGE_GATE.md` and `release-evidence/commercial_launch_stage_matrix.json`.
 
 ## Claim tiers and allowed scope
 

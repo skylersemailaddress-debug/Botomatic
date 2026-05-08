@@ -2,7 +2,7 @@
 
 This policy maps claim types to minimum evidence classes and defines conflict-resolution rules.
 
-Stage-gate policy: commercial launch claims are additionally bounded by `Validate-Botomatic-CommercialLaunchStageGate` using `release-evidence/runtime/commercial_launch_stage_matrix.json`.
+Stage-gate policy: commercial launch claims are additionally bounded by `Validate-Botomatic-CommercialLaunchStageGate` using `release-evidence/commercial_launch_stage_matrix.json`.
 
 ## Evidence classes
 

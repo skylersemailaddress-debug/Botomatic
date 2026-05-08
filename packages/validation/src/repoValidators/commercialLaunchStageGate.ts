@@ -3,7 +3,7 @@ import path from "node:path";
 import type { RepoValidatorResult } from "../repoValidators";
 
 const VALIDATOR_NAME = "Validate-Botomatic-CommercialLaunchStageGate";
-const MATRIX_PATH = "release-evidence/runtime/commercial_launch_stage_matrix.json";
+const MATRIX_PATH = "release-evidence/commercial_launch_stage_matrix.json";
 const DOC_PATH = "docs/beta/COMMERCIAL_LAUNCH_STAGE_GATE.md";
 const EXPECTED_STAGES = ["local_dev", "friends_family_beta", "paid_beta", "enterprise_pilot", "public_launch"] as const;
 const EXPECTED_CATEGORIES = [
@@ -172,4 +172,3 @@ export function validateCommercialLaunchStageGate(root: string): RepoValidatorRe
     checks
   );
 }
-

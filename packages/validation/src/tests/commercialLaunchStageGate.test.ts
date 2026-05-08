@@ -33,7 +33,7 @@ function writePolicyDocs(root: string, claimStage = "enterprise_pilot", blocked 
 function writeMatrix(root: string, claimStage = "enterprise_pilot", blocked = ["public_launch"]) {
   writeFile(
     root,
-    "release-evidence/runtime/commercial_launch_stage_matrix.json",
+    "release-evidence/commercial_launch_stage_matrix.json",
     JSON.stringify(
       {
         currentClaimStage: claimStage,
@@ -116,4 +116,3 @@ function run() {
 }
 
 run();
-

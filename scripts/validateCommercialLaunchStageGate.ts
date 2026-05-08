@@ -3,7 +3,7 @@ import path from "node:path";
 import { validateCommercialLaunchStageGate } from "../packages/validation/src/repoValidators/commercialLaunchStageGate";
 
 const ROOT = process.cwd();
-const MATRIX_PATH = "release-evidence/runtime/commercial_launch_stage_matrix.json";
+const MATRIX_PATH = "release-evidence/commercial_launch_stage_matrix.json";
 const OUTPUT_PATH = "release-evidence/runtime/commercial_launch_stage_gate.json";
 const STAGE_ORDER = ["local_dev", "friends_family_beta", "paid_beta", "enterprise_pilot", "public_launch"] as const;
 
@@ -82,4 +82,3 @@ function main() {
 }
 
 main();
-
