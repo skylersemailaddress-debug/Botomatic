@@ -109,7 +109,7 @@ export const ROUTE_AUTHORIZATION_POLICIES: readonly RoutePolicy[] = [
   project("GET", "/api/projects/:projectId/ui/audit", "operator", false, "Reads project audit events."),
 ] as const;
 
-const rank: Record<AuthContext["role"], number> = { operator: 1, reviewer: 2, admin: 3 };
+const rank: Record<AuthContext["role"], number> = { reviewer: 1, operator: 2, admin: 3 };
 const requiredRuntimeRole: Partial<Record<RoutePolicyName, AuthContext["role"]>> = {
   operator: "operator",
   admin: "admin",

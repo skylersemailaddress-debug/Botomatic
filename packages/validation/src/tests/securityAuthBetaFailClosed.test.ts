@@ -130,7 +130,7 @@ async function main() {
       baseUrl,
       `/api/projects/${intakeBody.projectId}/dispatch/execute-next`,
       {},
-      { "x-user-id": "owner-1", "x-role": "operator" },
+      { "x-user-id": "owner-1", "x-role": "reviewer" },
     );
     assert.equal(wrongRole.status, 403);
     signals.wrong_role_denied = true;
