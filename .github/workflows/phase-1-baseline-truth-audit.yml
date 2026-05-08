@@ -20,6 +20,13 @@ jobs:
     name: Baseline truth audit
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    env:
+      RUNTIME_MODE: development
+      BOTOMATIC_DEPLOYMENT_ENV: local
+      PROJECT_REPOSITORY_MODE: memory
+      QUEUE_BACKEND: memory
+      BOTOMATIC_ALLOW_LOCAL_MEMORY_FALLBACK: "true"
+      BOTOMATIC_LOCAL_TEST_AUTH: "true"
 
     steps:
       - name: Checkout
