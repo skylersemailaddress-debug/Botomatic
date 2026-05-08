@@ -33,6 +33,7 @@ function run() {
       cwd: process.cwd(),
       stdio: "inherit",
       encoding: "utf8",
+      env: { ...process.env },
     });
 
     if ((result.status ?? 1) !== 0) {
