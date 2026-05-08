@@ -1,0 +1,330 @@
+{
+  "gate": "commercial_launch_stage_gate",
+  "version": 1,
+  "currentClaimStage": "enterprise_pilot",
+  "notClaimableStages": [
+    "public_launch"
+  ],
+  "stages": [
+    {
+      "id": "local_dev",
+      "requiredProofs": {
+        "security": {
+          "applicable": true,
+          "proofs": [
+            "release-evidence/runtime/security_auth_beta_proof.json"
+          ]
+        },
+        "durable_e2e": {
+          "applicable": true,
+          "proofs": [
+            "release-evidence/runtime/orchestration_core_beta_proof.json"
+          ]
+        },
+        "tenant_isolation": {
+          "applicable": true,
+          "proofs": [
+            "release-evidence/runtime/tenant_isolation_proof.json"
+          ]
+        },
+        "deployment": {
+          "applicable": true,
+          "proofs": [
+            "docs/beta/HOSTED_COMMERCIAL_LAUNCH.md"
+          ]
+        },
+        "generated_app_quality": {
+          "applicable": true,
+          "proofs": [
+            "release-evidence/runtime/builder_quality_benchmark.json"
+          ]
+        },
+        "observability": {
+          "applicable": true,
+          "proofs": [
+            "release-evidence/runtime/ops_observability.json"
+          ]
+        },
+        "support_runbooks": {
+          "applicable": true,
+          "proofs": [
+            "docs/runbooks/stuck-build.md"
+          ]
+        },
+        "legal_compliance": {
+          "applicable": true,
+          "proofs": [
+            "LEGAL_CLAIM_BOUNDARIES.md"
+          ]
+        },
+        "billing": {
+          "applicable": false,
+          "proofs": []
+        }
+      }
+    },
+    {
+      "id": "friends_family_beta",
+      "requiredProofs": {
+        "security": {
+          "applicable": true,
+          "proofs": [
+            "release-evidence/runtime/security_auth_beta_proof.json",
+            "release-evidence/runtime/no_secrets_beta_proof.json"
+          ]
+        },
+        "durable_e2e": {
+          "applicable": true,
+          "proofs": [
+            "release-evidence/runtime/orchestration_core_beta_proof.json",
+            "release-evidence/runtime/durable_fail_closed_beta_proof.json"
+          ]
+        },
+        "tenant_isolation": {
+          "applicable": true,
+          "proofs": [
+            "release-evidence/runtime/tenant_isolation_proof.json"
+          ]
+        },
+        "deployment": {
+          "applicable": true,
+          "proofs": [
+            "release-evidence/runtime/deployment_smoke_beta_proof.json",
+            "docs/beta/DEPLOYMENT_SMOKE_AND_ROLLBACK.md"
+          ]
+        },
+        "generated_app_quality": {
+          "applicable": true,
+          "proofs": [
+            "release-evidence/runtime/builder_quality_benchmark.json"
+          ]
+        },
+        "observability": {
+          "applicable": true,
+          "proofs": [
+            "release-evidence/runtime/ops_observability.json"
+          ]
+        },
+        "support_runbooks": {
+          "applicable": true,
+          "proofs": [
+            "docs/beta/RC_RUNBOOK.md",
+            "docs/beta/SUPPORT.md"
+          ]
+        },
+        "legal_compliance": {
+          "applicable": true,
+          "proofs": [
+            "docs/beta/BETA_TERMS.md",
+            "docs/beta/BETA_PRIVACY.md"
+          ]
+        },
+        "billing": {
+          "applicable": false,
+          "proofs": []
+        }
+      }
+    },
+    {
+      "id": "paid_beta",
+      "requiredProofs": {
+        "security": {
+          "applicable": true,
+          "proofs": [
+            "release-evidence/runtime/security_auth_beta_proof.json",
+            "release-evidence/runtime/no_secrets_beta_proof.json"
+          ]
+        },
+        "durable_e2e": {
+          "applicable": true,
+          "proofs": [
+            "release-evidence/runtime/orchestration_core_beta_proof.json",
+            "release-evidence/runtime/durable_fail_closed_beta_proof.json"
+          ]
+        },
+        "tenant_isolation": {
+          "applicable": true,
+          "proofs": [
+            "release-evidence/runtime/tenant_isolation_proof.json"
+          ]
+        },
+        "deployment": {
+          "applicable": true,
+          "proofs": [
+            "release-evidence/runtime/deployment_dry_run_proof.json",
+            "release-evidence/runtime/credentialed_deployment_readiness_proof.json"
+          ]
+        },
+        "generated_app_quality": {
+          "applicable": true,
+          "proofs": [
+            "release-evidence/runtime/builder_quality_benchmark.json",
+            "release-evidence/runtime/domain_quality_scorecards.json"
+          ]
+        },
+        "observability": {
+          "applicable": true,
+          "proofs": [
+            "release-evidence/runtime/ops_observability.json"
+          ]
+        },
+        "support_runbooks": {
+          "applicable": true,
+          "proofs": [
+            "docs/runbooks/queue-backlog.md",
+            "docs/runbooks/bad-deploy-rollback.md"
+          ]
+        },
+        "legal_compliance": {
+          "applicable": true,
+          "proofs": [
+            "LEGAL_CLAIM_BOUNDARIES.md",
+            "EVIDENCE_BOUNDARY_POLICY.md",
+            "MARKETING_CLAIMS_ALLOWED.md"
+          ]
+        },
+        "billing": {
+          "applicable": false,
+          "proofs": [],
+          "note": "Paid beta claims in this repository are positioned as pre-billing readiness; billing proof is deferred to public_launch."
+        }
+      }
+    },
+    {
+      "id": "enterprise_pilot",
+      "requiredProofs": {
+        "security": {
+          "applicable": true,
+          "proofs": [
+            "release-evidence/runtime/security_auth_beta_proof.json",
+            "release-evidence/runtime/no_secrets_beta_proof.json"
+          ]
+        },
+        "durable_e2e": {
+          "applicable": true,
+          "proofs": [
+            "release-evidence/runtime/orchestration_core_beta_proof.json",
+            "release-evidence/runtime/durable_fail_closed_beta_proof.json"
+          ]
+        },
+        "tenant_isolation": {
+          "applicable": true,
+          "proofs": [
+            "release-evidence/runtime/tenant_isolation_proof.json"
+          ]
+        },
+        "deployment": {
+          "applicable": true,
+          "proofs": [
+            "release-evidence/runtime/deployment_dry_run_proof.json",
+            "release-evidence/runtime/credentialed_deployment_readiness_proof.json",
+            "release-evidence/runtime/live_deployment_execution_readiness_proof.json"
+          ]
+        },
+        "generated_app_quality": {
+          "applicable": true,
+          "proofs": [
+            "release-evidence/runtime/builder_quality_benchmark.json",
+            "release-evidence/runtime/domain_quality_scorecards.json",
+            "release-evidence/runtime/final_commercial_release_evidence.json"
+          ]
+        },
+        "observability": {
+          "applicable": true,
+          "proofs": [
+            "release-evidence/runtime/ops_observability.json",
+            "release-evidence/runtime/eval_suite_runtime_proof.json"
+          ]
+        },
+        "support_runbooks": {
+          "applicable": true,
+          "proofs": [
+            "docs/runbooks/supabase-outage.md",
+            "docs/runbooks/provider-outage.md",
+            "docs/runbooks/upload-abuse.md"
+          ]
+        },
+        "legal_compliance": {
+          "applicable": true,
+          "proofs": [
+            "LEGAL_CLAIM_BOUNDARIES.md",
+            "EVIDENCE_BOUNDARY_POLICY.md",
+            "MARKETING_CLAIMS_ALLOWED.md"
+          ]
+        },
+        "billing": {
+          "applicable": false,
+          "proofs": [],
+          "note": "Enterprise pilot claims in this repository are positioned as pre-billing readiness; billing proof is deferred to public_launch."
+        }
+      }
+    },
+    {
+      "id": "public_launch",
+      "requiredProofs": {
+        "security": {
+          "applicable": true,
+          "proofs": [
+            "release-evidence/runtime/security_auth_beta_proof.json",
+            "release-evidence/runtime/no_secrets_beta_proof.json"
+          ]
+        },
+        "durable_e2e": {
+          "applicable": true,
+          "proofs": [
+            "release-evidence/runtime/orchestration_core_beta_proof.json",
+            "release-evidence/runtime/durable_fail_closed_beta_proof.json"
+          ]
+        },
+        "tenant_isolation": {
+          "applicable": true,
+          "proofs": [
+            "release-evidence/runtime/tenant_isolation_proof.json"
+          ]
+        },
+        "deployment": {
+          "applicable": true,
+          "proofs": [
+            "release-evidence/runtime/live_deployment_provider_execution_proof.json"
+          ]
+        },
+        "generated_app_quality": {
+          "applicable": true,
+          "proofs": [
+            "release-evidence/runtime/builder_quality_benchmark.json",
+            "release-evidence/runtime/domain_quality_scorecards.json",
+            "release-evidence/runtime/final_commercial_release_evidence.json"
+          ]
+        },
+        "observability": {
+          "applicable": true,
+          "proofs": [
+            "release-evidence/runtime/ops_observability.json"
+          ]
+        },
+        "support_runbooks": {
+          "applicable": true,
+          "proofs": [
+            "docs/runbooks/supabase-outage.md",
+            "docs/runbooks/provider-outage.md",
+            "docs/runbooks/data-isolation-alert.md"
+          ]
+        },
+        "legal_compliance": {
+          "applicable": true,
+          "proofs": [
+            "LEGAL_CLAIM_BOUNDARIES.md",
+            "EVIDENCE_BOUNDARY_POLICY.md",
+            "MARKETING_CLAIMS_ALLOWED.md"
+          ]
+        },
+        "billing": {
+          "applicable": true,
+          "proofs": [
+            "release-evidence/runtime/public_launch_billing_proof.json"
+          ]
+        }
+      }
+    }
+  ]
+}

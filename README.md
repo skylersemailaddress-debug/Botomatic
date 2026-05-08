@@ -69,6 +69,10 @@ For evidence-bound claim language and marketing constraints, see:
 - `LEGAL_CLAIM_BOUNDARIES.md`
 - `EVIDENCE_BOUNDARY_POLICY.md`
 - `MARKETING_CLAIMS_ALLOWED.md`
+- `docs/beta/COMMERCIAL_LAUNCH_STAGE_GATE.md`
+
+Current commercial launch claim stage: `enterprise_pilot`
+Not currently claimable stages: `public_launch`
 
 ## Current launch status
 

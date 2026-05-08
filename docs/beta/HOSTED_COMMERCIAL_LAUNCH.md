@@ -4,6 +4,8 @@ This document describes the architecture and deployment steps for running
 Botomatic as a customer-facing hosted web app on Railway with no local setup
 required.
 
+Claim boundary: this document supports hosted `enterprise_pilot` operations and is not, by itself, proof of `public_launch` readiness.
+
 ---
 
 ## Architecture
