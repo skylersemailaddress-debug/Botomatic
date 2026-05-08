@@ -185,6 +185,7 @@ let alertDeliverySuccessCount = 0;
 let alertDeliveryFailureCount = 0;
 let telemetryUpdatedAt = now();
 const recentSupportAuditEvents: SupportAuditEvent[] = [];
+const globalDeniedAccessAuditEvents: SupportAuditEvent[] = [];
 const recentJobQueueSnapshots: JobQueueSnapshot[] = [];
 const recentBuildRunProjectIds = new Map<string, string>();
 const idempotencyResponses = new Map<string, unknown>();
@@ -461,7 +462,7 @@ function recordAuthFailure(message: string, metadata: Record<string, unknown>) {
 }
 
 function requireRole(required: AuthContext["role"], config: RuntimeConfig): express.RequestHandler {
-  const rank: Record<AuthContext["role"], number> = { operator: 1, reviewer: 2, admin: 3 };
+  const rank: Record<AuthContext["role"], number> = { reviewer: 1, operator: 2, admin: 3 };
   return async (req, res, next) => {
     try {
       const auth = await getVerifiedAuth(req, config);
@@ -515,6 +516,22 @@ function requireAnyRole(allowedRoles: AuthContext["role"][], config: RuntimeConf
   return async (req, res, next) => {
     try {
       const auth = await getVerifiedAuth(req, config);
+      if (!auth.userId || auth.userId === "anonymous") {
+        void appendDeniedAccessAudit(config, {
+          id: `audit_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+          type: "access_denied",
+          actorId: "anonymous",
+          tenantId: auth.tenantId || null,
+          projectId: req.params.projectId || null,
+          route: `${req.method} ${req.path}`,
+          outcome: "rejected",
+          reason: "authenticated_actor_required",
+          requestId: String((res.locals as any).requestId || ""),
+          timestamp: now(),
+          metadata: { allowedRoles },
+        });
+        return res.status(401).json({ error: "Authenticated actor required" });
+      }
       if (!allowedRoles.includes(auth.role)) {
         void appendDeniedAccessAudit(config, {
           id: `audit_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
@@ -552,7 +569,7 @@ function requireAnyRole(allowedRoles: AuthContext["role"][], config: RuntimeConf
 }
 
 function roleRank(role: AuthContext["role"]): number {
-  const rank: Record<AuthContext["role"], number> = { operator: 1, reviewer: 2, admin: 3 };
+  const rank: Record<AuthContext["role"], number> = { reviewer: 1, operator: 2, admin: 3 };
   return rank[role] ?? 0;
 }
 
@@ -649,7 +666,7 @@ function requireApiAuth(config: RuntimeConfig): express.RequestHandler {
         tenantId: null,
         projectId: req.params.projectId || null,
         route: `${req.method} ${req.path}`,
-        outcome: "error",
+        outcome: "rejected",
         reason: "auth_not_configured",
         requestId: String((res.locals as any).requestId || ""),
         timestamp: now(),
@@ -810,7 +827,13 @@ function storeIdempotencyResponse(key: string | null, responseBody: unknown) {
 
 async function appendDeniedAccessAudit(config: RuntimeConfig, event: SupportAuditEvent) {
   recordSupportAuditEvent(event);
-  if (!event.projectId) return;
+  if (!event.projectId) {
+    globalDeniedAccessAuditEvents.unshift({ ...event, scope: "global" } as any);
+    if (globalDeniedAccessAuditEvents.length > 300) {
+      globalDeniedAccessAuditEvents.length = 300;
+    }
+    return;
+  }
   try {
     const project = await config.repository.repo.getProject(event.projectId);
     if (!project) return;
@@ -820,6 +843,10 @@ async function appendDeniedAccessAudit(config: RuntimeConfig, event: SupportAudi
   } catch {
     // Best-effort audit trail only.
   }
+}
+
+function getGlobalDeniedAccessAuditEvents(): SupportAuditEvent[] {
+  return globalDeniedAccessAuditEvents.slice();
 }
 
 type RouteErrorAlertPayload = {
@@ -1199,7 +1226,13 @@ async function enqueueObservedJob(project: StoredProjectRecord, packetId: string
     });
     return jobId;
   } catch (error: any) {
-    incrementMetric("botomatic_duplicate_enqueue_prevented_total");
+    const errorMsg = String(error?.message || error || "").toLowerCase();
+    const isDuplicate = errorMsg.includes("duplicate") || errorMsg.includes("already") || errorMsg.includes("unique");
+    if (isDuplicate) {
+      incrementMetric("botomatic_duplicate_enqueue_prevented_total");
+    } else {
+      incrementMetric("botomatic_job_failure_total");
+    }
     recordJobLifecycleEvent({
       event: "job_enqueue_prevented",
       projectId: project.projectId,
@@ -2597,7 +2630,7 @@ export function buildApp(config: RuntimeConfig) {
     }
   };
 
-  app.get("/api/ops/metrics", requireRole("reviewer", config), respondOpsMetrics);
+  app.get("/api/ops/metrics", requireRole("operator", config), respondOpsMetrics);
   app.get("/ops/metrics", requireRole("operator", config), respondOpsMetrics);
 
   app.get("/api/ops/errors", requireRole("reviewer", config), async (req, res) => {
@@ -2918,54 +2951,60 @@ export function buildApp(config: RuntimeConfig) {
         allowClone: Boolean((req.body as any)?.allowClone),
         githubToken: String((req.body as any)?.githubToken || "") || undefined,
       });
-      observeMetric("botomatic_provider_latency_ms", Date.now() - githubStartedAt, { provider: "github" });
 
       emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "repo_scan_started", actorId: actor.actorId, timestamp: now(), metadata: { sourceId: source.sourceId } });
       emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "secret_scan_started", actorId: actor.actorId, timestamp: now(), metadata: { sourceId: source.sourceId } });
       emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "framework_detection_started", actorId: actor.actorId, timestamp: now(), metadata: { sourceId: source.sourceId } });
 
-      const status = github.authRequired && github.authStatus === "missing" ? "blocked_requires_auth" : "completed";
-      const updatedSource: IntakeSource = {
-        ...source,
-        status,
-        authRequired: github.authRequired,
-        authStatus: github.authStatus,
-        safetyStatus: github.secretScanResult.status === "flagged" ? "blocked" : "passed",
-        estimatedSizeBytes: github.repoSizeEstimateBytes,
-        updatedAt: nowIso(),
-        metadata: {
-          defaultBranch: github.defaultBranch,
-          fileCountEstimate: github.fileCountEstimate,
-          skippedPaths: github.skippedPaths.slice(0, 200),
-          noCodeExecutionDuringIntake: true,
-        },
-      };
-      upsertIntakeSource(project, updatedSource);
+      let status: IntakeSource["status"];
+      let updatedSource: IntakeSource;
+      let manifestPath: string;
+      try {
+        status = github.authRequired && github.authStatus === "missing" ? "blocked_requires_auth" : "completed";
+        updatedSource = {
+          ...source,
+          status,
+          authRequired: github.authRequired,
+          authStatus: github.authStatus,
+          safetyStatus: github.secretScanResult.status === "flagged" ? "blocked" : "passed",
+          estimatedSizeBytes: github.repoSizeEstimateBytes,
+          updatedAt: nowIso(),
+          metadata: {
+            defaultBranch: github.defaultBranch,
+            fileCountEstimate: github.fileCountEstimate,
+            skippedPaths: github.skippedPaths.slice(0, 200),
+            noCodeExecutionDuringIntake: true,
+          },
+        };
+        upsertIntakeSource(project, updatedSource);
 
-      const manifestPath = writeIntakeManifest(process.cwd(), source.sourceId, {
-        sourceType,
-        sourceUri: sourceUrl,
-        provider: "github",
-        accepted: true,
-        rejected: false,
-        sizeBytes: github.repoSizeEstimateBytes,
-        fileCount: github.fileCountEstimate,
-        skippedPaths: github.skippedPaths.slice(0, 500),
-        detectedLanguages: github.detectedLanguages,
-        detectedFrameworks: github.detectedFrameworks,
-        detectedPackageManagers: github.detectedPackageManagers,
-        detectedRiskSignals: github.riskSignals,
-        secretScanResult: github.secretScanResult,
-        safetyChecks: [
-          { check: "no_code_execution_during_intake", status: "passed", detail: "Repository metadata/scanning only." },
-          { check: "private_repo_requires_credentials", status: github.authRequired && github.authStatus === "missing" ? "blocked" : "passed", detail: github.authRequired ? "Access requires credentials." : "Public access path." },
-        ],
-        extractedTextSummary: "GitHub repository intake metadata captured.",
-        artifactPaths: github.clonePath ? [github.clonePath] : [],
-        nextRecommendedAction: github.authRequired && github.authStatus === "missing"
-          ? "Provide GitHub credentials/connector for private repository access."
-          : "Continue spec analysis using repository intake manifest.",
-      });
+        manifestPath = writeIntakeManifest(process.cwd(), source.sourceId, {
+          sourceType,
+          sourceUri: sourceUrl,
+          provider: "github",
+          accepted: true,
+          rejected: false,
+          sizeBytes: github.repoSizeEstimateBytes,
+          fileCount: github.fileCountEstimate,
+          skippedPaths: github.skippedPaths.slice(0, 500),
+          detectedLanguages: github.detectedLanguages,
+          detectedFrameworks: github.detectedFrameworks,
+          detectedPackageManagers: github.detectedPackageManagers,
+          detectedRiskSignals: github.riskSignals,
+          secretScanResult: github.secretScanResult,
+          safetyChecks: [
+            { check: "no_code_execution_during_intake", status: "passed", detail: "Repository metadata/scanning only." },
+            { check: "private_repo_requires_credentials", status: github.authRequired && github.authStatus === "missing" ? "blocked" : "passed", detail: github.authRequired ? "Access requires credentials." : "Public access path." },
+          ],
+          extractedTextSummary: "GitHub repository intake metadata captured.",
+          artifactPaths: github.clonePath ? [github.clonePath] : [],
+          nextRecommendedAction: github.authRequired && github.authStatus === "missing"
+            ? "Provide GitHub credentials/connector for private repository access."
+            : "Continue spec analysis using repository intake manifest.",
+        });
+      } finally {
+        observeMetric("botomatic_provider_latency_ms", Date.now() - githubStartedAt, { provider: "github" });
+      }
 
       emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "intake_manifest_written", actorId: actor.actorId, timestamp: now(), metadata: { sourceId: source.sourceId, manifestPath } });
       if (status === "blocked_requires_auth") {
@@ -4977,6 +5016,14 @@ export function buildApp(config: RuntimeConfig) {
         await enqueueObservedJob(project, packet.packetId, actor.actorId, "repair replay queued");
         replayed.push(packet.packetId);
       }
+      if (replayed.length > 0) {
+        incrementMetric("botomatic_repair_attempts_total", {}, replayed.length);
+        const repairBudget = 3;
+        const exhaustedCount = repairablePackets.filter((p: any) => (p.repairAttempts || 0) >= repairBudget).length;
+        if (exhaustedCount > 0) {
+          incrementMetric("botomatic_repair_exhausted_total", {}, exhaustedCount);
+        }
+      }
       recomputeProjectStatus(project);
       emitEvent(project as any, { id: `evt_${Date.now()}`, projectId: project.projectId, type: "repair_replay", actorId: actor.actorId, role: "admin", timestamp: now(), metadata: { replayed } });
       await persistProject(config, project);
@@ -5185,6 +5232,7 @@ export function buildApp(config: RuntimeConfig) {
         ...(((project as any).auditEvents || []) as Array<any>),
         ...recentSupportAuditEvents.filter((event) => event.projectId === project.projectId),
       ];
+      const globalAuditEvents = getGlobalDeniedAccessAuditEvents();
       const readiness = computeProjectReadiness(project);
       setResponseContext(res, { projectId: project.projectId, buildRunId: buildRun?.runId || null });
       return res.json({
@@ -5192,6 +5240,7 @@ export function buildApp(config: RuntimeConfig) {
         buildRunId: buildRun?.runId || null,
         logs,
         auditEvents,
+        globalAuditEvents,
         configSnapshot: {
           runtimeMode: config.runtimeMode,
           repositoryMode: config.repository.mode,

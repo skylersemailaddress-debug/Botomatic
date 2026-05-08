@@ -47,6 +47,21 @@ const TEST_CATEGORY_PATTERNS: Array<{ name: string; pattern: RegExp }> = [
   { name: "support endpoints require admin\/operator role", pattern: /support endpoints require admin\/operator role/i },
 ];
 
+// Call-site wiring table: metric name → expected snippet in server_app.ts
+const METRIC_CALL_SITE_CHECKS: Array<{ metric: string; snippet: string }> = [
+  { metric: "botomatic_request_total", snippet: 'incrementMetric("botomatic_request_total"' },
+  { metric: "botomatic_job_success_total", snippet: 'incrementMetric("botomatic_job_success_total"' },
+  { metric: "botomatic_job_failure_total", snippet: 'incrementMetric("botomatic_job_failure_total"' },
+  { metric: "botomatic_repair_attempts_total", snippet: 'incrementMetric("botomatic_repair_attempts_total"' },
+  { metric: "botomatic_repair_exhausted_total", snippet: 'incrementMetric("botomatic_repair_exhausted_total"' },
+  { metric: "botomatic_readiness_locked_total", snippet: 'incrementMetric("botomatic_readiness_locked_total"' },
+  { metric: "botomatic_readiness_unlocked_total", snippet: 'incrementMetric("botomatic_readiness_unlocked_total"' },
+  { metric: "botomatic_provider_latency_ms", snippet: 'observeMetric("botomatic_provider_latency_ms"' },
+  { metric: "botomatic_upload_failures_total", snippet: 'incrementMetric("botomatic_upload_failures_total"' },
+  { metric: "botomatic_queue_depth", snippet: 'setMetric("botomatic_queue_depth"' },
+  { metric: "botomatic_worker_count", snippet: 'setMetric("botomatic_worker_count"' },
+];
+
 type Row = {
   check: string;
   status: "PASS" | "FAIL";
@@ -73,6 +88,7 @@ function main() {
   const rows: Row[] = [];
   const observabilitySource = read("apps/orchestrator-api/src/observability.ts");
   const serverSource = read("apps/orchestrator-api/src/server_app.ts");
+  const routePoliciesSource = read("apps/orchestrator-api/src/security/routePolicies.ts");
   const metrics = new Set(listRegisteredMetricNames());
   const runbookDir = path.join(ROOT, "docs/runbooks");
   const testFiles = listTestFiles("packages/validation/src/tests");
@@ -93,6 +109,22 @@ function main() {
   const missingTestCategories = TEST_CATEGORY_PATTERNS.filter(({ pattern }) => !testSources.some((source) => pattern.test(source))).map(({ name }) => name);
   rows.push(row(missingTestCategories.length === 0, "test coverage categories present", missingTestCategories.length === 0 ? `Found all ${TEST_CATEGORY_PATTERNS.length} required test categories.` : `Missing categories: ${missingTestCategories.join(", ")}`));
 
+  // New check: metric call-site wiring
+  const missingCallSites = METRIC_CALL_SITE_CHECKS.filter(({ snippet }) => !serverSource.includes(snippet)).map(({ metric }) => metric);
+  rows.push(row(missingCallSites.length === 0, "metric call-site wiring", missingCallSites.length === 0 ? `All ${METRIC_CALL_SITE_CHECKS.length} metric call sites found in server_app.ts.` : `Missing call sites for: ${missingCallSites.join(", ")}`));
+
+  // New check: role rank table not inverted
+  const rankCorrect = routePoliciesSource.includes("reviewer: 1") && routePoliciesSource.includes("operator: 2");
+  rows.push(row(rankCorrect, "role rank table not inverted", rankCorrect ? "routePolicies.ts rank table has reviewer: 1, operator: 2." : "routePolicies.ts rank table is inverted — reviewer must be 1, operator must be 2."));
+
+  // New check: requireAnyRole anonymous rejection present
+  const hasAnonymousGuard = serverSource.includes('"authenticated_actor_required"');
+  rows.push(row(hasAnonymousGuard, "requireAnyRole anonymous rejection present", hasAnonymousGuard ? 'server_app.ts contains "authenticated_actor_required" guard.' : 'server_app.ts is missing "authenticated_actor_required" in requireAnyRole.'));
+
+  // New check: /api/ops/metrics enforces operator role
+  const hasOperatorOpsMetrics = !serverSource.includes('requireRole("reviewer", config), respondOpsMetrics');
+  rows.push(row(hasOperatorOpsMetrics, "/api/ops/metrics enforces operator role", hasOperatorOpsMetrics ? "/api/ops/metrics does not use reviewer role — operator enforced correctly." : '/api/ops/metrics incorrectly uses requireRole("reviewer") instead of requireRole("operator").'));
+
   console.log(`\n${VALIDATOR_NAME}\n`);
   console.table(rows);
 
@@ -105,3 +137,4 @@ function main() {
 }
 
 main();
+
