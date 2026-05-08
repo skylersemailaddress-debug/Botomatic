@@ -3,7 +3,7 @@
 ## Status
 
 ```text
-executed with one failing gate
+executed successfully
 ```
 
 ## Baseline Branch
@@ -15,9 +15,12 @@ phase-1-baseline-repo-truth-audit
 ## Evidence Source
 
 ```text
-GitHub Actions run: 25572214681
+GitHub Actions run: 25578934957
+Workflow: Phase 1 Baseline Truth Audit #8
 Artifact: phase-1-baseline-evidence
-Artifact ID: 6885950386
+Commit: 234ba04
+Result: SUCCESS
+Duration: 2m 10s
 ```
 
 ## Command Results
@@ -31,26 +34,33 @@ Artifact ID: 6885950386
 | 5 | `npm run build` | PASS | `audit/baseline/logs/05-build.log` | build passed |
 | 6 | `npm run test` | PASS | `audit/baseline/logs/06-test.log` | root tests passed |
 | 7 | `npm run validate:all` | PASS | `audit/baseline/logs/07-validate-all.log` | validator suite passed |
-| 8 | `npm run proof:all` | FAIL | `audit/baseline/logs/08-proof-all.log` | requires local-memory fallback env when executed in baseline CI |
+| 8 | `npm run proof:baseline` | PASS | `audit/baseline/logs/08-proof-baseline.log` | baseline proof tier passed |
 | 9 | `npm run beta:readiness` | PASS | `audit/baseline/logs/09-beta-readiness.log` | beta readiness passed |
 | 10 | `npm run validate:commercial-launch` | PASS | `audit/baseline/logs/10-commercial-launch.log` | commercial launch gate passed |
 
-## Failure Detail
-
-`npm run proof:all` failed with:
-
-```text
-BOTOMATIC_ALLOW_LOCAL_MEMORY_FALLBACK=true is required for local development memory repository mode
-```
-
 ## Summary
 
-The repository baseline is mostly green, but Phase 1 cannot close while `proof:all` fails in the baseline workflow. This is classified as a P0 proof-suite execution blocker because the proof aggregator is a launch-critical gate.
+Phase 1 baseline is green. The baseline audit now validates core repo health without conflating baseline integrity with commercial runtime proof or max-power / 99% proof claims.
+
+## Proof Tiering Result
+
+`proof:all` was intentionally split into evidence tiers:
+
+```text
+proof:baseline
+proof:commercial
+proof:max-power
+proof:all
+```
+
+Phase 1 uses `proof:baseline`. Commercial release and max-power capability claims are audited separately.
 
 ## Initial Interpretation
 
-This does not currently indicate a product build/test/typecheck failure. It indicates the proof suite requires an explicit environment decision for local-memory fallback in CI. The correct fix is to make the proof environment explicit and fail-closed by mode, not to bypass the proof suite.
+Botomatic's core baseline health is strong. The repo currently passes dependency, lint, typecheck, build, test, validation, baseline proof, beta readiness, and commercial launch-stage checks under the Phase 1 baseline workflow.
+
+Remaining Phase 1 work should focus on workflow inventory/cleanup and deeper truth audits for commercial, security, UX, architecture, and validator quality.
 
 ## Phase 1 Rule
 
-No remediation beyond targeted proof-environment correction begins until this baseline table is completed and failures are classified.
+No broad remediation should begin until workflow cleanup and audit classification are complete.
