@@ -2,6 +2,9 @@
 
 This file defines currently allowed and prohibited marketing language for Botomatic.
 
+Current commercial launch claim stage: `enterprise_pilot`
+Not currently claimable stages: `public_launch`
+
 ## Allowed current claims (cautious, evidence-bound wording)
 
 - Botomatic is a chat-first universal app and website builder under active evidence-bound development.
@@ -9,6 +12,7 @@ This file defines currently allowed and prohibited marketing language for Botoma
 - Botomatic uses validator-backed readiness gates and refuses unsupported launch-ready claims.
 - Botomatic has representative multi-domain generated-output and runtime evidence, subject to documented caveats.
 - Botomatic supports deployment readiness workflows, but live deployment requires explicit approval, real credentials, and provider-specific smoke tests.
+- Enterprise-pilot readiness may be discussed only as evidence-bound and validator-backed.
 
 ## Prohibited current claims
 
@@ -20,6 +24,7 @@ This file defines currently allowed and prohibited marketing language for Botoma
 - "Every blueprint permutation is exhaustively validated"
 - "No human review required for commercial launch"
 - "Universal 10/10 production readiness for every app type"
+- "Public launch is active"
 
 ## Usage notes
 

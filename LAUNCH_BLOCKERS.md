@@ -7,6 +7,7 @@ Important:
 - Legacy enterprise control-plane gate evidence remains recorded below.
 - This file now also tracks universal-builder launch blockers.
 - Universal-builder launch gates are satisfied by validator-backed representative proof in this repository.
+- Commercial launch stage gate status: current claim stage is `enterprise_pilot`; `public_launch` remains blocked pending `release-evidence/runtime/public_launch_billing_proof.json`.
 
 ---
 

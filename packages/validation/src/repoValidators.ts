@@ -67,6 +67,7 @@ import { validateRouteAuthorizationReadiness } from "./repoValidators/routeAutho
 import { validateDeploymentSmokeBetaReadiness } from "./repoValidators/deploymentSmokeBetaReadiness";
 import { validateBetaDocsReadiness } from "./repoValidators/betaDocsReadiness";
 import { validateCommercialSecurityHardening } from "./repoValidators/commercialSecurityHardeningReadiness";
+import { validateCommercialLaunchStageGate } from "./repoValidators/commercialLaunchStageGate";
 export type RepoValidatorResult = {
   name: string;
   status: "passed" | "failed";
@@ -1820,6 +1821,7 @@ export function runAllRepoValidators(root: string): RepoValidatorResult[] {
     validateBetaFileUploadWiring(root),
     validateHostedCommercialLaunch(root),
     validateCommercialReadinessGate(root),
+    validateCommercialLaunchStageGate(root),
     validateExpressReadinessGate(root),
     validateCommercialSecurityHardening(root),
   ];

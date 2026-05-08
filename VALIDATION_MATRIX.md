@@ -17,6 +17,7 @@ Purpose: Map each launch category to required validators.
 | Reliability | Validate-Botomatic-Reliability | IMPLEMENTED (PASS) |
 | Observability | Validate-Botomatic-Observability | IMPLEMENTED (PASS) |
 | Launch Readiness | Validate-Botomatic-LaunchReadiness | IMPLEMENTED (PASS) |
+| Commercial Launch Stages | Validate-Botomatic-CommercialLaunchStageGate | IMPLEMENTED (PASS, fail-closed when stage proofs/docs drift) |
 | Deployment Rollback (Gate 5) | Validate-Botomatic-DeploymentRollbackGate5 | IMPLEMENTED (PASS) |
 | Documentation | Validate-Botomatic-Documentation | IMPLEMENTED (PASS) |
 | Gate 4 Auth/Governance | Validate-Botomatic-AuthGovernanceGate4 | IMPLEMENTED (PASS) |
@@ -81,6 +82,7 @@ Runtime-proof harness requirements (content-inspected validators):
 - `Validate-Botomatic-Documentation` enforces launch-truth alignment across `LAUNCH_BLOCKERS.md`, `READINESS_SCORECARD.json`, `release-evidence/manifest.json`, and `README.md`.
 - `Validate-Botomatic-UIReadiness` and `Validate-Botomatic-UIControlPlaneIntegration` now enforce enterprise surface wiring, no-placeholder UI signals, loading/error/empty states, and real API service bindings.
 - `Validate-Botomatic-Claim99EntitlementReadiness` requires `release-evidence/runtime/live_deployment_provider_execution_proof.json`, `release-evidence/runtime/autobuild_99_statistical_proof.json`, `release-evidence/runtime/claim_99_independent_audit.json`, and `release-evidence/runtime/claim_99_entitlement_proof.json`; it fails closed for 99%-claim entitlement unless exhaustive-domain, live-deployment, statistical-threshold, and independent-audit requirements are all satisfied.
+- `Validate-Botomatic-CommercialLaunchStageGate` enforces explicit staged claims (`local_dev`, `friends_family_beta`, `paid_beta`, `enterprise_pilot`, `public_launch`) from `release-evidence/runtime/commercial_launch_stage_matrix.json`; it fails closed if any required stage proof file is missing for a claimed stage, if `notClaimableStages` does not match unproven stages, or if docs/marketing drift from the matrix claim state.
 - Provider execution evidence ingestion format is stored at `release-evidence/runtime/live_deployment_provider_execution_ingestion.json` and must include per-provider deployment log, smoke-test log, and rollback log references.
 
 Proof harness commands:
@@ -113,6 +115,7 @@ Proof harness commands:
 Fast commands:
 - `npm run -s validate:fast`
 - `npm run -s validate:changed`
+- `npm run -s validate:commercial-launch`
 - `npm run -s cache:clear`
 
 ## Runtime Proof Matrix
