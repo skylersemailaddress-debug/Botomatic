@@ -24,7 +24,7 @@ const gates = [
   ["05", "build", ["npm", ["run", "build"]]],
   ["06", "test", ["npm", ["run", "test"]]],
   ["07", "validate-all", ["npm", ["run", "validate:all"]]],
-  ["08", "proof-all", ["npm", ["run", "proof:all"]]],
+  ["08", "proof-baseline", ["npm", ["run", "proof:baseline"]]],
   ["09", "beta-readiness", ["npm", ["run", "beta:readiness"]]],
   ["10", "commercial-launch", ["npm", ["run", "validate:commercial-launch"]]],
 ];
