@@ -20,13 +20,6 @@ jobs:
     name: Baseline truth audit
     runs-on: ubuntu-latest
     timeout-minutes: 90
-    env:
-      RUNTIME_MODE: development
-      BOTOMATIC_DEPLOYMENT_ENV: local
-      PROJECT_REPOSITORY_MODE: memory
-      QUEUE_BACKEND: memory
-      BOTOMATIC_ALLOW_LOCAL_MEMORY_FALLBACK: "true"
-      BOTOMATIC_LOCAL_TEST_AUTH: "true"
 
     steps:
       - name: Checkout
@@ -38,55 +31,9 @@ jobs:
           node-version: "20"
           cache: npm
 
-      - name: Prepare evidence directories
+      - name: Run deterministic baseline suite
         shell: bash
-        run: mkdir -p audit/baseline/logs
-
-      - name: Run baseline suite without early exit
-        shell: bash
-        run: |
-          set +e
-          run_gate() {
-            index="$1"
-            name="$2"
-            shift 2
-            log="audit/baseline/logs/${index}-${name}.log"
-            exit_file="audit/baseline/logs/${index}-${name}.exit"
-            echo "::group::${index}-${name}"
-            echo "Running: $*"
-            "$@" > "$log" 2>&1
-            code=$?
-            echo "$code" > "$exit_file"
-            tail -n 80 "$log" || true
-            echo "Exit code: $code"
-            echo "::endgroup::"
-          }
-
-          run_gate 01 npm-ci npm ci
-          run_gate 02 deps-sanity npm run deps:sanity
-          run_gate 03 lint npm run lint
-          run_gate 04 typecheck npm run typecheck
-          run_gate 05 build npm run build
-          run_gate 06 test npm run test
-          run_gate 07 validate-all npm run validate:all
-          run_gate 08 proof-all npm run proof:all
-          run_gate 09 beta-readiness npm run beta:readiness
-          run_gate 10 commercial-launch npm run validate:commercial-launch
-
-          echo "Baseline exit summary:"
-          summary_status=0
-          : > audit/baseline/logs/exit-summary.txt
-          for f in audit/baseline/logs/[0-9][0-9]-*.exit; do
-            code="$(cat "$f")"
-            echo "$f: $code" | tee -a audit/baseline/logs/exit-summary.txt
-            if [ "$code" != "0" ]; then
-              summary_status=1
-            fi
-          done
-
-          echo "$summary_status" > audit/baseline/logs/baseline-suite.exit
-          echo "Baseline suite status: $summary_status"
-          exit "$summary_status"
+        run: node scripts/phase1BaselineTruthAudit.mjs
 
       - name: Upload baseline evidence
         if: always()
