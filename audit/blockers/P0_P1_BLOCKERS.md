@@ -46,28 +46,64 @@ Examples:
 # Current Status
 
 ```text
-pending baseline execution
+1 active P0 blocker identified during baseline execution
 ```
 
 ---
 
-# Required Fields
+# Active Blockers
 
-Each blocker should eventually contain:
+## P0-001 — proof:all baseline execution failure
+
+### Category
 
 ```text
-id
-severity
-category
-summary
-runtime truth
-commercial impact
-security impact
-claim impact
-evidence path
-temporary mitigation
-required remediation
-recommended owner/model
+proof-suite / environment-governance
+```
+
+### Runtime Truth
+
+`npm run proof:all` fails during GitHub Actions baseline execution.
+
+### Evidence
+
+```text
+GitHub Actions run: 25572214681
+Artifact: phase-1-baseline-evidence
+Log: audit/baseline/logs/08-proof-all.log
+```
+
+### Failure
+
+```text
+BOTOMATIC_ALLOW_LOCAL_MEMORY_FALLBACK=true is required for local development memory repository mode
+```
+
+### Commercial Impact
+
+The proof aggregation suite cannot currently execute cleanly in the baseline CI environment. Because `proof:all` is a launch-critical gate, Phase 1 cannot close while this remains unresolved.
+
+### Security / Reliability Impact
+
+The current proof behavior suggests local-memory fallback behavior is environment-sensitive and not yet governed explicitly enough for deterministic CI proof execution.
+
+### Claim Impact
+
+Commercial launch proof cannot be considered fully runtime-proven while the proof suite fails in baseline CI.
+
+### Required Remediation
+
+- explicitly define proof runtime mode in CI
+- fail closed when memory fallback is not intentionally allowed
+- separate local-development proof assumptions from CI/commercial proof assumptions
+- preserve runtime proof integrity
+
+### Recommended Owner/Model
+
+```text
+Primary reasoning: GPT-5.5
+Implementation: Codex/Cursor
+Large cleanup/refactor if needed: Claude Opus
 ```
 
 ---
