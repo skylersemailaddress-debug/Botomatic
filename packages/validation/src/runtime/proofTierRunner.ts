@@ -4,15 +4,10 @@ import path from "path";
 
 const proofTiers = {
   baseline: [
-    "proof:greenfield",
-    "proof:dirty-repo",
-    "proof:self-upgrade",
-    "proof:universal-pipeline",
     "proof:domain-scorecards",
     "proof:eval-suite",
     "proof:multi-domain-emitted-output",
     "proof:domain-runtime-commands",
-    "proof:deployment-dry-run",
     "proof:secrets-credential-management",
     "proof:autonomous-complex-build",
     "proof:adaptive-repair-strategy",
@@ -20,6 +15,11 @@ const proofTiers = {
     "proof:multi-source-intake",
   ],
   commercial: [
+    "proof:greenfield",
+    "proof:dirty-repo",
+    "proof:self-upgrade",
+    "proof:universal-pipeline",
+    "proof:deployment-dry-run",
     "proof:external-deployment-readiness",
     "proof:credentialed-deployment-readiness",
     "proof:live-deployment-execution-readiness",
