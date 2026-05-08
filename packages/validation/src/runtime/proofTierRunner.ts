@@ -2,38 +2,58 @@ import { spawnSync } from "child_process";
 import fs from "fs";
 import path from "path";
 
-const proofs = [
-  "proof:greenfield",
-  "proof:dirty-repo",
-  "proof:self-upgrade",
-  "proof:universal-pipeline",
-  "proof:domain-scorecards",
-  "proof:eval-suite",
-  "proof:multi-domain-emitted-output",
-  "proof:domain-runtime-commands",
-  "proof:external-deployment-readiness",
-  "proof:deployment-dry-run",
-  "proof:credentialed-deployment-readiness",
-  "proof:live-deployment-execution-readiness",
-  "proof:secrets-credential-management",
-  "proof:autonomous-complex-build",
-  "proof:adaptive-repair-strategy",
-  "proof:large-file-intake",
-  "proof:multi-source-intake",
-  "proof:max-power-domain-permutations",
-  "proof:live-ui-source-sync-before-export-launch",
-  "proof:live-deployment-provider-execution",
-  "proof:autobuild-99-statistical",
-  "proof:claim-99-independent-audit",
-  "proof:claim-99-entitlement",
-  "proof:max-power-completion",
-];
+const proofTiers = {
+  baseline: [
+    "proof:domain-scorecards",
+    "proof:eval-suite",
+    "proof:multi-domain-emitted-output",
+    "proof:domain-runtime-commands",
+    "proof:secrets-credential-management",
+    "proof:autonomous-complex-build",
+    "proof:adaptive-repair-strategy",
+    "proof:large-file-intake",
+    "proof:multi-source-intake",
+  ],
+  commercial: [
+    "proof:greenfield",
+    "proof:dirty-repo",
+    "proof:self-upgrade",
+    "proof:universal-pipeline",
+    "proof:deployment-dry-run",
+    "proof:external-deployment-readiness",
+    "proof:credentialed-deployment-readiness",
+    "proof:live-deployment-execution-readiness",
+    "proof:live-ui-source-sync-before-export-launch",
+    "proof:live-deployment-provider-execution",
+  ],
+  maxPower: [
+    "proof:max-power-domain-permutations",
+    "proof:autobuild-99-statistical",
+    "proof:claim-99-independent-audit",
+    "proof:claim-99-entitlement",
+    "proof:max-power-completion",
+  ],
+} as const;
 
+type ProofTier = keyof typeof proofTiers | "all";
 type ProofResult = {
   script: string;
   status: number;
   logPath: string;
 };
+
+function getTier(): ProofTier {
+  const raw = process.argv[2] || "all";
+  if (raw === "baseline" || raw === "commercial" || raw === "maxPower" || raw === "all") return raw;
+  throw new Error(`Unsupported proof tier: ${raw}`);
+}
+
+function getProofs(tier: ProofTier): string[] {
+  if (tier === "all") {
+    return [...proofTiers.baseline, ...proofTiers.commercial, ...proofTiers.maxPower];
+  }
+  return [...proofTiers[tier]];
+}
 
 function safeName(script: string): string {
   return script.replace(/[^a-zA-Z0-9._-]+/g, "-");
@@ -48,10 +68,15 @@ function tail(output: string, lines = 80): string {
 }
 
 function run() {
-  const evidenceDir = path.join(process.cwd(), "audit", "baseline", "logs", "proof-all");
+  const tier = getTier();
+  const proofs = getProofs(tier);
+  const evidenceDir = path.join(process.cwd(), "audit", "baseline", "logs", `proof-${tier}`);
   ensureDir(evidenceDir);
 
   const results: ProofResult[] = [];
+
+  console.log(`Running proof tier: ${tier}`);
+  console.log(`Proof count: ${proofs.length}`);
 
   for (const script of proofs) {
     const name = safeName(script);
@@ -74,9 +99,7 @@ function run() {
     fs.writeFileSync(logPath, output);
     fs.writeFileSync(exitPath, `${status}\n`);
 
-    if (output.trim()) {
-      console.log(tail(output));
-    }
+    if (output.trim()) console.log(tail(output));
     console.log(`${script}: ${status === 0 ? "PASS" : "FAIL"}`);
 
     results.push({ script, status, logPath });
@@ -88,7 +111,7 @@ function run() {
     .join("\n");
   fs.writeFileSync(summaryPath, `${summary}\n`);
 
-  console.log("\n=== proof:all summary ===");
+  console.log(`\n=== proof:${tier} summary ===`);
   console.log(summary);
 
   const failed = results.filter((result) => result.status !== 0);
@@ -100,7 +123,7 @@ function run() {
     process.exit(1);
   }
 
-  console.log("All runtime proof harnesses passed.");
+  console.log(`All ${tier} proof harnesses passed.`);
 }
 
 run();
