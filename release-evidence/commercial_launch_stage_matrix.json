@@ -59,8 +59,7 @@
         },
         "billing": {
           "applicable": false,
-          "proofs": [],
-          "note": "Paid beta claims in this repository are positioned as pre-billing readiness; billing proof is deferred to public_launch."
+          "proofs": []
         }
       }
     },
@@ -122,8 +121,7 @@
         },
         "billing": {
           "applicable": false,
-          "proofs": [],
-          "note": "Enterprise pilot claims in this repository are positioned as pre-billing readiness; billing proof is deferred to public_launch."
+          "proofs": []
         }
       }
     },
@@ -187,7 +185,8 @@
         },
         "billing": {
           "applicable": false,
-          "proofs": []
+          "proofs": [],
+          "note": "Paid beta claims in this repository are positioned as pre-billing readiness; billing proof is deferred to public_launch."
         }
       }
     },
@@ -255,7 +254,8 @@
         },
         "billing": {
           "applicable": false,
-          "proofs": []
+          "proofs": [],
+          "note": "Enterprise pilot claims in this repository are positioned as pre-billing readiness; billing proof is deferred to public_launch."
         }
       }
     },
