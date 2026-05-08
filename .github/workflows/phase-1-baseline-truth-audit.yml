@@ -1,0 +1,92 @@
+name: Phase 1 Baseline Truth Audit
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - audit/**
+      - .github/workflows/phase-1-baseline-truth-audit.yml
+      - package.json
+      - package-lock.json
+      - apps/**
+      - packages/**
+      - scripts/**
+
+permissions:
+  contents: read
+
+jobs:
+  baseline-truth-audit:
+    name: Baseline truth audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Prepare evidence directories
+        shell: bash
+        run: mkdir -p audit/baseline/logs
+
+      - name: Run baseline suite without early exit
+        shell: bash
+        run: |
+          set +e
+          run_gate() {
+            index="$1"
+            name="$2"
+            shift 2
+            log="audit/baseline/logs/${index}-${name}.log"
+            exit_file="audit/baseline/logs/${index}-${name}.exit"
+            echo "::group::${index}-${name}"
+            echo "Running: $*"
+            "$@" > "$log" 2>&1
+            code=$?
+            echo "$code" > "$exit_file"
+            tail -n 80 "$log" || true
+            echo "Exit code: $code"
+            echo "::endgroup::"
+          }
+
+          run_gate 01 npm-ci npm ci
+          run_gate 02 deps-sanity npm run deps:sanity
+          run_gate 03 lint npm run lint
+          run_gate 04 typecheck npm run typecheck
+          run_gate 05 build npm run build
+          run_gate 06 test npm run test
+          run_gate 07 validate-all npm run validate:all
+          run_gate 08 proof-all npm run proof:all
+          run_gate 09 beta-readiness npm run beta:readiness
+          run_gate 10 commercial-launch npm run validate:commercial-launch
+
+          echo "Baseline exit summary:"
+          for f in audit/baseline/logs/*.exit; do
+            echo "$f: $(cat "$f")"
+          done | tee audit/baseline/logs/exit-summary.txt
+
+          failing=0
+          for f in audit/baseline/logs/*.exit; do
+            code="$(cat "$f")"
+            if [ "$code" != "0" ]; then
+              failing=1
+            fi
+          done
+          exit "$failing"
+
+      - name: Upload baseline evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase-1-baseline-evidence
+          path: |
+            audit/baseline/logs/*.log
+            audit/baseline/logs/*.exit
+            audit/baseline/logs/exit-summary.txt
+          if-no-files-found: warn
