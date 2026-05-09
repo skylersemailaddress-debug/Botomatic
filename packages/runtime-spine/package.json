@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "tsx src/__tests__/stateMachine.test.ts && tsx src/__tests__/queue.test.ts && tsx src/__tests__/checkpoints.test.ts && tsx src/__tests__/validatorRuntime.test.ts && tsx src/__tests__/tracing.test.ts",
+    "test": "tsx src/__tests__/stateMachine.test.ts && tsx src/__tests__/queue.test.ts && tsx src/__tests__/checkpoints.test.ts && tsx src/__tests__/validatorRuntime.test.ts && tsx src/__tests__/tracing.test.ts && tsx src/__tests__/retryDeadLetter.test.ts && tsx src/__tests__/orchestrationRecovery.test.ts && tsx src/__tests__/workerLease.test.ts && tsx src/__tests__/orchestrationCoordinator.test.ts && tsx src/__tests__/scheduler.test.ts && tsx src/__tests__/validatorReplay.test.ts && tsx src/__tests__/executionRunner.test.ts && tsx src/__tests__/heartbeat.test.ts && tsx src/__tests__/cancellation.test.ts && tsx src/__tests__/timeouts.test.ts && tsx src/__tests__/leaseRenewal.test.ts && tsx src/__tests__/distributedWorkers.test.ts && tsx src/__tests__/cancellationPropagation.test.ts",
+    "proof:runtime-spine": "tsx src/proofRuntimeSpine.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json --incremental false"
   },
   "devDependencies": {}
