@@ -4,3 +4,7 @@ export * from './queue.js';
 export * from './checkpoints.js';
 export * from './validatorRuntime.js';
 export * from './tracing.js';
+export * from './workerLease.js';
+export * from './orchestrationCoordinator.js';
+export * from './scheduler.js';
+export * from './validatorReplay.js';
