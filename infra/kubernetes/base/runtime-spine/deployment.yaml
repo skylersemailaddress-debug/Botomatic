@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: runtime-spine
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: runtime-spine
+  template:
+    metadata:
+      labels:
+        app: runtime-spine
+    spec:
+      containers:
+        - name: runtime-spine
+          image: botomatic/runtime-spine:scaffold
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: RUNTIME_FEATURE_FLAG
+              value: disabled
+          ports:
+            - containerPort: 3000
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"

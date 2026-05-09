@@ -1,0 +1,23 @@
+{
+  "title": "Runtime Spine Overview",
+  "description": "Scaffold dashboard for runtime orchestration health",
+  "panels": [
+    {
+      "title": "Jobs Executing",
+      "metric": "runtime.job.executing"
+    },
+    {
+      "title": "Validator Approved",
+      "metric": "runtime.validator.approved"
+    },
+    {
+      "title": "Sandbox Blocks",
+      "metric": "runtime.sandbox.blocked"
+    },
+    {
+      "title": "Deployment Timeouts",
+      "metric": "runtime.deployment.timed_out"
+    }
+  ],
+  "status": "scaffold"
+}

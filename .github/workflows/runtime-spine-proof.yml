@@ -1,0 +1,39 @@
+name: Runtime Spine Proof
+
+on:
+  pull_request:
+    paths:
+      - 'packages/runtime-spine/**'
+      - '.github/workflows/runtime-spine-proof.yml'
+  push:
+    branches:
+      - phase-2-architecture-audit
+    paths:
+      - 'packages/runtime-spine/**'
+      - '.github/workflows/runtime-spine-proof.yml'
+
+jobs:
+  runtime-spine-proof:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Runtime spine typecheck
+        run: npm run typecheck --workspace @botomatic/runtime-spine
+
+      - name: Runtime spine tests
+        run: npm run test --workspace @botomatic/runtime-spine
+
+      - name: Runtime spine proof
+        run: npm run proof:runtime-spine --workspace @botomatic/runtime-spine
