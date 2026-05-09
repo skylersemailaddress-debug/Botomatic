@@ -1,0 +1,95 @@
+name: Phase 2 Architecture Graph Audit
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/phase-2-architecture-graph-audit.yml
+      - audit/architecture/**
+      - package.json
+      - package-lock.json
+      - apps/**
+      - packages/**
+      - scripts/**
+
+permissions:
+  contents: read
+
+jobs:
+  architecture-graph-audit:
+    name: Architecture graph audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run architecture graph audit without early exit
+        shell: bash
+        run: |
+          set +e
+          mkdir -p audit/architecture/logs
+
+          run_gate() {
+            index="$1"
+            name="$2"
+            shift 2
+            log="audit/architecture/logs/${index}-${name}.log"
+            exit_file="audit/architecture/logs/${index}-${name}.exit"
+            echo "::group::${index}-${name}"
+            echo "Running: $*"
+            "$@" > "$log" 2>&1
+            code=$?
+            echo "$code" > "$exit_file"
+            tail -n 120 "$log" || true
+            echo "Exit code: $code"
+            echo "::endgroup::"
+          }
+
+          run_gate 01 madge-circular npx madge --circular .
+          run_gate 02 dependency-cruiser npx dependency-cruiser src packages apps
+          run_gate 03 ts-prune npx ts-prune
+          run_gate 04 npm-ls-depth-2 npm ls --all --depth=2
+          run_gate 05 lint npm run lint
+          run_gate 06 typecheck npm run typecheck
+
+          echo "Architecture graph exit summary:"
+          summary_status=0
+          : > audit/architecture/logs/architecture-exit-summary.txt
+          for f in audit/architecture/logs/[0-9][0-9]-*.exit; do
+            code="$(cat "$f")"
+            echo "$f: $code" | tee -a audit/architecture/logs/architecture-exit-summary.txt
+          done
+
+          # Phase 2 graph audit is evidence capture. It should upload all results even if graph tools report findings.
+          # Hard CI failure is limited to baseline health commands.
+          lint_code="$(cat audit/architecture/logs/05-lint.exit)"
+          typecheck_code="$(cat audit/architecture/logs/06-typecheck.exit)"
+          if [ "$lint_code" != "0" ] || [ "$typecheck_code" != "0" ]; then
+            summary_status=1
+          fi
+
+          echo "$summary_status" > audit/architecture/logs/architecture-suite.exit
+          echo "Architecture audit suite status: $summary_status"
+          exit "$summary_status"
+
+      - name: Upload architecture graph evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase-2-architecture-graph-evidence
+          path: |
+            audit/architecture/logs/*.log
+            audit/architecture/logs/*.exit
+            audit/architecture/logs/architecture-exit-summary.txt
+          if-no-files-found: warn
