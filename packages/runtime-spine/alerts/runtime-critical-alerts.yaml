@@ -1,0 +1,20 @@
+alerts:
+  - name: runtime-queue-saturation
+    severity: critical
+    metric: runtime.queue.depth
+    condition: '> 1000'
+
+  - name: runtime-validator-replay-failure
+    severity: critical
+    metric: runtime.validator.replay.failure
+    condition: '> 0'
+
+  - name: runtime-sandbox-isolation-violation
+    severity: critical
+    metric: runtime.sandbox.blocked
+    condition: '> 0'
+
+  - name: runtime-deployment-timeout
+    severity: high
+    metric: runtime.deployment.timed_out
+    condition: '> 5'
